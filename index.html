@@ -662,20 +662,26 @@ const firebaseConfig = {
                             
                             Explain this page content as a teacher would in class. 
                             
+                            IMPORTANT LANGUAGE INSTRUCTION:
+                            - First, detect the language of the Page Content above
+                            - If the content is in Telugu (తెలుగు), Hindi (हिंदी), Tamil (தமிழ்), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം), or any other Indian language, respond in THE SAME LANGUAGE
+                            - If the content is in English, respond in English
+                            - Your explanations should be in the SAME LANGUAGE as the textbook content
+                            
                             IMPORTANT: Return ONLY valid, properly formatted JSON. Use single spaces instead of newlines in HTML strings. Escape all quotes properly.
                             
                             Return this exact structure:
                             {
-                                "summary": "2-3 sentence summary (simple HTML with <b> tags only)",
-                                "keyPoints": ["point 1 (plain text)", "point 2 (plain text)", "point 3 (plain text)"],
-                                "explanation": "Detailed explanation (use <p> and <b> tags, keep in one line)",
-                                "importantDetails": "Subject-specific details - For English: Comprehension questions, For Math: Formulas and examples, For Science: Highlighted sections (use <ul><li> tags, keep in one line)",
-                                "examples": "Real-world examples (use <p> and <b> tags, keep in one line)",
-                                "thinkAbout": "2-3 questions (use <ul><li> tags, keep in one line)",
-                                "exam": "Exam tips (use <p> and <b> tags, keep in one line)"
+                                "summary": "2-3 sentence summary in the SAME LANGUAGE as the content (simple HTML with <b> tags only)",
+                                "keyPoints": ["point 1 in SAME LANGUAGE (plain text)", "point 2 in SAME LANGUAGE (plain text)", "point 3 in SAME LANGUAGE (plain text)"],
+                                "explanation": "Detailed explanation in SAME LANGUAGE (use <p> and <b> tags, keep in one line)",
+                                "importantDetails": "Subject-specific details in SAME LANGUAGE - For English: Comprehension questions, For Math: Formulas and examples, For Science: Highlighted sections (use <ul><li> tags, keep in one line)",
+                                "examples": "Real-world examples in SAME LANGUAGE (use <p> and <b> tags, keep in one line)",
+                                "thinkAbout": "2-3 questions in SAME LANGUAGE (use <ul><li> tags, keep in one line)",
+                                "exam": "Exam tips in SAME LANGUAGE (use <p> and <b> tags, keep in one line)"
                             }
                             
-                            Make it engaging, clear, and encouraging like a good teacher!
+                            Make it engaging, clear, and encouraging like a good teacher! Remember to use the SAME LANGUAGE as the textbook content.
                         `;
 
                         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
@@ -1053,24 +1059,30 @@ const firebaseConfig = {
                             
                             ${pageContent ? `Context from current page:\n"${pageContent}"\n\nBased on this content, create specific activities.` : 'Create general activities for this chapter.'}
                             
+                            IMPORTANT LANGUAGE INSTRUCTION:
+                            - First, detect the language of the content above
+                            - If the content is in Telugu (తెలుగు), Hindi (हिंदी), Tamil (தமிழ்), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം), or any other Indian language, respond in THE SAME LANGUAGE
+                            - If the content is in English, respond in English
+                            - All activities should be in the SAME LANGUAGE as the textbook content
+                            
                             IMPORTANT: Return ONLY valid, properly formatted JSON. Keep all HTML strings on single lines. Escape all quotes properly.
                             
                             Return exactly this structure:
                             {
                                 "rbl": {
-                                    "title": "Research Based Learning Title (specific to content)",
-                                    "task": "HTML with <ul><li> tags describing detailed research activities based on the content (keep in one line)"
+                                    "title": "Research Based Learning Title in SAME LANGUAGE (specific to content)",
+                                    "task": "HTML with <ul><li> tags in SAME LANGUAGE describing detailed research activities based on the content (keep in one line)"
                                 },
                                 "cbl": {
-                                    "title": "Case Based Learning Title (specific to content)",
-                                    "task": "HTML with <ul><li> tags describing detailed case study activities based on the content (keep in one line)"
+                                    "title": "Case Based Learning Title in SAME LANGUAGE (specific to content)",
+                                    "task": "HTML with <ul><li> tags in SAME LANGUAGE describing detailed case study activities based on the content (keep in one line)"
                                 },
                                 "sea": {
-                                    "title": "Subject Enrichment Activity Title (specific to content)",
-                                    "task": "HTML with <ul><li> tags describing detailed creative activities based on the content (keep in one line)"
+                                    "title": "Subject Enrichment Activity Title in SAME LANGUAGE (specific to content)",
+                                    "task": "HTML with <ul><li> tags in SAME LANGUAGE describing detailed creative activities based on the content (keep in one line)"
                                 }
                             }
-                            Make activities engaging, specific, and age-appropriate for Grade 8. Use actual concepts from the content provided.
+                            Make activities engaging, specific, and age-appropriate for Grade 8. Use actual concepts from the content provided. Remember to use the SAME LANGUAGE as the textbook content.
                         `;
                         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                             method: 'POST', 
@@ -1230,14 +1242,23 @@ const firebaseConfig = {
                 if (!apiKey) { setState('no-key'); return; }
                 setState('loading');
                 try {
-                        const prompt = `Explain "${term}" for Grade 8 student as JSON:
-{
-  "explanation": "Clear 2-3 sentence explanation with <b> tags",
-  "analogy": "Simple real-world analogy in 1 sentence",
-  "pyq": "One exam question example",
-  "demo": "Small interactive HTML with button onclick='...' - keep simple"
-}
-Return ONLY the JSON.`;
+                        const prompt = `
+                            LANGUAGE DETECTION: First, detect the language of this term: "${term}"
+                            
+                            If the term is in Telugu (తెలుగు), Hindi (हिंदी), Tamil (தமிழ்), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം), or any other Indian language, respond in THE SAME LANGUAGE.
+                            If the term is in English, respond in English.
+                            
+                            Explain "${term}" for Grade 8 student as JSON:
+                            {
+                              "explanation": "Clear 2-3 sentence explanation in SAME LANGUAGE with <b> tags",
+                              "analogy": "Simple real-world analogy in SAME LANGUAGE in 1 sentence",
+                              "pyq": "One exam question example in SAME LANGUAGE",
+                              "demo": "Small interactive HTML with button onclick='...' - keep simple (labels in SAME LANGUAGE)"
+                            }
+                            
+                            Remember: Use the SAME LANGUAGE as the term/concept being explained.
+                            Return ONLY the JSON.
+                        `;
                         
                         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                             method: 'POST', 
