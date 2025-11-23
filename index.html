@@ -1610,9 +1610,9 @@ Return ONLY valid JSON: {"translation": "your explanation in ${languageName}"}`;
                     
                     // Clean HTML and limit size to prevent errors
                     let cleanContent = typeof sectionContent === 'string' ? stripHtml(sectionContent) : sectionContent;
-                    if (cleanContent.length > 2000) {
-                        cleanContent = cleanContent.substring(0, 2000) + '...';
-                        console.log('⚠️ Section content truncated for translation');
+                    if (cleanContent.length > 4000) {
+                        cleanContent = cleanContent.substring(0, 4000) + '...';
+                        console.log('⚠️ Section content truncated to 4000 chars for translation');
                     }
                     
                     const prompt = `Explain this content in ${languageName} for Grade 8 students:
@@ -1632,7 +1632,7 @@ JSON: {"translation": "..."}`
                             contents: [{ parts: [{ text: prompt }] }],
                             generationConfig: {
                                 temperature: 0.7,
-                                maxOutputTokens: 2048
+                                maxOutputTokens: 3072  // Increased from 2048 for larger section translations
                             }
                         })
                     });
