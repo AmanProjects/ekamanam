@@ -598,23 +598,67 @@ const firebaseConfig = {
             const [isPaused, setIsPaused] = useState(false);
             const utteranceQueueRef = useRef([]);
             const currentUtteranceIndexRef = useRef(0);
+            const [currentSection, setCurrentSection] = useState(0);
+            const [textSections, setTextSections] = useState([]);
             const apiKey = localStorage.getItem('gemini_pat');
 
+            // Extract and split text into manageable sections
             useEffect(() => {
+                const extractText = async () => {
+                    if (!pdfDoc) return;
+                    
+                    try {
+                        const page = await pdfDoc.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        
+                        // Filter out graphics/captions (very short lines) and join meaningful text
+                        const meaningfulText = textContent.items
+                            .filter(item => item.str.trim().length > 15) // Skip short lines (likely graphics/labels)
+                            .map(item => item.str)
+                            .join(' ');
+                        
+                        console.log('📄 Full page text length:', meaningfulText.length);
+                        
+                        // Split into sections of ~1500 characters (manageable for AI)
+                        const sections = [];
+                        const chunkSize = 1500;
+                        
+                        for (let i = 0; i < meaningfulText.length; i += chunkSize) {
+                            sections.push(meaningfulText.substring(i, i + chunkSize));
+                        }
+                        
+                        console.log(`📚 Split into ${sections.length} sections`);
+                        setTextSections(sections);
+                        setCurrentSection(0);
+                        
+                    } catch (error) {
+                        console.error('❌ Text extraction error:', error);
+                        setState('error');
+                        setErrorMsg('Could not extract text from PDF');
+                    }
+                };
+                
+                extractText();
+            }, [pdfDoc, pageNum]);
+
+            // Fetch explanation for current section
+            useEffect(() => {
+                if (textSections.length === 0) return;
+                
                 const fetchTeacherExplanation = async () => {
                     if (!apiKey) { setState('no-key'); return; }
-                    if (!pdfDoc) { setState('error'); setErrorMsg('No PDF loaded'); return; }
                     
                     setState('loading');
                     try {
-                        // Extract text from current page
-                        const page = await pdfDoc.getPage(pageNum);
-                        const textContent = await page.getTextContent();
-                        const pageText = textContent.items.map(item => item.str).join(' ');
+                        // Use the current section text
+                        const pageText = textSections[currentSection];
                         
                         if (!pageText || pageText.trim().length < 50) {
-                            throw new Error('Could not extract enough text from page');
+                            throw new Error('Section is too short or empty');
                         }
+                        
+                        console.log(`📖 Processing section ${currentSection + 1}/${textSections.length} (${pageText.length} chars)`);
+
 
                         // Determine subject-specific instructions
                         let subjectSpecificInstructions = '';
@@ -656,13 +700,15 @@ const firebaseConfig = {
                             
                             Subject: ${subject}
                             Chapter: ${chapterName}
+                            Section: ${currentSection + 1} of ${textSections.length}
                             
                             ${subjectSpecificInstructions}
                             
-                            Page Content:
-                            "${pageText.substring(0, 3000)}"
+                            Content Section (filtered to remove graphics):
+                            "${pageText}"
                             
-                            Explain this page content as a teacher would in class. 
+                            NOTE: This is section ${currentSection + 1} of ${textSections.length} from this page.
+                            Explain this section content as a teacher would in class. 
                             
                             IMPORTANT LANGUAGE INSTRUCTION:
                             - First, detect the language of the Page Content above
@@ -770,7 +816,7 @@ const firebaseConfig = {
                     }
                 };
                 fetchTeacherExplanation();
-            }, [pdfDoc, pageNum, apiKey, subject]);
+            }, [currentSection, textSections, apiKey, subject]);
 
             // Text-to-Speech functions
             const stripHtml = (html) => {
@@ -992,6 +1038,44 @@ const firebaseConfig = {
                                     <p className="text-xs text-green-600">Page {pageNum} • {chapterName}</p>
                                 </div>
                             </div>
+                            
+                            {/* Section Navigation */}
+                            {textSections.length > 1 && (
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setCurrentSection(Math.max(0, currentSection - 1))}
+                                        disabled={currentSection === 0}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                                            currentSection === 0 
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                                : 'bg-green-600 text-white hover:bg-green-700'
+                                        }`}
+                                        title="Previous Section"
+                                    >
+                                        <Icon name="chevron-left" size={16}/>
+                                        <span className="hidden md:inline">Prev</span>
+                                    </button>
+                                    
+                                    <div className="bg-white px-3 py-1.5 rounded-lg text-sm font-bold text-green-800 border-2 border-green-300">
+                                        {currentSection + 1} / {textSections.length}
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={() => setCurrentSection(Math.min(textSections.length - 1, currentSection + 1))}
+                                        disabled={currentSection === textSections.length - 1}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                                            currentSection === textSections.length - 1
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                                : 'bg-green-600 text-white hover:bg-green-700'
+                                        }`}
+                                        title="Next Section"
+                                    >
+                                        <span className="hidden md:inline">Next</span>
+                                        <Icon name="chevron-right" size={16}/>
+                                    </button>
+                                </div>
+                            )}
+                            
                             <button onClick={onClose}><Icon name="x" size={24} className="text-gray-500 hover:text-gray-800"/></button>
                         </div>
                         
@@ -1149,40 +1233,77 @@ const firebaseConfig = {
             const [translationData, setTranslationData] = useState(null); // Translations
             const [activeLanguage, setActiveLanguage] = useState(null); // 'hindi' or 'english'
             const [errorMsg, setErrorMsg] = useState('');
+            const [currentSection, setCurrentSection] = useState(0);
+            const [textSections, setTextSections] = useState([]);
             const apiKey = localStorage.getItem('gemini_pat');
 
+            // Extract and split text - SAME AS TEACHER MODE
             useEffect(() => {
-                fetchTeacherContent();
+                const extractText = async () => {
+                    if (!pdfDoc) return;
+                    
+                    try {
+                        const page = await pdfDoc.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        
+                        // Filter out graphics/captions (very short lines)
+                        const meaningfulText = textContent.items
+                            .filter(item => item.str.trim().length > 15)
+                            .map(item => item.str)
+                            .join(' ');
+                        
+                        console.log('📄 Telugu Learn - Full text length:', meaningfulText.length);
+                        
+                        // Split into sections
+                        const sections = [];
+                        const chunkSize = 1500;
+                        
+                        for (let i = 0; i < meaningfulText.length; i += chunkSize) {
+                            sections.push(meaningfulText.substring(i, i + chunkSize));
+                        }
+                        
+                        console.log(`📚 Split into ${sections.length} sections`);
+                        setTextSections(sections);
+                        setCurrentSection(0);
+                        
+                    } catch (error) {
+                        console.error('❌ Text extraction error:', error);
+                        setState('error');
+                        setErrorMsg('Could not extract text from PDF');
+                    }
+                };
+                
+                extractText();
             }, [pdfDoc, pageNum]);
 
-            // USE EXACT SAME LOGIC AS TEACHER MODE (proven to work!)
-            const fetchTeacherContent = async () => {
-                if (!apiKey) { setState('no-key'); return; }
-                if (!pdfDoc) { setState('error'); setErrorMsg('No PDF loaded'); return; }
+            // Fetch content for current section
+            useEffect(() => {
+                if (textSections.length === 0) return;
                 
-                setState('loading');
-                try {
-                    // Extract text from current page (SAME AS TEACHER MODE)
-                    const page = await pdfDoc.getPage(pageNum);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map(item => item.str).join(' ');
+                const fetchTeacherContent = async () => {
+                    if (!apiKey) { setState('no-key'); return; }
                     
-                    console.log('📚 Telugu Learning (using Teacher Mode logic)');
-                    console.log('📄 Extracted Text Length:', pageText.length);
-                    
-                    if (!pageText || pageText.trim().length < 50) {
-                        throw new Error('Could not extract enough text from page');
-                    }
+                    setState('loading');
+                    try {
+                        // Use the current section text
+                        const pageText = textSections[currentSection];
+                        
+                        if (!pageText || pageText.trim().length < 50) {
+                            throw new Error('Section is too short or empty');
+                        }
+                        
+                        console.log(`📖 Telugu Learn - Section ${currentSection + 1}/${textSections.length} (${pageText.length} chars)`);
 
-                    // USE SAME PROMPT AS TEACHER MODE
-                    const prompt = `
-                        You are an experienced and friendly teacher. 
-                        
-                        Subject: ${subject || 'General'}
-                        Chapter: ${chapterName}
-                        
-                        Page Content:
-                        "${pageText.substring(0, 3000)}"
+                        // USE SAME PROMPT AS TEACHER MODE
+                        const prompt = `
+                            You are an experienced and friendly teacher. 
+                            
+                            Subject: ${subject || 'General'}
+                            Chapter: ${chapterName}
+                            Section: ${currentSection + 1} of ${textSections.length}
+                            
+                            Content Section (filtered to remove graphics):
+                            "${pageText}"
                         
                         Explain this page content as a teacher would in class. 
                         
@@ -1280,6 +1401,9 @@ const firebaseConfig = {
                     setErrorMsg(error.message || 'Failed to load content');
                 }
             };
+            
+            fetchTeacherContent();
+        }, [currentSection, textSections, apiKey, subject]);
 
             const fetchTranslation = async (targetLanguage) => {
                 if (!apiKey || !teacherData) return;
@@ -1374,6 +1498,44 @@ const firebaseConfig = {
                                 </h3>
                                 <p className="text-xs text-orange-600">For Non-Native Telugu Speakers • Page {pageNum}</p>
                             </div>
+                            
+                            {/* Section Navigation */}
+                            {textSections.length > 1 && (
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setCurrentSection(Math.max(0, currentSection - 1))}
+                                        disabled={currentSection === 0}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                                            currentSection === 0 
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                                : 'bg-orange-600 text-white hover:bg-orange-700'
+                                        }`}
+                                        title="Previous Section"
+                                    >
+                                        <Icon name="chevron-left" size={16}/>
+                                        <span className="hidden md:inline">Prev</span>
+                                    </button>
+                                    
+                                    <div className="bg-white px-3 py-1.5 rounded-lg text-sm font-bold text-orange-800 border-2 border-orange-300">
+                                        {currentSection + 1} / {textSections.length}
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={() => setCurrentSection(Math.min(textSections.length - 1, currentSection + 1))}
+                                        disabled={currentSection === textSections.length - 1}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                                            currentSection === textSections.length - 1
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                                : 'bg-orange-600 text-white hover:bg-orange-700'
+                                        }`}
+                                        title="Next Section"
+                                    >
+                                        <span className="hidden md:inline">Next</span>
+                                        <Icon name="chevron-right" size={16}/>
+                                    </button>
+                                </div>
+                            )}
+                            
                             <button onClick={onClose}><Icon name="x" size={24} className="text-gray-500 hover:text-gray-800"/></button>
                         </div>
 
