@@ -704,7 +704,7 @@ const firebaseConfig = {
 
             const toggleSpeech = () => {
                 if (!window.speechSynthesis) {
-                    alert('Text-to-speech is not supported in your browser');
+                    window.alert('Text-to-speech is not supported in your browser');
                     return;
                 }
 
@@ -1437,13 +1437,13 @@ Return ONLY the JSON.`;
                             },
                             { merge: true }
                         );
-                        alert("API Key Saved & Synced to your Google Account! 🎉"); 
+                        window.alert("API Key Saved & Synced to your Google Account! 🎉"); 
                     } catch (error) {
                         console.error("Error saving to cloud:", error);
-                        alert("API Key Saved Locally! (Cloud sync unavailable)");
+                        window.alert("API Key Saved Locally! (Cloud sync unavailable)");
                     }
                 } else {
-                    alert("API Key Saved Locally! Sign in with Google to sync across devices."); 
+                    window.alert("API Key Saved Locally! Sign in with Google to sync across devices."); 
                 }
                 
                 setSaving(false);
@@ -1999,6 +1999,13 @@ Return ONLY the JSON.`;
             };
 
             const handleGoogleSignIn = async () => {
+                console.log("=== Google Sign-In Diagnostic ===");
+                console.log("Firebase Configured:", isFirebaseConfigured);
+                console.log("Auth object exists:", !!auth);
+                console.log("Firebase Modules:", window.firebaseModules ? "Loaded" : "Not loaded");
+                console.log("Current URL:", window.location.href);
+                console.log("================================");
+                
                 if (!isFirebaseConfigured) {
                     // Show helpful guide instead of just an alert
                     const shouldContinue = confirm(
@@ -2029,23 +2036,47 @@ Return ONLY the JSON.`;
                 }
                 
                 if (!auth) {
-                    alert("Firebase initialization failed. Please check your Firebase configuration in index.html and refresh the page.");
+                    window.alert("Firebase initialization failed. Please check your Firebase configuration in index.html and refresh the page.");
                     return;
                 }
                 
                 try {
+                    console.log("Starting Google Sign-In...");
                     const provider = new window.firebaseModules.GoogleAuthProvider();
-                    await window.firebaseModules.signInWithPopup(auth, provider);
-                    // User state will be updated by onAuthStateChanged listener
-                    console.log("✅ Successfully signed in with Google");
+                    provider.setCustomParameters({
+                        prompt: 'select_account'
+                    });
+                    
+                    console.log("Opening sign-in popup...");
+                    const result = await window.firebaseModules.signInWithPopup(auth, provider);
+                    console.log("✅ Successfully signed in:", result.user.email);
                 } catch (error) {
-                    console.error("Sign-in error:", error);
+                    console.error("Sign-in error (full):", error);
+                    console.error("Error code:", error.code);
+                    console.error("Error message:", error.message);
+                    
                     if (error.code === 'auth/popup-closed-by-user') {
                         // User closed popup, no need to alert
+                        console.log("User closed the sign-in popup");
+                    } else if (error.code === 'auth/popup-blocked') {
+                        window.alert("🚫 Popup Blocked\n\nYour browser blocked the sign-in popup.\n\nTo fix:\n1. Allow popups for this site\n2. Click 'Sign in with Google' again\n\nOR try using a different browser (Chrome recommended)");
                     } else if (error.code === 'auth/unauthorized-domain') {
-                        alert("Sign-in Error: This domain is not authorized.\n\nIn Firebase Console:\n1. Go to Authentication → Settings\n2. Add your domain to 'Authorized domains'\n3. Try again");
+                        console.error("❌ DOMAIN NOT AUTHORIZED");
+                        console.error("Current domain needs to be added to Firebase Console");
+                        console.error("\n📋 STEPS TO FIX:\n");
+                        console.error("1. Go to: https://console.firebase.google.com/project/ekamanam/authentication/settings");
+                        console.error("2. Scroll to 'Authorized domains'");
+                        console.error("3. Click 'Add domain' and add:", window.location.hostname);
+                        console.error("4. Try signing in again");
+                        
+                        window.alert("⚠️ Domain Not Authorized\n\nYour current domain (" + window.location.hostname + ") needs to be authorized.\n\nSTEPS TO FIX:\n\n1. Go to Firebase Console:\n   https://console.firebase.google.com/project/ekamanam/authentication/settings\n\n2. Scroll to 'Authorized domains'\n\n3. Click 'Add domain' and add:\n   " + window.location.hostname + "\n\n4. Try signing in again\n\nCheck console for clickable link!");
+                    } else if (error.code === 'auth/operation-not-allowed') {
+                        window.alert("⚠️ Google Sign-In Not Enabled\n\nSteps to enable in Firebase Console:\n\n1. Go to: https://console.firebase.google.com/\n2. Select your project: ekamanam\n3. Go to Authentication → Sign-in method\n4. Click 'Google' and toggle it to ENABLED\n5. Save changes\n6. Try signing in again");
+                    } else if (error.code === 'auth/cancelled-popup-request') {
+                        // Multiple popups, just ignore
+                        console.log("Popup request cancelled (another popup was opened)");
                     } else {
-                        alert("Could not sign in: " + (error.message || "Unknown error") + "\n\nCheck the browser console for details.");
+                        window.alert("❌ Sign-In Failed\n\nError: " + (error.message || "Unknown error") + "\n\nError Code: " + (error.code || "none") + "\n\nCheck browser console (F12) for details.");
                     }
                 }
             };
@@ -2058,7 +2089,7 @@ Return ONLY the JSON.`;
                     // localStorage.removeItem('gemini_pat'); // Keep it so user can use offline
                 } catch (error) {
                     console.error("Sign-out error:", error);
-                    alert("Could not sign out: " + error.message);
+                    window.alert("Could not sign out: " + error.message);
                 }
             };
 
