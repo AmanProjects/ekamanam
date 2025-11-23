@@ -1739,7 +1739,7 @@ JSON: {"translation": "..."}`
                         You are a language teacher helping non-native speakers understand this content.
                         
                         ORIGINAL CONTENT:
-                        ${fullContent.substring(0, 2000)}
+                        ${fullContent.substring(0, 4000)}
                         
                         Provide a comprehensive learning guide in ${languageName} ONLY.
                         
@@ -1763,7 +1763,7 @@ JSON: {"translation": "..."}`
                             contents: [{ parts: [{ text: prompt }] }],
                             generationConfig: {
                                 temperature: 0.7,
-                                maxOutputTokens: 4096
+                                maxOutputTokens: 6144  // Increased for full page translations with all sections
                             }
                         })
                     });
@@ -1774,21 +1774,71 @@ JSON: {"translation": "..."}`
                     }
 
                     const result = await response.json();
-                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    // Check for errors
+                    const candidate = result.candidates?.[0];
+                    if (!candidate) throw new Error('No translation from AI');
+                    
+                    if (candidate.finishReason === 'MAX_TOKENS') {
+                        console.log('⚠️ Translation truncated but usable');
+                    }
+                    if (candidate.finishReason === 'SAFETY' || candidate.finishReason === 'RECITATION') {
+                        throw new Error('Content blocked by AI filters');
+                    }
+                    
+                    let text = candidate.content?.parts?.[0]?.text;
                     if (!text) throw new Error('No translation from AI');
 
+                    console.log('📝 Full page translation response received:', text.substring(0, 200));
+
+                    // Remove markdown code blocks
+                    text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+                    // Try to extract JSON
                     const jsonMatch = text.match(/\{[\s\S]*\}/);
-                    if (!jsonMatch) throw new Error('Invalid translation response');
+                    
+                    if (!jsonMatch) {
+                        // If no JSON, create simple translation object with plain text
+                        console.log('⚠️ No JSON found, using plain text');
+                        const data = {
+                            translation: `<p>${text}</p>`,
+                            wordMeanings: '',
+                            pronunciation: '',
+                            grammar: '',
+                            culturalNotes: '',
+                            practiceQuestions: ''
+                        };
+                        setTranslationData(data);
+                        setState('translated');
+                        console.log('✅ Translation ready (plain text):', targetLanguage);
+                        return;
+                    }
                     
                     let cleanedJson = jsonMatch[0]
                         .replace(/\n/g, ' ')
                         .replace(/\r/g, ' ')
                         .replace(/\t/g, ' ');
                     
-                    const data = JSON.parse(cleanedJson);
-                    setTranslationData(data);
-                    setState('translated');
-                    console.log('✅ Translation ready:', targetLanguage);
+                    try {
+                        const data = JSON.parse(cleanedJson);
+                        setTranslationData(data);
+                        setState('translated');
+                        console.log('✅ Translation ready:', targetLanguage);
+                    } catch (parseError) {
+                        console.error('JSON parse error:', parseError);
+                        // Fallback: create simple structure
+                        const data = {
+                            translation: `<p>${text}</p>`,
+                            wordMeanings: '',
+                            pronunciation: '',
+                            grammar: '',
+                            culturalNotes: '',
+                            practiceQuestions: ''
+                        };
+                        setTranslationData(data);
+                        setState('translated');
+                        console.log('✅ Translation ready (fallback):', targetLanguage);
+                    }
                     
                 } catch (error) {
                     console.error("Translation Error:", error);
