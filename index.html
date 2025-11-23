@@ -778,36 +778,69 @@ const firebaseConfig = {
                 return tmp.textContent || tmp.innerText || '';
             };
 
-            const getFemaleVoice = () => {
+            const detectLanguage = (text) => {
+                // Detect Telugu
+                if (/[\u0C00-\u0C7F]/.test(text)) return 'te-IN';
+                // Detect Hindi
+                if (/[\u0900-\u097F]/.test(text)) return 'hi-IN';
+                // Detect Tamil
+                if (/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN';
+                // Detect Kannada
+                if (/[\u0C80-\u0CFF]/.test(text)) return 'kn-IN';
+                // Detect Malayalam
+                if (/[\u0D00-\u0D7F]/.test(text)) return 'ml-IN';
+                // Default to English
+                return 'en-IN';
+            };
+
+            const getBestVoice = (text) => {
                 const voices = window.speechSynthesis.getVoices();
+                const detectedLang = detectLanguage(text);
                 
-                // Look for specific female voices (in order of preference)
-                const femaleNames = [
-                    'google uk english female',
-                    'google us english female', 
-                    'samantha',
-                    'victoria',
-                    'karen',
-                    'susan',
-                    'fiona',
-                    'zira',
-                    'microsoft zira',
-                    'microsoft susan'
-                ];
+                console.log('🗣️ Detected language:', detectedLang);
+                console.log('📢 Available voices:', voices.length);
                 
-                // Try to find by name first
-                for (const name of femaleNames) {
-                    const voice = voices.find(v => v.name.toLowerCase().includes(name));
-                    if (voice) return voice;
+                // Priority list for each language
+                const voicePriorities = {
+                    'te-IN': ['telugu', 'te-in', 'te_in'],
+                    'hi-IN': ['hindi', 'hi-in', 'hi_in'],
+                    'ta-IN': ['tamil', 'ta-in', 'ta_in'],
+                    'kn-IN': ['kannada', 'kn-in', 'kn_in'],
+                    'ml-IN': ['malayalam', 'ml-in', 'ml_in'],
+                    'en-IN': ['english india', 'en-in', 'en_in', 'google uk english female', 'google us english female']
+                };
+                
+                const priorities = voicePriorities[detectedLang] || voicePriorities['en-IN'];
+                
+                // Try to find by language match first
+                for (const priority of priorities) {
+                    const voice = voices.find(v => 
+                        v.name.toLowerCase().includes(priority) || 
+                        v.lang.toLowerCase().includes(priority.replace('_', '-'))
+                    );
+                    if (voice) {
+                        console.log('✓ Selected voice:', voice.name, voice.lang);
+                        return voice;
+                    }
                 }
                 
-                // Fallback: look for any female voice
-                const femaleVoice = voices.find(voice => 
-                    voice.name.toLowerCase().includes('female') && 
-                    !voice.name.toLowerCase().includes('male')
-                );
+                // Try to find by exact lang code
+                const langVoice = voices.find(v => v.lang.toLowerCase() === detectedLang.toLowerCase());
+                if (langVoice) {
+                    console.log('✓ Selected voice by lang:', langVoice.name, langVoice.lang);
+                    return langVoice;
+                }
                 
-                return femaleVoice || voices[0]; // Return first voice as last resort
+                // Fallback: find any voice for that language family
+                const langPrefix = detectedLang.split('-')[0];
+                const familyVoice = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix));
+                if (familyVoice) {
+                    console.log('✓ Selected voice by family:', familyVoice.name, familyVoice.lang);
+                    return familyVoice;
+                }
+                
+                console.warn('⚠️ No appropriate voice found, using default');
+                return voices[0]; // Last resort
             };
 
             const speakContent = () => {
@@ -820,33 +853,57 @@ const firebaseConfig = {
                 const textToSpeak = stripHtml(data.explanation);
 
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                utterance.rate = 0.85; // Slower for better comprehension
-                utterance.pitch = 1.1; // Slightly higher pitch for natural female voice
+                
+                // Detect language and adjust speech parameters
+                const lang = detectLanguage(textToSpeak);
+                utterance.lang = lang;
+                
+                // Adjust rate based on language (Indian languages often need slower speed)
+                if (lang.startsWith('te') || lang.startsWith('hi') || lang.startsWith('ta') || lang.startsWith('kn') || lang.startsWith('ml')) {
+                    utterance.rate = 0.75; // Slower for Indian languages
+                    utterance.pitch = 1.0; // Natural pitch
+                } else {
+                    utterance.rate = 0.85; // Slightly slower for English
+                    utterance.pitch = 1.1;
+                }
                 utterance.volume = 1;
                 
-                // Wait for voices to load if needed, then set female voice
-                if (window.speechSynthesis.getVoices().length > 0) {
-                    utterance.voice = getFemaleVoice();
-                } else {
-                    // Voices not loaded yet, wait for them
+                // Set appropriate voice for detected language
+                const setVoice = () => {
+                    const voices = window.speechSynthesis.getVoices();
+                    if (voices.length > 0) {
+                        utterance.voice = getBestVoice(textToSpeak);
+                        console.log('🎙️ Using voice:', utterance.voice?.name, 'for language:', lang);
+                    }
+                };
+                
+                // Try to set voice immediately
+                setVoice();
+                
+                // Also listen for voices to load (some browsers load them async)
+                if (window.speechSynthesis.getVoices().length === 0) {
                     window.speechSynthesis.onvoiceschanged = () => {
-                        utterance.voice = getFemaleVoice();
+                        setVoice();
                     };
                 }
                 
                 utterance.onstart = () => {
                     setIsSpeaking(true);
                     setIsPaused(false);
+                    console.log('▶️ Started speaking');
                 };
                 
                 utterance.onend = () => {
                     setIsSpeaking(false);
                     setIsPaused(false);
+                    console.log('⏹️ Finished speaking');
                 };
                 
-                utterance.onerror = () => {
+                utterance.onerror = (error) => {
+                    console.error('❌ Speech error:', error);
                     setIsSpeaking(false);
                     setIsPaused(false);
+                    window.alert(`Speech Error: ${error.error}\n\nYour browser might not support ${lang} text-to-speech. Try updating your browser or using Chrome/Edge for better language support.`);
                 };
                 
                 window.speechSynthesis.speak(utterance);
@@ -977,6 +1034,24 @@ const firebaseConfig = {
                                                         <Icon name="square" size={16}/>
                                                     </button>
                                                 )}
+                                                <button 
+                                                    onClick={() => {
+                                                        const voices = window.speechSynthesis.getVoices();
+                                                        const lang = detectLanguage(stripHtml(data.explanation));
+                                                        console.log('=== Voice Diagnostics ===');
+                                                        console.log('Detected Language:', lang);
+                                                        console.log('Total Available Voices:', voices.length);
+                                                        voices.forEach((v, i) => console.log(`${i + 1}. ${v.name} (${v.lang}) ${v.default ? '[DEFAULT]' : ''}`));
+                                                        const selected = getBestVoice(stripHtml(data.explanation));
+                                                        console.log('Selected Voice:', selected?.name, selected?.lang);
+                                                        console.log('=======================');
+                                                        window.alert(`Voice Diagnostics:\n\nDetected Language: ${lang}\nSelected Voice: ${selected?.name || 'None'} (${selected?.lang || 'N/A'})\nTotal Available: ${voices.length} voices\n\nCheck browser console (F12) for full list.`);
+                                                    }}
+                                                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                    title="Check available voices"
+                                                >
+                                                    <Icon name="help-circle" size={16}/>
+                                                </button>
                                             </div>
                                         </div>
                                         <div className="text-gray-700 leading-relaxed space-y-3" dangerouslySetInnerHTML={{__html: data.explanation}} />
@@ -1051,23 +1126,39 @@ const firebaseConfig = {
                     const textContent = await page.getTextContent();
                     const pageText = textContent.items.map(item => item.str).join(' ');
                     
-                    if (!pageText || pageText.trim().length < 20) {
-                        throw new Error('Could not extract enough text from page');
+                    console.log('📄 Telugu Learning Mode - Extracted Text Length:', pageText.length);
+                    console.log('📄 First 200 characters:', pageText.substring(0, 200));
+                    
+                    if (!pageText || pageText.trim().length < 10) {
+                        throw new Error('Could not extract enough text from page. The page might be an image or scanned PDF.');
                     }
 
-                    // Check if text contains Telugu characters
+                    // Check if text contains Telugu characters (expanded Unicode range)
+                    // Telugu Unicode: U+0C00 to U+0C7F
                     const teluguRegex = /[\u0C00-\u0C7F]/;
-                    if (teluguRegex.test(pageText)) {
-                        setTeluguText(pageText.substring(0, 2500));
+                    const hasTeluguChars = teluguRegex.test(pageText);
+                    
+                    console.log('🔍 Telugu characters detected:', hasTeluguChars);
+                    
+                    if (hasTeluguChars) {
+                        // Extract more text to ensure we capture full content
+                        setTeluguText(pageText.substring(0, 3000));
                         setState('ready');
                     } else {
-                        setErrorMsg('No Telugu content detected on this page.');
-                        setState('error');
+                        // Still show the text even if no Telugu detected, let user decide
+                        console.warn('⚠️ No Telugu characters detected, but showing extracted text anyway');
+                        setTeluguText(pageText.substring(0, 3000));
+                        setState('ready');
+                        
+                        // Show warning but allow to proceed
+                        setTimeout(() => {
+                            window.alert('⚠️ Warning: No Telugu characters detected on this page.\n\nThe page might be:\n- A scanned image (not searchable text)\n- In a different language\n- Improperly encoded\n\nYou can still try translation, but results may not be accurate.');
+                        }, 500);
                     }
                 } catch (error) {
-                    console.error("Error extracting text:", error);
+                    console.error("❌ Error extracting text:", error);
                     setState('error');
-                    setErrorMsg(error.message || 'Failed to extract text from page');
+                    setErrorMsg(error.message || 'Failed to extract text from page. This might be a scanned/image PDF.');
                 }
             };
 
@@ -1171,10 +1262,23 @@ const firebaseConfig = {
                             )}
 
                             {state === 'error' && (
-                                <div className="text-center py-16 max-w-md mx-auto">
+                                <div className="text-center py-16 max-w-2xl mx-auto">
                                     <Icon name="alert-circle" size={48} className="mx-auto text-red-400 mb-4"/>
-                                    <h3 className="font-bold text-gray-800 mb-2">Could Not Process</h3>
-                                    <p className="text-sm text-gray-600 mb-2">{errorMsg || 'Please try again'}</p>
+                                    <h3 className="font-bold text-gray-800 mb-3">Could Not Process</h3>
+                                    <p className="text-sm text-gray-600 mb-4">{errorMsg || 'Please try again'}</p>
+                                    
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 text-left">
+                                        <h4 className="font-bold text-yellow-900 mb-2">💡 Common Issues:</h4>
+                                        <ul className="text-sm text-yellow-800 space-y-1">
+                                            <li>• <strong>Scanned/Image PDFs:</strong> The PDF might be a scanned image. Telugu Learning Mode needs searchable text.</li>
+                                            <li>• <strong>Different Language:</strong> This page might not contain Telugu content.</li>
+                                            <li>• <strong>Empty Page:</strong> The page might be blank or contain only images.</li>
+                                        </ul>
+                                        <p className="text-xs text-yellow-700 mt-2">
+                                            <strong>Tip:</strong> Check the browser console (F12) for detailed extraction info.
+                                        </p>
+                                    </div>
+                                    
                                     <button onClick={onClose} className="bg-gray-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700">Close</button>
                                 </div>
                             )}
@@ -1182,13 +1286,21 @@ const firebaseConfig = {
                             {state === 'ready' && !translations && (
                                 <div className="space-y-6">
                                     <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-xl p-6">
-                                        <h4 className="text-lg font-bold text-orange-900 mb-3 flex items-center gap-2">
-                                            <Icon name="file-text" size={20}/>
-                                            Original Telugu Text
-                                        </h4>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="text-lg font-bold text-orange-900 flex items-center gap-2">
+                                                <Icon name="file-text" size={20}/>
+                                                Extracted Text from Page {pageNum}
+                                            </h4>
+                                            <div className="text-xs text-orange-700 bg-orange-100 px-2 py-1 rounded">
+                                                {teluguText.length} characters
+                                            </div>
+                                        </div>
                                         <div className="bg-white rounded-lg p-4 border border-orange-200 max-h-64 overflow-y-auto">
                                             <p className="text-lg leading-relaxed" style={{fontFamily: 'Noto Sans Telugu, sans-serif'}}>{teluguText}</p>
                                         </div>
+                                        <p className="text-xs text-orange-600 mt-2">
+                                            ✓ Text extracted successfully. If you see Telugu script above, click a language button below to translate.
+                                        </p>
                                     </div>
 
                                     <div className="bg-white rounded-xl p-6 border-2 border-gray-200">
