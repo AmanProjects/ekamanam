@@ -1,10 +1,10 @@
 # Ekamanam - The Art of Focused Learning
 
-**An AI-powered study companion for Class 8 NCERT students**
+**An AI-powered study companion for NCERT students**
 
 ## 🎯 Features
 
-- **📚 Complete NCERT Access**: Read all Class 8 textbooks (Mathematics, Science, Social Science, English)
+- **📚 NCERT Textbook Support**: Read NCERT textbooks (Mathematics, Science, Social Science, English)
 - **🎓 Teacher Mode**: AI reads entire PDF pages and explains like a real teacher
 - **🎧 Audio Learning**: Listen to explanations with text-to-speech (NEW!)
 - **🤖 AI-Powered Learning**: Select any text to get instant explanations, analogies, and interactive demos
@@ -194,6 +194,28 @@ The app works on mobile devices! For best experience:
 - Camera feed for focus monitoring **never leaves your device**
 - No data is collected or sent to any third party
 - All processing happens locally or through your own API key
+
+## ⚖️ Copyright & Legal Compliance
+
+**Current Mode: User-Upload Only ("My Books")**
+
+This app respects all intellectual property rights:
+
+- ✅ **No Direct NCERT Linking**: The app does NOT provide direct access to NCERT materials
+- ✅ **User-Provided Content**: Students must upload their own PDF files
+- ✅ **Legal Compliance**: All features are transformative educational tools
+- ✅ **User Responsibility**: Users are responsible for materials they upload
+
+### NCERT Library Feature (Future)
+
+The codebase includes **commented-out** code for potential future NCERT library integration. This feature is:
+- ❌ Currently **DISABLED**
+- 🔒 Will remain disabled until proper permissions are obtained from NCERT
+- 📝 Clearly marked in the code for transparency
+
+See [COPYRIGHT_NOTICE.md](COPYRIGHT_NOTICE.md) for complete legal information.
+
+**Note**: Students should download NCERT textbooks from the official [NCERT website](https://ncert.nic.in/textbook.php) and upload them to the app for personal educational use.
 
 ## 👨‍👩‍👧 For Parents
 
