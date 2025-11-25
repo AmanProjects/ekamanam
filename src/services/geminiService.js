@@ -90,9 +90,11 @@ Make activities practical, engaging, and suitable for the content level.`;
   return await callGeminiAPI(prompt, apiKey);
 }
 
-export default {
+const geminiService = {
   generateTeacherMode,
   generateExplanation,
   generateActivities
 };
+
+export default geminiService;
 

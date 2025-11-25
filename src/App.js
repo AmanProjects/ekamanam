@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Container, Grid, AppBar, Toolbar, Typography, Button, IconButton } from '@mui/material';
+import { Box, Grid, AppBar, Toolbar, Typography, Button, IconButton } from '@mui/material';
 import { Settings as SettingsIcon, Dashboard as DashboardIcon } from '@mui/icons-material';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase/config';
@@ -19,7 +19,6 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedText, setSelectedText] = useState('');
   const [pageText, setPageText] = useState('');
-  const [focusAlert, setFocusAlert] = useState(false);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -118,7 +117,7 @@ function App() {
       />
 
       {/* Focus Monitor Widget */}
-      <FocusMonitor onAlert={setFocusAlert} />
+      <FocusMonitor />
     </Box>
   );
 }

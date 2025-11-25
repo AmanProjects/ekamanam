@@ -13,7 +13,7 @@ import {
 import {
   FileUpload,
   FolderOpen,
-  BookOpen,
+  MenuBook,
   Description,
   Bolt,
   CenterFocusStrong,
@@ -181,7 +181,7 @@ function Dashboard({ onFileSelect, onStartReading, selectedFile }) {
             size="large"
             disabled={!selectedFile}
             onClick={onStartReading}
-            startIcon={<BookOpen />}
+            startIcon={<MenuBook />}
             sx={{ 
               mt: 3,
               py: 1.5,

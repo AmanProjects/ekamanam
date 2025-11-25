@@ -87,6 +87,7 @@ function PDFViewer({
     };
 
     renderPage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDocument, currentPage, scale, onPageTextExtract]);
 
   const renderTextLayer = async (page, viewport) => {
