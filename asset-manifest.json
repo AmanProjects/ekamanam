@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/ekamanam/static/js/main.bbe8189d.js",
+    "main.js": "/ekamanam/static/js/main.527732a2.js",
     "index.html": "/ekamanam/index.html",
-    "main.bbe8189d.js.map": "/ekamanam/static/js/main.bbe8189d.js.map"
+    "main.527732a2.js.map": "/ekamanam/static/js/main.527732a2.js.map"
   },
   "entrypoints": [
-    "static/js/main.bbe8189d.js"
+    "static/js/main.527732a2.js"
   ]
 }
