@@ -1527,11 +1527,11 @@ Return ONLY this valid JSON:
                                 <Paper sx={{ p: 2, bgcolor: 'white' }}>
                                   {exercise.steps.map((step, stepIdx) => {
                                     // Handle both old format (string array) and new format (object array)
-                                    const stepText = typeof step === 'string' ? step : step.text;
+                                    const stepText = typeof step === 'string' ? step : (step?.text || '');
                                     const stepEnglish = typeof step === 'string' 
                                       ? (exercise.steps_english && exercise.steps_english[stepIdx]) 
-                                      : step.text_english;
-                                    const stepVisual = typeof step === 'object' ? step.visualAid : null;
+                                      : (step?.text_english || '');
+                                    const stepVisual = (typeof step === 'object' && step?.visualAid) ? step.visualAid : null;
                                     
                                     return (
                                       <Box key={stepIdx} sx={{ mb: 2, pb: 2, borderBottom: stepIdx < exercise.steps.length - 1 ? '1px dashed #e0e0e0' : 'none' }}>

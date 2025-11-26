@@ -18,7 +18,8 @@ function VisualAidRenderer({ visualAid }) {
     };
   }, [visualAid]);
 
-  if (!visualAid || visualAid.trim() === '') {
+  // Type check: visualAid must be a string
+  if (!visualAid || typeof visualAid !== 'string' || visualAid.trim() === '') {
     return null;
   }
 
