@@ -13,6 +13,8 @@ import {
   Divider
 } from '@mui/material';
 import { Save, Key } from '@mui/icons-material';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 function SettingsDialog({ open, onClose, user }) {
   const [apiKey, setApiKey] = useState('');
@@ -28,15 +30,43 @@ function SettingsDialog({ open, onClose, user }) {
     }
   }, [open]);
 
-  const handleSave = () => {
-    if (apiKey.trim()) {
-      localStorage.setItem('gemini_pat', apiKey.trim());
-      setSaved(true);
-      setTimeout(() => {
-        setSaved(false);
-        onClose();
-      }, 1500);
+  const handleSave = async () => {
+    const trimmedKey = apiKey.trim();
+    if (!trimmedKey) return;
+    
+    setSaved(true);
+    
+    // Always save to localStorage as backup
+    localStorage.setItem('gemini_pat', trimmedKey);
+    localStorage.setItem('setup_complete', 'true');
+    
+    // If user is signed in with Google, save to Firebase too
+    if (user && db) {
+      try {
+        await setDoc(
+          doc(db, 'users', user.uid),
+          { 
+            apiKey: trimmedKey,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            lastUpdated: new Date()
+          },
+          { merge: true }
+        );
+        alert("API Key Saved & Synced to your Google Account! 🎉");
+      } catch (error) {
+        console.error("Error saving to cloud:", error);
+        alert("API Key Saved Locally! (Cloud sync unavailable)");
+      }
+    } else {
+      alert("API Key Saved Locally! Sign in with Google to sync across devices.");
     }
+    
+    setTimeout(() => {
+      setSaved(false);
+      onClose();
+    }, 1500);
   };
 
   return (

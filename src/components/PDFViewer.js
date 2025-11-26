@@ -60,10 +60,30 @@ function PDFViewer({
     const renderPage = async () => {
       try {
         const page = await pdfDocument.getPage(currentPage);
-        const viewport = page.getViewport({ scale });
+        
+        // Get page rotation - PDF.js stores rotation in the page object
+        // Rotation can be 0, 90, 180, or 270 degrees
+        const rotation = page.rotate || 0;
+        
+        // Log rotation for debugging - ALWAYS log to help diagnose issues
+        console.log(`📐 Page ${currentPage} - PDF rotation metadata: ${rotation}°`);
+        
+        // IMPORTANT: Some regional language PDFs have incorrect rotation metadata
+        // If the PDF appears inverted/upside down, the issue might be:
+        // 1. PDF was scanned upside down AND has rotation=180 in metadata
+        // 2. PDF.js applies the rotation correctly but the scan is still wrong
+        // 
+        // Solution: Don't pass rotation parameter - let PDF.js render as-is
+        // Users can rotate in their PDF viewer if needed
+        
+        // Create viewport WITHOUT rotation to see if this fixes the inversion
+        // const viewport = page.getViewport({ scale, rotation }); // OLD - applies metadata rotation
+        const viewport = page.getViewport({ scale }); // NEW - ignores rotation metadata
         
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
+        
+        // Set canvas dimensions based on viewport (already rotated)
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
@@ -72,6 +92,7 @@ function PDFViewer({
           viewport: viewport
         };
 
+        // Render the page with rotation applied
         await page.render(renderContext).promise;
 
         // Extract text
@@ -79,7 +100,7 @@ function PDFViewer({
         const textItems = textContent.items.map(item => item.str).join(' ');
         onPageTextExtract(textItems);
 
-        // Render text layer for selection
+        // Render text layer for selection with same viewport (includes rotation)
         renderTextLayer(page, viewport);
       } catch (error) {
         console.error('Error rendering page:', error);
@@ -98,28 +119,19 @@ function PDFViewer({
     textLayer.innerHTML = '';
     textLayer.style.width = `${viewport.width}px`;
     textLayer.style.height = `${viewport.height}px`;
+    
+    // Set the scale factor CSS variable as required by PDF.js
+    textLayer.style.setProperty('--scale-factor', viewport.scale);
 
     const textContent = await page.getTextContent();
     
-    textContent.items.forEach((item) => {
-      const span = document.createElement('span');
-      span.textContent = item.str;
-      
-      const tx = pdfjsLib.Util.transform(
-        viewport.transform,
-        item.transform
-      );
-      
-      span.style.position = 'absolute';
-      span.style.left = `${tx[4]}px`;
-      span.style.top = `${tx[5]}px`;
-      span.style.fontSize = `${Math.abs(tx[0])}px`;
-      span.style.fontFamily = item.fontName;
-      span.style.color = 'transparent';
-      span.style.whiteSpace = 'pre';
-      
-      textLayer.appendChild(span);
-    });
+    // Use PDF.js built-in text layer rendering for proper Unicode support
+    await pdfjsLib.renderTextLayer({
+      textContentSource: textContent,
+      container: textLayer,
+      viewport: viewport,
+      textDivs: []
+    }).promise;
 
     // Handle text selection
     const handleSelection = () => {
@@ -257,20 +269,24 @@ function PDFViewer({
             />
             <Box
               ref={textLayerRef}
+              className="textLayer"
               sx={{
                 position: 'absolute',
                 left: 0,
                 top: 0,
+                right: 0,
+                bottom: 0,
                 overflow: 'hidden',
                 opacity: 0.2,
                 lineHeight: 1.0,
+                zIndex: 10,
                 userSelect: 'text',
-                '& span': {
+                '& span, & br': {
+                  color: 'transparent',
+                  position: 'absolute',
+                  whiteSpace: 'pre',
                   cursor: 'text',
-                },
-                '& ::selection': {
-                  backgroundColor: 'rgba(255, 193, 7, 0.75)',
-                  color: '#000',
+                  transformOrigin: '0% 0%',
                 }
               }}
             />

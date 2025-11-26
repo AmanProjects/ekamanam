@@ -13,10 +13,10 @@ import {
 import {
   FileUpload,
   FolderOpen,
-  MenuBook,
+  Book,
   Description,
-  Bolt,
-  CenterFocusStrong,
+  FlashOn,
+  CenterFocusWeak,
   Close
 } from '@mui/icons-material';
 
@@ -32,37 +32,87 @@ function Dashboard({ onFileSelect, onStartReading, selectedFile }) {
     <Box sx={{ 
       height: '100%', 
       overflow: 'auto', 
-      bgcolor: 'background.default',
-      py: 4
+      bgcolor: '#f8fafc',
+      py: { xs: 2, md: 4 }
     }}>
-      <Container maxWidth="md">
-        {/* Welcome Section */}
+      <Container maxWidth="lg">
+        {/* Logo and Title Section */}
         <Paper 
-          elevation={3} 
+          elevation={0} 
           sx={{ 
-            p: 4, 
-            mb: 4, 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white'
+            p: { xs: 3, md: 4 }, 
+            mb: 3,
+            bgcolor: 'white',
+            borderRadius: 3,
+            textAlign: 'center'
           }}
         >
-          <Typography variant="h3" gutterBottom sx={{ fontWeight: 700 }}>
-            Welcome to Ekamanam
+          <Box
+            component="img"
+            src="/Ekamanam_logo.png"
+            alt="Ekamanam"
+            sx={{
+              width: { xs: 120, sm: 160, md: 200 },
+              height: { xs: 120, sm: 160, md: 200 },
+              mx: 'auto',
+              mb: 2,
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
+            }}
+          />
+          <Typography 
+            variant="h3" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 700,
+              fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' },
+              color: '#1f2937'
+            }}
+          >
+            Ekamanam
           </Typography>
-          <Typography variant="h6" sx={{ opacity: 0.9 }}>
-            The Art of Focused Learning
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: '#6b7280',
+              fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' },
+              mb: 2
+            }}
+          >
+            AI-Powered Study Companion
           </Typography>
-          <Typography variant="body1" sx={{ mt: 2, opacity: 0.95 }}>
-            Upload your NCERT textbook and experience AI-powered learning with instant explanations,
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              mt: 2, 
+              color: '#4b5563',
+              maxWidth: 600,
+              mx: 'auto',
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
+          >
+            Upload your textbook and experience AI-powered learning with instant explanations,
             interactive demos, and focus monitoring.
           </Typography>
         </Paper>
 
         {/* File Upload Section */}
-        <Paper elevation={2} sx={{ p: 4, mb: 3 }}>
-          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
-            My Books
-          </Typography>
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: { xs: 3, md: 4 }, 
+            mb: 3,
+            bgcolor: 'white',
+            borderRadius: 3,
+            border: '2px dashed',
+            borderColor: 'primary.main',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              borderColor: 'primary.dark',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.05)'
+            }
+          }}
+        >
           
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <input
@@ -83,28 +133,46 @@ function Dashboard({ onFileSelect, onStartReading, selectedFile }) {
                 }}>
                   <Box 
                     sx={{ 
-                      width: 80, 
-                      height: 80, 
+                      width: { xs: 64, md: 80 }, 
+                      height: { xs: 64, md: 80 }, 
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      transition: 'transform 0.2s ease',
+                      '&:hover': {
+                        transform: 'scale(1.05)'
+                      }
                     }}
                   >
-                    <FileUpload sx={{ fontSize: 40, color: 'white' }} />
+                    <FileUpload sx={{ fontSize: { xs: 32, md: 40 }, color: 'white' }} />
                   </Box>
-                  <Typography variant="h6" fontWeight={600}>
+                  <Typography 
+                    variant="h6" 
+                    fontWeight={600}
+                    sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
+                  >
                     Select Your PDF Textbook
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                  >
                     Click here to browse and select a PDF file
                   </Typography>
                   <Button
-                    variant="outlined"
+                    variant="contained"
                     size="large"
                     startIcon={<FolderOpen />}
-                    sx={{ mt: 2 }}
+                    sx={{ 
+                      mt: 2,
+                      background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)',
+                      }
+                    }}
                   >
                     Browse Files
                   </Button>
@@ -181,13 +249,19 @@ function Dashboard({ onFileSelect, onStartReading, selectedFile }) {
             size="large"
             disabled={!selectedFile}
             onClick={onStartReading}
-            startIcon={<MenuBook />}
+            startIcon={<Book />}
             sx={{ 
               mt: 3,
               py: 1.5,
+              fontSize: { xs: '0.875rem', md: '1rem' },
               background: selectedFile 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                : undefined
+                ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)'
+                : undefined,
+              '&:hover': {
+                background: selectedFile 
+                  ? 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)'
+                  : undefined,
+              }
             }}
           >
             Start Reading
@@ -195,41 +269,131 @@ function Dashboard({ onFileSelect, onStartReading, selectedFile }) {
         </Paper>
 
         {/* Feature Cards */}
-        <Grid container spacing={2}>
+        <Grid container spacing={{ xs: 2, md: 3 }}>
           <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Description color="primary" sx={{ fontSize: 40, mb: 1 }} />
-                <Typography variant="h6" gutterBottom fontWeight={600}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                height: '100%',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderLeft: '4px solid',
+                borderLeftColor: 'primary.main',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                  transform: 'translateY(-4px)'
+                }
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <Description 
+                  sx={{ 
+                    fontSize: { xs: 32, md: 40 }, 
+                    mb: 1.5, 
+                    color: 'primary.main' 
+                  }} 
+                />
+                <Typography 
+                  variant="h6" 
+                  gutterBottom 
+                  fontWeight={600}
+                  sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
+                >
                   Any PDF
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
+                >
                   Upload any textbook or document
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Bolt color="secondary" sx={{ fontSize: 40, mb: 1 }} />
-                <Typography variant="h6" gutterBottom fontWeight={600}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                height: '100%',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderLeft: '4px solid',
+                borderLeftColor: 'secondary.main',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                  transform: 'translateY(-4px)'
+                }
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <FlashOn 
+                  sx={{ 
+                    fontSize: { xs: 32, md: 40 }, 
+                    mb: 1.5, 
+                    color: 'secondary.main' 
+                  }} 
+                />
+                <Typography 
+                  variant="h6" 
+                  gutterBottom 
+                  fontWeight={600}
+                  sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
+                >
                   AI Powered
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
+                >
                   Instant explanations & demos
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <CenterFocusStrong color="success" sx={{ fontSize: 40, mb: 1 }} />
-                <Typography variant="h6" gutterBottom fontWeight={600}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                height: '100%',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderLeft: '4px solid',
+                borderLeftColor: 'success.main',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                  transform: 'translateY(-4px)'
+                }
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <CenterFocusWeak 
+                  sx={{ 
+                    fontSize: { xs: 32, md: 40 }, 
+                    mb: 1.5, 
+                    color: 'success.main' 
+                  }} 
+                />
+                <Typography 
+                  variant="h6" 
+                  gutterBottom 
+                  fontWeight={600}
+                  sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}
+                >
                   Stay Focused
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
+                >
                   Smart focus monitoring
                 </Typography>
               </CardContent>

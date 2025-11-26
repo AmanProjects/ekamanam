@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ekamanam - AI Powered Bilingual Learning</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="../../public/Ekamanam_logo.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+Telugu:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#1e293b',
+                            primary: '#4f46e5', // Indigo 600
+                            light: '#eef2ff',
+                            accent: '#f59e0b', // Amber 500
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        telugu: ['Noto Sans Telugu', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Animations */
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            will-change: opacity, visibility;
+        }
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: none;
+        }
+        
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        .blob {
+            position: absolute;
+            filter: blur(40px);
+            z-index: -1;
+            opacity: 0.4;
+            animation: move 10s infinite alternate;
+        }
+        @keyframes move {
+            from { transform: translate(0, 0) scale(1); }
+            to { transform: translate(20px, -20px) scale(1.1); }
+        }
+        
+        /* Smooth Scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Subtle pulse animation for logo */
+        .animate-pulse-slow {
+            animation: pulse-slow 3s ease-in-out infinite;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 bg-slate-50 antialiased overflow-x-hidden">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0 flex items-center gap-3">
+                    <img src="../../public/Ekamanam_logo.png" alt="Ekamanam Logo" class="h-10 w-10 object-contain">
+                    <span class="font-bold text-xl tracking-tight text-gray-900">Ekamanam</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#story" class="text-gray-600 hover:text-brand-primary transition">The Story</a>
+                    <a href="#features" class="text-gray-600 hover:text-brand-primary transition">Features</a>
+                    <a href="#tech" class="text-gray-600 hover:text-brand-primary transition">Technology</a>
+                </div>
+                <div>
+                    <a href="#cta" class="bg-brand-primary hover:bg-indigo-700 text-white px-5 py-2 rounded-full font-medium transition shadow-lg shadow-indigo-500/30">
+                        View Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative min-h-screen flex items-center overflow-hidden">
+        <div class="blob bg-purple-300 w-96 h-96 rounded-full top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
+        <div class="blob bg-indigo-300 w-96 h-96 rounded-full bottom-0 right-0 translate-x-1/3 translate-y-1/3"></div>
+
+        <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 fade-in-section">
+            <div class="flex flex-col items-center mb-8">
+                <img src="../../public/Ekamanam_logo.png" alt="Ekamanam Logo" class="h-32 w-32 md:h-48 md:w-48 lg:h-56 lg:w-56 object-contain drop-shadow-2xl animate-pulse-slow">
+                <div class="mt-4">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Ekamanam</h2>
+                    <p class="text-lg md:text-xl text-gray-600 font-telugu">एकमनम्</p>
+                    <p class="text-sm md:text-base text-gray-500 italic mt-1">"One Mind" - The Art of Focused Learning</p>
+                </div>
+            </div>
+            <span class="inline-block py-1 px-3 rounded-full bg-indigo-100 text-brand-primary text-sm font-bold mb-6 tracking-wide uppercase">
+                EdTech Revolution
+            </span>
+            <h1 class="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-6">
+                From Sunday Morning Struggles <br class="hidden md:block" />
+                <span class="text-brand-primary bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+                    To AI-Powered Solutions
+                </span>
+            </h1>
+            <p class="mt-4 max-w-2xl mx-auto text-xl text-gray-600 leading-relaxed">
+                A father-daughter journey to build <strong>Ekamanam</strong> (एकमनम्) — the Agentic AI companion that makes bilingual learning accessible, focused, and empowering.
+            </p>
+            <div class="mt-10 flex justify-center gap-4">
+                <a href="#story" class="px-8 py-4 border border-transparent text-lg font-medium rounded-xl text-white bg-brand-primary hover:bg-indigo-700 shadow-xl transition md:w-auto">
+                    Read the Story
+                </a>
+                <a href="#features" class="px-8 py-4 border border-gray-300 text-lg font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition md:w-auto">
+                    Explore Features
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- The Problem / Story Section -->
+    <section id="story" class="min-h-screen flex items-center py-20 bg-white">
+        <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="fade-in-section">
+                <div class="border-l-4 border-brand-accent pl-6 mb-12">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">The "Aha" Moment</h2>
+                    <p class="text-lg text-gray-600 italic">
+                        "Papa, I just don't get this. I can read the letters, but I don't understand what they mean... Can AI help me learn Telugu? Can it explain things in both languages?"
+                    </p>
+                </div>
+                
+                <div class="prose prose-lg text-gray-600">
+                    <p class="mb-6">
+                        It was a quiet Sunday morning. My daughter sat at the breakfast table, frustration written all over her face. As a non-Telugu speaker in an English-medium environment, every regional language exam felt like climbing a mountain without a map.
+                    </p>
+                    <p class="mb-6">
+                        Her struggle wasn't ability; it was access. She needed to understand the content in <strong>both</strong> languages – to read in Telugu, but think in English.
+                    </p>
+                    <p>
+                        That breakfast table conversation sparked the creation of <strong>Ekamanam</strong>. We asked: <em>Could we build an AI study companion that acts like a bilingual personal tutor?</em>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="min-h-screen flex items-center py-24 bg-brand-dark text-white relative overflow-hidden">
+        <!-- Decorative bg elements -->
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+            <i class="fa-solid fa-code absolute top-10 left-10 text-9xl"></i>
+            <i class="fa-solid fa-language absolute bottom-10 right-10 text-9xl"></i>
+        </div>
+
+        <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-16 fade-in-section">
+                <h2 class="text-base font-semibold text-brand-accent tracking-wide uppercase">Core Features</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight sm:text-4xl">
+                    Agentic AI. Focus. Mastery.
+                </p>
+                <p class="mt-4 max-w-2xl text-xl text-gray-300 mx-auto">
+                    Most tools are passive. Ekamanam is active. It actively helps students learn, stay focused, and achieve their goals.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Feature 1 -->
+                <div class="feature-card bg-slate-800 p-6 rounded-2xl border border-slate-700 fade-in-section">
+                    <div class="w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-chalkboard-user text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Bilingual Teacher Mode</h3>
+                    <p class="text-gray-400 text-sm">Comprehensive explanations in the original language with section-by-section English translations.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card bg-slate-800 p-6 rounded-2xl border border-slate-700 fade-in-section">
+                    <div class="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-spell-check text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Word-by-Word Analysis</h3>
+                    <p class="text-gray-400 text-sm">Breaks down text into POS, pronunciation, and meaning. Builds vocabulary naturally while reading.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card bg-slate-800 p-6 rounded-2xl border border-slate-700 fade-in-section">
+                    <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-list-check text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Complete Solutions</h3>
+                    <p class="text-gray-400 text-sm">AI detects exercises and provides step-by-step bilingual solutions, hints, and context.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="feature-card bg-slate-800 p-6 rounded-2xl border border-slate-700 fade-in-section">
+                    <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-headphones text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Natural Audio</h3>
+                    <p class="text-gray-400 text-sm">Listen to explanations in 6+ Indian languages with natural-sounding voices. Great for auditory learners.</p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="feature-card bg-slate-800 p-6 rounded-2xl border border-slate-700 fade-in-section">
+                    <div class="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-bolt text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Smart Caching</h3>
+                    <p class="text-gray-400 text-sm">IndexedDB saves explanations locally. Revisit pages instantly without waiting for AI or internet.</p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="feature-card bg-slate-800 p-6 rounded-2xl border border-slate-700 fade-in-section">
+                    <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-gamepad text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Interactive Activities</h3>
+                    <p class="text-gray-400 text-sm">AI-generated MCQs with instant grading and detailed feedback to test comprehension.</p>
+                </div>
+
+                <!-- Feature 7 -->
+                <div class="feature-card bg-slate-800 p-6 rounded-2xl border border-slate-700 fade-in-section">
+                    <div class="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-cube text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Visual Demos</h3>
+                    <p class="text-gray-400 text-sm">Instant interactive charts, graphs, and animations for Math & Science concepts.</p>
+                </div>
+
+                <!-- Feature 8 -->
+                <div class="feature-card bg-slate-800 p-6 rounded-2xl border border-slate-700 fade-in-section">
+                    <div class="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-globe text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Internet Connected</h3>
+                    <p class="text-gray-400 text-sm">Connects textbook content to curated web resources to understand the 'why' and 'how'.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Result Section -->
+    <section class="min-h-screen flex items-center py-20 bg-indigo-50">
+        <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:flex lg:items-center lg:justify-between fade-in-section">
+                <div class="lg:w-1/2">
+                    <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                        The First Test:<br>
+                        <span class="text-brand-primary">Telugu Exam Week</span>
+                    </h2>
+                    <p class="mt-4 text-lg text-gray-600">
+                        Two weeks after launch, my daughter faced her Telugu exam. Her routine transformed from frustration to focus.
+                    </p>
+                    <ul class="mt-8 space-y-4">
+                        <li class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fa-solid fa-check-circle text-green-500 mt-1"></i>
+                            </div>
+                            <p class="ml-3 text-base text-gray-700">Genuine understanding via bilingual explanations.</p>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fa-solid fa-check-circle text-green-500 mt-1"></i>
+                            </div>
+                            <p class="ml-3 text-base text-gray-700">Empowerment: No longer dependent on parents for every word.</p>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fa-solid fa-check-circle text-green-500 mt-1"></i>
+                            </div>
+                            <p class="ml-3 text-base text-gray-700">Enjoyment: The language barrier disappeared.</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mt-10 lg:mt-0 lg:w-1/2 lg:pl-16">
+                    <div class="bg-white rounded-2xl shadow-xl overflow-hidden p-8 border-t-8 border-brand-accent transform rotate-2 hover:rotate-0 transition duration-500">
+                        <div class="flex items-center mb-4">
+                            <i class="fa-solid fa-quote-left text-brand-primary text-3xl opacity-20"></i>
+                        </div>
+                        <p class="text-xl font-medium text-gray-900 mb-6">
+                            "She actually enjoyed studying Telugu for the first time... The AI was always there, patient, never judging, always ready to explain one more time."
+                        </p>
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold">
+                                F
+                            </div>
+                            <div class="ml-3">
+                                <div class="text-sm font-bold text-gray-900">Father & Founder</div>
+                                <div class="text-sm text-gray-500">Ekamanam Creator</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section id="tech" class="min-h-screen flex items-center py-20 bg-white border-t border-gray-100">
+        <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12 fade-in-section">
+                <h2 class="text-3xl font-bold text-gray-900">Built with Modern Tech</h2>
+                <p class="mt-2 text-gray-600">Open Source. Privacy First. Cutting Edge.</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 fade-in-section">
+                <div class="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                    <i class="fa-brands fa-google text-4xl text-blue-600 mb-2"></i>
+                    <span class="font-bold">Gemini 2.0 Flash</span>
+                    <span class="text-xs text-gray-500">Multimodal AI Model</span>
+                </div>
+                <div class="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                    <i class="fa-brands fa-react text-4xl text-cyan-500 mb-2"></i>
+                    <span class="font-bold">React.js</span>
+                    <span class="text-xs text-gray-500">Responsive Frontend</span>
+                </div>
+                <div class="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                    <i class="fa-solid fa-database text-4xl text-yellow-500 mb-2"></i>
+                    <span class="font-bold">Firebase</span>
+                    <span class="text-xs text-gray-500">Firestore & Auth</span>
+                </div>
+                <div class="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                    <i class="fa-solid fa-server text-4xl text-green-600 mb-2"></i>
+                    <span class="font-bold">IndexedDB</span>
+                    <span class="text-xs text-gray-500">Offline Caching</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section id="cta" class="min-h-screen flex items-center py-24 bg-brand-primary relative overflow-hidden">
+        <div class="absolute inset-0">
+            <div class="absolute inset-0 bg-gradient-to-r from-indigo-700 to-purple-800 mix-blend-multiply"></div>
+        </div>
+        <div class="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center fade-in-section">
+            <h2 class="text-4xl font-extrabold text-white tracking-tight sm:text-5xl mb-6">
+                Ready to transform learning?
+            </h2>
+            <p class="mt-4 max-w-2xl mx-auto text-xl text-indigo-100 mb-10">
+                Whether you're a parent, a student, or a developer, Ekamanam is built for you. It's simple, and it works.
+            </p>
+            <p class="mt-12 text-indigo-200 text-sm italic">
+                P.S. To my daughter: This one's for you. Always ask questions. ❤️
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center mb-4 md:mb-0">
+                <img src="../../public/Ekamanam_logo.png" alt="Ekamanam Logo" class="h-8 w-8 object-contain mr-3">
+                <span class="font-bold text-xl">Ekamanam</span>
+            </div>
+            <div class="text-gray-400 text-sm text-center md:text-right">
+                <p>&copy; 2024 Ekamanam Project.</p>
+
+            </div>
+        </div>
+    </footer>
+
+    <!-- Animation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            const sections = document.querySelectorAll('.fade-in-section');
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>

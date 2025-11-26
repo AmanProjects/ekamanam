@@ -14,7 +14,7 @@ import {
   Person 
 } from '@mui/icons-material';
 import { signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase/config';
+import { auth, googleProvider, isFirebaseConfigured } from '../firebase/config';
 
 function AuthButton({ user }) {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -29,12 +29,45 @@ function AuthButton({ user }) {
   };
 
   const handleSignIn = async () => {
+    if (!isFirebaseConfigured) {
+      window.confirm(
+        "🔧 Firebase Not Configured\n\n" +
+        "Google Sign-In requires Firebase setup. You have two options:\n\n" +
+        "1. Continue WITHOUT Sign-In (Recommended for quick start)\n" +
+        "   - App works fully\n" +
+        "   - Store API key locally\n" +
+        "   - Notes saved in browser\n\n" +
+        "2. Set up Firebase (For cloud sync)\n" +
+        "   - Enable Google Sign-In\n" +
+        "   - Sync across devices\n\n" +
+        "Click OK to continue without sign-in."
+      );
+      return;
+    }
+    
+    if (!auth || !googleProvider) {
+      alert("Firebase initialization failed. Please check your Firebase configuration.");
+      return;
+    }
+    
     try {
+      googleProvider.setCustomParameters({
+        prompt: 'select_account'
+      });
       await signInWithPopup(auth, googleProvider);
       handleClose();
     } catch (error) {
       console.error('Sign-in error:', error);
-      alert('Failed to sign in: ' + error.message);
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        console.log("User closed the sign-in popup");
+      } else if (error.code === 'auth/popup-blocked') {
+        alert("🚫 Popup Blocked\n\nYour browser blocked the sign-in popup.\n\nTo fix:\n1. Allow popups for this site\n2. Try again");
+      } else if (error.code === 'auth/unauthorized-domain') {
+        alert("⚠️ Domain Not Authorized\n\nYour current domain needs to be authorized in Firebase Console.");
+      } else {
+        alert('Failed to sign in: ' + error.message);
+      }
     }
   };
 
