@@ -5,6 +5,97 @@ All notable changes to Ekamanam will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-11-26
+
+### Added - 🎉 **MAJOR: 3D & Scientific Visualizations**
+
+#### **🎯 3D Geometric Shapes (Three.js)**
+- ✅ Interactive 3D shapes: cube, sphere, cone, cylinder, pyramid, torus
+- ✅ Polyhedra: dodecahedron, icosahedron, tetrahedron, octahedron
+- ✅ Customizable colors, wireframes, dimensions, labels
+- ✅ Auto-rotation, drag-to-rotate, scroll-to-zoom
+- ✅ Axis helpers for orientation
+- ✅ Edge highlighting for better visibility
+
+#### **📊 3D Scientific Plots (Plotly.js)**
+- ✅ 3D surface plots for functions z = f(x, y)
+- ✅ 3D scatter plots for data visualization
+- ✅ Vector fields for physics
+- ✅ Parametric curves
+- ✅ Heat maps and contour plots
+- ✅ Interactive rotation, zoom, pan
+- ✅ Colorscales and legends
+
+#### **🧪 Chemistry Visualization (3Dmol.js)**
+- ✅ Molecular structure viewer
+- ✅ Pre-configured molecules: water, methane, ethanol, glucose, benzene, caffeine
+- ✅ SMILES notation support
+- ✅ Stick and ball-and-stick models
+- ✅ Interactive 3D rotation and zoom
+- ✅ Atom labels
+
+#### **📐 Mathematical Formulas (KaTeX)**
+- ✅ LaTeX formula rendering
+- ✅ Chemical formulas
+- ✅ Scientific notation
+- ✅ High-quality typesetting
+
+### New Components
+- `ThreeDVisualization.js` - Three.js wrapper for 3D geometric shapes
+- `ChemistryVisualization.js` - 3Dmol.js wrapper for molecular structures
+- `PlotlyVisualization.js` - Plotly wrapper for scientific 3D plots
+- Enhanced `VisualAidRenderer.js` - Auto-detects and routes visualization types
+
+### Enhanced AI Integration
+- 🤖 **Updated `generateExplanation` prompt** with comprehensive 3D visualization instructions
+- 📚 **5 Visualization Types** supported:
+  1. Chart.js (pie, bar, line) for 2D data
+  2. Three.js 3D for geometric shapes
+  3. Plotly 3D for scientific plots
+  4. Chemistry 3Dmol for molecules
+  5. SVG for simple 2D diagrams
+- 🎯 **Selection Guide** - AI knows when to use each type
+- 📝 **Progressive Visuals** - Step-by-step 3D construction
+- 💡 **Examples** for each visualization type
+
+### Packages Installed
+- `three@0.160.0` - 3D WebGL rendering library
+- `plotly.js@2.27.1` - Interactive scientific visualizations
+- `react-plotly.js@2.6.0` - React wrapper for Plotly
+- `katex@0.16.9` - Math formula rendering
+- `react-katex@3.0.1` - React wrapper for KaTeX
+
+### Documentation
+- ✅ Created `3D_VISUALIZATION_GUIDE.md` - Comprehensive guide with examples
+- ✅ Subject-specific examples (Geometry, Chemistry, Calculus, Statistics)
+- ✅ JSON format specifications for each visualization type
+- ✅ Interactive features documentation
+
+### Benefits
+- 🎓 **For Students:**
+  - Visualize complex 3D concepts interactively
+  - Understand chemistry through 3D molecules
+  - See mathematical surfaces come to life
+  - Better retention through visual learning
+  - Explore geometric shapes from all angles
+
+- 👨‍🏫 **For Teachers:**
+  - No manual 3D modeling required
+  - AI generates appropriate visuals automatically
+  - Progressive step-by-step visualizations
+  - Bilingual support with visuals
+  - Works for Math, Science, Chemistry, Biology
+
+### Use Cases
+- **Geometry:** Draw and explore 3D shapes (cubes, spheres, pyramids, polyhedra)
+- **Calculus:** Visualize 3D surfaces and functions
+- **Chemistry:** View molecular structures in 3D
+- **Physics:** Vector fields, parametric curves
+- **Statistics:** Interactive 3D data plots
+- **Biology:** (Future) Animated cell diagrams, DNA structures
+
+---
+
 ## [2.1.2] - 2025-11-26
 
 ### Fixed
