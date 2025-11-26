@@ -237,6 +237,7 @@ Return ONLY this valid JSON (no extra text before or after):
       "answerLocation_english": "Page reference in English",
       "steps": ["Step 1 in original language", "Step 2", "Step 3"],
       "steps_english": ["Step 1 in English", "Step 2 in English", "Step 3 in English"],
+      "visualAid": "SVG/HTML visualization for this step (for Math/Science only)",
       "keyTerms": ["key", "terms"]
     }
   ],
@@ -266,7 +267,24 @@ CRITICAL RULES:
 - Make answers detailed and educational
 - Return ONLY valid JSON
 
-IMPORTANT: Students need actual answers to learn, not just hints. Help them understand by providing complete solutions.`;
+**VISUAL AIDS FOR MATH & SCIENCE:**
+- For geometry: Create SVG diagrams showing shapes, angles, measurements labeled clearly
+- For algebra: Show equation transformations visually with color-coded steps
+- For graphs: Generate HTML Canvas code to plot functions, mark points
+- For physics: Diagrams with arrows showing forces, velocities, circuits with components
+- For chemistry: Molecular structures, reaction arrows, electron configurations
+- Include visual aids in the "visualAid" field for each exercise where applicable
+
+EXAMPLE SVG for geometry:
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="150,20 280,180 20,180" fill="lightblue" stroke="blue" stroke-width="2"/>
+  <text x="150" y="15" text-anchor="middle" font-size="14">A</text>
+  <text x="285" y="190" font-size="14">B</text>
+  <text x="10" y="190" font-size="14">C</text>
+  <text x="150" y="120" text-anchor="middle" font-size="12">c² = a² + b²</text>
+</svg>
+
+IMPORTANT: Students need actual answers to learn, not just hints. Help them understand by providing complete solutions with visual aids for Math/Science content.`;
 
   return await callGeminiAPI(prompt, apiKey, {
     temperature: 0.7,
