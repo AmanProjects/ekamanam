@@ -136,7 +136,7 @@ function App() {
         <Toolbar>
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, gap: 2 }}>
             <img 
-              src="/Ekamanam_logo.png" 
+              src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
               alt="Ekamanam" 
               style={{ height: 40, width: 40, objectFit: 'contain' }}
               onError={(e) => {

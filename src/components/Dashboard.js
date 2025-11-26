@@ -49,7 +49,7 @@ function Dashboard({ onFileSelect, onStartReading, selectedFile }) {
         >
           <Box
             component="img"
-            src="/Ekamanam_logo.png"
+            src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
             alt="Ekamanam"
             sx={{
               width: { xs: 120, sm: 160, md: 200 },
