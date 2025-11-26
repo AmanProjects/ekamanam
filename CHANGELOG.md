@@ -5,6 +5,71 @@ All notable changes to Ekamanam will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-11-26
+
+### 🎉 MAJOR FEATURES
+
+#### 📝 Rich Text Notes Editor
+- **Full-featured editor** with React-Quill
+- **Formatting toolbar**: Bold, italic, underline, headers, colors, lists, alignment
+- **Insert images and graphics** via toolbar or copy-paste
+- **Auto-save every 5 seconds** to localStorage
+- **Manual save** button with timestamp display
+- **Export to PDF** using html2canvas + jsPDF
+- **Print preview** with formatted output
+- **Clear all notes** with confirmation
+
+#### ➕ Add to Notes Functionality  
+- **"+ Notes" button** on Explain tab (next to Clear)
+- **Automatically captures** AI explanations with:
+  - Explanation text
+  - Analogies
+  - Exam questions (PYQ)
+  - Exercises and solutions (questions, answers, steps)
+- **Formatted entries** with:
+  - Page number reference
+  - Timestamp
+  - Visual separation
+  - Color-coded sections
+- **Success notification** when added
+- **Instant navigation** to Notes tab
+
+#### 🔒 Smart Tab Disabling
+- **Read & Understand tab disabled** for English PDFs
+- **Enabled only for regional languages**:
+  - Telugu, Hindi, Tamil, Bengali, Gujarati
+  - Punjabi, Oriya, Malayalam, Kannada
+- **Helpful tooltip** explains why disabled:
+  - "📖 This tab is for regional languages. English PDFs don't need word-by-word analysis."
+- **Auto-detection** using Unicode character ranges
+- **Prevents unnecessary** word analysis for English content
+
+### 📦 New Packages
+- `react-quill@2.0.0` - Industry-standard rich text editor
+- `jspdf@2.5.1` - PDF export functionality
+- `html2canvas@1.4.1` - HTML to canvas rendering
+
+### 🆕 New Component
+- `NotesEditor.js` - Complete notes management system with:
+  - Quill editor integration
+  - localStorage persistence
+  - Export/print functionality
+  - Auto-save logic
+
+### 🐛 Fixes
+- Fixed unused import warnings (IconButton, Tooltip)
+- Fixed react-hooks/exhaustive-deps warning in NotesEditor
+- Proper Clear button integration on Explain tab
+
+### 📖 User Benefits
+✅ Take comprehensive notes with rich formatting  
+✅ Capture AI explanations instantly with one click  
+✅ Export notes for offline study as PDF  
+✅ Print for physical reference  
+✅ No word analysis clutter for English PDFs  
+✅ All notes auto-saved, never lost  
+✅ Graphics and visual aids preserved in notes  
+
 ## [2.2.6] - 2025-11-26
 
 ### Fixed
