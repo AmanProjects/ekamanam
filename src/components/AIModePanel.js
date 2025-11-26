@@ -56,32 +56,42 @@ function TabPanel({ children, value, index, ...other }) {
 function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, user, pdfDocument }) {
   const [activeTab, setActiveTab] = useState(0);
 
-  // Cleanup: Stop speech when component unmounts or page changes
+  // Cleanup: Stop speech and clear data when page changes
   useEffect(() => {
-    return () => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        console.log('🔇 Stopped speech on unmount/page change');
-      }
-    };
+    // Stop speech
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      console.log('🔇 Stopped speech on page change');
+    }
+    
+    // Clear error when page changes
+    setError(null);
+    
+    // Note: We don't clear the responses here, we just track the page
+    // The rendering logic will check if data matches current page
   }, [currentPage]); // Re-run when page changes
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [teacherResponse, setTeacherResponse] = useState('');
+  const [teacherResponsePage, setTeacherResponsePage] = useState(null);
   const [teacherEnglish, setTeacherEnglish] = useState({});
   const [translatingSection, setTranslatingSection] = useState(null);
   const [usedCache, setUsedCache] = useState(false);
   const [cacheStats, setCacheStats] = useState(null);
   const [explainResponse, setExplainResponse] = useState('');
+  const [explainResponsePage, setExplainResponsePage] = useState(null);
   const [explainEnglish, setExplainEnglish] = useState(null);
   const [translatingExplain, setTranslatingExplain] = useState(false);
   const [activitiesResponse, setActivitiesResponse] = useState(null);
+  const [activitiesResponsePage, setActivitiesResponsePage] = useState(null);
   const [resourcesResponse, setResourcesResponse] = useState('');
+  const [resourcesResponsePage, setResourcesResponsePage] = useState(null);
   const [notes, setNotes] = useState('');
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizResults, setQuizResults] = useState(null);
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
   const [wordAnalysis, setWordAnalysis] = useState([]);
+  const [wordAnalysisPage, setWordAnalysisPage] = useState(null);
   const [analyzingWords, setAnalyzingWords] = useState(false);
   const [wordBatch, setWordBatch] = useState(1); // Track which batch of words we're on
   const [speakingWordIndex, setSpeakingWordIndex] = useState(null);
@@ -138,6 +148,48 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+  };
+
+  // Clear functions for each tab
+  const clearTeacherMode = () => {
+    setTeacherResponse('');
+    setTeacherResponsePage(null);
+    setTeacherEnglish({});
+    setTranslatingSection(null);
+    setUsedCache(false);
+    setError(null);
+  };
+
+  const clearExplain = () => {
+    setExplainResponse('');
+    setExplainResponsePage(null);
+    setExplainEnglish(null);
+    setTranslatingExplain(false);
+    setUsedCache(false);
+    setError(null);
+  };
+
+  const clearActivities = () => {
+    setActivitiesResponse(null);
+    setActivitiesResponsePage(null);
+    setQuizAnswers({});
+    setQuizResults(null);
+    setUsedCache(false);
+    setError(null);
+  };
+
+  const clearResources = () => {
+    setResourcesResponse('');
+    setResourcesResponsePage(null);
+    setUsedCache(false);
+    setError(null);
+  };
+
+  const clearWordAnalysis = () => {
+    setWordAnalysis([]);
+    setWordAnalysisPage(null);
+    setWordBatch(1);
+    setError(null);
   };
 
   const handleTeacherMode = async () => {
@@ -206,6 +258,7 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
         const parsedResponse = JSON.parse(cleanResponse);
         console.log('Successfully parsed Teacher Mode response');
         setTeacherResponse(parsedResponse);
+        setTeacherResponsePage(currentPage); // Track which page this data is for
 
         // 💾 SAVE TO CACHE
         if (pdfId && currentPage) {
@@ -362,6 +415,7 @@ Return ONLY the English translation, no extra text.`;
         } else {
           // Store the complete analysis (Teacher Mode style - all at once)
           setWordAnalysis([parsedResponse]);
+          setWordAnalysisPage(currentPage); // Track which page this data is for
         }
         
         setWordBatch(batchNumber);
@@ -581,6 +635,7 @@ Return ONLY the English translation, no extra text.`;
         };
         
         setExplainResponse(mergedResponse);
+        setExplainResponsePage(currentPage); // Track page
         console.log(`✅ Smart chunking complete: ${chunkResults.length} chunks merged`);
 
         // 💾 SAVE TO CACHE
