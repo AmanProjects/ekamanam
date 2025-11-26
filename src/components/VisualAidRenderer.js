@@ -1,9 +1,36 @@
 import React, { useRef, useEffect } from 'react';
 import { Box, Paper } from '@mui/material';
-import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
+import { 
+  Chart as ChartJS, 
+  ArcElement, 
+  CategoryScale, 
+  LinearScale, 
+  BarElement, 
+  LineElement, 
+  PointElement, 
+  Title, 
+  Tooltip, 
+  Legend,
+  PieController,
+  BarController,
+  LineController
+} from 'chart.js';
 
-// Register Chart.js components
-ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
+// Register Chart.js components AND controllers
+ChartJS.register(
+  ArcElement, 
+  CategoryScale, 
+  LinearScale, 
+  BarElement, 
+  LineElement, 
+  PointElement, 
+  Title, 
+  Tooltip, 
+  Legend,
+  PieController,
+  BarController,
+  LineController
+);
 
 function VisualAidRenderer({ visualAid }) {
   const chartInstanceRef = useRef(null);
