@@ -987,24 +987,47 @@ Return ONLY this valid JSON:
         {/* Teacher Mode Tab */}
         <TabPanel value={activeTab} index={0}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ mb: 2 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                color="success"
-                size="large"
-                startIcon={<TeacherIcon />}
-                onClick={handleTeacherMode}
-                disabled={loading}
-              >
-                {loading ? 'Generating...' : 'Explain This Page'}
-              </Button>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="success"
+                  size="large"
+                  startIcon={<TeacherIcon />}
+                  onClick={handleTeacherMode}
+                  disabled={loading}
+                >
+                  {loading ? 'Generating...' : 'Explain This Page'}
+                </Button>
+                {teacherResponse && teacherResponsePage === currentPage && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="large"
+                    onClick={clearTeacherMode}
+                    disabled={loading}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                 Get a comprehensive teacher-style explanation of the current page
               </Typography>
             </Box>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            
+            {/* Show page mismatch warning */}
+            {teacherResponse && teacherResponsePage && teacherResponsePage !== currentPage && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                📄 Teacher Mode data is from page {teacherResponsePage}. You're on page {currentPage}. 
+                <Button size="small" onClick={clearTeacherMode} sx={{ ml: 1 }}>
+                  Clear Old Data
+                </Button>
+              </Alert>
+            )}
             
             {loading && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -1012,7 +1035,7 @@ Return ONLY this valid JSON:
               </Box>
             )}
 
-            {teacherResponse && !loading && (
+            {teacherResponse && teacherResponsePage === currentPage && !loading && (
               <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1248,6 +1271,17 @@ Return ONLY this valid JSON:
               >
                 {analyzingWords && wordBatch === 1 ? 'Analyzing...' : '📚 Start Word Analysis'}
               </Button>
+              {wordAnalysis.length > 0 && wordAnalysisPage === currentPage && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="large"
+                  onClick={clearWordAnalysis}
+                  disabled={analyzingWords}
+                >
+                  Clear
+                </Button>
+              )}
               
               {wordAnalysis.length > 0 && wordAnalysis[0]?.words?.length > 0 && (
                 <Button
@@ -1459,7 +1493,7 @@ Return ONLY this valid JSON:
               </Box>
             )}
 
-            {explainResponse && !loading && (
+            {explainResponse && explainResponsePage === currentPage && !loading && (
               <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
                 {typeof explainResponse === 'object' && explainResponse.explanation ? (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -1921,32 +1955,55 @@ Return ONLY this valid JSON:
         {/* Activities Tab */}
         <TabPanel value={activeTab} index={3}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ mb: 2 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                color="secondary"
-                size="large"
-                startIcon={<ActivitiesIcon />}
-                onClick={handleGenerateActivities}
-                disabled={loading}
-              >
-                {loading ? 'Generating...' : 'Generate Activities'}
-              </Button>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="secondary"
+                  size="large"
+                  startIcon={<ActivitiesIcon />}
+                  onClick={handleGenerateActivities}
+                  disabled={loading}
+                >
+                  {loading ? 'Generating...' : 'Generate Activities'}
+                </Button>
+                {activitiesResponse && activitiesResponsePage === currentPage && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="large"
+                    onClick={clearActivities}
+                    disabled={loading}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                 Generate RBL, CBL, and SEA activities based on current page content
               </Typography>
             </Box>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             
+            {/* Show page mismatch warning */}
+            {activitiesResponse && activitiesResponsePage && activitiesResponsePage !== currentPage && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                📄 Activities are from page {activitiesResponsePage}. You're on page {currentPage}. 
+                <Button size="small" onClick={clearActivities} sx={{ ml: 1 }}>
+                  Clear Old Data
+                </Button>
+              </Alert>
+            )}
+
             {loading && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                 <CircularProgress />
               </Box>
             )}
-
-            {activitiesResponse && !loading && (
+            
+            {activitiesResponse && activitiesResponsePage === currentPage && !loading && (
               <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
                 {activitiesResponse.error ? (
                   <Box>
