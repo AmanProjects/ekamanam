@@ -6,7 +6,6 @@ import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, L
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
 
 function VisualAidRenderer({ visualAid }) {
-  const canvasRef = useRef(null);
   const chartInstanceRef = useRef(null);
 
   useEffect(() => {
