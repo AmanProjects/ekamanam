@@ -1524,46 +1524,55 @@ Return ONLY this valid JSON:
                                   📋 Step-by-Step Solution:
                                 </Typography>
                                 <Paper sx={{ p: 2, bgcolor: 'white' }}>
-                                  {exercise.steps.map((step, stepIdx) => (
-                                    <Box key={stepIdx} sx={{ mb: 2, pb: 2, borderBottom: stepIdx < exercise.steps.length - 1 ? '1px dashed #e0e0e0' : 'none' }}>
-                                      <Typography 
-                                        variant="body2" 
-                                        sx={{ fontWeight: 500, mb: 0.5 }}
-                                        dangerouslySetInnerHTML={{ __html: `${stepIdx + 1}. ${formatBoldText(step)}` }}
-                                      />
-                                      {exercise.steps_english && exercise.steps_english[stepIdx] && exercise.steps_english[stepIdx].trim() !== "" && exercise.steps_english[stepIdx] !== step && (
+                                  {exercise.steps.map((step, stepIdx) => {
+                                    // Handle both old format (string array) and new format (object array)
+                                    const stepText = typeof step === 'string' ? step : step.text;
+                                    const stepEnglish = typeof step === 'string' 
+                                      ? (exercise.steps_english && exercise.steps_english[stepIdx]) 
+                                      : step.text_english;
+                                    const stepVisual = typeof step === 'object' ? step.visualAid : null;
+                                    
+                                    return (
+                                      <Box key={stepIdx} sx={{ mb: 2, pb: 2, borderBottom: stepIdx < exercise.steps.length - 1 ? '1px dashed #e0e0e0' : 'none' }}>
                                         <Typography 
                                           variant="body2" 
-                                          color="info.dark" 
-                                          sx={{ ml: 2, fontStyle: 'italic', mb: 1 }}
-                                          dangerouslySetInnerHTML={{ __html: `🌐 ${formatBoldText(exercise.steps_english[stepIdx])}` }}
+                                          sx={{ fontWeight: 500, mb: 0.5 }}
+                                          dangerouslySetInnerHTML={{ __html: `${stepIdx + 1}. ${formatBoldText(stepText)}` }}
                                         />
-                                      )}
-                                      
-                                      {/* Visual Aid for Math/Science */}
-                                      {exercise.visualAid && (
-                                        <Paper 
-                                          elevation={0}
-                                          sx={{ 
-                                            mt: 1, 
-                                            p: 2, 
-                                            bgcolor: '#f8f9fa',
-                                            border: '2px dashed #4CAF50',
-                                            borderRadius: 2,
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            minHeight: 150
-                                          }}
-                                        >
-                                          <Box 
-                                            sx={{ textAlign: 'center', width: '100%' }}
-                                            dangerouslySetInnerHTML={{ __html: exercise.visualAid }}
+                                        {stepEnglish && stepEnglish.trim() !== "" && stepEnglish !== stepText && (
+                                          <Typography 
+                                            variant="body2" 
+                                            color="info.dark" 
+                                            sx={{ ml: 2, fontStyle: 'italic', mb: 1 }}
+                                            dangerouslySetInnerHTML={{ __html: `🌐 ${formatBoldText(stepEnglish)}` }}
                                           />
-                                        </Paper>
-                                      )}
-                                    </Box>
-                                  ))}
+                                        )}
+                                        
+                                        {/* Visual Aid for THIS specific step (if it has one and it's not empty) */}
+                                        {stepVisual && stepVisual.trim() !== "" && (
+                                          <Paper 
+                                            elevation={0}
+                                            sx={{ 
+                                              mt: 1, 
+                                              p: 2, 
+                                              bgcolor: '#f8f9fa',
+                                              border: '2px dashed #4CAF50',
+                                              borderRadius: 2,
+                                              display: 'flex',
+                                              justifyContent: 'center',
+                                              alignItems: 'center',
+                                              minHeight: 150
+                                            }}
+                                          >
+                                            <Box 
+                                              sx={{ textAlign: 'center', width: '100%' }}
+                                              dangerouslySetInnerHTML={{ __html: stepVisual }}
+                                            />
+                                          </Paper>
+                                        )}
+                                      </Box>
+                                    );
+                                  })}
                                   <Button
                                     size="small"
                                     variant={currentSpeakingId === `s${idx}` ? "contained" : "outlined"}

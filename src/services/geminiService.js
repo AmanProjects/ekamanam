@@ -235,9 +235,18 @@ Return ONLY this valid JSON (no extra text before or after):
       "hints_english": ["Hint 1 in English", "Hint 2 in English"],
       "answerLocation": "Page reference if available from context",
       "answerLocation_english": "Page reference in English",
-      "steps": ["Step 1 in original language", "Step 2", "Step 3"],
-      "steps_english": ["Step 1 in English", "Step 2 in English", "Step 3 in English"],
-      "visualAid": "SVG/HTML visualization for this step (for Math/Science only)",
+      "steps": [
+        {
+          "text": "Step 1 in original language",
+          "text_english": "Step 1 in English",
+          "visualAid": "SVG/HTML for THIS SPECIFIC step (only if it adds value, can be empty string)"
+        },
+        {
+          "text": "Step 2 in original language",
+          "text_english": "Step 2 in English", 
+          "visualAid": "Different visual showing PROGRESSION from step 1"
+        }
+      ],
       "keyTerms": ["key", "terms"]
     }
   ],
@@ -270,22 +279,25 @@ CRITICAL RULES:
 - Make answers detailed and educational
 - Return ONLY valid JSON
 
-**VISUAL AIDS FOR MATH & SCIENCE:**
-- For geometry: Create SVG diagrams showing shapes, angles, measurements labeled clearly
-- For algebra: Show equation transformations visually with color-coded steps
-- For graphs: Generate HTML Canvas code to plot functions, mark points
-- For physics: Diagrams with arrows showing forces, velocities, circuits with components
-- For chemistry: Molecular structures, reaction arrows, electron configurations
-- Include visual aids in the "visualAid" field for each exercise where applicable
+**VISUAL AIDS FOR MATH & SCIENCE - CRITICAL RULES:**
+- Each step should have its OWN unique visual showing PROGRESSION
+- Only include visuals for steps where they ADD VALUE (don't force visuals on every step)
+- Show DIFFERENT stages of the problem-solving process
+- For geometry: Show the shape being constructed step-by-step (Step 1: triangle, Step 2: add measurements, Step 3: highlight result)
+- For algebra: Show equation transformations progressively (Step 1: original equation, Step 2: after subtraction, Step 3: after division)
+- For graphs: Show progressive plotting (Step 1: axes, Step 2: plot points, Step 3: connect curve)
+- For physics: Show progressive states (Step 1: initial position, Step 2: forces applied, Step 3: final state)
+- Leave visualAid as empty string "" for steps that don't need visuals
 
-EXAMPLE SVG for geometry:
-<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="150,20 280,180 20,180" fill="lightblue" stroke="blue" stroke-width="2"/>
-  <text x="150" y="15" text-anchor="middle" font-size="14">A</text>
-  <text x="285" y="190" font-size="14">B</text>
-  <text x="10" y="190" font-size="14">C</text>
-  <text x="150" y="120" text-anchor="middle" font-size="12">c² = a² + b²</text>
-</svg>
+EXAMPLE - Progressive geometry visuals:
+Step 1 visual (Draw triangle): <svg>...shows triangle with labels...</svg>
+Step 2 visual (Apply theorem): <svg>...shows triangle with theorem formula highlighted...</svg>
+Step 3 visual (Calculate): <svg>...shows triangle with result highlighted...</svg>
+
+EXAMPLE - Progressive algebra visuals:
+Step 1: <div>2x + 5 = 15</div>
+Step 2: <div><span style="color:blue">2x = 15 - 5</span></div>
+Step 3: <div><span style="color:green">x = 5</span></div>
 
 IMPORTANT: Students need actual answers to learn, not just hints. Help them understand by providing complete solutions with visual aids for Math/Science content.`;
 
