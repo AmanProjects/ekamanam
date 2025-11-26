@@ -202,24 +202,31 @@ export async function generateExplanation(selectedText, contextText, apiKey) {
     ? contextText.map(p => `Page ${p.pageNumber}: ${p.summary}`).join('\n')
     : (typeof contextText === 'string' ? contextText : '');
   
-  const prompt = `You are an expert in Indian languages and educational content. The text below is extracted from an educational PDF. It may appear garbled due to PDF font encoding issues, but it represents real content.
-
-CRITICAL INSTRUCTIONS:
-1. INTERPRET the garbled text and understand what it actually says
-2. DO NOT copy the garbled characters - figure out the real words
-3. Detect if the content contains:
-   - Exercises/questions
-   - Important notes or instructions
-   - Regular educational content
-4. Respond in the ORIGINAL LANGUAGE of the content (Telugu, Hindi, Tamil, etc.)
-5. Provide analysis and clues for exercises
+  const prompt = `You are an expert tutor. Analyze this educational content and provide a clear, structured explanation with visuals where helpful.
 
 ${contextString ? `PRIOR CONTEXT:\n${contextString}\n\n` : ''}
 
-TEXT TO ANALYZE (may appear garbled):
+CONTENT TO ANALYZE:
 "${selectedText}"
 
-Return ONLY this valid JSON (no extra text before or after):
+INSTRUCTIONS:
+1. Detect language and respond in the SAME language
+2. For regional languages: provide bilingual content (original + English)
+3. For English: provide only English (no duplicate translations)
+4. Identify content type: exercise, notes, or regular content
+5. For exercises: provide complete step-by-step solutions with visuals
+6. For "Draw" questions: MUST include visualizations
+
+VISUALIZATION RULES:
+- Use Chart.js for: pie/bar/line charts (data, statistics)
+- Use 3D shapes for: "Draw a cube/sphere/pyramid" → {"type":"3d","shapeType":"cube",...}
+- Use Plotly for: 3D graphs, surfaces → {"type":"plotly",...}
+- Use Chemistry for: molecules → {"type":"chemistry","moleculeData":"water",...}
+- Use SVG for: simple 2D shapes, angles, triangles
+- Progressive visuals: Each step builds on previous (different visuals per step)
+- Only add visuals when they ADD VALUE
+
+Return ONLY valid JSON (no markdown, no extra text):
 {
   "contentType": "exercise" | "notes" | "regular" | "mixed",
   "language": "Detected language name (Telugu, Hindi, Tamil, English, etc.)",
@@ -266,86 +273,68 @@ Return ONLY this valid JSON (no extra text before or after):
   "demo": "Interactive HTML demo if applicable, or empty string"
 }
 
-CRITICAL RULES:
-- INTERPRET garbled text like "u§eTà" and write it in proper Telugu/Hindi/Tamil script
-- DO NOT copy garbled characters - reconstruct proper words
-- Use clean Unicode characters
-- **BILINGUAL LOGIC**: 
-  - If content is in ENGLISH: Provide ONLY English explanations (no duplicate translations)
-  - If content is in REGIONAL LANGUAGE (Telugu, Hindi, Tamil, etc.): Provide BILINGUAL content (Original + English)
-  - Set _english fields to empty string "" for English content
-- For exercises: Provide COMPLETE ANSWERS with step-by-step solutions, not just hints
-- For questions: Actually answer them using context or general knowledge
-- Make answers detailed and educational
-- Return ONLY valid JSON
-
-VISUAL AIDS FOR MATH & SCIENCE - CRITICAL RULES:
-- Each step should have its OWN unique visual showing PROGRESSION
-- Only include visuals for steps where they ADD VALUE (don't force visuals on every step)
-- Show DIFFERENT stages of the problem-solving process
-- Leave visualAid as empty string "" for steps that don't need visuals
-
-VISUALIZATION TYPES AVAILABLE:
-
-1. 2D Charts (Chart.js) - For statistics, data comparison:
-   Format: {"chartType": "pie|bar|line", "data": {...}, "options": {...}}
-
-2. 3D Geometry (Three.js) - For geometric shapes:
-   Format: {"type": "3d", "shapeType": "cube|sphere|cone|cylinder|pyramid|torus|dodecahedron|icosahedron|tetrahedron|octahedron", "color": "#4FC3F7", "wireframe": false, "dimensions": {"radius": 1.5, "height": 3}, "labels": ["Labels"], "title": "Title", "rotate": true}
-   Use 3D when: Student needs to visualize actual 3D objects
-
-3. 3D Scientific Plots (Plotly) - For 3D graphs, surfaces, vectors:
-   Format: {"type": "plotly", "data": [{"type": "surface|scatter3d|mesh3d", "x": [...], "y": [...], "z": [...]}], "layout": {"scene": {"xaxis": {"title": "X"}}}, "title": "Graph title"}
-   Use Plotly when: Math/Physics needs 3D graphs, vector fields, parametric curves
-
-4. Chemistry (3Dmol.js) - For molecular structures:
-   Format: {"type": "chemistry", "moleculeData": "water|methane|ethanol|glucose|benzene|caffeine", "format": "smiles", "title": "Molecule name", "style": {"stick": {}, "sphere": {"scale": 0.3}}}
-   Use Chemistry when: Showing molecular structures, chemical bonds, 3D molecules
-
-5. 2D SVG - For simple diagrams, angles, 2D shapes:
-   - Always use viewBox="0 0 400 300" for proper scaling
-   - Use xmlns="http://www.w3.org/2000/svg"
-   - Angles: NEVER rotate SVG elements - draw in correct orientation
-   - Triangles: Calculate correct points, no transform rotate
-   - Labels: Use text-anchor="middle" and positioning
-
-SELECTION GUIDE:
-- Pie/Bar/Line charts → Chart.js JSON
-- 3D geometric solids (cube, sphere, pyramid) → Three.js 3D JSON
-- 3D mathematical surfaces (z = x² + y²) → Plotly JSON
-- Molecules, chemical structures → Chemistry JSON
-- Simple 2D shapes, angles → SVG string
-
-DATA VISUALIZATION RULES:
-- Pie charts: Data sums to 100%, use "pie" type
-- Bar charts: Compare separate values, use "bar" type
-- Line graphs: Show trends over time, use "line" type
-- 3D shapes: Use actual 3D JSON, NOT rotated 2D
-- Chemistry: Use common molecule names or SMILES notation
+VISUALIZATION QUICK REFERENCE:
+- 2D Chart: {"chartType":"pie|bar|line","data":{...}}
+- 3D Shape: {"type":"3d","shapeType":"cube|sphere|pyramid","color":"#4FC3F7","dimensions":{...},"title":"..."}
+- 3D Plot: {"type":"plotly","data":[{"type":"surface","x":[...],"y":[...],"z":[...]}],"title":"..."}
+- Chemistry: {"type":"chemistry","moleculeData":"water|methane|benzene","format":"smiles","title":"..."}
+- 2D SVG: <svg viewBox="0 0 400 300">...</svg>
 
 EXAMPLES:
+Cube: {"type":"3d","shapeType":"cube","color":"#4FC3F7","dimensions":{"width":2},"title":"Cube"}
+Pie: {"chartType":"pie","data":{"labels":["A","B"],"datasets":[{"data":[60,40],"backgroundColor":["#FF6384","#36A2EB"]}]}}
+Paraboloid: {"type":"plotly","data":[{"type":"surface","z":[[0,1,4],[1,2,5],[4,5,8]]}],"title":"z=x²+y²"}
 
-Example 1 - 3D Cube (Geometry):
-{"type":"3d","shapeType":"cube","color":"#4FC3F7","dimensions":{"width":2,"height":2,"depth":2},"labels":["8 vertices","12 edges","6 faces"],"title":"Cube","rotate":true}
+CRITICAL RULES:
+- Clean Unicode (no garbled text)
+- Bilingual: Regional language + English (skip English duplicate if content already English)
+- Complete answers for exercises (not just hints)
+- Progressive visuals: each step different, showing progression
+- Only include visuals when valuable (not forced on every step)
+- "Draw" questions MUST have visuals
 
-Example 2 - 3D Surface (Math - z = x² + y²):
-{"type":"plotly","data":[{"type":"surface","z":[[0,1,4],[1,2,5],[4,5,8]],"x":[-2,-1,0,1,2],"y":[-2,-1,0,1,2],"colorscale":"Viridis"}],"layout":{"scene":{"xaxis":{"title":"X"},"yaxis":{"title":"Y"},"zaxis":{"title":"Z"}}},"title":"Paraboloid"}
+JSON STRUCTURE:
 
-Example 3 - Water Molecule (Chemistry):
-{"type":"chemistry","moleculeData":"water","format":"smiles","title":"H₂O - Water Molecule","style":{"stick":{},"sphere":{"scale":0.3}}}
+{
+  "contentType": "exercise|notes|regular|mixed",
+  "language": "Detected language",
+  "explanation": "Clear explanation in original language",
+  "explanation_english": "English translation (empty if already English)",
+  "exercises": [
+    {
+      "question": "Question in original language",
+      "question_english": "Question in English (empty if already English)",
+      "answer": "Complete answer",
+      "answer_english": "Answer in English",
+      "hints": ["Hint 1", "Hint 2"],
+      "hints_english": ["Hint 1 English", "Hint 2 English"],
+      "answerLocation": "Page reference",
+      "steps": [
+        {
+          "text": "Step description",
+          "text_english": "Step in English",
+          "visualAid": "JSON or SVG (empty string if not needed)"
+        }
+      ],
+      "keyTerms": ["term1", "term2"]
+    }
+  ],
+  "importantNotes": [
+    {
+      "title": "Note title",
+      "title_english": "Title English",
+      "content": "Note content",
+      "content_english": "Content English",
+      "type": "definition|formula|reminder|warning"
+    }
+  ],
+  "analogy": "Helpful analogy",
+  "analogy_english": "Analogy English",
+  "pyq": "Exam question",
+  "pyq_english": "Exam question English"
+}
 
-Example 4 - Pie Chart (Statistics):
-{"chartType":"pie","data":{"labels":["Red","Blue","Green"],"datasets":[{"data":[30,50,20],"backgroundColor":["#FF6384","#36A2EB","#4BC0C0"]}]},"options":{"responsive":true,"plugins":{"legend":{"position":"bottom"}}}}
-
-Example 5 - 2D Triangle (Simple SVG):
-<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><polygon points="100,50 100,200 300,200" fill="#E3F2FD" stroke="#1976D2" stroke-width="3"/><text x="100" y="40" text-anchor="middle">A</text></svg>
-
-Progressive Example - 3D Pyramid Volume:
-Step 1: {"type":"3d","shapeType":"pyramid","color":"#FFA726","title":"Step 1: Draw Pyramid"}
-Step 2: {"type":"3d","shapeType":"pyramid","color":"#66BB6A","dimensions":{"radius":2,"height":3},"labels":["Base=2","Height=3"],"title":"Step 2: Label Dimensions"}
-Step 3: Use 2D SVG for formula, then back to 3D for result
-
-IMPORTANT: Students need actual answers to learn, not just hints. Help them understand by providing complete solutions with visual aids for Math/Science content.`;
+IMPORTANT: Keep response concise. Students need answers, not walls of text. Use visuals to explain complex concepts.`;
 
   return await callGeminiAPI(prompt, apiKey, {
     temperature: 0.7,
