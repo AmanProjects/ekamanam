@@ -26,8 +26,10 @@ import {
   Stop,
   Public as ResourcesIcon,
   Link as LinkIcon,
-  MenuBook as ReadIcon
+  MenuBook as ReadIcon,
+  AddCircle as AddToNotesIcon
 } from '@mui/icons-material';
+import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis } from '../services/geminiService';
 import {
   getCachedData,
@@ -97,6 +99,32 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [speakingWordIndex, setSpeakingWordIndex] = useState(null);
   const [currentSpeakingId, setCurrentSpeakingId] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [notesContent, setNotesContent] = useState('');
+
+  // Helper function to detect if content is in English
+  const isEnglishContent = (text) => {
+    if (!text || typeof text !== 'string') return true; // Default to English
+    
+    // Check for regional language scripts
+    const hasDevanagari = /[\u0900-\u097F]/.test(text); // Hindi, Sanskrit
+    const hasTelugu = /[\u0C00-\u0C7F]/.test(text);
+    const hasTamil = /[\u0B80-\u0BFF]/.test(text);
+    const hasBengali = /[\u0980-\u09FF]/.test(text);
+    const hasGujarati = /[\u0A80-\u0AFF]/.test(text);
+    const hasGurmukhi = /[\u0A00-\u0A7F]/.test(text); // Punjabi
+    const hasOriya = /[\u0B00-\u0B7F]/.test(text);
+    const hasMalayalam = /[\u0D00-\u0D7F]/.test(text);
+    const hasKannada = /[\u0C80-\u0CFF]/.test(text);
+    
+    // If any regional script detected, it's NOT English
+    if (hasDevanagari || hasTelugu || hasTamil || hasBengali || hasGujarati || 
+        hasGurmukhi || hasOriya || hasMalayalam || hasKannada) {
+      return false;
+    }
+    
+    // Otherwise, assume English
+    return true;
+  };
 
   // Helper function to detect if text is likely regional language or garbled
   const isRegionalLanguageOrGarbled = (text) => {
@@ -190,6 +218,33 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setWordAnalysisPage(null);
     setWordBatch(1);
     setError(null);
+  };
+
+  // Add content to Notes
+  const addToNotes = (content, title = 'AI Explanation') => {
+    const timestamp = new Date().toLocaleString();
+    const noteEntry = `
+      <div style="border-left: 4px solid #1976d2; padding-left: 16px; margin-bottom: 24px;">
+        <h3 style="color: #1976d2; margin-top: 0;">${title}</h3>
+        <p style="color: #666; font-size: 0.875rem; margin: 4px 0 12px 0;">
+          <em>📄 Page ${currentPage} • ${timestamp}</em>
+        </p>
+        ${content}
+      </div>
+      <hr style="margin: 24px 0; border: none; border-top: 1px solid #e0e0e0;" />
+    `;
+    
+    setNotesContent(prev => prev + noteEntry);
+    
+    // Save to localStorage
+    if (pdfId) {
+      const updatedNotes = notesContent + noteEntry;
+      localStorage.setItem(`notes_${pdfId}`, updatedNotes);
+      localStorage.setItem(`notes_${pdfId}_timestamp`, new Date().toISOString());
+    }
+    
+    // Show success message
+    alert(`✅ Added to Notes! Switch to the Notes tab to view.`);
   };
 
   const handleTeacherMode = async () => {
@@ -2484,6 +2539,11 @@ Return ONLY this valid JSON:
               Notes are saved automatically
             </Typography>
           </Box>
+        </TabPanel>
+
+        {/* Notes Tab */}
+        <TabPanel value={activeTab} index={5}>
+          <NotesEditor pdfId={pdfId} />
         </TabPanel>
       </Box>
     </Box>
