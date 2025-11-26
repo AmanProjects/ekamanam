@@ -27,8 +27,7 @@ import {
   Public as ResourcesIcon,
   Link as LinkIcon,
   MenuBook as ReadIcon,
-  AddCircle as AddToNotesIcon,
-  Tooltip
+  AddCircle as AddToNotesIcon
 } from '@mui/icons-material';
 import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis } from '../services/geminiService';
