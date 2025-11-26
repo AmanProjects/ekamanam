@@ -27,7 +27,8 @@ import {
   Public as ResourcesIcon,
   Link as LinkIcon,
   MenuBook as ReadIcon,
-  AddCircle as AddToNotesIcon
+  AddCircle as AddToNotesIcon,
+  Tooltip
 } from '@mui/icons-material';
 import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis } from '../services/geminiService';
@@ -1025,12 +1026,23 @@ Return ONLY this valid JSON:
     });
   };
 
+  // Check if Read & Understand should be disabled (English content)
+  const isEnglish = isEnglishContent(pageText);
+  const readTabDisabled = isEnglish;
+  const readTabTooltip = readTabDisabled 
+    ? "📖 This tab is for regional languages (Hindi, Telugu, Tamil, etc.). English PDFs don't need word-by-word analysis."
+    : "📚 Word-by-word analysis with pronunciation and meaning";
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       <Paper square elevation={1}>
         <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           <Tab icon={<TeacherIcon />} label="Teacher Mode" />
-          <Tab icon={<ReadIcon />} label="Read & Understand" />
+          <Tooltip title={readTabTooltip} arrow>
+            <span>
+              <Tab icon={<ReadIcon />} label="Read & Understand" disabled={readTabDisabled} />
+            </span>
+          </Tooltip>
           <Tab icon={<ExplainIcon />} label="Explain" />
           <Tab icon={<ActivitiesIcon />} label="Activities" />
           <Tab icon={<ResourcesIcon />} label="Resources" />
