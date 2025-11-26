@@ -126,11 +126,14 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     return false;
   };
 
-  // Helper function to format markdown bold (**text**) to HTML
+  // Helper function to format markdown bold and italic to HTML
   const formatBoldText = (text) => {
-    if (!text) return text;
-    // Replace **text** with <strong>text</strong>
-    return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    if (!text || typeof text !== 'string') return text;
+    // Replace **text** with <strong>text</strong> (bold)
+    let formatted = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Replace *text* with <em>text</em> (italic) - but not if already part of **
+    formatted = formatted.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+    return formatted;
   };
 
   const handleTabChange = (event, newValue) => {
