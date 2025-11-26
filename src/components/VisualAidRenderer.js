@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Box, Paper } from '@mui/material';
+import { Box, Paper, Alert } from '@mui/material';
 import { 
   Chart as ChartJS, 
   ArcElement, 
@@ -15,6 +15,9 @@ import {
   BarController,
   LineController
 } from 'chart.js';
+import ThreeDVisualization from './ThreeDVisualization';
+import ChemistryVisualization from './ChemistryVisualization';
+import PlotlyVisualization from './PlotlyVisualization';
 
 // Register Chart.js components AND controllers
 ChartJS.register(
@@ -34,6 +37,9 @@ ChartJS.register(
 
 function VisualAidRenderer({ visualAid }) {
   const chartInstanceRef = useRef(null);
+  const [parsedVisual, setParsedVisual] = React.useState(null);
+  const [visualType, setVisualType] = React.useState(null);
+  const [error, setError] = React.useState(null);
 
   useEffect(() => {
     // Cleanup previous chart instance
@@ -45,60 +51,46 @@ function VisualAidRenderer({ visualAid }) {
     };
   }, [visualAid]);
 
-  // Type check: visualAid must be a string
-  if (!visualAid || typeof visualAid !== 'string' || visualAid.trim() === '') {
-    return null;
-  }
+  useEffect(() => {
+    setError(null);
+    setParsedVisual(null);
+    setVisualType(null);
 
-  // Try to detect if it's a Chart.js JSON format
-  let isChartData = false;
-  let chartConfig = null;
-  
-  try {
-    const parsed = JSON.parse(visualAid);
-    if (parsed.chartType && parsed.data) {
-      isChartData = true;
-      chartConfig = parsed;
+    // Type check: visualAid must be a string
+    if (!visualAid || typeof visualAid !== 'string' || visualAid.trim() === '') {
+      return;
     }
-  } catch (e) {
-    // Not JSON, treat as SVG/HTML
-  }
 
-  // Render Chart.js chart
-  if (isChartData && chartConfig) {
-    return (
-      <Paper 
-        elevation={0}
-        sx={{ 
-          mt: 1, 
-          p: 3, 
-          bgcolor: '#f8f9fa',
-          border: '2px dashed #4CAF50',
-          borderRadius: 2,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}
-      >
-        <Box sx={{ width: '100%', maxWidth: 500, height: 300 }}>
-          <canvas ref={(canvas) => {
-            if (canvas && !chartInstanceRef.current) {
-              const ctx = canvas.getContext('2d');
-              chartInstanceRef.current = new ChartJS(ctx, {
-                type: chartConfig.chartType,
-                data: chartConfig.data,
-                options: {
-                  ...chartConfig.options,
-                  responsive: true,
-                  maintainAspectRatio: true
-                }
-              });
-            }
-          }} />
-        </Box>
-      </Paper>
-    );
-  }
+    try {
+      // Attempt to parse as JSON
+      const config = JSON.parse(visualAid);
+      
+      // Detect visualization type
+      if (config.chartType) {
+        // Chart.js (pie, bar, line)
+        setVisualType('chartjs');
+        setParsedVisual(config);
+      } else if (config.type === '3d' && config.shapeType) {
+        // 3D Geometry (cube, sphere, pyramid, etc.)
+        setVisualType('3d');
+        setParsedVisual(config);
+      } else if (config.type === 'chemistry' || config.moleculeData) {
+        // Chemistry (molecular structures)
+        setVisualType('chemistry');
+        setParsedVisual(config);
+      } else if (config.type === 'plotly' || (Array.isArray(config.data) && config.data[0]?.type)) {
+        // Plotly (3D surfaces, scatter, etc.)
+        setVisualType('plotly');
+        setParsedVisual(config);
+      } else {
+        // Unknown JSON format, try as SVG/HTML
+        setVisualType('svg');
+      }
+    } catch (e) {
+      // Not JSON, treat as SVG/HTML
+      setVisualType('svg');
+    }
+  }, [visualAid]);
 
   // Fix common SVG issues
   const fixSVG = (svgString) => {
@@ -122,29 +114,120 @@ function VisualAidRenderer({ visualAid }) {
     return fixed;
   };
 
-  // Render SVG/HTML visual
-  return (
-    <Paper 
-      elevation={0}
-      sx={{ 
-        mt: 1, 
-        p: 2, 
-        bgcolor: '#f8f9fa',
-        border: '2px dashed #4CAF50',
-        borderRadius: 2,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: 150
-      }}
-    >
-      <Box 
-        sx={{ textAlign: 'center', width: '100%' }}
-        dangerouslySetInnerHTML={{ __html: fixSVG(visualAid) }}
+  // Error handling
+  if (error) {
+    return (
+      <Alert severity="warning" sx={{ my: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
+
+  if (!visualType) {
+    return null;
+  }
+
+  // Chart.js rendering (pie, bar, line charts)
+  if (visualType === 'chartjs' && parsedVisual) {
+    return (
+      <Paper 
+        elevation={0}
+        sx={{ 
+          mt: 1, 
+          p: 3, 
+          bgcolor: '#f8f9fa',
+          border: '2px dashed #4CAF50',
+          borderRadius: 2,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
+      >
+        <Box sx={{ width: '100%', maxWidth: 500, height: 300 }}>
+          <canvas ref={(canvas) => {
+            if (canvas && !chartInstanceRef.current) {
+              const ctx = canvas.getContext('2d');
+              chartInstanceRef.current = new ChartJS(ctx, {
+                type: parsedVisual.chartType,
+                data: parsedVisual.data,
+                options: {
+                  ...parsedVisual.options,
+                  responsive: true,
+                  maintainAspectRatio: true
+                }
+              });
+            }
+          }} />
+        </Box>
+      </Paper>
+    );
+  }
+
+  // 3D Geometry rendering (cube, sphere, pyramid, etc.)
+  if (visualType === '3d' && parsedVisual) {
+    return (
+      <ThreeDVisualization
+        shapeType={parsedVisual.shapeType}
+        color={parsedVisual.color}
+        wireframe={parsedVisual.wireframe}
+        dimensions={parsedVisual.dimensions}
+        labels={parsedVisual.labels}
+        rotate={parsedVisual.rotate !== false}
+        title={parsedVisual.title}
       />
-    </Paper>
-  );
+    );
+  }
+
+  // Chemistry visualization (molecular structures)
+  if (visualType === 'chemistry' && parsedVisual) {
+    return (
+      <ChemistryVisualization
+        moleculeData={parsedVisual.moleculeData}
+        format={parsedVisual.format || 'smiles'}
+        style={parsedVisual.style}
+        title={parsedVisual.title}
+      />
+    );
+  }
+
+  // Plotly visualization (3D plots, surfaces, etc.)
+  if (visualType === 'plotly' && parsedVisual) {
+    return (
+      <PlotlyVisualization
+        data={parsedVisual.data}
+        layout={parsedVisual.layout}
+        title={parsedVisual.title}
+        config={parsedVisual.config}
+      />
+    );
+  }
+
+  // SVG/HTML rendering (fallback for 2D graphics)
+  if (visualType === 'svg' && visualAid && typeof visualAid === 'string') {
+    return (
+      <Paper 
+        elevation={0}
+        sx={{ 
+          mt: 1, 
+          p: 2, 
+          bgcolor: '#f8f9fa',
+          border: '2px dashed #4CAF50',
+          borderRadius: 2,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: 150
+        }}
+      >
+        <Box 
+          sx={{ textAlign: 'center', width: '100%' }}
+          dangerouslySetInnerHTML={{ __html: fixSVG(visualAid) }}
+        />
+      </Paper>
+    );
+  }
+
+  return null;
 }
 
 export default VisualAidRenderer;
-

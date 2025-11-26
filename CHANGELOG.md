@@ -5,6 +5,37 @@ All notable changes to Ekamanam will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2025-11-26
+
+### Fixed
+- 🐛 **CRITICAL: Fixed `TypeError: e.split is not a function` crash**
+  - Added type checking in `formatMarkdown()`: Validates text is string before `.split()`
+  - Added type checking in `formatText()`: Validates html is string before `.split()`  
+  - Added safe navigation for `utterance.lang.split()`: Uses default 'en' if lang is undefined
+  - Prevents app crashes when AI returns non-string values (objects, arrays, null)
+
+### Technical Details
+**Root Cause:**
+- AI responses sometimes return non-string values
+- Code was calling `.split()` without type validation
+- This caused TypeErrors when rendering AI content
+
+**Type Safety Pattern Applied:**
+```javascript
+// BEFORE (unsafe):
+if (!text) return null;
+return text.split('\n')...
+
+// AFTER (type-safe):
+if (!text || typeof text !== 'string') return null;
+return text.split('\n')...
+```
+
+**All .split() calls now type-safe:**
+- ✅ `formatMarkdown(text)` - checks `typeof text === 'string'`
+- ✅ `formatText(html)` - checks `typeof html === 'string'`
+- ✅ `utterance.lang.split()` - uses safe navigation `(lang || 'en').split()`
+
 ## [2.1.1] - 2025-11-26
 
 ### Fixed
@@ -122,4 +153,3 @@ ekamanam/
 - **Repository**: https://github.com/AmanProjects/ekamanam
 - **Original Version**: [index.html](https://amanprojects.github.io/ekamanam/original.html)
 - **Landing Page**: [Ekamanam.html](https://amanprojects.github.io/ekamanam/landing.html)
-
