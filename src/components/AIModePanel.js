@@ -1437,14 +1437,20 @@ Return ONLY this valid JSON:
                           >
                             {/* Question - Bilingual */}
                             <Box sx={{ mb: 2 }}>
-                              <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
-                                Q{idx + 1}. {exercise.question}
-                              </Typography>
+                              <Typography 
+                                variant="h6" 
+                                fontWeight={700} 
+                                color="text.primary" 
+                                gutterBottom
+                                dangerouslySetInnerHTML={{ __html: `Q${idx + 1}. ${formatBoldText(exercise.question)}` }}
+                              />
                               {exercise.question_english && exercise.question_english.trim() !== "" && exercise.question_english !== exercise.question && (
                                 <Paper sx={{ p: 1.5, bgcolor: 'info.lighter', mt: 1, borderLeft: '4px solid', borderColor: 'info.main' }}>
-                                  <Typography variant="body2" color="info.dark">
-                                    🌐 {exercise.question_english}
-                                  </Typography>
+                                  <Typography 
+                                    variant="body2" 
+                                    color="info.dark"
+                                    dangerouslySetInnerHTML={{ __html: `🌐 ${formatBoldText(exercise.question_english)}` }}
+                                  />
                                 </Paper>
                               )}
                               <Button
@@ -1513,13 +1519,18 @@ Return ONLY this valid JSON:
                                 <Paper sx={{ p: 2, bgcolor: 'white' }}>
                                   {exercise.steps.map((step, stepIdx) => (
                                     <Box key={stepIdx} sx={{ mb: 2, pb: 2, borderBottom: stepIdx < exercise.steps.length - 1 ? '1px dashed #e0e0e0' : 'none' }}>
-                                      <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-                                        {stepIdx + 1}. {step}
-                                      </Typography>
+                                      <Typography 
+                                        variant="body2" 
+                                        sx={{ fontWeight: 500, mb: 0.5 }}
+                                        dangerouslySetInnerHTML={{ __html: `${stepIdx + 1}. ${formatBoldText(step)}` }}
+                                      />
                                       {exercise.steps_english && exercise.steps_english[stepIdx] && exercise.steps_english[stepIdx].trim() !== "" && exercise.steps_english[stepIdx] !== step && (
-                                        <Typography variant="body2" color="info.dark" sx={{ ml: 2, fontStyle: 'italic', mb: 1 }}>
-                                          🌐 {exercise.steps_english[stepIdx]}
-                                        </Typography>
+                                        <Typography 
+                                          variant="body2" 
+                                          color="info.dark" 
+                                          sx={{ ml: 2, fontStyle: 'italic', mb: 1 }}
+                                          dangerouslySetInnerHTML={{ __html: `🌐 ${formatBoldText(exercise.steps_english[stepIdx])}` }}
+                                        />
                                       )}
                                       
                                       {/* Visual Aid for Math/Science */}
@@ -1566,13 +1577,19 @@ Return ONLY this valid JSON:
                                 <Typography variant="subtitle2" fontWeight={700} color="success.dark" gutterBottom>
                                   💡 Helpful Hints:
                                 </Typography>
-                                {exercise.hints.map((hint, hintIdx) => (
+                                  {exercise.hints.map((hint, hintIdx) => (
                                   <Box key={hintIdx} sx={{ mb: 0.5 }}>
-                                    <Typography variant="body2">• {hint}</Typography>
+                                    <Typography 
+                                      variant="body2"
+                                      dangerouslySetInnerHTML={{ __html: `• ${formatBoldText(hint)}` }}
+                                    />
                                     {exercise.hints_english && exercise.hints_english[hintIdx] && exercise.hints_english[hintIdx].trim() !== "" && exercise.hints_english[hintIdx] !== hint && (
-                                      <Typography variant="body2" color="info.dark" sx={{ ml: 2, fontStyle: 'italic' }}>
-                                        🌐 {exercise.hints_english[hintIdx]}
-                                      </Typography>
+                                      <Typography 
+                                        variant="body2" 
+                                        color="info.dark" 
+                                        sx={{ ml: 2, fontStyle: 'italic' }}
+                                        dangerouslySetInnerHTML={{ __html: `🌐 ${formatBoldText(exercise.hints_english[hintIdx])}` }}
+                                      />
                                     )}
                                   </Box>
                                 ))}
