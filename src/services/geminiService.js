@@ -279,112 +279,68 @@ CRITICAL RULES:
 - Make answers detailed and educational
 - Return ONLY valid JSON
 
-**VISUAL AIDS FOR MATH & SCIENCE - CRITICAL RULES:**
+VISUAL AIDS FOR MATH & SCIENCE - CRITICAL RULES:
 - Each step should have its OWN unique visual showing PROGRESSION
 - Only include visuals for steps where they ADD VALUE (don't force visuals on every step)
 - Show DIFFERENT stages of the problem-solving process
 - Leave visualAid as empty string "" for steps that don't need visuals
 
-**VISUALIZATION TYPES AVAILABLE:**
+VISUALIZATION TYPES AVAILABLE:
 
-1. **2D Charts (Chart.js)** - For statistics, data comparison:
-   ```json
-   {"chartType": "pie|bar|line", "data": {...}, "options": {...}}
-   ```
+1. 2D Charts (Chart.js) - For statistics, data comparison:
+   Format: {"chartType": "pie|bar|line", "data": {...}, "options": {...}}
 
-2. **3D Geometry (Three.js)** - For geometric shapes:
-   ```json
-   {
-     "type": "3d",
-     "shapeType": "cube|sphere|cone|cylinder|pyramid|torus|dodecahedron|icosahedron|tetrahedron|octahedron",
-     "color": "#4FC3F7",
-     "wireframe": false,
-     "dimensions": {"radius": 1.5, "height": 3, "width": 2, "depth": 2},
-     "labels": ["Label vertices or faces"],
-     "title": "Shape name",
-     "rotate": true
-   }
-   ```
-   **Use 3D when:** Student needs to visualize actual 3D objects (cubes, spheres, polyhedra)
+2. 3D Geometry (Three.js) - For geometric shapes:
+   Format: {"type": "3d", "shapeType": "cube|sphere|cone|cylinder|pyramid|torus|dodecahedron|icosahedron|tetrahedron|octahedron", "color": "#4FC3F7", "wireframe": false, "dimensions": {"radius": 1.5, "height": 3}, "labels": ["Labels"], "title": "Title", "rotate": true}
+   Use 3D when: Student needs to visualize actual 3D objects
 
-3. **3D Scientific Plots (Plotly)** - For 3D graphs, surfaces, vectors:
-   ```json
-   {
-     "type": "plotly",
-     "data": [{
-       "type": "surface|scatter3d|mesh3d",
-       "x": [...], "y": [...], "z": [...]
-     }],
-     "layout": {"title": "...", "scene": {"xaxis": {"title": "X"}}},
-     "title": "Graph title"
-   }
-   ```
-   **Use Plotly when:** Math/Physics needs 3D graphs (z = f(x,y)), vector fields, parametric curves
+3. 3D Scientific Plots (Plotly) - For 3D graphs, surfaces, vectors:
+   Format: {"type": "plotly", "data": [{"type": "surface|scatter3d|mesh3d", "x": [...], "y": [...], "z": [...]}], "layout": {"scene": {"xaxis": {"title": "X"}}}, "title": "Graph title"}
+   Use Plotly when: Math/Physics needs 3D graphs, vector fields, parametric curves
 
-4. **Chemistry (3Dmol.js)** - For molecular structures:
-   ```json
-   {
-     "type": "chemistry",
-     "moleculeData": "water|methane|ethanol|glucose|benzene|caffeine|CH4|C2H5OH",
-     "format": "smiles",
-     "title": "Molecule name",
-     "style": {"stick": {}, "sphere": {"scale": 0.3}}
-   }
-   ```
-   **Use Chemistry when:** Showing molecular structures, chemical bonds, 3D molecules
+4. Chemistry (3Dmol.js) - For molecular structures:
+   Format: {"type": "chemistry", "moleculeData": "water|methane|ethanol|glucose|benzene|caffeine", "format": "smiles", "title": "Molecule name", "style": {"stick": {}, "sphere": {"scale": 0.3}}}
+   Use Chemistry when: Showing molecular structures, chemical bonds, 3D molecules
 
-5. **2D SVG** - For simple diagrams, angles, 2D shapes:
+5. 2D SVG - For simple diagrams, angles, 2D shapes:
    - Always use viewBox="0 0 400 300" for proper scaling
    - Use xmlns="http://www.w3.org/2000/svg"
-   - Angles: NEVER rotate SVG elements - draw them in correct orientation from start
-   - Triangles: Calculate correct points, don't use transform rotate
-   - Labels: Use proper text-anchor="middle" and positioning
+   - Angles: NEVER rotate SVG elements - draw in correct orientation
+   - Triangles: Calculate correct points, no transform rotate
+   - Labels: Use text-anchor="middle" and positioning
 
-**SELECTION GUIDE:**
-- **Pie/Bar/Line charts** → Chart.js JSON
-- **3D geometric solids** (cube, sphere, pyramid) → Three.js 3D JSON
-- **3D mathematical surfaces** (z = x² + y²) → Plotly JSON
-- **Molecules, chemical structures** → Chemistry JSON
-- **Simple 2D shapes, angles** → SVG string
+SELECTION GUIDE:
+- Pie/Bar/Line charts → Chart.js JSON
+- 3D geometric solids (cube, sphere, pyramid) → Three.js 3D JSON
+- 3D mathematical surfaces (z = x² + y²) → Plotly JSON
+- Molecules, chemical structures → Chemistry JSON
+- Simple 2D shapes, angles → SVG string
 
-**DATA VISUALIZATION RULES:**
-- For pie charts: Ensure data sums to 100%, use "pie" type
-- For bar charts: Compare separate values, use "bar" type
-- For line graphs: Show trends over time, use "line" type
-- For 3D shapes: Use actual 3D JSON, NOT rotated 2D
-- For chemistry: Use common molecule names or SMILES notation
+DATA VISUALIZATION RULES:
+- Pie charts: Data sums to 100%, use "pie" type
+- Bar charts: Compare separate values, use "bar" type
+- Line graphs: Show trends over time, use "line" type
+- 3D shapes: Use actual 3D JSON, NOT rotated 2D
+- Chemistry: Use common molecule names or SMILES notation
 
-**EXAMPLES:**
+EXAMPLES:
 
-**Example 1 - 3D Cube** (Geometry):
-```json
+Example 1 - 3D Cube (Geometry):
 {"type":"3d","shapeType":"cube","color":"#4FC3F7","dimensions":{"width":2,"height":2,"depth":2},"labels":["8 vertices","12 edges","6 faces"],"title":"Cube","rotate":true}
-```
 
-**Example 2 - 3D Surface** (Math - z = x² + y²):
-```json
+Example 2 - 3D Surface (Math - z = x² + y²):
 {"type":"plotly","data":[{"type":"surface","z":[[0,1,4],[1,2,5],[4,5,8]],"x":[-2,-1,0,1,2],"y":[-2,-1,0,1,2],"colorscale":"Viridis"}],"layout":{"scene":{"xaxis":{"title":"X"},"yaxis":{"title":"Y"},"zaxis":{"title":"Z"}}},"title":"Paraboloid"}
-```
 
-**Example 3 - Water Molecule** (Chemistry):
-```json
+Example 3 - Water Molecule (Chemistry):
 {"type":"chemistry","moleculeData":"water","format":"smiles","title":"H₂O - Water Molecule","style":{"stick":{},"sphere":{"scale":0.3}}}
-```
 
-**Example 4 - Pie Chart** (Statistics):
-```json
+Example 4 - Pie Chart (Statistics):
 {"chartType":"pie","data":{"labels":["Red","Blue","Green"],"datasets":[{"data":[30,50,20],"backgroundColor":["#FF6384","#36A2EB","#4BC0C0"]}]},"options":{"responsive":true,"plugins":{"legend":{"position":"bottom"}}}}
-```
 
-**Example 5 - 2D Triangle** (Simple SVG):
-```svg
-<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="100,50 100,200 300,200" fill="#E3F2FD" stroke="#1976D2" stroke-width="3"/>
-  <text x="100" y="40" text-anchor="middle">A</text>
-</svg>
-```
+Example 5 - 2D Triangle (Simple SVG):
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><polygon points="100,50 100,200 300,200" fill="#E3F2FD" stroke="#1976D2" stroke-width="3"/><text x="100" y="40" text-anchor="middle">A</text></svg>
 
-**Progressive Example - 3D Pyramid Volume:**
+Progressive Example - 3D Pyramid Volume:
 Step 1: {"type":"3d","shapeType":"pyramid","color":"#FFA726","title":"Step 1: Draw Pyramid"}
 Step 2: {"type":"3d","shapeType":"pyramid","color":"#66BB6A","dimensions":{"radius":2,"height":3},"labels":["Base=2","Height=3"],"title":"Step 2: Label Dimensions"}
 Step 3: Use 2D SVG for formula, then back to 3D for result
