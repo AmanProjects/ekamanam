@@ -875,7 +875,7 @@ Return ONLY this valid JSON:
   };
 
   const formatMarkdown = (text) => {
-    if (!text) return null;
+    if (!text || typeof text !== 'string') return null;
     
     return text.split('\n').map((line, i) => {
       // Headers
