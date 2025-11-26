@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Grid, AppBar, Toolbar, Typography, Button, IconButton, Fab, Tooltip } from '@mui/material';
+import { Box, Grid, AppBar, Toolbar, Button, IconButton, Fab, Tooltip } from '@mui/material';
 import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome } from '@mui/icons-material';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
