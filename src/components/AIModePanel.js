@@ -1517,20 +1517,77 @@ Return ONLY this valid JSON:
                   </Typography>
                 </Paper>
               )}
-              <Button
-                fullWidth
-                variant="contained"
-                color="primary"
-                size="large"
-                startIcon={<ExplainIcon />}
-                onClick={handleExplainText}
-                disabled={loading || (!selectedText && !pageText)}
-              >
-                {loading ? 'Analyzing...' : 
-                 selectedText ? 'Explain Selected Text' : 
-                 '📝 Analyze This Page (Find Exercises & Notes)'}
-              </Button>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  startIcon={<ExplainIcon />}
+                  onClick={handleExplainText}
+                  disabled={loading || (!selectedText && !pageText)}
+                >
+                  {loading ? 'Analyzing...' : 
+                   selectedText ? 'Explain Selected Text' : 
+                   '📝 Analyze This Page'}
+                </Button>
+                {explainResponse && explainResponsePage === currentPage && (
+                  <>
+                    <Tooltip title="Add this explanation to your Notes">
+                      <Button
+                        variant="outlined"
+                        color="success"
+                        size="large"
+                        onClick={() => {
+                          let content = '';
+                          if (typeof explainResponse === 'string') {
+                            content = explainResponse;
+                          } else {
+                            content = `
+                              ${explainResponse.explanation ? `<div><h4>📖 Explanation</h4><p>${explainResponse.explanation}</p></div>` : ''}
+                              ${explainResponse.analogy ? `<div><h4>💡 Analogy</h4><p>${explainResponse.analogy}</p></div>` : ''}
+                              ${explainResponse.pyq ? `<div><h4>📝 Exam Question</h4><p>${explainResponse.pyq}</p></div>` : ''}
+                              ${explainResponse.exercises && explainResponse.exercises.length > 0 ? `
+                                <div><h4>✏️ Exercises & Solutions</h4>
+                                ${explainResponse.exercises.map((ex, idx) => `
+                                  <div style="margin-bottom: 16px; border-left: 3px solid #1976d2; padding-left: 12px;">
+                                    <p><strong>Question ${idx + 1}:</strong> ${ex.question || ex.question_english || ''}</p>
+                                    <p><strong>Answer:</strong> ${ex.answer || ex.answer_english || ''}</p>
+                                    ${ex.steps && ex.steps.length > 0 ? `
+                                      <p><strong>Steps:</strong></p>
+                                      <ol>${ex.steps.map(step => `<li>${step.step || step.step_english || ''}</li>`).join('')}</ol>
+                                    ` : ''}
+                                  </div>
+                                `).join('')}
+                                </div>
+                              ` : ''}
+                            `;
+                          }
+                          addToNotes(content, `📚 Explanation - Page ${currentPage}`);
+                        }}
+                        disabled={loading}
+                        startIcon={<AddToNotesIcon />}
+                      >
+                        + Notes
+                      </Button>
+                    </Tooltip>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="large"
+                      onClick={() => {
+                        setExplainResponse(null);
+                        setExplainResponsePage(null);
+                        setError(null);
+                      }}
+                      disabled={loading}
+                    >
+                      Clear
+                    </Button>
+                  </>
+                )}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                 {selectedText 
                   ? '🔍 Analyzes selected text and detects: exercises, important notes, formulas, warnings'
                   : '🤖 Smart AI Analysis: Automatically detects exercises, notes, and provides answer clues with page references'}

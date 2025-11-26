@@ -5,9 +5,7 @@ import {
   Box, 
   Paper, 
   Typography, 
-  Button, 
-  IconButton,
-  Tooltip,
+  Button,
   Alert
 } from '@mui/material';
 import { 
@@ -54,10 +52,15 @@ const NotesEditor = ({ pdfId }) => {
   useEffect(() => {
     if (pdfId && notes) {
       const timer = setTimeout(() => {
-        handleSave();
+        if (pdfId) {
+          localStorage.setItem(`notes_${pdfId}`, notes);
+          localStorage.setItem(`notes_${pdfId}_timestamp`, new Date().toISOString());
+          setLastSaved(new Date());
+        }
       }, 5000);
       return () => clearTimeout(timer);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notes, pdfId]);
 
   const handleSave = () => {
