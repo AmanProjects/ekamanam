@@ -5,6 +5,85 @@ All notable changes to Ekamanam will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.6] - 2025-11-26
+
+### Fixed
+- 🔴 **CRITICAL: AI now generates actual visuals for "Draw" commands**
+  - **Issue:** AI was saying "Draw the pie chart" but NOT providing the chart
+  - **Fix:** Enhanced prompt with explicit rule: "When you write 'Draw X', the visualAid MUST contain the drawing of X"
+  - **Result:** AI now provides actual Chart.js/3D/SVG when it mentions drawing
+
+### Enhanced
+- 📝 **Better visualization examples** with real data (not placeholders)
+  - Pie chart example: actual labels ["Hindi","English","Telugu","Tamil"] with real data
+  - Bar chart example: complete configuration with axis labels
+  - All examples now copy-paste ready
+
+### Prompt Changes
+- Added 🚨 CRITICAL section for "Draw" detection
+- Emphasized: "NEVER tell user to draw something without providing the visual yourself"
+- Added validation: "Empty visualAid when saying 'draw' = FAILURE"
+- Clarified: "The user CANNOT draw - YOU must provide the visual"
+
+## [2.2.5] - 2025-11-26
+
+### Added
+- ✨ **Clear buttons** on all AI tabs
+  - Teacher Mode: Clear button next to "Explain This Page"
+  - Explain: Clear button next to "Explain Current Page"  
+  - Activities: Clear button next to "Generate Activities"
+  - Resources: Clear button next to "Find Additional Resources"
+  - Word Analysis: Clear button next to "Start Word Analysis"
+
+### Fixed
+- 📄 **Page-specific data display**
+  - Data only shows if it matches current page
+  - Navigating to different page hides old data
+  - Returning to original page shows cached data
+  - **Page mismatch warnings:** Alert when viewing data from wrong page
+  - Clear buttons only appear for current page's data
+
+### Implementation
+- Added `*ResponsePage` state tracking (teacherResponsePage, explainResponsePage, etc.)
+- Conditional rendering: `{response && responsePage === currentPage && ...}`
+- Clear functions reset both data and page tracking
+- Inline "Clear Old Data" buttons in mismatch warnings
+
+## [2.2.4] - 2025-11-26
+
+### Added
+- 🧪 **3D Visualization Test Page** (diagnostic tool)
+  - Test Three.js cube and sphere rendering
+  - Test Plotly 3D surface plots
+  - Test 3Dmol chemistry molecules
+  - Troubleshooting guide for WebGL issues
+  - Browser compatibility checks
+
+## [2.2.3] - 2025-11-26
+
+### Fixed
+- 🔒 **Type safety for all .split() calls**
+  - Fixed `TypeError: e.split is not a function`
+  - Added type checking in `formatMarkdown()` and `formatText()`
+  - Safe navigation for `utterance.lang.split()`
+
+## [2.2.2] - 2025-11-26
+
+### Fixed
+- 🐛 **Markdown bold syntax rendering** (`**text**` displayed literally)
+  - Enhanced `formatBoldText()` to handle bold and italic
+  - Converts `**text**` → `<strong>text</strong>`
+  - Converts `*text*` → `<em>text</em>`
+  - Applied to all AI responses (Teacher, Explain, Activities)
+
+## [2.2.1] - 2025-11-26
+
+### Fixed
+- 🐛 **Explain tab generating paragraphs instead of structured JSON**
+  - Simplified AI prompt (was too complex with 3D instructions)
+  - Condensed from 150+ lines to ~50 lines
+  - Restored excellent structured explanations with visuals
+
 ## [2.2.0] - 2025-11-26
 
 ### Added - 🎉 **MAJOR: 3D & Scientific Visualizations**
