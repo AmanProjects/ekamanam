@@ -433,7 +433,7 @@ Return ONLY the English translation, no extra text.`;
       
       // Load voices and find the best match
       const voices = window.speechSynthesis.getVoices();
-      const targetLang = utterance.lang.split('-')[0];
+      const targetLang = (utterance.lang || 'en').split('-')[0];
       
       // Try to find a native voice for the language
       const nativeVoice = voices.find(voice => 
@@ -863,13 +863,15 @@ Return ONLY this valid JSON:
     // Wrap consecutive <li> tags in <ul>
     html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
     
-    // Convert line breaks to paragraphs
-    html = html.split('\n\n').map(para => {
+    // Convert line breaks to paragraphs  
+    if (typeof html === 'string') {
+      html = html.split('\n\n').map(para => {
       if (para.trim() && !para.startsWith('<h') && !para.startsWith('<ul') && !para.startsWith('<li')) {
         return `<p>${para.replace(/\n/g, '<br>')}</p>`;
       }
       return para;
     }).join('');
+    }
     
     return html;
   };
