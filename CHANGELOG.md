@@ -5,6 +5,44 @@ All notable changes to Ekamanam will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2025-11-26
+
+### 🔧 Critical Fixes
+
+#### Notes Integration Fixed
+- **PROBLEM:** Notes weren't appearing in Notes tab after clicking "Add to Notes"
+- **ROOT CAUSE:** `notesContent` state in AIModePanel wasn't connected to NotesEditor
+- **FIX:** 
+  - Removed intermediate state, now writes directly to localStorage
+  - Added custom `notesUpdated` event system
+  - NotesEditor listens for updates and reloads immediately
+- **RESULT:** ✅ Notes now appear instantly in Notes tab
+
+#### Add to Notes Button UI Improvements
+- Changed from `outlined` to `contained` variant (more prominent)
+- Changed text from `"+ Notes"` to `"Add to Notes"` (clearer)
+- Added `minWidth: 140px` for consistent button sizing
+- Removed Tooltip wrapper (cleaner, more professional look)
+
+#### Auto-Switch to Notes Tab
+- After adding notes, automatically switches to Notes tab (index 5)
+- User sees their added content immediately
+- Better UX flow - no manual tab switching needed
+
+#### State Management Cleanup
+- Removed unused `notesContent` state from AIModePanel
+- All notes now managed through localStorage exclusively
+- Single source of truth for notes data
+- Prevents state synchronization issues
+
+### 📖 How It Works Now
+1. User clicks **"Add to Notes"** on Explain tab
+2. Content written to `localStorage` with key `notes_{pdfId}`
+3. Custom event `notesUpdated` dispatched
+4. NotesEditor listens for event, reloads from localStorage
+5. User **automatically switched** to Notes tab
+6. Notes appear with full formatting, page number, and timestamp
+
 ## [2.3.0] - 2025-11-26
 
 ### 🎉 MAJOR FEATURES
