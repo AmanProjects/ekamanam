@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import VisualAidRenderer from './VisualAidRenderer';
 import { 
   Box, 
   Paper, 
@@ -1549,27 +1550,7 @@ Return ONLY this valid JSON:
                                         )}
                                         
                                         {/* Visual Aid for THIS specific step (if it has one and it's not empty) */}
-                                        {stepVisual && stepVisual.trim() !== "" && (
-                                          <Paper 
-                                            elevation={0}
-                                            sx={{ 
-                                              mt: 1, 
-                                              p: 2, 
-                                              bgcolor: '#f8f9fa',
-                                              border: '2px dashed #4CAF50',
-                                              borderRadius: 2,
-                                              display: 'flex',
-                                              justifyContent: 'center',
-                                              alignItems: 'center',
-                                              minHeight: 150
-                                            }}
-                                          >
-                                            <Box 
-                                              sx={{ textAlign: 'center', width: '100%' }}
-                                              dangerouslySetInnerHTML={{ __html: stepVisual }}
-                                            />
-                                          </Paper>
-                                        )}
+                                        <VisualAidRenderer visualAid={stepVisual} />
                                       </Box>
                                     );
                                   })}

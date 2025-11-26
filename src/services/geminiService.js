@@ -283,21 +283,47 @@ CRITICAL RULES:
 - Each step should have its OWN unique visual showing PROGRESSION
 - Only include visuals for steps where they ADD VALUE (don't force visuals on every step)
 - Show DIFFERENT stages of the problem-solving process
-- For geometry: Show the shape being constructed step-by-step (Step 1: triangle, Step 2: add measurements, Step 3: highlight result)
-- For algebra: Show equation transformations progressively (Step 1: original equation, Step 2: after subtraction, Step 3: after division)
-- For graphs: Show progressive plotting (Step 1: axes, Step 2: plot points, Step 3: connect curve)
-- For physics: Show progressive states (Step 1: initial position, Step 2: forces applied, Step 3: final state)
 - Leave visualAid as empty string "" for steps that don't need visuals
 
-EXAMPLE - Progressive geometry visuals:
-Step 1 visual (Draw triangle): <svg>...shows triangle with labels...</svg>
-Step 2 visual (Apply theorem): <svg>...shows triangle with theorem formula highlighted...</svg>
-Step 3 visual (Calculate): <svg>...shows triangle with result highlighted...</svg>
+**SVG BEST PRACTICES FOR GEOMETRY:**
+- Always use viewBox="0 0 400 300" for proper scaling
+- Use xmlns="http://www.w3.org/2000/svg"
+- Angles: NEVER rotate SVG elements - draw them in correct orientation from start
+- Triangles: Calculate correct points, don't use transform rotate
+- Circles: Use cx, cy, r (no rotation needed)
+- Labels: Use proper text-anchor="middle" and positioning
+- Keep viewBox coordinate system standard (0,0 at top-left)
 
-EXAMPLE - Progressive algebra visuals:
-Step 1: <div>2x + 5 = 15</div>
-Step 2: <div><span style="color:blue">2x = 15 - 5</span></div>
-Step 3: <div><span style="color:green">x = 5</span></div>
+**DATA VISUALIZATION (Pie Charts, Bar Charts, Graphs):**
+- Use Chart.js JSON format instead of SVG
+- Return: {"chartType": "pie|bar|line", "data": {...}, "options": {...}}
+- For pie charts: Ensure correct angle calculations (0° at top, clockwise)
+- For bar charts: Proper axis labels and spacing
+- For line graphs: Clear axis labels and gridlines
+
+EXAMPLE - Correct SVG Triangle (NO rotation, proper orientation):
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+  <!-- Right-angled triangle at B -->
+  <polygon points="100,50 100,200 300,200" fill="#E3F2FD" stroke="#1976D2" stroke-width="3"/>
+  <!-- Right angle marker -->
+  <rect x="100" y="180" width="20" height="20" fill="none" stroke="#1976D2" stroke-width="2"/>
+  <!-- Labels at vertices -->
+  <text x="100" y="40" text-anchor="middle" font-size="18" font-weight="bold">A</text>
+  <text x="100" y="225" text-anchor="middle" font-size="18" font-weight="bold">B</text>
+  <text x="300" y="225" text-anchor="middle" font-size="18" font-weight="bold">C</text>
+  <!-- Side labels -->
+  <text x="50" y="125" font-size="14" fill="#D32F2F">AB=24cm</text>
+  <text x="200" y="220" font-size="14" fill="#D32F2F">BC=7cm</text>
+  <text x="200" y="110" font-size="14" fill="#388E3C" font-weight="bold">AC=?</text>
+</svg>
+
+EXAMPLE - Chart.js Pie Chart (for statistics/data):
+{"chartType":"pie","data":{"labels":["Category A","Category B","Category C"],"datasets":[{"data":[30,50,20],"backgroundColor":["#FF6384","#36A2EB","#FFCE56"]}]},"options":{"responsive":true,"plugins":{"legend":{"position":"bottom"}}}}
+
+EXAMPLE - Progressive Pythagorean theorem:
+Step 1 (Draw): <svg>...triangle with AB and BC labeled...</svg>
+Step 2 (Formula): <svg>...same triangle + formula "AC² = AB² + BC²" shown...</svg>
+Step 3 (Result): <svg>...triangle with AC=25cm highlighted in green...</svg>
 
 IMPORTANT: Students need actual answers to learn, not just hints. Help them understand by providing complete solutions with visual aids for Math/Science content.`;
 
