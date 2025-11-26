@@ -99,7 +99,6 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [speakingWordIndex, setSpeakingWordIndex] = useState(null);
   const [currentSpeakingId, setCurrentSpeakingId] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [notesContent, setNotesContent] = useState('');
 
   // Helper function to detect if content is in English
   const isEnglishContent = (text) => {
@@ -234,17 +233,20 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       <hr style="margin: 24px 0; border: none; border-top: 1px solid #e0e0e0;" />
     `;
     
-    setNotesContent(prev => prev + noteEntry);
-    
-    // Save to localStorage
+    // Get existing notes from localStorage
     if (pdfId) {
-      const updatedNotes = notesContent + noteEntry;
+      const existingNotes = localStorage.getItem(`notes_${pdfId}`) || '';
+      const updatedNotes = existingNotes + noteEntry;
       localStorage.setItem(`notes_${pdfId}`, updatedNotes);
       localStorage.setItem(`notes_${pdfId}_timestamp`, new Date().toISOString());
+      
+      // Trigger a custom event to notify NotesEditor to reload
+      window.dispatchEvent(new CustomEvent('notesUpdated', { detail: { pdfId } }));
     }
     
-    // Show success message
-    alert(`✅ Added to Notes! Switch to the Notes tab to view.`);
+    // Show success message and switch to Notes tab
+    alert(`✅ Added to Notes! Switching to Notes tab...`);
+    setActiveTab(5); // Switch to Notes tab (index 5)
   };
 
   const handleTeacherMode = async () => {
@@ -1544,12 +1546,11 @@ Return ONLY this valid JSON:
                 </Button>
                 {explainResponse && explainResponsePage === currentPage && (
                   <>
-                    <Tooltip title="Add this explanation to your Notes">
-                      <Button
-                        variant="outlined"
-                        color="success"
-                        size="large"
-                        onClick={() => {
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="large"
+                      onClick={() => {
                           let content = '';
                           if (typeof explainResponse === 'string') {
                             content = explainResponse;
@@ -1578,10 +1579,10 @@ Return ONLY this valid JSON:
                         }}
                         disabled={loading}
                         startIcon={<AddToNotesIcon />}
+                        sx={{ minWidth: '140px' }}
                       >
-                        + Notes
+                        Add to Notes
                       </Button>
-                    </Tooltip>
                     <Button
                       variant="outlined"
                       color="error"

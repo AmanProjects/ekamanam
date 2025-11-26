@@ -34,18 +34,32 @@ const NotesEditor = ({ pdfId }) => {
   const [lastSaved, setLastSaved] = useState(null);
   const [exporting, setExporting] = useState(false);
 
-  // Load notes from localStorage on mount
+  // Load notes from localStorage on mount and when notesUpdated event fires
   useEffect(() => {
-    if (pdfId) {
-      const savedNotes = localStorage.getItem(`notes_${pdfId}`);
-      if (savedNotes) {
-        setNotes(savedNotes);
-        const timestamp = localStorage.getItem(`notes_${pdfId}_timestamp`);
-        if (timestamp) {
-          setLastSaved(new Date(timestamp));
+    const loadNotes = () => {
+      if (pdfId) {
+        const savedNotes = localStorage.getItem(`notes_${pdfId}`);
+        if (savedNotes) {
+          setNotes(savedNotes);
+          const timestamp = localStorage.getItem(`notes_${pdfId}_timestamp`);
+          if (timestamp) {
+            setLastSaved(new Date(timestamp));
+          }
         }
       }
-    }
+    };
+
+    loadNotes();
+
+    // Listen for notes updates from other components
+    const handleNotesUpdate = (event) => {
+      if (event.detail.pdfId === pdfId) {
+        loadNotes();
+      }
+    };
+
+    window.addEventListener('notesUpdated', handleNotesUpdate);
+    return () => window.removeEventListener('notesUpdated', handleNotesUpdate);
   }, [pdfId]);
 
   // Auto-save notes every 5 seconds if changed
