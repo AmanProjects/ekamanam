@@ -125,6 +125,13 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     return false;
   };
 
+  // Helper function to format markdown bold (**text**) to HTML
+  const formatBoldText = (text) => {
+    if (!text) return text;
+    // Replace **text** with <strong>text</strong>
+    return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  };
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
