@@ -143,9 +143,6 @@ function App() {
                 e.target.style.display = 'none';
               }}
             />
-            <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
-              Ekamanam
-            </Typography>
           </Box>
           
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -153,9 +150,17 @@ function App() {
               variant={view === 'dashboard' ? 'contained' : 'text'}
               startIcon={<DashboardIcon />}
               onClick={() => setView('dashboard')}
+              sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Library
             </Button>
+            <IconButton 
+              onClick={() => setView('dashboard')}
+              color={view === 'dashboard' ? 'primary' : 'default'}
+              sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+            >
+              <DashboardIcon />
+            </IconButton>
             <IconButton onClick={() => setShowSettings(true)}>
               <SettingsIcon />
             </IconButton>
