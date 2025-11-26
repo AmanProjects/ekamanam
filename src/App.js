@@ -11,6 +11,7 @@ import Dashboard from './components/Dashboard';
 import SettingsDialog from './components/SettingsDialog';
 import AuthButton from './components/AuthButton';
 import FocusMonitor from './components/FocusMonitor';
+import Test3DVisualization from './components/Test3DVisualization';
 
 function App() {
   const [user, setUser] = useState(null);
