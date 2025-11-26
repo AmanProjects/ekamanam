@@ -1440,7 +1440,7 @@ Return ONLY this valid JSON:
                               <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
                                 Q{idx + 1}. {exercise.question}
                               </Typography>
-                              {exercise.question_english && exercise.question_english !== exercise.question && (
+                              {exercise.question_english && exercise.question_english.trim() !== "" && exercise.question_english !== exercise.question && (
                                 <Paper sx={{ p: 1.5, bgcolor: 'info.lighter', mt: 1, borderLeft: '4px solid', borderColor: 'info.main' }}>
                                   <Typography variant="body2" color="info.dark">
                                     🌐 {exercise.question_english}
@@ -1481,7 +1481,7 @@ Return ONLY this valid JSON:
                                   </Button>
                                 </Paper>
                                 
-                                {exercise.answer_english && exercise.answer_english !== exercise.answer && (
+                                {exercise.answer_english && exercise.answer_english.trim() !== "" && exercise.answer_english !== exercise.answer && (
                                   <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'info.lighter', borderLeft: '4px solid', borderColor: 'info.main' }}>
                                     <Typography variant="subtitle2" fontWeight={700} color="info.dark" gutterBottom>
                                       🌐 Answer in English:
@@ -1516,7 +1516,7 @@ Return ONLY this valid JSON:
                                       <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
                                         {stepIdx + 1}. {step}
                                       </Typography>
-                                      {exercise.steps_english && exercise.steps_english[stepIdx] && (
+                                      {exercise.steps_english && exercise.steps_english[stepIdx] && exercise.steps_english[stepIdx].trim() !== "" && exercise.steps_english[stepIdx] !== step && (
                                         <Typography variant="body2" color="info.dark" sx={{ ml: 2, fontStyle: 'italic', mb: 1 }}>
                                           🌐 {exercise.steps_english[stepIdx]}
                                         </Typography>
@@ -1569,7 +1569,7 @@ Return ONLY this valid JSON:
                                 {exercise.hints.map((hint, hintIdx) => (
                                   <Box key={hintIdx} sx={{ mb: 0.5 }}>
                                     <Typography variant="body2">• {hint}</Typography>
-                                    {exercise.hints_english && exercise.hints_english[hintIdx] && (
+                                    {exercise.hints_english && exercise.hints_english[hintIdx] && exercise.hints_english[hintIdx].trim() !== "" && exercise.hints_english[hintIdx] !== hint && (
                                       <Typography variant="body2" color="info.dark" sx={{ ml: 2, fontStyle: 'italic' }}>
                                         🌐 {exercise.hints_english[hintIdx]}
                                       </Typography>

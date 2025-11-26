@@ -261,7 +261,10 @@ CRITICAL RULES:
 - INTERPRET garbled text like "u§eTà" and write it in proper Telugu/Hindi/Tamil script
 - DO NOT copy garbled characters - reconstruct proper words
 - Use clean Unicode characters
-- Provide BILINGUAL content: Original language + English for EVERYTHING
+- **BILINGUAL LOGIC**: 
+  - If content is in ENGLISH: Provide ONLY English explanations (no duplicate translations)
+  - If content is in REGIONAL LANGUAGE (Telugu, Hindi, Tamil, etc.): Provide BILINGUAL content (Original + English)
+  - Set _english fields to empty string "" for English content
 - For exercises: Provide COMPLETE ANSWERS with step-by-step solutions, not just hints
 - For questions: Actually answer them using context or general knowledge
 - Make answers detailed and educational
