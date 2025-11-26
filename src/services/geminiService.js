@@ -217,14 +217,21 @@ INSTRUCTIONS:
 5. For exercises: provide complete step-by-step solutions with visuals
 6. For "Draw" questions: MUST include visualizations
 
+🚨 CRITICAL - "DRAW" COMMAND DETECTION:
+- If step text says "Draw the pie chart" → YOU MUST provide the actual Chart.js JSON in visualAid
+- If step text says "Draw a cube" → YOU MUST provide the actual 3D JSON in visualAid
+- If step text says "Draw a triangle" → YOU MUST provide the actual SVG in visualAid
+- NEVER tell user to draw something without providing the visual yourself
+- The visualAid field is HOW you draw it - NOT empty when you say "draw"
+
 VISUALIZATION RULES:
-- Use Chart.js for: pie/bar/line charts (data, statistics)
-- Use 3D shapes for: "Draw a cube/sphere/pyramid" → {"type":"3d","shapeType":"cube",...}
-- Use Plotly for: 3D graphs, surfaces → {"type":"plotly",...}
-- Use Chemistry for: molecules → {"type":"chemistry","moleculeData":"water",...}
-- Use SVG for: simple 2D shapes, angles, triangles
+- Pie/Bar/Line charts → Chart.js JSON (NOT instructions to draw, actual JSON)
+- 3D geometric shapes → Three.js 3D JSON (actual visualization, not text)
+- 3D math surfaces → Plotly JSON (actual plot data)
+- Molecules → Chemistry JSON (actual molecule)
+- Simple 2D shapes → SVG string (actual graphic)
 - Progressive visuals: Each step builds on previous (different visuals per step)
-- Only add visuals when they ADD VALUE
+- When you write "Draw X", the visualAid MUST contain the drawing of X
 
 Return ONLY valid JSON (no markdown, no extra text):
 {
@@ -274,16 +281,25 @@ Return ONLY valid JSON (no markdown, no extra text):
 }
 
 VISUALIZATION QUICK REFERENCE:
-- 2D Chart: {"chartType":"pie|bar|line","data":{...}}
-- 3D Shape: {"type":"3d","shapeType":"cube|sphere|pyramid","color":"#4FC3F7","dimensions":{...},"title":"..."}
+- 2D Chart: {"chartType":"pie|bar|line","data":{"labels":[...],"datasets":[{"data":[...],"backgroundColor":[...]}]}}
+- 3D Shape: {"type":"3d","shapeType":"cube|sphere|pyramid|cone|cylinder","color":"#4FC3F7","dimensions":{...},"title":"..."}
 - 3D Plot: {"type":"plotly","data":[{"type":"surface","x":[...],"y":[...],"z":[...]}],"title":"..."}
 - Chemistry: {"type":"chemistry","moleculeData":"water|methane|benzene","format":"smiles","title":"..."}
 - 2D SVG: <svg viewBox="0 0 400 300">...</svg>
 
-EXAMPLES:
-Cube: {"type":"3d","shapeType":"cube","color":"#4FC3F7","dimensions":{"width":2},"title":"Cube"}
-Pie: {"chartType":"pie","data":{"labels":["A","B"],"datasets":[{"data":[60,40],"backgroundColor":["#FF6384","#36A2EB"]}]}}
-Paraboloid: {"type":"plotly","data":[{"type":"surface","z":[[0,1,4],[1,2,5],[4,5,8]]}],"title":"z=x²+y²"}
+REAL EXAMPLES WITH ACTUAL DATA:
+
+Pie Chart (Language Distribution):
+{"chartType":"pie","data":{"labels":["Hindi","English","Telugu","Tamil"],"datasets":[{"data":[30,25,25,20],"backgroundColor":["#FF6384","#36A2EB","#FFCE56","#4BC0C0"]}]},"options":{"responsive":true,"plugins":{"legend":{"position":"bottom"},"title":{"display":true,"text":"Language Distribution"}}}}
+
+Bar Chart (Student Count):
+{"chartType":"bar","data":{"labels":["Class A","Class B","Class C"],"datasets":[{"label":"Students","data":[45,38,52],"backgroundColor":["#FF6384","#36A2EB","#FFCE56"]}]},"options":{"responsive":true,"scales":{"y":{"beginAtZero":true}}}}
+
+3D Cube:
+{"type":"3d","shapeType":"cube","color":"#4FC3F7","dimensions":{"width":2,"height":2,"depth":2},"labels":["8 vertices","12 edges","6 faces"],"title":"Cube","rotate":true}
+
+Paraboloid Surface:
+{"type":"plotly","data":[{"type":"surface","z":[[0,1,4],[1,2,5],[4,5,8]],"colorscale":"Viridis"}],"layout":{"scene":{"xaxis":{"title":"X"},"yaxis":{"title":"Y"},"zaxis":{"title":"Z"}}},"title":"z=x²+y²"}
 
 CRITICAL RULES:
 - Clean Unicode (no garbled text)
@@ -291,7 +307,14 @@ CRITICAL RULES:
 - Complete answers for exercises (not just hints)
 - Progressive visuals: each step different, showing progression
 - Only include visuals when valuable (not forced on every step)
-- "Draw" questions MUST have visuals
+
+🔴 MOST IMPORTANT RULE - "DRAW" COMMANDS:
+- If your step says "Draw the pie chart" → visualAid MUST contain Chart.js JSON with actual data
+- If your step says "Draw a triangle" → visualAid MUST contain SVG with actual triangle
+- If your step says "Draw a cube" → visualAid MUST contain 3D JSON
+- NEVER EVER write "draw" in text without providing the drawing in visualAid
+- Empty visualAid when saying "draw" = FAILURE
+- The user CANNOT draw - YOU must provide the visual
 
 JSON STRUCTURE:
 
