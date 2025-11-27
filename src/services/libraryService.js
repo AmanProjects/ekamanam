@@ -91,6 +91,7 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
       lastPage: 1,
       progress: 0,
       subject: metadata.subject || 'General',
+      class: metadata.class || null,
       workspace: metadata.workspace || 'My Files',
       workspaceId: metadata.workspaceId || null,
       tags: metadata.tags || [],
