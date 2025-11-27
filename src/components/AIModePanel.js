@@ -55,8 +55,14 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
-function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, user, pdfDocument }) {
+function AIModePanel({ currentPage, totalPages, pdfId, selectedText: initialSelectedText, pageText, user, pdfDocument }) {
   const [activeTab, setActiveTab] = useState(0);
+  const [editableSelectedText, setEditableSelectedText] = useState('');
+
+  // Update editable text when selection changes
+  useEffect(() => {
+    setEditableSelectedText(initialSelectedText || '');
+  }, [initialSelectedText]);
 
   // Cleanup: Stop speech and clear data when page changes
   useEffect(() => {
@@ -65,6 +71,9 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       window.speechSynthesis.cancel();
       console.log('🔇 Stopped speech on page change');
     }
+    
+    // Clear selected text when page changes
+    setEditableSelectedText('');
     
     // Clear error when page changes
     setError(null);
@@ -592,8 +601,8 @@ Return ONLY the English translation, no extra text.`;
   // Removed Read Text and Explain features - user requested to remove these functions
 
   const handleExplainText = async () => {
-    // Use selected text if available, otherwise use full page text
-    const textToExplain = selectedText || pageText;
+    // Use editable selected text if available, otherwise use full page text
+    const textToExplain = editableSelectedText || pageText;
     
     if (!textToExplain) {
       setError('Please load a PDF page first');
@@ -619,7 +628,7 @@ Return ONLY the English translation, no extra text.`;
         : `explain_fullpage`;
       
       // Only use cache for full page, not selections (selections are dynamic)
-      if (pdfId && currentPage && !selectedText) {
+      if (pdfId && currentPage && !editableSelectedText) {
         const cachedData = await getCachedData(pdfId, currentPage, cacheKey);
         if (cachedData) {
           console.log(`⚡ Cache HIT: Using cached Page Explanation`);
@@ -631,8 +640,8 @@ Return ONLY the English translation, no extra text.`;
         } else {
           console.log(`📊 Cache MISS: Generating new explanation for page ${currentPage}`);
         }
-      } else if (selectedText) {
-        console.log(`📝 Explaining selected text (not cached): "${selectedText.substring(0, 50)}..."`);
+      } else if (editableSelectedText) {
+        console.log(`📝 Explaining selected text (not cached): "${editableSelectedText.substring(0, 50)}..."`);
       }
 
       // 📚 GET PRIOR CONTEXT FOR ANSWER CLUES
@@ -646,7 +655,7 @@ Return ONLY the English translation, no extra text.`;
 
       // 🧠 SMART CHUNKING: Check if text is too large
       const CHUNK_SIZE = 2000; // ~2000 characters per chunk
-      const needsChunking = textToExplain.length > CHUNK_SIZE && !selectedText;
+      const needsChunking = textToExplain.length > CHUNK_SIZE && !editableSelectedText;
 
       if (needsChunking) {
         console.log(`📦 Text is large (${textToExplain.length} chars), using smart chunking...`);
@@ -732,10 +741,10 @@ Return ONLY the English translation, no extra text.`;
         setExplainResponsePage(currentPage); // ✅ Track which page this explanation is for
 
         // 💾 SAVE TO CACHE (only for full page, not selections)
-        if (pdfId && currentPage && !selectedText) {
+        if (pdfId && currentPage && !editableSelectedText) {
           await saveCachedData(pdfId, currentPage, cacheKey, parsedResponse);
           console.log('💾 Saved to cache: Explanation');
-        } else if (selectedText) {
+        } else if (editableSelectedText) {
           console.log('✅ Explanation generated for selected text (not cached)');
         }
       } catch (parseError) {
@@ -1551,10 +1560,10 @@ Return ONLY this valid JSON:
                   size="large"
                   startIcon={<ExplainIcon />}
                   onClick={handleExplainText}
-                  disabled={loading || (!selectedText && !pageText)}
+                  disabled={loading || (!editableSelectedText && !pageText)}
                 >
                   {loading ? 'Analyzing...' : 
-                   selectedText ? 'Explain Selected Text' : 
+                   editableSelectedText ? 'Explain Selected Text' : 
                    '📝 Analyze This Page'}
                 </Button>
                 {explainResponse && explainResponsePage === currentPage && (
@@ -1609,7 +1618,7 @@ Return ONLY this valid JSON:
                 )}
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {selectedText 
+                {editableSelectedText 
                   ? '🔍 Analyzes selected text and detects: exercises, important notes, formulas, warnings'
                   : '🤖 Smart AI Analysis: Automatically detects exercises, notes, and provides answer clues with page references'}
               </Typography>
