@@ -29,6 +29,7 @@ import {
   MenuBook
 } from '@mui/icons-material';
 import libraryService from '../services/libraryService';
+import zipHandler from '../services/zipHandler';
 
 function Library({ onBack, onOpenPdf }) {
   const [pdfs, setPdfs] = useState([]);
@@ -43,6 +44,11 @@ function Library({ onBack, onOpenPdf }) {
     class: '',
     customSubject: ''
   });
+  
+  // ZIP extraction state
+  const [zipExtracting, setZipExtracting] = useState(false);
+  const [zipProgress, setZipProgress] = useState({ current: 0, total: 0, message: '' });
+  const [extractedPdfs, setExtractedPdfs] = useState([]);
 
   useEffect(() => {
     loadLibrary();
@@ -73,12 +79,19 @@ function Library({ onBack, onOpenPdf }) {
     }
   };
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
     
+    // Check if it's a ZIP file
+    if (zipHandler.isZipFile(file)) {
+      await handleZipUpload(file);
+      return;
+    }
+    
+    // Regular PDF upload
     if (file.type !== 'application/pdf') {
-      alert('Please select a valid PDF file');
+      alert('Please select a valid PDF or ZIP file');
       return;
     }
     
@@ -92,12 +105,99 @@ function Library({ onBack, onOpenPdf }) {
     setUploadDialog(true);
   };
   
-  const handleConfirmUpload = async () => {
-    if (!pendingFile) return;
+  const handleZipUpload = async (zipFile) => {
+    setZipExtracting(true);
+    setZipProgress({ current: 0, total: 0, message: 'Reading ZIP file...' });
     
+    try {
+      // Extract all PDFs from ZIP
+      const pdfFiles = await zipHandler.extractZipFile(
+        zipFile,
+        (current, total, message) => {
+          setZipProgress({ current, total, message });
+        }
+      );
+      
+      if (pdfFiles.length === 0) {
+        alert('No PDF files found in the ZIP archive');
+        setZipExtracting(false);
+        return;
+      }
+      
+      // Show metadata confirmation dialog
+      setExtractedPdfs(pdfFiles);
+      const detectedMetadata = pdfFiles[0].metadata;
+      setUploadMetadata({
+        subject: detectedMetadata.subject || '',
+        class: detectedMetadata.class || '',
+        customSubject: '',
+        bookName: detectedMetadata.collection || zipFile.name.replace('.zip', '')
+      });
+      setZipExtracting(false);
+      setUploadDialog(true);
+      
+    } catch (error) {
+      console.error('❌ ZIP extraction error:', error);
+      alert(`Failed to extract ZIP file:\n${error.message}`);
+      setZipExtracting(false);
+    }
+  };
+  
+  const handleConfirmUpload = async () => {
     const subject = uploadMetadata.subject === 'Other' 
       ? uploadMetadata.customSubject || 'General'
       : uploadMetadata.subject || 'General';
+    
+    // Batch upload from ZIP
+    if (extractedPdfs.length > 0) {
+      setZipExtracting(true);
+      setZipProgress({ current: 0, total: extractedPdfs.length, message: 'Adding PDFs to library...' });
+      
+      try {
+        let successCount = 0;
+        
+        for (let i = 0; i < extractedPdfs.length; i++) {
+          const pdfData = extractedPdfs[i];
+          setZipProgress({ 
+            current: i + 1, 
+            total: extractedPdfs.length, 
+            message: `Adding ${pdfData.filename}...` 
+          });
+          
+          const pdfName = pdfData.metadata.type === 'chapter'
+            ? `${uploadMetadata.bookName || 'Book'} - ${pdfData.metadata.title}`
+            : `${uploadMetadata.bookName || 'Book'} - ${pdfData.metadata.title}`;
+          
+          await libraryService.addPDFToLibrary(pdfData.file, {
+            name: pdfName,
+            subject: subject,
+            class: uploadMetadata.class || null,
+            workspace: 'My Files',
+            collection: uploadMetadata.bookName || 'Book Collection',
+            chapter: pdfData.metadata.chapter,
+            chapterTitle: pdfData.metadata.title
+          });
+          
+          successCount++;
+        }
+        
+        console.log(`✅ Successfully added ${successCount} PDFs from ZIP`);
+        await loadLibrary();
+        setUploadDialog(false);
+        setExtractedPdfs([]);
+        setZipExtracting(false);
+        alert(`✅ Successfully added ${successCount} PDFs to library!`);
+        
+      } catch (error) {
+        console.error('❌ Failed to add PDFs from ZIP:', error);
+        alert(`Failed to add some PDFs:\n${error.message}`);
+        setZipExtracting(false);
+      }
+      return;
+    }
+    
+    // Single PDF upload
+    if (!pendingFile) return;
     
     console.log('📄 Adding PDF to library:', pendingFile.name);
     
@@ -122,7 +222,8 @@ function Library({ onBack, onOpenPdf }) {
   const handleCancelUpload = () => {
     setUploadDialog(false);
     setPendingFile(null);
-    setUploadMetadata({ subject: '', class: '', customSubject: '' });
+    setExtractedPdfs([]);
+    setUploadMetadata({ subject: '', class: '', customSubject: '', bookName: '' });
   };
 
   const filteredPdfs = pdfs.filter(pdf =>
@@ -235,7 +336,7 @@ function Library({ onBack, onOpenPdf }) {
                 <input
                   type="file"
                   hidden
-                  accept="application/pdf"
+                  accept="application/pdf,.zip"
                   onChange={handleFileUpload}
                 />
               </Button>
@@ -291,7 +392,7 @@ function Library({ onBack, onOpenPdf }) {
                 <input
                   type="file"
                   hidden
-                  accept="application/pdf"
+                  accept="application/pdf,.zip"
                   onChange={handleFileUpload}
                 />
               </Button>
@@ -476,14 +577,64 @@ function Library({ onBack, onOpenPdf }) {
         )}
       </Container>
 
-      {/* Upload Metadata Dialog */}
-      <Dialog open={uploadDialog} onClose={handleCancelUpload} maxWidth="sm" fullWidth>
-        <DialogTitle>Add PDF to Library</DialogTitle>
+      {/* ZIP Extraction Progress Dialog */}
+      <Dialog open={zipExtracting} maxWidth="sm" fullWidth>
+        <DialogTitle>📦 Extracting ZIP File</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              📄 {pendingFile?.name}
+              {zipProgress.message}
             </Typography>
+            <LinearProgress 
+              variant="determinate" 
+              value={(zipProgress.current / zipProgress.total) * 100 || 0}
+              sx={{ height: 8, borderRadius: 4 }}
+            />
+            <Typography variant="caption" color="text.secondary" textAlign="center">
+              {zipProgress.current} / {zipProgress.total}
+            </Typography>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Metadata Dialog */}
+      <Dialog open={uploadDialog} onClose={handleCancelUpload} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {extractedPdfs.length > 0 
+            ? `📦 Add ${extractedPdfs.length} PDFs to Library` 
+            : 'Add PDF to Library'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {extractedPdfs.length > 0 ? (
+              <Box>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  📦 Extracted {extractedPdfs.length} PDFs from ZIP
+                </Typography>
+                <Paper elevation={0} sx={{ p: 1, bgcolor: '#f5f5f5', maxHeight: 150, overflow: 'auto' }}>
+                  {extractedPdfs.map((pdf, idx) => (
+                    <Typography key={idx} variant="caption" display="block">
+                      • {pdf.metadata.title} ({pdf.filename})
+                    </Typography>
+                  ))}
+                </Paper>
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                📄 {pendingFile?.name}
+              </Typography>
+            )}
+            
+            {extractedPdfs.length > 0 && (
+              <TextField
+                fullWidth
+                label="Book/Collection Name"
+                placeholder="e.g., Class 11 Economics"
+                value={uploadMetadata.bookName || ''}
+                onChange={(e) => setUploadMetadata({ ...uploadMetadata, bookName: e.target.value })}
+                helperText="Name for this book/textbook collection"
+              />
+            )}
             
             <FormControl fullWidth>
               <InputLabel>Subject</InputLabel>
