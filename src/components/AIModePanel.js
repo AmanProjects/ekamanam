@@ -729,16 +729,22 @@ Return ONLY the English translation, no extra text.`;
         
         const parsedResponse = JSON.parse(cleanResponse);
         setExplainResponse(parsedResponse);
+        setExplainResponsePage(currentPage); // ✅ Track which page this explanation is for
 
-        // 💾 SAVE TO CACHE
-        if (pdfId && currentPage) {
+        // 💾 SAVE TO CACHE (only for full page, not selections)
+        if (pdfId && currentPage && !selectedText) {
           await saveCachedData(pdfId, currentPage, cacheKey, parsedResponse);
           console.log('💾 Saved to cache: Explanation');
+        } else if (selectedText) {
+          console.log('✅ Explanation generated for selected text (not cached)');
         }
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
+        console.error('Response that failed to parse:', response);
         // If parsing fails, store as plain text
         setExplainResponse({ explanation: response });
+        setExplainResponsePage(currentPage); // ✅ Still track the page
+        console.log('⚠️ Stored as plain text due to parse error');
       }
     } catch (err) {
       setError(err.message);
