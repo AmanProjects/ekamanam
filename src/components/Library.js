@@ -31,7 +31,10 @@ import {
   Delete,
   CloudUpload,
   MenuBook,
-  ExpandMore
+  ExpandMore,
+  CheckBox as CheckBoxIcon,
+  CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
+  DeleteSweep
 } from '@mui/icons-material';
 import libraryService from '../services/libraryService';
 import zipHandler from '../services/zipHandler';
@@ -54,6 +57,10 @@ function Library({ onBack, onOpenPdf }) {
   const [zipExtracting, setZipExtracting] = useState(false);
   const [zipProgress, setZipProgress] = useState({ current: 0, total: 0, message: '' });
   const [extractedPdfs, setExtractedPdfs] = useState([]);
+  
+  // Bulk selection state
+  const [selectedPdfs, setSelectedPdfs] = useState(new Set());
+  const [selectMode, setSelectMode] = useState(false);
 
   useEffect(() => {
     loadLibrary();
@@ -169,16 +176,17 @@ function Library({ onBack, onOpenPdf }) {
             message: `Adding ${pdfData.filename}...` 
           });
           
+          const collectionName = uploadMetadata.bookName || pdfData.metadata.collection || 'Book Collection';
           const pdfName = pdfData.metadata.type === 'chapter'
-            ? `${uploadMetadata.bookName || 'Book'} - ${pdfData.metadata.title}`
-            : `${uploadMetadata.bookName || 'Book'} - ${pdfData.metadata.title}`;
+            ? `${collectionName} - ${pdfData.metadata.title}`
+            : `${collectionName} - ${pdfData.metadata.title}`;
           
           const libraryItem = await libraryService.addPDFToLibrary(pdfData.file, {
             name: pdfName,
             subject: subject,
             class: uploadMetadata.class || null,
             workspace: 'My Files',
-            collection: uploadMetadata.bookName || 'Book Collection',
+            collection: collectionName,
             chapter: pdfData.metadata.chapter,
             chapterTitle: pdfData.metadata.title
           });
@@ -239,6 +247,49 @@ function Library({ onBack, onOpenPdf }) {
     setPendingFile(null);
     setExtractedPdfs([]);
     setUploadMetadata({ subject: '', class: '', customSubject: '', bookName: '' });
+  };
+  
+  const handleBulkDelete = async () => {
+    if (selectedPdfs.size === 0) return;
+    
+    if (window.confirm(`Delete ${selectedPdfs.size} selected PDFs?`)) {
+      try {
+        for (const pdfId of selectedPdfs) {
+          await libraryService.removePDFFromLibrary(pdfId);
+        }
+        await loadLibrary();
+        setSelectedPdfs(new Set());
+        setSelectMode(false);
+        alert(`✅ Deleted ${selectedPdfs.size} PDFs`);
+      } catch (error) {
+        console.error('❌ Failed to delete PDFs:', error);
+        alert('Failed to delete some PDFs');
+      }
+    }
+  };
+  
+  const toggleSelectPdf = (pdfId) => {
+    const newSelected = new Set(selectedPdfs);
+    if (newSelected.has(pdfId)) {
+      newSelected.delete(pdfId);
+    } else {
+      newSelected.add(pdfId);
+    }
+    setSelectedPdfs(newSelected);
+  };
+  
+  const selectAllInCollection = (collectionPdfs) => {
+    const newSelected = new Set(selectedPdfs);
+    const allSelected = collectionPdfs.every(pdf => newSelected.has(pdf.id));
+    
+    if (allSelected) {
+      // Deselect all in collection
+      collectionPdfs.forEach(pdf => newSelected.delete(pdf.id));
+    } else {
+      // Select all in collection
+      collectionPdfs.forEach(pdf => newSelected.add(pdf.id));
+    }
+    setSelectedPdfs(newSelected);
   };
 
   const filteredPdfs = pdfs.filter(pdf =>
@@ -326,7 +377,7 @@ function Library({ onBack, onOpenPdf }) {
           )}
         </Box>
 
-        {/* Stats & Search */}
+        {/* Stats & Actions */}
         <Paper elevation={0} sx={{ p: 2, mb: 3, border: '1px solid', borderColor: 'divider' }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={6} md={3}>
@@ -360,40 +411,67 @@ function Library({ onBack, onOpenPdf }) {
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Button
-                component="label"
-                variant="contained"
-                fullWidth
-                startIcon={<CloudUpload />}
-                size="small"
-              >
-                Add PDF
-                <input
-                  type="file"
-                  hidden
-                  accept="application/pdf,.zip"
-                  onChange={handleFileUpload}
-                />
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  component="label"
+                  variant="contained"
+                  fullWidth
+                  startIcon={<CloudUpload />}
+                  size="small"
+                >
+                  Add PDF
+                  <input
+                    type="file"
+                    hidden
+                    accept="application/pdf,.zip"
+                    onChange={handleFileUpload}
+                  />
+                </Button>
+                {pdfs.length > 0 && (
+                  <Button
+                    variant={selectMode ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => {
+                      setSelectMode(!selectMode);
+                      if (selectMode) setSelectedPdfs(new Set());
+                    }}
+                    sx={{ minWidth: 'auto', px: 1 }}
+                  >
+                    {selectMode ? <CheckBoxIcon /> : <CheckBoxOutlineBlankIcon />}
+                  </Button>
+                )}
+              </Box>
             </Grid>
           </Grid>
         </Paper>
 
-        {/* Search */}
-        <TextField
-          fullWidth
-          placeholder="Search books and PDFs..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 2, flexShrink: 0 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-        />
+        {/* Search & Bulk Actions */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexShrink: 0, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            placeholder="Search books and PDFs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+          />
+          {selectMode && selectedPdfs.size > 0 && (
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<DeleteSweep />}
+              onClick={handleBulkDelete}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              Delete ({selectedPdfs.size})
+            </Button>
+          )}
+        </Box>
 
         {/* Scrollable PDF List */}
         <Box sx={{ flex: 1, overflow: 'auto', pr: 1 }}>
@@ -440,6 +518,8 @@ function Library({ onBack, onOpenPdf }) {
                 const firstPdf = collectionPdfs[0];
                 const totalPages = collectionPdfs.reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0);
                 const avgProgress = collectionPdfs.reduce((sum, pdf) => sum + (pdf.progress || 0), 0) / collectionPdfs.length;
+                const allSelected = collectionPdfs.every(pdf => selectedPdfs.has(pdf.id));
+                const someSelected = collectionPdfs.some(pdf => selectedPdfs.has(pdf.id));
 
                 return (
                   <Accordion 
@@ -461,8 +541,39 @@ function Library({ onBack, onOpenPdf }) {
                       }}
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
-                        {/* Collection Icon */}
-                        <MenuBook sx={{ fontSize: 40, color: 'primary.main' }} />
+                        {/* Bulk Select Checkbox */}
+                        {selectMode && (
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              selectAllInCollection(collectionPdfs);
+                            }}
+                            sx={{ mr: 1 }}
+                          >
+                            {allSelected ? <CheckBoxIcon color="primary" /> : 
+                             someSelected ? <CheckBoxIcon sx={{ opacity: 0.5 }} /> : 
+                             <CheckBoxOutlineBlankIcon />}
+                          </IconButton>
+                        )}
+                        
+                        {/* Collection Icon/Cover */}
+                        {firstPdf.thumbnailUrl ? (
+                          <Box
+                            component="img"
+                            src={firstPdf.thumbnailUrl}
+                            alt={collection}
+                            sx={{
+                              width: 60,
+                              height: 80,
+                              objectFit: 'cover',
+                              borderRadius: 1,
+                              boxShadow: 1
+                            }}
+                          />
+                        ) : (
+                          <MenuBook sx={{ fontSize: 40, color: 'primary.main' }} />
+                        )}
                         
                         {/* Collection Info */}
                         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -537,16 +648,30 @@ function Library({ onBack, onOpenPdf }) {
                               display: 'flex',
                               alignItems: 'center',
                               p: 2,
-                              bgcolor: 'background.paper',
+                              bgcolor: selectedPdfs.has(pdf.id) ? '#e3f2fd' : 'background.paper',
                               borderBottom: index < collectionPdfs.length - 1 ? '1px solid' : 'none',
                               borderColor: 'divider',
                               transition: 'all 0.2s',
                               '&:hover': {
-                                bgcolor: '#f5f5f5',
+                                bgcolor: selectedPdfs.has(pdf.id) ? '#bbdefb' : '#f5f5f5',
                                 transform: 'translateX(4px)'
                               }
                             }}
                           >
+                            {/* Selection Checkbox */}
+                            {selectMode && (
+                              <IconButton
+                                size="small"
+                                onClick={() => toggleSelectPdf(pdf.id)}
+                                sx={{ mr: 1 }}
+                              >
+                                {selectedPdfs.has(pdf.id) ? 
+                                  <CheckBoxIcon color="primary" /> : 
+                                  <CheckBoxOutlineBlankIcon />
+                                }
+                              </IconButton>
+                            )}
+                            
                             {/* Chapter Number Badge */}
                             {pdf.chapter && (
                               <Box
