@@ -27,10 +27,12 @@ import {
   Public as ResourcesIcon,
   Link as LinkIcon,
   MenuBook as ReadIcon,
-  AddCircle as AddToNotesIcon
+  AddCircle as AddToNotesIcon,
+  Quiz as ExamIcon
 } from '@mui/icons-material';
 import NotesEditor from './NotesEditor';
-import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis } from '../services/geminiService';
+import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer } from '../services/geminiService';
+import { extractFullPdfText } from '../services/pdfExtractor';
 import {
   getCachedData,
   saveCachedData,
@@ -108,6 +110,13 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [speakingWordIndex, setSpeakingWordIndex] = useState(null);
   const [currentSpeakingId, setCurrentSpeakingId] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // Exam Prep state
+  const [examPrepResponse, setExamPrepResponse] = useState(null);
+  const [examPrepPage, setExamPrepPage] = useState(null);
+  const [examAnswers, setExamAnswers] = useState({});
+  const [generatingExam, setGeneratingExam] = useState(false);
+  const [generatingAnswer, setGeneratingAnswer] = useState(null);
 
   // Helper function to detect if content is in English
   const isEnglishContent = (text) => {
@@ -600,6 +609,132 @@ Return ONLY the English translation, no extra text.`;
 
   // Removed Read Text and Explain features - user requested to remove these functions
 
+  // Exam Preparation handlers
+  const handleGenerateExamPrep = async () => {
+    if (!pdfDocument) {
+      setError('No PDF loaded');
+      return;
+    }
+
+    setGeneratingExam(true);
+    setError(null);
+
+    try {
+      // Check cache first
+      const cacheKey = `examPrep_full`;
+      const cached = await getCachedData(pdfId, currentPage, cacheKey);
+      if (cached) {
+        console.log('⚡ Loading exam prep from cache');
+        setExamPrepResponse(cached);
+        setExamPrepPage(currentPage);
+        setUsedCache(true);
+        setGeneratingExam(false);
+        return;
+      }
+
+      // Extract full PDF text
+      console.log('📖 Extracting full PDF text for exam prep...');
+      const fullText = await extractFullPdfText(pdfDocument);
+      
+      // Split into chunks (8000 characters each)
+      const chunkSize = 8000;
+      const chunks = [];
+      for (let i = 0; i < fullText.length; i += chunkSize) {
+        chunks.push(fullText.substring(i, i + chunkSize));
+      }
+      
+      console.log(`📚 Processing ${chunks.length} chunks...`);
+      
+      // Process each chunk and merge results
+      const mergedResponse = {
+        mcqs: [],
+        shortAnswer: [],
+        longAnswer: []
+      };
+      
+      for (let i = 0; i < Math.min(chunks.length, 3); i++) { // Process first 3 chunks
+        console.log(`🔄 Processing chunk ${i + 1}/${Math.min(chunks.length, 3)}...`);
+        const chunkResponse = await generateExamPrep(fullText, chunks[i], i + 1, chunks.length);
+        
+        if (chunkResponse.mcqs) mergedResponse.mcqs.push(...chunkResponse.mcqs);
+        if (chunkResponse.shortAnswer) mergedResponse.shortAnswer.push(...chunkResponse.shortAnswer);
+        if (chunkResponse.longAnswer) mergedResponse.longAnswer.push(...chunkResponse.longAnswer);
+      }
+      
+      setExamPrepResponse(mergedResponse);
+      setExamPrepPage(currentPage);
+      setUsedCache(false);
+      
+      // Cache the result
+      await saveCachedData(pdfId, currentPage, cacheKey, mergedResponse);
+      console.log('✅ Exam prep generated and cached');
+      
+    } catch (error) {
+      console.error('Error generating exam prep:', error);
+      setError(error.message || 'Failed to generate exam preparation');
+    } finally {
+      setGeneratingExam(false);
+    }
+  };
+
+  const handleGenerateLongAnswer = async (questionIndex) => {
+    if (!pdfDocument || !examPrepResponse) return;
+
+    setGeneratingAnswer(questionIndex);
+    
+    try {
+      const question = examPrepResponse.longAnswer[questionIndex];
+      const fullText = await extractFullPdfText(pdfDocument);
+      
+      const answer = await generateLongAnswer(
+        question.question || question.original,
+        fullText,
+        question.pageReferences
+      );
+      
+      setExamAnswers({
+        ...examAnswers,
+        [questionIndex]: answer
+      });
+      
+    } catch (error) {
+      console.error('Error generating answer:', error);
+      setError('Failed to generate answer');
+    } finally {
+      setGeneratingAnswer(null);
+    }
+  };
+
+  const evaluateExamMCQ = (selectedAnswers) => {
+    if (!examPrepResponse || !examPrepResponse.mcqs) return;
+
+    let correct = 0;
+    const results = examPrepResponse.mcqs.map((mcq, index) => {
+      const userAnswer = selectedAnswers[index];
+      const isCorrect = userAnswer === mcq.correctAnswer;
+      if (isCorrect) correct++;
+      return {
+        isCorrect,
+        correctAnswer: mcq.correctAnswer,
+        explanation: mcq.explanation
+      };
+    });
+
+    return {
+      score: (correct / examPrepResponse.mcqs.length) * 100,
+      correct,
+      total: examPrepResponse.mcqs.length,
+      results
+    };
+  };
+
+  const clearExamPrep = () => {
+    setExamPrepResponse(null);
+    setExamPrepPage(null);
+    setExamAnswers({});
+    setError(null);
+  };
+
   const handleExplainText = async () => {
     // Use editable selected text if available, otherwise use full page text
     const textToExplain = editableSelectedText || pageText;
@@ -1063,11 +1198,12 @@ Return ONLY this valid JSON:
           <Tab icon={<TeacherIcon />} label="Teacher Mode" />
           <Tooltip title={readTabTooltip} arrow>
             <span>
-              <Tab icon={<ReadIcon />} label="Read & Understand" disabled={readTabDisabled} />
+              <Tab icon={<ReadIcon />} label="Multilingual" disabled={readTabDisabled} />
             </span>
           </Tooltip>
-          <Tab icon={<ExplainIcon />} label="Explain" />
+          <Tab icon={<ExplainIcon />} label="Smart Explain" />
           <Tab icon={<ActivitiesIcon />} label="Activities" />
+          <Tab icon={<ExamIcon />} label="Exam Prep" />
           <Tab icon={<ResourcesIcon />} label="Resources" />
           <Tab icon={<NotesIcon />} label="Notes" />
         </Tabs>
@@ -2481,7 +2617,7 @@ Return ONLY this valid JSON:
         </TabPanel>
 
         {/* Additional Resources Tab */}
-        <TabPanel value={activeTab} index={4}>
+        <TabPanel value={activeTab} index={5}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2 }}>
               {selectedText && !isRegionalLanguageOrGarbled(selectedText) && (
@@ -2608,43 +2744,197 @@ Return ONLY this valid JSON:
           </Box>
         </TabPanel>
 
-        {/* Notes Tab */}
-        <TabPanel value={activeTab} index={5}>
-          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" fontWeight={600} gutterBottom>My Notes</Typography>
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: 2, 
-                flexGrow: 1, 
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-            >
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Type your notes here..."
-                style={{
-                  width: '100%',
-                  flexGrow: 1,
-                  border: 'none',
-                  outline: 'none',
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: '14px',
-                  resize: 'none',
-                  padding: '8px'
-                }}
-              />
-            </Paper>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              Notes are saved automatically
+        {/* Exam Prep Tab */}
+        <TabPanel value={activeTab} index={4}>
+          <Box>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              📝 Exam Preparation
             </Typography>
+            
+            <Button
+              variant="contained"
+              onClick={handleGenerateExamPrep}
+              disabled={generatingExam || !pdfDocument}
+              startIcon={generatingExam ? <CircularProgress size={20} /> : null}
+              sx={{ mb: 2 }}
+            >
+              {generatingExam ? 'Generating Questions...' : 'Generate Exam Questions'}
+            </Button>
+
+            {examPrepResponse && examPrepPage === currentPage && (
+              <Box>
+                {/* MCQs - Assertion & Reasoning */}
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    📊 MCQs (Assertion & Reasoning)
+                  </Typography>
+                  
+                  {examPrepResponse.mcqs?.map((mcq, index) => (
+                    <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        Question {index + 1}
+                      </Typography>
+                      
+                      <Paper sx={{ p: 2, mb: 2, bgcolor: '#e3f2fd' }}>
+                        <Typography variant="body2" fontWeight={600}>
+                          Assertion (A): {mcq.assertion || mcq.original?.assertion}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600} sx={{ mt: 1 }}>
+                          Reason (R): {mcq.reason || mcq.original?.reason}
+                        </Typography>
+                      </Paper>
+
+                      <FormControl component="fieldset">
+                        <RadioGroup
+                          value={examAnswers[`mcq_${index}`] || ''}
+                          onChange={(e) => setExamAnswers({
+                            ...examAnswers,
+                            [`mcq_${index}`]: parseInt(e.target.value)
+                          })}
+                        >
+                          {mcq.options?.map((option, optIndex) => (
+                            <FormControlLabel
+                              key={optIndex}
+                              value={optIndex}
+                              control={<Radio />}
+                              label={option}
+                            />
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+
+                      {examAnswers[`mcq_result_${index}`] !== undefined && (
+                        <Paper sx={{ 
+                          p: 2, 
+                          mt: 2, 
+                          bgcolor: examAnswers[`mcq_result_${index}`] ? '#c8e6c9' : '#ffcdd2' 
+                        }}>
+                          <Typography variant="body2" fontWeight={600}>
+                            {examAnswers[`mcq_result_${index}`] ? '✅ Correct!' : '❌ Incorrect'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            {mcq.explanation}
+                          </Typography>
+                        </Paper>
+                      )}
+                    </Paper>
+                  ))}
+
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      examPrepResponse.mcqs.forEach((mcq, index) => {
+                        const userAnswer = examAnswers[`mcq_${index}`];
+                        const isCorrect = userAnswer === mcq.correctAnswer;
+                        setExamAnswers(prev => ({
+                          ...prev,
+                          [`mcq_result_${index}`]: isCorrect
+                        }));
+                      });
+                    }}
+                  >
+                    Evaluate MCQs
+                  </Button>
+                </Paper>
+
+                {/* Short Answer Questions */}
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    ✍️ Short Answer Questions
+                  </Typography>
+                  
+                  {examPrepResponse.shortAnswer?.map((qa, index) => (
+                    <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
+                      <Typography variant="body1" fontWeight={600} gutterBottom>
+                        Q{index + 1}. {qa.question || qa.original}
+                      </Typography>
+                      
+                      <Paper sx={{ p: 2, bgcolor: '#f5f5f5' }}>
+                        <Typography variant="body2" fontWeight={600} gutterBottom>
+                          Answer:
+                        </Typography>
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                          {qa.answer || qa.english}
+                        </Typography>
+                        
+                        {qa.keywords && qa.keywords.length > 0 && (
+                          <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                            <Typography variant="caption" fontWeight={600}>Keywords:</Typography>
+                            {qa.keywords.map((keyword, kidx) => (
+                              <Chip key={kidx} label={keyword} size="small" />
+                            ))}
+                          </Box>
+                        )}
+                      </Paper>
+                    </Paper>
+                  ))}
+                </Paper>
+
+                {/* Long Answer Questions */}
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    📖 Long Answer Questions
+                  </Typography>
+                  
+                  {examPrepResponse.longAnswer?.map((q, index) => (
+                    <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
+                      <Typography variant="body1" fontWeight={600} gutterBottom>
+                        Q{index + 1}. {q.question || q.original}
+                      </Typography>
+                      
+                      {q.hints && q.hints.length > 0 && (
+                        <Paper sx={{ p: 2, mb: 2, bgcolor: '#fff3e0' }}>
+                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                            💡 Hints:
+                          </Typography>
+                          {q.hints.map((hint, hidx) => (
+                            <Typography key={hidx} variant="body2" sx={{ ml: 2 }}>
+                              • {hint}
+                            </Typography>
+                          ))}
+                        </Paper>
+                      )}
+                      
+                      {q.pageReferences && q.pageReferences.length > 0 && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                          📄 Refer to pages: {q.pageReferences.join(', ')}
+                        </Typography>
+                      )}
+
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleGenerateLongAnswer(index)}
+                        disabled={generatingAnswer === index}
+                        startIcon={generatingAnswer === index ? <CircularProgress size={16} /> : null}
+                      >
+                        {generatingAnswer === index ? 'Generating...' : 'Generate Answer'}
+                      </Button>
+
+                      {examAnswers[index] && (
+                        <Paper sx={{ p: 2, mt: 2, bgcolor: '#f5f5f5' }}>
+                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                            Model Answer:
+                          </Typography>
+                          <Typography 
+                            variant="body2" 
+                            sx={{ whiteSpace: 'pre-wrap' }}
+                            dangerouslySetInnerHTML={{ 
+                              __html: formatMarkdown(examAnswers[index]) 
+                            }}
+                          />
+                        </Paper>
+                      )}
+                    </Paper>
+                  ))}
+                </Paper>
+              </Box>
+            )}
           </Box>
         </TabPanel>
 
         {/* Notes Tab */}
-        <TabPanel value={activeTab} index={5}>
+        <TabPanel value={activeTab} index={6}>
           <NotesEditor pdfId={pdfId} />
         </TabPanel>
       </Box>
