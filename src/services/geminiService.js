@@ -178,11 +178,14 @@ The content below is from an Indian textbook and may contain:
 These are VALID Unicode characters used in Indian education.
 PROCESS THE CONTENT NORMALLY.
 
-📚 LANGUAGE HANDLING:
-- If content is in Telugu → Explain in Telugu + provide English translation
-- If content is in Hindi → Explain in Hindi + provide English translation
-- If content is in Tamil → Explain in Tamil + provide English translation
+📚 LANGUAGE HANDLING (V3.0.3 - Simplified):
+- If content is in Telugu → Explain in Telugu ONLY (no English translation for steps)
+- If content is in Hindi → Explain in Hindi ONLY (no English translation for steps)
+- If content is in Tamil → Explain in Tamil ONLY (no English translation for steps)
 - If content is in English → Explain in English only
+
+⚠️ CRITICAL: For regional languages, provide step-by-step solutions ONLY in the original language.
+Students who can read Telugu/Hindi/Tamil don't need bilingual step-by-step explanations.
 
 ${contextString ? `PRIOR CONTEXT (for answering exercises):\n${contextString}\n\n` : ''}
 
@@ -203,38 +206,54 @@ VISUALIZATION FORMATS:
 🔴 CRITICAL: If step says "Draw X", visualAid MUST contain the actual drawing (Chart.js JSON, SVG, or 3D JSON). NOT empty!
 
 Return ONLY this JSON (no markdown blocks):
+
+FOR REGIONAL LANGUAGES (Telugu/Hindi/Tamil/etc):
 {
   "contentType": "exercise|notes|regular",
-  "language": "Telugu|Hindi|Tamil|English|etc",
+  "language": "Telugu|Hindi|Tamil|etc",
   "explanation": "Clear explanation in ORIGINAL language (తెలుగు/हिंदी/தமிழ்)",
-  "explanation_english": "English translation (empty if already English)",
   "exercises": [{
     "question": "Question in original language",
-    "question_english": "Question in English",
     "answer": "Complete answer in original language",
-    "answer_english": "Answer in English",
-    "hints": ["Hint 1 original", "Hint 2 original"],
-    "hints_english": ["Hint 1 English", "Hint 2 English"],
+    "hints": ["Hint 1 in original language"],
     "steps": [{
-      "text": "Step in original language",
-      "text_english": "Step in English",
+      "text": "Step in original language ONLY (no English needed)",
       "visualAid": "Chart.js JSON / SVG / 3D JSON (if drawing required)"
     }]
   }],
   "importantNotes": [{
     "title": "Note title in original language",
-    "title_english": "Note title in English",
     "content": "Note content in original language",
-    "content_english": "Note content in English",
     "type": "definition|formula|reminder"
   }],
   "analogy": "Helpful analogy in original language",
-  "analogy_english": "Analogy in English",
-  "pyq": "Exam question in original language",
-  "pyq_english": "Exam question in English"
+  "pyq": "Exam question in original language"
 }
 
-KEEP IT CONCISE. Use visuals for complex concepts. BILINGUAL for regional languages.`;
+FOR ENGLISH:
+{
+  "contentType": "exercise|notes|regular",
+  "language": "English",
+  "explanation": "Clear explanation in English",
+  "exercises": [{
+    "question": "Question in English",
+    "answer": "Complete answer",
+    "hints": ["Hint 1"],
+    "steps": [{
+      "text": "Step in English",
+      "visualAid": "Chart.js JSON / SVG / 3D JSON (if drawing required)"
+    }]
+  }],
+  "importantNotes": [{
+    "title": "Note title",
+    "content": "Note content",
+    "type": "definition|formula|reminder"
+  }],
+  "analogy": "Helpful analogy",
+  "pyq": "Exam question"
+}
+
+KEEP IT CONCISE. Use visuals for complex concepts. NO BILINGUAL for step-by-step solutions.`;
 
   return await callLLM(prompt, {
     feature: 'explain',
@@ -244,15 +263,18 @@ KEEP IT CONCISE. Use visuals for complex concepts. BILINGUAL for regional langua
 }
 
 export async function generateActivities(pageText, apiKey = null) {
-  const prompt = `IMPORTANT LANGUAGE INSTRUCTION:
+  const prompt = `IMPORTANT LANGUAGE INSTRUCTION (V3.0.3 - Simplified):
 - First, detect the language of the Page Content below
-- If the content is in a regional language (Telugu, Hindi, Tamil, etc.), provide BILINGUAL content (original language + English) to help non-native students
+- If the content is in a regional language (Telugu, Hindi, Tamil, etc.), provide content in ORIGINAL LANGUAGE ONLY
 - If the content is already in English, only provide English content
+
+⚠️ STUDENTS READING REGIONAL LANGUAGE PDFs UNDERSTAND THAT LANGUAGE
+⚠️ NO NEED FOR BILINGUAL ACTIVITIES - USE ORIGINAL LANGUAGE ONLY
 
 Page Content:
 ${pageText}
 
-Generate engaging learning activities based on this content. For regional language content, provide BILINGUAL format.
+Generate engaging learning activities based on this content. Use the SAME LANGUAGE as the content.
 
 Return ONLY this valid JSON (no extra text before or after):
 {
@@ -303,7 +325,7 @@ Return ONLY this valid JSON (no extra text before or after):
 }
 
 Generate 5 MCQs, 5 practice questions, 3 hands-on activities, 3 discussion prompts, and 3 real-world applications.
-For regional language content, provide BOTH original language and English for everything to help non-native students learn.
+For regional language content, use the ORIGINAL LANGUAGE ONLY (students reading Telugu PDFs understand Telugu).
 Return ONLY the JSON.`;
 
   return await callLLM(prompt, {
