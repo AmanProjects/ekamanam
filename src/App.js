@@ -350,8 +350,8 @@ function App() {
           />
         ) : view === 'library' ? (
           <Library
-            onOpenPDF={handleOpenFromLibrary}
-            onAddPDF={handleAddPDF}
+            onBack={() => setView('dashboard')}
+            onOpenPdf={handleOpenFromLibrary}
           />
         ) : (
           <Grid container sx={{ height: '100%' }}>
