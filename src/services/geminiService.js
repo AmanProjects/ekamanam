@@ -21,16 +21,21 @@ async function callGeminiAPI(prompt, apiKey, config = {}) {
   });
 }
 
-export async function generateTeacherMode(pageText, apiKey = null) {
+export async function generateTeacherMode(pageText, apiKey = null, languageHint = null) {
+  // V3.0.3: Accept optional language hint from manual selection
+  const languageInstruction = languageHint 
+    ? `LANGUAGE: This content is in ${languageHint}. Provide explanation in ${languageHint}.`
+    : `IMPORTANT INSTRUCTION:
+- Detect the language of the Page Content above
+- Provide explanation in the SAME LANGUAGE as the textbook content
+- If Telugu, explain in Telugu. If Hindi, explain in Hindi. If English, explain in English.`;
+  
   const prompt = `You are an experienced teacher helping students understand textbook content.
 
 Page Content:
 ${pageText}
 
-IMPORTANT INSTRUCTION:
-- Detect the language of the Page Content above
-- Provide explanation in the SAME LANGUAGE as the textbook content
-- If Telugu, explain in Telugu. If Hindi, explain in Hindi. If English, explain in English.
+${languageInstruction}
 
 Return ONLY this valid JSON (no extra text before or after):
 {

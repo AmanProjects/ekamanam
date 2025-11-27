@@ -16,7 +16,9 @@ import {
   Radio,
   RadioGroup,
   FormControl,
-  FormControlLabel
+  FormControlLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { 
   School as TeacherIcon,
@@ -118,6 +120,35 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [examAnswers, setExamAnswers] = useState({});
   const [generatingExam, setGeneratingExam] = useState(false);
   const [generatingAnswer, setGeneratingAnswer] = useState(null);
+  
+  // Manual language selection (overrides auto-detection)
+  const [manualLanguage, setManualLanguage] = useState(null);
+
+  // Load saved language preference for this PDF
+  useEffect(() => {
+    if (pdfId) {
+      const savedLang = localStorage.getItem(`pdf_language_${pdfId}`);
+      if (savedLang) {
+        setManualLanguage(savedLang);
+      }
+    }
+  }, [pdfId]);
+
+  // Save language preference when changed
+  const handleLanguageChange = (event) => {
+    const selectedLang = event.target.value;
+    setManualLanguage(selectedLang === 'auto' ? null : selectedLang);
+    
+    if (pdfId) {
+      if (selectedLang === 'auto') {
+        localStorage.removeItem(`pdf_language_${pdfId}`);
+      } else {
+        localStorage.setItem(`pdf_language_${pdfId}`, selectedLang);
+      }
+    }
+    
+    console.log(`🔧 Language manually set to: ${selectedLang}`);
+  };
 
   // Helper function to detect language and return details
   const detectLanguage = (text) => {
@@ -1195,8 +1226,27 @@ Return ONLY this valid JSON:
   // Load admin configuration
   const adminConfig = useAdminConfig();
   
-  // Detect language from page text
-  const detectedLang = detectLanguage(pageText);
+  // Language preference: manual override or auto-detection
+  const languageOptions = {
+    'auto': { language: 'Auto-Detect', emoji: '🔄', isEnglish: null, script: 'Auto' },
+    'en': { language: 'English', emoji: '🇬🇧', isEnglish: true, script: 'Latin' },
+    'te': { language: 'Telugu (తెలుగు)', emoji: '🇮🇳', isEnglish: false, script: 'Telugu' },
+    'hi': { language: 'Hindi (हिंदी)', emoji: '🇮🇳', isEnglish: false, script: 'Devanagari' },
+    'ta': { language: 'Tamil (தமிழ்)', emoji: '🇮🇳', isEnglish: false, script: 'Tamil' },
+    'kn': { language: 'Kannada (ಕನ್ನಡ)', emoji: '🇮🇳', isEnglish: false, script: 'Kannada' },
+    'ml': { language: 'Malayalam (മലയാളം)', emoji: '🇮🇳', isEnglish: false, script: 'Malayalam' },
+    'bn': { language: 'Bengali (বাংলা)', emoji: '🇮🇳', isEnglish: false, script: 'Bengali' },
+    'gu': { language: 'Gujarati (ગુજરાતી)', emoji: '🇮🇳', isEnglish: false, script: 'Gujarati' },
+    'pa': { language: 'Punjabi (ਪੰਜਾਬੀ)', emoji: '🇮🇳', isEnglish: false, script: 'Gurmukhi' },
+    'or': { language: 'Odia (ଓଡ଼ିଆ)', emoji: '🇮🇳', isEnglish: false, script: 'Odia' },
+    'mr': { language: 'Marathi (मराठी)', emoji: '🇮🇳', isEnglish: false, script: 'Devanagari' }
+  };
+  
+  // Detect language from page text (for auto mode)
+  const autoDetectedLang = detectLanguage(pageText);
+  
+  // Use manual selection if set, otherwise use auto-detection
+  const detectedLang = manualLanguage ? languageOptions[manualLanguage] : autoDetectedLang;
   const isEnglish = detectedLang.isEnglish;
   const readTabDisabled = isEnglish;
   const readTabTooltip = readTabDisabled 
@@ -1205,7 +1255,10 @@ Return ONLY this valid JSON:
   
   // Debug logging for language detection
   console.log('🔍 [Language Detection]', {
-    detectedLanguage: detectedLang.language,
+    mode: manualLanguage ? 'Manual' : 'Auto',
+    manualLanguage: manualLanguage || 'none',
+    autoDetected: autoDetectedLang.language,
+    finalLanguage: detectedLang.language,
     script: detectedLang.script,
     pageTextLength: pageText?.length || 0,
     isEnglish,
@@ -1225,7 +1278,7 @@ Return ONLY this valid JSON:
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       <Paper square elevation={1}>
-        {/* Language Indicator */}
+        {/* Language Indicator & Selector */}
         <Box sx={{ 
           px: 2, 
           py: 1, 
@@ -1234,27 +1287,80 @@ Return ONLY this valid JSON:
           borderColor: 'divider',
           display: 'flex',
           alignItems: 'center',
-          gap: 1
+          gap: 1.5
         }}>
-          <Chip 
-            label={`${detectedLang.emoji} ${detectedLang.language}`}
-            size="small"
-            color={detectedLang.isEnglish ? 'primary' : 'warning'}
-            sx={{ fontWeight: 600 }}
-          />
-          <Typography variant="caption" color="text.secondary">
+          {/* Language Selector Dropdown */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+              Language:
+            </Typography>
+            <Select
+              value={manualLanguage || 'auto'}
+              onChange={handleLanguageChange}
+              size="small"
+              variant="outlined"
+              sx={{ 
+                minWidth: 180,
+                height: 32,
+                fontSize: '0.875rem',
+                '& .MuiSelect-select': {
+                  py: 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5
+                }
+              }}
+            >
+              <MenuItem value="auto">🔄 Auto-Detect</MenuItem>
+              <MenuItem value="en">🇬🇧 English</MenuItem>
+              <MenuItem value="te">🇮🇳 Telugu (తెలుగు)</MenuItem>
+              <MenuItem value="hi">🇮🇳 Hindi (हिंदी)</MenuItem>
+              <MenuItem value="ta">🇮🇳 Tamil (தமிழ்)</MenuItem>
+              <MenuItem value="kn">🇮🇳 Kannada (ಕನ್ನಡ)</MenuItem>
+              <MenuItem value="ml">🇮🇳 Malayalam (മലയാളം)</MenuItem>
+              <MenuItem value="bn">🇮🇳 Bengali (বাংলা)</MenuItem>
+              <MenuItem value="gu">🇮🇳 Gujarati (ગુજરાતી)</MenuItem>
+              <MenuItem value="pa">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</MenuItem>
+              <MenuItem value="or">🇮🇳 Odia (ଓଡ଼ିଆ)</MenuItem>
+              <MenuItem value="mr">🇮🇳 Marathi (मराठी)</MenuItem>
+            </Select>
+          </Box>
+          
+          {/* Current Detection Display */}
+          {manualLanguage && (
+            <Chip 
+              label={`✓ ${detectedLang.language}`}
+              size="small"
+              color={detectedLang.isEnglish ? 'primary' : 'warning'}
+              sx={{ fontWeight: 600 }}
+            />
+          )}
+          
+          {!manualLanguage && (
+            <Chip 
+              label={`🔍 ${autoDetectedLang.language}`}
+              size="small"
+              color={autoDetectedLang.isEnglish ? 'primary' : 'warning'}
+              variant="outlined"
+              sx={{ fontWeight: 500 }}
+            />
+          )}
+          
+          {/* Provider Info */}
+          <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
             {detectedLang.isEnglish 
-              ? '• Using Groq (Fast) for English content'
-              : `• Using Gemini (Better multilingual) for ${detectedLang.script} script`
+              ? '• Using Groq (Fast) for English'
+              : `• Using Gemini (Better multilingual) for ${detectedLang.script}`
             }
           </Typography>
+          
+          {/* Bilingual Badge */}
           {!detectedLang.isEnglish && (
             <Chip 
               label="Bilingual Mode"
               size="small"
               variant="outlined"
               color="success"
-              sx={{ ml: 'auto' }}
             />
           )}
         </Box>
