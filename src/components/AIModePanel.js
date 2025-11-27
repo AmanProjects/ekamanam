@@ -2793,29 +2793,29 @@ Return ONLY this valid JSON:
 
                       <FormControl component="fieldset">
                         <RadioGroup
-                          value={examAnswers[`mcq_${index}`] || ''}
+                          value={examAnswers[`mcq_${index}`] !== undefined ? String(examAnswers[`mcq_${index}`]) : ''}
                           onChange={(e) => setExamAnswers({
                             ...examAnswers,
                             [`mcq_${index}`]: parseInt(e.target.value)
                           })}
                         >
                           <FormControlLabel
-                            value={0}
+                            value="0"
                             control={<Radio />}
                             label="Both A and R are true, and R is the correct explanation of A"
                           />
                           <FormControlLabel
-                            value={1}
+                            value="1"
                             control={<Radio />}
                             label="Both A and R are true, but R is NOT the correct explanation of A"
                           />
                           <FormControlLabel
-                            value={2}
+                            value="2"
                             control={<Radio />}
                             label="A is true, but R is false"
                           />
                           <FormControlLabel
-                            value={3}
+                            value="3"
                             control={<Radio />}
                             label="A is false, but R is true"
                           />
