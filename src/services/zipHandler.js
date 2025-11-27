@@ -234,6 +234,13 @@ export const extractZipFile = async (zipFile, onProgress = null) => {
     const zipMetadata = detectMetadataFromZip(zipFile.name);
     console.log('📋 Detected metadata:', zipMetadata);
     
+    // Ensure we have a proper collection name
+    if (!zipMetadata.bookName || zipMetadata.bookName === zipFile.name.replace('.zip', '')) {
+      // Try to extract a better name from the filename
+      const baseName = zipFile.name.replace('.zip', '').replace(/[_-]/g, ' ');
+      zipMetadata.bookName = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+    }
+    
     // Read ZIP file
     const zipData = await zipFile.arrayBuffer();
     const zip = await JSZip.loadAsync(zipData);

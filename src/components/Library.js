@@ -139,11 +139,20 @@ function Library({ onBack, onOpenPdf }) {
       // Show metadata confirmation dialog
       setExtractedPdfs(pdfFiles);
       const detectedMetadata = pdfFiles[0].metadata;
+      
+      // Ensure we have a collection name
+      let bookName = detectedMetadata.collection || zipFile.name.replace('.zip', '');
+      
+      // If bookName looks like a code (e.g., "hecu1dd"), make it more readable
+      if (bookName.length < 10 && /^[a-z0-9]+$/i.test(bookName)) {
+        bookName = bookName.toUpperCase();
+      }
+      
       setUploadMetadata({
         subject: detectedMetadata.subject || '',
         class: detectedMetadata.class || '',
         customSubject: '',
-        bookName: detectedMetadata.collection || zipFile.name.replace('.zip', '')
+        bookName: bookName
       });
       setZipExtracting(false);
       setUploadDialog(true);
@@ -411,36 +420,21 @@ function Library({ onBack, onOpenPdf }) {
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  component="label"
-                  variant="contained"
-                  fullWidth
-                  startIcon={<CloudUpload />}
-                  size="small"
-                >
-                  Add PDF
-                  <input
-                    type="file"
-                    hidden
-                    accept="application/pdf,.zip"
-                    onChange={handleFileUpload}
-                  />
-                </Button>
-                {pdfs.length > 0 && (
-                  <Button
-                    variant={selectMode ? "contained" : "outlined"}
-                    size="small"
-                    onClick={() => {
-                      setSelectMode(!selectMode);
-                      if (selectMode) setSelectedPdfs(new Set());
-                    }}
-                    sx={{ minWidth: 'auto', px: 1 }}
-                  >
-                    {selectMode ? <CheckBoxIcon /> : <CheckBoxOutlineBlankIcon />}
-                  </Button>
-                )}
-              </Box>
+              <Button
+                component="label"
+                variant="contained"
+                fullWidth
+                startIcon={<CloudUpload />}
+                size="small"
+              >
+                Add PDF
+                <input
+                  type="file"
+                  hidden
+                  accept="application/pdf,.zip"
+                  onChange={handleFileUpload}
+                />
+              </Button>
             </Grid>
           </Grid>
         </Paper>
@@ -541,22 +535,6 @@ function Library({ onBack, onOpenPdf }) {
                       }}
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
-                        {/* Bulk Select Checkbox */}
-                        {selectMode && (
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              selectAllInCollection(collectionPdfs);
-                            }}
-                            sx={{ mr: 1 }}
-                          >
-                            {allSelected ? <CheckBoxIcon color="primary" /> : 
-                             someSelected ? <CheckBoxIcon sx={{ opacity: 0.5 }} /> : 
-                             <CheckBoxOutlineBlankIcon />}
-                          </IconButton>
-                        )}
-                        
                         {/* Collection Icon/Cover */}
                         {firstPdf.thumbnailUrl ? (
                           <Box
@@ -577,9 +555,32 @@ function Library({ onBack, onOpenPdf }) {
                         
                         {/* Collection Info */}
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
-                            {collection}
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Typography variant="h6" fontWeight={600}>
+                              {collection}
+                            </Typography>
+                            {/* Select Mode Button */}
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (selectMode) {
+                                  selectAllInCollection(collectionPdfs);
+                                } else {
+                                  setSelectMode(true);
+                                }
+                              }}
+                              sx={{ ml: 1 }}
+                            >
+                              {selectMode ? (
+                                allSelected ? <CheckBoxIcon color="primary" /> : 
+                                someSelected ? <CheckBoxIcon sx={{ opacity: 0.5 }} /> : 
+                                <CheckBoxOutlineBlankIcon />
+                              ) : (
+                                <CheckBoxOutlineBlankIcon sx={{ opacity: 0.3 }} />
+                              )}
+                            </IconButton>
+                          </Box>
                           
                           {/* Metadata */}
                           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
