@@ -10,15 +10,19 @@ import {
   Box,
   Alert,
   Link,
-  Divider
+  Divider,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { Save, Key } from '@mui/icons-material';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import MultiProviderSettings from './MultiProviderSettings';
 
 function SettingsDialog({ open, onClose, user }) {
   const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     if (open) {
@@ -69,11 +73,14 @@ function SettingsDialog({ open, onClose, user }) {
     }, 1500);
   };
 
+  // Import multi-provider settings
+  const [useMultiProvider, setUseMultiProvider] = useState(true);
+
   return (
     <Dialog 
       open={open} 
       onClose={onClose} 
-      maxWidth="sm" 
+      maxWidth="md" 
       fullWidth
     >
       <DialogTitle>
@@ -84,20 +91,23 @@ function SettingsDialog({ open, onClose, user }) {
       </DialogTitle>
       <DialogContent>
         <Box sx={{ py: 2 }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Gemini API Key
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            Required for AI-powered features like explanations and teacher mode.
-          </Typography>
-          
-          <TextField
-            fullWidth
-            type="password"
-            placeholder="AIza..."
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            variant="outlined"
+          {/* Legacy Gemini-only settings (for backward compatibility) */}
+          {!useMultiProvider && (
+            <>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Gemini API Key
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Required for AI-powered features like explanations and teacher mode.
+              </Typography>
+              
+              <TextField
+                fullWidth
+                type="password"
+                placeholder="AIza..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                variant="outlined"
             sx={{ mb: 2 }}
           />
 

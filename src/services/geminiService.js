@@ -1,73 +1,27 @@
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+/**
+ * 🔄 MIGRATION TO MULTI-LLM SERVICE
+ * 
+ * This service now uses the new llmService for multi-provider support with automatic fallback.
+ * All functions have been updated to use callLLM instead of direct Gemini API calls.
+ * 
+ * Supports: Gemini (primary), Groq (fallback), Perplexity (web), Mistral (optional)
+ */
 
+import { callLLM, PROVIDERS } from './llmService';
+
+// Legacy function for backward compatibility
+// Now routes through llmService with multi-provider support
 async function callGeminiAPI(prompt, apiKey, config = {}) {
-  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        temperature: config.temperature || 0.7,
-        maxOutputTokens: config.maxOutputTokens || 4096
-      }
-    })
+  // Note: apiKey parameter is now ignored as llmService manages keys internally
+  return await callLLM(prompt, {
+    feature: config.feature || 'general',
+    temperature: config.temperature || 0.7,
+    maxTokens: config.maxOutputTokens || 4096,
+    systemPrompt: config.systemPrompt || null
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Failed to generate response');
-  }
-
-  const data = await response.json();
-  
-  // Check if response has candidates
-  if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
-    console.error('Invalid API response:', data);
-    throw new Error('No response from AI - candidates array is missing or empty');
-  }
-  
-  // Check for safety blocks or other issues
-  const candidate = data.candidates[0];
-  if (!candidate) {
-    throw new Error('No response from AI');
-  }
-  
-  if (candidate.finishReason === 'SAFETY') {
-    throw new Error('Content was blocked by AI safety filters');
-  }
-  
-  if (candidate.finishReason === 'RECITATION') {
-    throw new Error('AI detected copyrighted content');
-  }
-  
-  // Check if truncated due to token limit
-  if (candidate.finishReason === 'MAX_TOKENS') {
-    console.warn('⚠️ Response was truncated due to token limit.');
-    throw new Error('Response truncated - try with smaller text chunk or increase maxOutputTokens');
-  }
-  
-  // Safely access the text content
-  if (!candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
-    console.error('Invalid candidate structure:', candidate);
-    throw new Error('Response structure is invalid - parts array is missing');
-  }
-  
-  const text = candidate.content.parts[0]?.text || '';
-  
-  if (!text || text.trim().length === 0) {
-    throw new Error('Empty response from AI');
-  }
-  
-  return text;
 }
 
-export async function generateTeacherMode(pageText, apiKey) {
+export async function generateTeacherMode(pageText, apiKey = null) {
   const prompt = `You are an experienced teacher helping students understand textbook content.
 
 Page Content:
@@ -89,9 +43,10 @@ Return ONLY this valid JSON (no extra text before or after):
 
 IMPORTANT: Return ONLY the JSON object. No explanations, no markdown code blocks, just valid JSON. Make it engaging, clear, and helpful for students!`;
 
-  return await callGeminiAPI(prompt, apiKey, {
+  return await callLLM(prompt, {
+    feature: 'teacherMode',
     temperature: 0.7,
-    maxOutputTokens: 4096
+    maxTokens: 4096
   });
 }
 
@@ -112,9 +67,10 @@ Return ONLY this valid JSON translation (no extra text before or after):
 
 IMPORTANT: Return ONLY the JSON object with English translations. No explanations, no markdown code blocks, just valid JSON.`;
 
-  return await callGeminiAPI(prompt, apiKey, {
+  return await callLLM(prompt, {
+    feature: 'resources',
     temperature: 0.5,
-    maxOutputTokens: 4096
+    maxTokens: 4096
   });
 }
 
@@ -359,13 +315,14 @@ JSON STRUCTURE:
 
 IMPORTANT: Keep response concise. Students need answers, not walls of text. Use visuals to explain complex concepts.`;
 
-  return await callGeminiAPI(prompt, apiKey, {
+  return await callLLM(prompt, {
+    feature: 'explain',
     temperature: 0.7,
-    maxOutputTokens: 8192
+    maxTokens: 8192
   });
 }
 
-export async function generateActivities(pageText, apiKey) {
+export async function generateActivities(pageText, apiKey = null) {
   const prompt = `IMPORTANT LANGUAGE INSTRUCTION:
 - First, detect the language of the Page Content below
 - If the content is in a regional language (Telugu, Hindi, Tamil, etc.), provide BILINGUAL content (original language + English) to help non-native students
@@ -515,9 +472,10 @@ RULES:
 - Simple pronunciation
 - ONLY valid JSON (no code blocks)`;
 
-  return await callGeminiAPI(prompt, apiKey, {
+  return await callLLM(prompt, {
+    feature: 'explain',
     temperature: 0.7,
-    maxOutputTokens: 8192
+    maxTokens: 8192
   });
 }
 
