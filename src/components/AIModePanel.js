@@ -711,11 +711,36 @@ Return ONLY the English translation, no extra text.`;
         question.hints
       );
       
-      console.log('✅ Long answer generated:', answer.substring(0, 100) + '...');
+      console.log('✅ Long answer generated (type):', typeof answer);
+      console.log('✅ Long answer generated (value):', answer);
+      
+      // Handle different response types
+      let finalAnswer = answer;
+      
+      if (typeof answer === 'object') {
+        console.warn('⚠️ Answer is object, attempting to extract text...');
+        // If it's an array, join it
+        if (Array.isArray(answer)) {
+          finalAnswer = answer.map(item => {
+            if (typeof item === 'string') return item;
+            if (item && item.text) return item.text;
+            if (item && item.content) return item.content;
+            return JSON.stringify(item);
+          }).join('\n\n');
+        } else if (answer && answer.text) {
+          finalAnswer = answer.text;
+        } else if (answer && answer.content) {
+          finalAnswer = answer.content;
+        } else {
+          finalAnswer = JSON.stringify(answer, null, 2);
+        }
+      }
+      
+      console.log('✅ Final answer to display:', finalAnswer.substring(0, 100) + '...');
       
       setExamAnswers({
         ...examAnswers,
-        [`long_answer_${questionIndex}`]: answer
+        [`long_answer_${questionIndex}`]: finalAnswer
       });
       
     } catch (error) {

@@ -194,7 +194,18 @@ async function callGemini(prompt, apiKey, config) {
     throw new Error('Response truncated - increase maxOutputTokens');
   }
   
-  return candidate.content.parts[0].text;
+  // Extract text from parts (handle single or multiple parts)
+  const parts = candidate.content.parts;
+  if (!parts || parts.length === 0) {
+    throw new Error('No text in Gemini response');
+  }
+  
+  // If multiple parts, join them
+  if (parts.length > 1) {
+    return parts.map(part => part.text || '').join('\n');
+  }
+  
+  return parts[0].text || '';
 }
 
 /**
