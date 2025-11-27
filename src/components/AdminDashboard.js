@@ -17,11 +17,17 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
   IconButton,
   List,
   ListItem,
   ListItemText,
-  CircularProgress
+  CircularProgress,
+  LinearProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   ExpandMore,
@@ -99,12 +105,21 @@ function AdminDashboard({ open, onClose }) {
   // Library management state
   const [pdfs, setPdfs] = useState([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
-  const [uploadingPdf, setUploadingPdf] = useState(false);
+  
+  // Upload dialog state
+  const [uploadDialog, setUploadDialog] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null);
   const [uploadMetadata, setUploadMetadata] = useState({
     subject: '',
     class: '',
+    customSubject: '',
     bookName: ''
   });
+  
+  // ZIP extraction state
+  const [zipExtracting, setZipExtracting] = useState(false);
+  const [zipProgress, setZipProgress] = useState({ current: 0, total: 0, message: '' });
+  const [extractedPdfs, setExtractedPdfs] = useState([]);
 
   // Load config from localStorage
   useEffect(() => {
@@ -135,55 +150,174 @@ function AdminDashboard({ open, onClose }) {
     }
   };
   
-  const handleFileUpload = async (event) => {
+  const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
     
-    setUploadingPdf(true);
+    // Check if it's a ZIP file
+    if (zipHandler.isZipFile(file)) {
+      await handleZipUpload(file);
+      return;
+    }
+    
+    // Regular PDF upload
+    if (file.type !== 'application/pdf') {
+      alert('Please select a valid PDF or ZIP file');
+      return;
+    }
+    
+    // Open dialog for metadata
+    setPendingFile(file);
+    setUploadMetadata({
+      subject: '',
+      class: '',
+      customSubject: '',
+      bookName: ''
+    });
+    setUploadDialog(true);
+  };
+  
+  const handleZipUpload = async (zipFile) => {
+    setZipExtracting(true);
+    setZipProgress({ current: 0, total: 0, message: 'Reading ZIP file...' });
     
     try {
-      // Check if ZIP
-      if (zipHandler.isZipFile(file)) {
-        const extracted = await zipHandler.extractZipFile(file, (current, total, message) => {
-          console.log(`Progress: ${current}/${total} - ${message}`);
-        });
-        
-        // Add all PDFs from ZIP
-        for (const pdfData of extracted.pdfFiles) {
-          await libraryService.addPDFToLibrary(pdfData.file, {
-            name: pdfData.metadata.title || pdfData.filename,
-            subject: uploadMetadata.subject || pdfData.metadata.subject,
-            class: uploadMetadata.class || pdfData.metadata.class,
-            collection: uploadMetadata.bookName || pdfData.metadata.collection,
-            chapter: pdfData.metadata.chapter,
-            chapterTitle: pdfData.metadata.title,
-            totalPages: pdfData.metadata.totalPages,
-            pdfTitle: pdfData.metadata.pdfTitle
-          });
+      // Extract all PDFs from ZIP
+      const pdfFiles = await zipHandler.extractZipFile(
+        zipFile,
+        (current, total, message) => {
+          setZipProgress({ current, total, message });
         }
-        
-        alert(`✅ Added ${extracted.pdfFiles.length} PDFs from ZIP`);
-      } else {
-        // Single PDF
-        await libraryService.addPDFToLibrary(file, {
-          name: file.name.replace('.pdf', ''),
-          subject: uploadMetadata.subject,
-          class: uploadMetadata.class,
-          collection: uploadMetadata.bookName || 'Uncategorized'
-        });
-        
-        alert(`✅ Added ${file.name}`);
+      );
+      
+      if (pdfFiles.length === 0) {
+        alert('No PDF files found in the ZIP archive');
+        setZipExtracting(false);
+        return;
       }
       
-      await loadLibrary();
-      setUploadMetadata({ subject: '', class: '', bookName: '' });
+      // Show metadata confirmation dialog
+      setExtractedPdfs(pdfFiles);
+      const detectedMetadata = pdfFiles[0].metadata;
+      
+      // Ensure we have a collection name
+      let bookName = detectedMetadata.collection || zipFile.name.replace('.zip', '');
+      
+      // If bookName looks like a code (e.g., "hecu1dd"), make it more readable
+      if (bookName.length < 10 && /^[a-z0-9]+$/i.test(bookName)) {
+        bookName = bookName.toUpperCase();
+      }
+      
+      setUploadMetadata({
+        subject: detectedMetadata.subject || '',
+        class: detectedMetadata.class || '',
+        customSubject: '',
+        bookName: bookName
+      });
+      setZipExtracting(false);
+      setUploadDialog(true);
       
     } catch (error) {
-      console.error('Failed to upload:', error);
-      alert(`❌ Failed to upload: ${error.message}`);
-    } finally {
-      setUploadingPdf(false);
+      console.error('❌ ZIP extraction error:', error);
+      alert(`Failed to extract ZIP file:\n${error.message}`);
+      setZipExtracting(false);
     }
+  };
+  
+  const handleConfirmUpload = async () => {
+    const subject = uploadMetadata.subject === 'Other' 
+      ? uploadMetadata.customSubject || 'General'
+      : uploadMetadata.subject || 'General';
+    
+    // Batch upload from ZIP
+    if (extractedPdfs.length > 0) {
+      setZipExtracting(true);
+      setZipProgress({ current: 0, total: extractedPdfs.length, message: 'Adding PDFs to library...' });
+      
+      try {
+        let successCount = 0;
+        
+        for (let i = 0; i < extractedPdfs.length; i++) {
+          const pdfData = extractedPdfs[i];
+          setZipProgress({ 
+            current: i + 1, 
+            total: extractedPdfs.length, 
+            message: `Adding ${pdfData.filename}...` 
+          });
+          
+          // Determine collection name with priority
+          const collectionName = uploadMetadata.bookName || pdfData.metadata.collection || 'Book Collection';
+          
+          const pdfName = pdfData.metadata.type === 'chapter'
+            ? `${collectionName} - ${pdfData.metadata.title}`
+            : `${collectionName} - ${pdfData.metadata.title}`;
+          
+          const libraryItem = await libraryService.addPDFToLibrary(pdfData.file, {
+            name: pdfName,
+            subject: subject,
+            class: uploadMetadata.class || null,
+            workspace: 'My Files',
+            collection: collectionName,
+            chapter: pdfData.metadata.chapter,
+            chapterTitle: pdfData.metadata.title,
+            totalPages: pdfData.metadata.totalPages || 0,
+            pdfTitle: pdfData.metadata.pdfTitle
+          });
+          
+          // Store thumbnail (individual PDF thumbnail or cover image)
+          const thumbnailToStore = pdfData.metadata.thumbnail || pdfData.metadata.coverImage;
+          if (thumbnailToStore) {
+            try {
+              await libraryService.storeThumbnail(libraryItem.id, thumbnailToStore);
+            } catch (error) {
+              console.warn('⚠️ Failed to store thumbnail:', error);
+            }
+          }
+          
+          successCount++;
+        }
+        
+        await loadLibrary();
+        setUploadDialog(false);
+        setExtractedPdfs([]);
+        setZipExtracting(false);
+        alert(`✅ Successfully added ${successCount} PDFs to library!`);
+        
+      } catch (error) {
+        console.error('❌ Failed to add PDFs from ZIP:', error);
+        alert(`Failed to add some PDFs:\n${error.message}`);
+        setZipExtracting(false);
+      }
+      return;
+    }
+    
+    // Single PDF upload
+    if (!pendingFile) return;
+    
+    try {
+      const libraryItem = await libraryService.addPDFToLibrary(pendingFile, {
+        name: pendingFile.name.replace('.pdf', ''),
+        subject: subject,
+        class: uploadMetadata.class || null,
+        workspace: 'My Files',
+        collection: uploadMetadata.bookName || 'Uncategorized'
+      });
+      
+      await loadLibrary();
+      setUploadDialog(false);
+      setPendingFile(null);
+      alert(`✅ "${pendingFile.name}" added to library!`);
+    } catch (error) {
+      console.error('❌ Failed to add PDF:', error);
+      alert(`Failed to add PDF to library:\n${error.message}\n\nPlease try again.`);
+    }
+  };
+  
+  const handleCancelUpload = () => {
+    setUploadDialog(false);
+    setPendingFile(null);
+    setExtractedPdfs([]);
+    setUploadMetadata({ subject: '', class: '', customSubject: '', bookName: '' });
   };
   
   const handleDeletePdf = async (id, name) => {
@@ -258,6 +392,7 @@ function AdminDashboard({ open, onClose }) {
   };
 
   return (
+    <>
     <Dialog 
       open={open} 
       onClose={onClose}
@@ -323,64 +458,44 @@ function AdminDashboard({ open, onClose }) {
             </Alert>
             
             {/* Upload Section */}
-            <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                Add PDFs to Library
-              </Typography>
-              
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Subject"
-                    value={uploadMetadata.subject}
-                    onChange={(e) => setUploadMetadata(prev => ({ ...prev, subject: e.target.value }))}
-                    placeholder="e.g., Mathematics"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Class"
-                    value={uploadMetadata.class}
-                    onChange={(e) => setUploadMetadata(prev => ({ ...prev, class: e.target.value }))}
-                    placeholder="e.g., 10"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Book Name"
-                    value={uploadMetadata.bookName}
-                    onChange={(e) => setUploadMetadata(prev => ({ ...prev, bookName: e.target.value }))}
-                    placeholder="e.g., Geometry"
-                  />
-                </Grid>
-              </Grid>
-              
+            <Box sx={{ mb: 3 }}>
               <Button
                 variant="contained"
                 component="label"
-                startIcon={uploadingPdf ? <CircularProgress size={20} /> : <CloudUpload />}
-                disabled={uploadingPdf}
+                startIcon={<CloudUpload />}
                 fullWidth
+                size="large"
               >
-                {uploadingPdf ? 'Uploading...' : 'Upload PDF or ZIP'}
+                📤 Upload PDF or ZIP File
                 <input
                   type="file"
                   hidden
                   accept=".pdf,.zip"
-                  onChange={handleFileUpload}
+                  onChange={handleFileSelect}
                 />
               </Button>
-              
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                Upload a single PDF or ZIP file containing multiple chapter PDFs
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, textAlign: 'center' }}>
+                Upload a single PDF or ZIP file containing multiple chapter PDFs. You'll be prompted for metadata.
               </Typography>
-            </Paper>
+            </Box>
+            
+            {/* ZIP Extraction Progress */}
+            {zipExtracting && (
+              <Paper sx={{ p: 2, mb: 2 }}>
+                <Typography variant="body2" gutterBottom>
+                  {zipProgress.message}
+                </Typography>
+                <LinearProgress 
+                  variant={zipProgress.total > 0 ? "determinate" : "indeterminate"}
+                  value={zipProgress.total > 0 ? (zipProgress.current / zipProgress.total) * 100 : 0}
+                />
+                {zipProgress.total > 0 && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {zipProgress.current} / {zipProgress.total}
+                  </Typography>
+                )}
+              </Paper>
+            )}
             
             {/* PDF List */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -651,6 +766,131 @@ function AdminDashboard({ open, onClose }) {
         </Accordion>
       </DialogContent>
     </Dialog>
+    
+    {/* Upload Metadata Dialog */}
+    <Dialog open={uploadDialog} onClose={handleCancelUpload} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        {extractedPdfs.length > 0 
+          ? `📦 Add ${extractedPdfs.length} PDFs to Library` 
+          : 'Add PDF to Library'}
+      </DialogTitle>
+      <DialogContent>
+        <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {extractedPdfs.length > 0 ? (
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Found {extractedPdfs.length} PDFs in ZIP file. Please confirm the metadata:
+              </Typography>
+              <Paper sx={{ p: 2, bgcolor: 'background.default', mt: 1 }}>
+                <Typography variant="caption" display="block">
+                  <strong>Detected Collection:</strong> {uploadMetadata.bookName || 'None'}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  <strong>Files:</strong> {extractedPdfs.map(p => p.filename).join(', ')}
+                </Typography>
+              </Paper>
+              
+              <TextField
+                fullWidth
+                label="Book/Collection Name"
+                placeholder="e.g., Grade 10 Science"
+                value={uploadMetadata.bookName}
+                onChange={(e) => setUploadMetadata({ ...uploadMetadata, bookName: e.target.value })}
+                sx={{ mt: 2 }}
+                helperText="This name will be used to group all chapters together"
+              />
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Selected: <strong>{pendingFile?.name}</strong>
+            </Typography>
+          )}
+          
+          <FormControl fullWidth>
+            <InputLabel>Subject</InputLabel>
+            <Select
+              value={uploadMetadata.subject}
+              label="Subject"
+              onChange={(e) => setUploadMetadata({ ...uploadMetadata, subject: e.target.value })}
+            >
+              <MenuItem value="Mathematics">Mathematics</MenuItem>
+              <MenuItem value="Science">Science</MenuItem>
+              <MenuItem value="Physics">Physics</MenuItem>
+              <MenuItem value="Chemistry">Chemistry</MenuItem>
+              <MenuItem value="Biology">Biology</MenuItem>
+              <MenuItem value="English">English</MenuItem>
+              <MenuItem value="History">History</MenuItem>
+              <MenuItem value="Geography">Geography</MenuItem>
+              <MenuItem value="Computer Science">Computer Science</MenuItem>
+              <MenuItem value="Economics">Economics</MenuItem>
+              <MenuItem value="Other">Other (Specify below)</MenuItem>
+            </Select>
+          </FormControl>
+          
+          {uploadMetadata.subject === 'Other' && (
+            <TextField
+              fullWidth
+              label="Custom Subject"
+              placeholder="Enter subject name"
+              value={uploadMetadata.customSubject}
+              onChange={(e) => setUploadMetadata({ ...uploadMetadata, customSubject: e.target.value })}
+            />
+          )}
+          
+          <FormControl fullWidth>
+            <InputLabel>Class/Grade (Optional)</InputLabel>
+            <Select
+              value={uploadMetadata.class}
+              label="Class/Grade (Optional)"
+              onChange={(e) => setUploadMetadata({ ...uploadMetadata, class: e.target.value })}
+            >
+              <MenuItem value="">None</MenuItem>
+              <MenuItem value="1">Class 1</MenuItem>
+              <MenuItem value="2">Class 2</MenuItem>
+              <MenuItem value="3">Class 3</MenuItem>
+              <MenuItem value="4">Class 4</MenuItem>
+              <MenuItem value="5">Class 5</MenuItem>
+              <MenuItem value="6">Class 6</MenuItem>
+              <MenuItem value="7">Class 7</MenuItem>
+              <MenuItem value="8">Class 8</MenuItem>
+              <MenuItem value="9">Class 9</MenuItem>
+              <MenuItem value="10">Class 10</MenuItem>
+              <MenuItem value="11">Class 11</MenuItem>
+              <MenuItem value="12">Class 12</MenuItem>
+              <MenuItem value="University">University</MenuItem>
+            </Select>
+          </FormControl>
+          
+          {zipExtracting && (
+            <Box>
+              <Typography variant="body2" gutterBottom>
+                {zipProgress.message}
+              </Typography>
+              <LinearProgress 
+                variant={zipProgress.total > 0 ? "determinate" : "indeterminate"}
+                value={zipProgress.total > 0 ? (zipProgress.current / zipProgress.total) * 100 : 0}
+              />
+              {zipProgress.total > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  {zipProgress.current} / {zipProgress.total}
+                </Typography>
+              )}
+            </Box>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleCancelUpload} disabled={zipExtracting}>Cancel</Button>
+        <Button 
+          onClick={handleConfirmUpload} 
+          variant="contained"
+          disabled={!uploadMetadata.subject || (uploadMetadata.subject === 'Other' && !uploadMetadata.customSubject) || zipExtracting}
+        >
+          {zipExtracting ? 'Adding...' : 'Add to Library'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 }
 
