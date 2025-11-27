@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import VisualAidRenderer from './VisualAidRenderer';
+import { useAdminConfig, isTabEnabled } from '../hooks/useAdminConfig';
 import { 
   Box, 
   Paper, 
@@ -1197,6 +1198,9 @@ Return ONLY this valid JSON:
     });
   };
 
+  // Load admin configuration
+  const adminConfig = useAdminConfig();
+  
   // Check if Read & Understand should be disabled (English content)
   const isEnglish = isEnglishContent(pageText);
   const readTabDisabled = isEnglish;
@@ -1204,21 +1208,32 @@ Return ONLY this valid JSON:
     ? "📖 This tab is for regional languages (Hindi, Telugu, Tamil, etc.). English PDFs don't need word-by-word analysis."
     : "📚 Word-by-word analysis with pronunciation and meaning";
 
+  // Check tab visibility from admin config
+  const showTeacherMode = isTabEnabled(adminConfig, 'teacherMode');
+  const showMultilingual = isTabEnabled(adminConfig, 'multilingual');
+  const showExplain = isTabEnabled(adminConfig, 'explain');
+  const showActivities = isTabEnabled(adminConfig, 'activities');
+  const showExamPrep = isTabEnabled(adminConfig, 'examPrep');
+  const showResources = isTabEnabled(adminConfig, 'resources');
+  const showNotes = isTabEnabled(adminConfig, 'notes');
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       <Paper square elevation={1}>
         <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
-          <Tab icon={<TeacherIcon />} label="Teacher Mode" />
-          <Tooltip title={readTabTooltip} arrow>
-            <span>
-              <Tab icon={<ReadIcon />} label="Multilingual" disabled={readTabDisabled} />
-            </span>
-          </Tooltip>
-          <Tab icon={<ExplainIcon />} label="Smart Explain" />
-          <Tab icon={<ActivitiesIcon />} label="Activities" />
-          <Tab icon={<ExamIcon />} label="Exam Prep" />
-          <Tab icon={<ResourcesIcon />} label="Resources" />
-          <Tab icon={<NotesIcon />} label="Notes" />
+          {showTeacherMode && <Tab icon={<TeacherIcon />} label="Teacher Mode" />}
+          {showMultilingual && (
+            <Tooltip title={readTabTooltip} arrow>
+              <span>
+                <Tab icon={<ReadIcon />} label="Multilingual" disabled={readTabDisabled} />
+              </span>
+            </Tooltip>
+          )}
+          {showExplain && <Tab icon={<ExplainIcon />} label="Smart Explain" />}
+          {showActivities && <Tab icon={<ActivitiesIcon />} label="Activities" />}
+          {showExamPrep && <Tab icon={<ExamIcon />} label="Exam Prep" />}
+          {showResources && <Tab icon={<ResourcesIcon />} label="Resources" />}
+          {showNotes && <Tab icon={<NotesIcon />} label="Notes" />}
         </Tabs>
       </Paper>
 

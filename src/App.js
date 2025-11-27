@@ -11,6 +11,7 @@ import Dashboard from './components/Dashboard';
 import Library from './components/Library';
 import SettingsDialog from './components/SettingsDialog';
 import AdminDashboard from './components/AdminDashboard';
+import AdminOTPDialog from './components/AdminOTPDialog';
 import AuthButton from './components/AuthButton';
 import FocusMonitor from './components/FocusMonitor';
 import Test3DVisualization from './components/Test3DVisualization';
@@ -26,6 +27,7 @@ function App() {
   const [view, setView] = useState('dashboard'); // 'dashboard', 'library', or 'reader'
   const [showSettings, setShowSettings] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showOTPDialog, setShowOTPDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [pdfDocument, setPdfDocument] = useState(null);
   const [pdfId, setPdfId] = useState(null); // Unique ID for caching
@@ -359,7 +361,7 @@ function App() {
             </Tooltip>
 
             <Tooltip title="Admin Dashboard">
-              <IconButton onClick={() => setShowAdmin(true)} color="secondary">
+              <IconButton onClick={() => setShowOTPDialog(true)} color="secondary">
                 <AdminPanelSettings />
               </IconButton>
             </Tooltip>
@@ -444,6 +446,16 @@ function App() {
         open={showSettings} 
         onClose={() => setShowSettings(false)}
         user={user}
+      />
+
+      {/* Admin OTP Dialog */}
+      <AdminOTPDialog
+        open={showOTPDialog}
+        onClose={() => setShowOTPDialog(false)}
+        onSuccess={() => {
+          setShowOTPDialog(false);
+          setShowAdmin(true);
+        }}
       />
 
       {/* Admin Dashboard */}

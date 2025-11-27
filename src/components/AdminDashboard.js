@@ -24,8 +24,7 @@ import {
   Settings as SettingsIcon,
   Save as SaveIcon,
   RestartAlt as ResetIcon,
-  Close as CloseIcon,
-  ArrowBack
+  Close as CloseIcon
 } from '@mui/icons-material';
 
 const DEFAULT_CONFIG = {
