@@ -46,10 +46,14 @@ export const sendOTPToAdmin = async () => {
     // Send email via EmailJS
     const templateParams = {
       to_email: ADMIN_EMAIL,
+      to_name: 'Admin',
       otp_code: currentOTP,
       expiry_minutes: 5,
-      timestamp: new Date().toLocaleString()
+      timestamp: new Date().toLocaleString(),
+      from_name: 'Ekamanam'
     };
+    
+    console.log('📤 Template params:', templateParams);
     
     const response = await emailjs.send(
       EMAILJS_SERVICE_ID,
