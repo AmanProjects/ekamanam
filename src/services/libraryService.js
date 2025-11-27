@@ -17,13 +17,14 @@
 import { openDB } from 'idb';
 
 const DB_NAME = 'ekamanam_library';
-const DB_VERSION = 1;
+const DB_VERSION = 2;  // V3.0: Upgraded for exam prep cache
 
 // Store names
 const STORES = {
   LIBRARY_ITEMS: 'library_items',
   PDF_DATA: 'pdf_data',
-  THUMBNAILS: 'thumbnails'
+  THUMBNAILS: 'thumbnails',
+  EXAM_PREP: 'exam_prep'  // V3.0: New store for cached exam questions
 };
 
 /**
@@ -31,7 +32,7 @@ const STORES = {
  */
 const initDB = async () => {
   return openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+    upgrade(db, oldVersion) {
       // Library Items Store
       if (!db.objectStoreNames.contains(STORES.LIBRARY_ITEMS)) {
         const libraryStore = db.createObjectStore(STORES.LIBRARY_ITEMS, { 
@@ -52,6 +53,13 @@ const initDB = async () => {
       // Thumbnails Store
       if (!db.objectStoreNames.contains(STORES.THUMBNAILS)) {
         db.createObjectStore(STORES.THUMBNAILS, { keyPath: 'id' });
+      }
+
+      // V3.0: Exam Prep Cache Store (upgrade from v1 to v2)
+      if (oldVersion < 2 && !db.objectStoreNames.contains(STORES.EXAM_PREP)) {
+        const examStore = db.createObjectStore(STORES.EXAM_PREP, { keyPath: 'id' });
+        examStore.createIndex('generatedAt', 'generatedAt');
+        console.log('✅ V3.0: Created exam_prep store for caching');
       }
     }
   });
@@ -440,9 +448,83 @@ export const clearLibrary = async () => {
     await db.clear(STORES.LIBRARY_ITEMS);
     await db.clear(STORES.PDF_DATA);
     await db.clear(STORES.THUMBNAILS);
+    await db.clear(STORES.EXAM_PREP);  // V3.0: Also clear exam prep
     console.log('✅ Library cleared');
   } catch (error) {
     console.error('❌ Error clearing library:', error);
+    throw error;
+  }
+};
+
+/**
+ * V3.0: Save exam prep to cache
+ * @param {string} pdfId - PDF ID
+ * @param {Object} examData - Exam prep data (mcqs, shortAnswer, longAnswer)
+ * @returns {Promise<void>}
+ */
+export const saveExamPrepCache = async (pdfId, examData) => {
+  try {
+    const db = await initDB();
+    await db.put(STORES.EXAM_PREP, {
+      id: pdfId,
+      data: examData,
+      generatedAt: new Date().toISOString(),
+      version: '3.0'
+    });
+    console.log('✅ Exam prep cached for', pdfId);
+  } catch (error) {
+    console.error('❌ Error caching exam prep:', error);
+    throw error;
+  }
+};
+
+/**
+ * V3.0: Load exam prep from cache
+ * @param {string} pdfId - PDF ID
+ * @returns {Promise<Object|null>} Cached exam data or null
+ */
+export const loadExamPrepCache = async (pdfId) => {
+  try {
+    const db = await initDB();
+    const cached = await db.get(STORES.EXAM_PREP, pdfId);
+    if (cached) {
+      console.log('⚡ Exam prep loaded from cache for', pdfId);
+      return cached.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('❌ Error loading exam prep cache:', error);
+    return null;
+  }
+};
+
+/**
+ * V3.0: Check if exam prep cache exists
+ * @param {string} pdfId - PDF ID
+ * @returns {Promise<boolean>}
+ */
+export const hasExamPrepCache = async (pdfId) => {
+  try {
+    const db = await initDB();
+    const cached = await db.get(STORES.EXAM_PREP, pdfId);
+    return !!cached;
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * V3.0: Delete exam prep cache for a PDF
+ * @param {string} pdfId - PDF ID
+ * @returns {Promise<void>}
+ */
+export const deleteExamPrepCache = async (pdfId) => {
+  try {
+    const db = await initDB();
+    await db.delete(STORES.EXAM_PREP, pdfId);
+    console.log('✅ Exam prep cache deleted for', pdfId);
+  } catch (error) {
+    console.error('❌ Error deleting exam prep cache:', error);
     throw error;
   }
 };
@@ -462,6 +544,11 @@ export default {
   generateThumbnail,
   getThumbnail,
   storeThumbnail,
-  clearLibrary
+  clearLibrary,
+  // V3.0: Exam prep caching
+  saveExamPrepCache,
+  loadExamPrepCache,
+  hasExamPrepCache,
+  deleteExamPrepCache
 };
 

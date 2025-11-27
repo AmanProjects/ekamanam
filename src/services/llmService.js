@@ -25,12 +25,15 @@ const PROVIDER_ENDPOINTS = {
 
 // Feature-to-Provider mapping (with fallbacks)
 // OPTIMIZED: Groq first for speed (300+ tokens/s vs 40-60 for Gemini)
+// VERSION 3.0: Groq for Exam Prep & Long Answers (10x cheaper, 100x faster)
 const FEATURE_PROVIDERS = {
   teacherMode: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
   explain: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
   activities: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
   resources: [PROVIDERS.PERPLEXITY, PROVIDERS.GROQ, PROVIDERS.GEMINI], // Perplexity for web search
   wordAnalysis: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
+  examPrep: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // V3.0: Groq for fast exam generation
+  longAnswer: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // V3.0: Groq for long answers (10x cheaper)
   general: [PROVIDERS.GROQ, PROVIDERS.GEMINI] // Groq first for speed
 };
 

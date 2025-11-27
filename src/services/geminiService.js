@@ -458,6 +458,10 @@ Return ONLY JSON, no markdown.`;
  * @returns {Promise<string>} - Generated answer
  */
 export const generateLongAnswer = async (question, fullPdfText, pageReferences = [], hints = []) => {
+  // V3.0: OPTIMIZED - Use smart context instead of full PDF text
+  // Only use first 6000 chars for better token efficiency
+  const contextText = fullPdfText.substring(0, 6000);
+  
   const prompt = `Generate a comprehensive exam answer for this question:
 
 QUESTION:
@@ -469,24 +473,24 @@ ${hints.map((h, i) => `${i + 1}. ${h}`).join('\n')}` : ''}
 ${pageReferences && pageReferences.length > 0 ? `REFERENCE PAGES: ${pageReferences.join(', ')}` : ''}
 
 RELEVANT CONTENT FROM PDF:
-${fullPdfText.substring(0, 4000)}
+${contextText}
 
 REQUIREMENTS:
-- Comprehensive, well-structured answer
+- Comprehensive, well-structured answer (250-350 words)
 - Use the hints provided to guide your answer
 - Academic language appropriate for exams
 - Clear points with proper explanations
-- 200-300 words
 - Use ** for bold text (important terms)
 - Include relevant examples from the content
-- Structure with introduction, main points, and conclusion
+- Structure: introduction, main points with explanations, conclusion
+- If page references provided, prioritize that content
 
 Generate a model answer that would score full marks:`;
 
   const response = await callLLM(prompt, {
     feature: 'longAnswer',
     temperature: 0.7,
-    maxTokens: 2048
+    maxTokens: 3072  // V3.0: Increased from 2048 for longer answers
   });
 
   return response;

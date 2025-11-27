@@ -40,8 +40,11 @@ import {
   Folder,
   Refresh
 } from '@mui/icons-material';
-import libraryService from '../services/libraryService';
+import libraryService, { saveExamPrepCache } from '../services/libraryService';
 import zipHandler from '../services/zipHandler';
+import { generateExamPrep } from '../services/geminiService';
+import { extractFullPdfText } from '../services/pdfExtractor';
+import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 
 const DEFAULT_CONFIG = {
   // Tab Visibility
@@ -307,9 +310,66 @@ function AdminDashboard({ open, onClose }) {
       setUploadDialog(false);
       setPendingFile(null);
       alert(`✅ "${pendingFile.name}" added to library!`);
+      
+      // V3.0: Generate exam prep in background
+      generateExamPrepInBackground(libraryItem.id, pendingFile);
+      
     } catch (error) {
       console.error('❌ Failed to add PDF:', error);
       alert(`Failed to add PDF to library:\n${error.message}\n\nPlease try again.`);
+    }
+  };
+  
+  /**
+   * V3.0: Generate exam prep in background after PDF upload
+   * Runs asynchronously without blocking the UI
+   */
+  const generateExamPrepInBackground = async (pdfId, file) => {
+    try {
+      console.log('🎓 [V3.0] Starting background exam prep generation for:', pdfId);
+      
+      // Load PDF
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      // Extract text
+      const fullText = await extractFullPdfText(pdf);
+      
+      // Generate exam prep (Groq will make this fast!)
+      const chunks = [];
+      const CHUNK_SIZE = 3000;
+      for (let i = 0; i < fullText.length && i < 15000; i += CHUNK_SIZE) {  // Max 5 chunks
+        chunks.push(fullText.substring(i, i + CHUNK_SIZE));
+      }
+      
+      const mergedResponse = {
+        mcqs: [],
+        shortAnswer: [],
+        longAnswer: []
+      };
+      
+      for (let i = 0; i < Math.min(chunks.length, 3); i++) {  // Process max 3 chunks
+        try {
+          const chunkResponse = await generateExamPrep(fullText, chunks[i], i + 1, chunks.length);
+          if (chunkResponse.mcqs) mergedResponse.mcqs.push(...chunkResponse.mcqs);
+          if (chunkResponse.shortAnswer) mergedResponse.shortAnswer.push(...chunkResponse.shortAnswer);
+          if (chunkResponse.longAnswer) mergedResponse.longAnswer.push(...chunkResponse.longAnswer);
+        } catch (chunkError) {
+          console.warn(`⚠️ Chunk ${i + 1} failed:`, chunkError.message);
+        }
+      }
+      
+      // Cache the generated exam prep
+      await saveExamPrepCache(pdfId, mergedResponse);
+      console.log('✅ [V3.0] Exam prep cached successfully!', {
+        mcqs: mergedResponse.mcqs.length,
+        shortAnswer: mergedResponse.shortAnswer.length,
+        longAnswer: mergedResponse.longAnswer.length
+      });
+      
+    } catch (error) {
+      console.error('❌ Background exam prep generation failed:', error);
+      // Don't show error to user - this is background
     }
   };
   
