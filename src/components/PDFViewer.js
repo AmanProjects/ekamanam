@@ -130,6 +130,13 @@ function PDFViewer({
         // Extract text
         const textContent = await page.getTextContent();
         const textItems = textContent.items.map(item => item.str).join(' ');
+        console.log('📝 [PDFViewer] Text extracted:', {
+          length: textItems.length,
+          preview: textItems.substring(0, 100),
+          hasDevanagari: /[\u0900-\u097F]/.test(textItems),
+          hasTelugu: /[\u0C00-\u0C7F]/.test(textItems),
+          hasTamil: /[\u0B80-\u0BFF]/.test(textItems)
+        });
         onPageTextExtract(textItems);
 
         // Render text layer for selection with same viewport (includes rotation)

@@ -126,6 +126,12 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       return false; // Default to regional (enable tab) if no text
     }
     
+    // V3.0.2: Enhanced logging for debugging
+    console.log('🔍 [isEnglishContent] Checking text:', {
+      textLength: text.length,
+      textPreview: text.substring(0, 50)
+    });
+    
     // Check for regional language scripts
     const hasDevanagari = /[\u0900-\u097F]/.test(text); // Hindi, Sanskrit
     const hasTelugu = /[\u0C00-\u0C7F]/.test(text);
@@ -140,12 +146,14 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     // If any regional script detected, it's NOT English
     if (hasDevanagari || hasTelugu || hasTamil || hasBengali || hasGujarati || 
         hasGurmukhi || hasOriya || hasMalayalam || hasKannada) {
-      console.log('🌐 Regional language detected:', { 
-        hasDevanagari, hasTelugu, hasTamil, hasBengali, hasKannada, hasMalayalam 
+      console.log('✅ Regional language detected:', { 
+        hasDevanagari, hasTelugu, hasTamil, hasBengali, hasKannada, hasMalayalam,
+        hasGujarati, hasGurmukhi, hasOriya
       });
       return false;
     }
     
+    console.log('ℹ️ Text appears to be English (no regional scripts detected)');
     // Otherwise, assume English
     return true;
   };
@@ -1239,6 +1247,15 @@ Return ONLY this valid JSON:
   const readTabTooltip = readTabDisabled 
     ? "📖 This tab is for regional languages (Hindi, Telugu, Tamil, etc.). English PDFs don't need word-by-word analysis."
     : "📚 Word-by-word analysis with pronunciation and meaning";
+  
+  // Debug logging for language detection
+  console.log('🔍 [Language Detection]', {
+    pageText: pageText ? `${pageText.substring(0, 100)}...` : 'NULL/EMPTY',
+    pageTextLength: pageText?.length || 0,
+    isEnglish,
+    readTabDisabled,
+    currentPage
+  });
 
   // Check tab visibility from admin config
   const showTeacherMode = isTabEnabled(adminConfig, 'teacherMode');
