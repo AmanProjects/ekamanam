@@ -1,387 +1,201 @@
 import React from 'react';
 import { 
   Box, 
+  Container, 
+  Paper, 
   Typography, 
   Button, 
-  Container,
-  Paper,
   Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Chip,
-  Divider,
-  alpha
+  Divider
 } from '@mui/material';
-import { 
+import {
   CloudUpload as UploadIcon,
   LocalLibrary as LibraryIcon,
-  AutoStories as BookIcon,
-  TipsAndUpdates as TipsIcon,
   School as SchoolIcon,
-  Speed as SpeedIcon
+  TipsAndUpdates as TipsIcon,
+  Speed as SpeedIcon,
+  Language as LanguageIcon
 } from '@mui/icons-material';
 
 function Dashboard({ onFileSelect, onOpenLibrary }) {
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
+  const handleFileInputChange = (event) => {
+    const file = event.target.files[0];
     if (file && file.type === 'application/pdf') {
       onFileSelect(file);
-    } else {
-      alert('Please select a valid PDF file');
     }
   };
 
   return (
     <Box sx={{ 
-      minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      pt: 8,
-      pb: 6
+      minHeight: '100vh',
+      bgcolor: '#fafafa',
+      py: 6
     }}>
-      <Container maxWidth="lg">
-        {/* Hero Section */}
+      <Container maxWidth="md">
+        {/* Logo and Title */}
         <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center',
-            mb: 2
-          }}>
-            <img 
-              src={`${process.env.PUBLIC_URL}/Ekamanaml.png`}
-              alt="Ekamanam Logo" 
-              style={{ 
-                height: '80px',
-                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
-              }}
-            />
-          </Box>
-          
-          <Typography 
-            variant="h2" 
-            sx={{ 
-              fontWeight: 700, 
-              color: 'white',
-              mb: 1,
-              textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          <Box
+            component="img"
+            src={`${process.env.PUBLIC_URL}/Ekamanaml.png`}
+            alt="Ekamanam"
+            sx={{
+              width: 140,
+              height: 140,
+              mx: 'auto',
+              mb: 2
             }}
-          >
+          />
+          <Typography variant="h3" fontWeight={600} gutterBottom sx={{ color: '#1a1a1a' }}>
             Ekamanam
           </Typography>
-          
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              color: 'rgba(255,255,255,0.9)',
-              mb: 1,
-              fontWeight: 300
-            }}
-          >
-            एकमनम् | ఏకమనం | ஏகமனம் | One Mind
+          <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
+            एकमनम् | ఏకమనం | ஏகமனம்
           </Typography>
-          
-          <Typography 
-            variant="subtitle1" 
-            sx={{ 
-              color: 'rgba(255,255,255,0.8)',
-              maxWidth: 600,
-              mx: 'auto',
-              fontSize: '1.1rem'
-            }}
-          >
-            The Art of Focused Learning
+          <Typography variant="h6" color="text.secondary" fontWeight={300}>
+            AI-Powered Learning Platform
           </Typography>
-          
-          <Box sx={{ mt: 3, display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Chip 
-              label="AI-Powered" 
-              sx={{ 
-                bgcolor: 'rgba(255,255,255,0.2)', 
-                color: 'white',
-                fontWeight: 600,
-                backdropFilter: 'blur(10px)'
-              }} 
-            />
-            <Chip 
-              label="Multilingual" 
-              sx={{ 
-                bgcolor: 'rgba(255,255,255,0.2)', 
-                color: 'white',
-                fontWeight: 600,
-                backdropFilter: 'blur(10px)'
-              }} 
-            />
-            <Chip 
-              label="100% Free" 
-              sx={{ 
-                bgcolor: 'rgba(76,175,80,0.9)', 
-                color: 'white',
-                fontWeight: 600
-              }} 
-            />
-          </Box>
         </Box>
 
-        {/* Main Action Cards */}
+        {/* Main Actions */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Quick Start Card */}
-          <Grid item xs={12} md={6}>
-            <Card 
-              elevation={8}
+          {/* Upload PDF */}
+          <Grid item xs={12} sm={6}>
+            <Paper 
+              elevation={0}
               sx={{ 
+                p: 4,
                 height: '100%',
-                background: 'linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%)',
-                transition: 'all 0.3s ease',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+                transition: 'all 0.2s',
                 '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 12px 24px rgba(0,0,0,0.15)'
+                  borderColor: 'primary.main',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
                 }
               }}
             >
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <UploadIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-                  <Typography variant="h5" fontWeight={600}>
-                    Quick Start
-                  </Typography>
-                </Box>
-                
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                  Upload a PDF textbook and start learning with AI-powered explanations, 
-                  interactive visualizations, and bilingual support.
+              <Box sx={{ textAlign: 'center' }}>
+                <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  Upload PDF
                 </Typography>
-
-                <Box sx={{ 
-                  bgcolor: alpha('#667eea', 0.05),
-                  borderRadius: 2,
-                  p: 2,
-                  mb: 3,
-                  border: '2px dashed',
-                  borderColor: 'primary.main'
-                }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    <strong>Supports:</strong>
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip label="📚 PDF Files" size="small" variant="outlined" />
-                    <Chip label="🌐 All Languages" size="small" variant="outlined" />
-                    <Chip label="📊 Visual Learning" size="small" variant="outlined" />
-                  </Box>
-                </Box>
-
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Upload a textbook and start learning with AI-powered explanations
+                </Typography>
                 <Button
                   component="label"
                   variant="contained"
-                  size="large"
                   fullWidth
+                  size="large"
                   startIcon={<UploadIcon />}
-                  sx={{ 
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
-                    }
-                  }}
                 >
-                  Upload PDF & Start Learning
+                  Choose File
                   <input
                     type="file"
                     hidden
                     accept="application/pdf"
-                    onChange={handleFileSelect}
+                    onChange={handleFileInputChange}
                   />
                 </Button>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
 
-          {/* My Library Card */}
-          <Grid item xs={12} md={6}>
-            <Card 
-              elevation={8}
+          {/* My Library */}
+          <Grid item xs={12} sm={6}>
+            <Paper 
+              elevation={0}
               sx={{ 
+                p: 4,
                 height: '100%',
-                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                color: 'white',
-                transition: 'all 0.3s ease',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+                transition: 'all 0.2s',
                 '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 12px 24px rgba(0,0,0,0.15)'
+                  borderColor: 'primary.main',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
                 }
               }}
             >
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <LibraryIcon sx={{ fontSize: 40, mr: 2 }} />
-                  <Typography variant="h5" fontWeight={600}>
-                    My Library
-                  </Typography>
-                </Box>
-                
-                <Typography variant="body1" sx={{ mb: 3, opacity: 0.95 }}>
-                  Access your collection of PDFs, track your reading progress, 
-                  and pick up right where you left off. All your study materials 
-                  in one place.
+              <Box sx={{ textAlign: 'center' }}>
+                <LibraryIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  My Library
                 </Typography>
-
-                <Box sx={{ 
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  borderRadius: 2,
-                  p: 2,
-                  mb: 3,
-                  backdropFilter: 'blur(10px)'
-                }}>
-                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
-                    <strong>Library Features:</strong>
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    <Typography variant="body2">✓ Auto-save reading progress</Typography>
-                    <Typography variant="body2">✓ Quick search & access</Typography>
-                    <Typography variant="body2">✓ Thumbnail previews</Typography>
-                    <Typography variant="body2">✓ Offline storage (IndexedDB)</Typography>
-                  </Box>
-                </Box>
-
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Access your PDFs and continue from where you left off
+                </Typography>
                 <Button
-                  variant="contained"
-                  size="large"
+                  variant="outlined"
                   fullWidth
+                  size="large"
                   startIcon={<LibraryIcon />}
                   onClick={onOpenLibrary}
-                  sx={{ 
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    bgcolor: 'white',
-                    color: '#f5576c',
-                    '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.9)',
-                    }
-                  }}
                 >
-                  Open My Library
+                  Open Library
                 </Button>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           </Grid>
         </Grid>
 
-        {/* Features Grid */}
+        {/* Features */}
         <Paper 
-          elevation={4}
+          elevation={0}
           sx={{ 
-            p: 4, 
-            borderRadius: 3,
-            bgcolor: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(10px)'
+            p: 4,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2
           }}
         >
-          <Typography 
-            variant="h5" 
-            fontWeight={600} 
-            gutterBottom 
-            sx={{ 
-              textAlign: 'center',
-              mb: 3,
-              color: 'text.primary'
-            }}
-          >
-            Powerful Learning Tools
+          <Typography variant="h6" fontWeight={600} gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
+            Features
           </Typography>
           
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={6} sm={3}>
               <Box sx={{ textAlign: 'center' }}>
-                <SchoolIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                <Typography variant="h6" fontWeight={600} gutterBottom>
+                <SchoolIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>
                   Teacher Mode
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Get explanations like a teacher would explain - clear, structured, 
-                  with examples and exam tips
-                </Typography>
               </Box>
             </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={6} sm={3}>
               <Box sx={{ textAlign: 'center' }}>
-                <TipsIcon sx={{ fontSize: 48, color: 'warning.main', mb: 1 }} />
-                <Typography variant="h6" fontWeight={600} gutterBottom>
+                <TipsIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>
                   Smart Explain
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Detects exercises, provides step-by-step solutions with visuals, 
-                  and answers your questions
+              </Box>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center' }}>
+                <LanguageIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>
+                  Multilingual
                 </Typography>
               </Box>
             </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={6} sm={3}>
               <Box sx={{ textAlign: 'center' }}>
-                <BookIcon sx={{ fontSize: 48, color: 'success.main', mb: 1 }} />
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  Word Analysis
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Learn vocabulary with pronunciation, meaning, and bilingual explanations 
-                  for regional languages
-                </Typography>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ textAlign: 'center' }}>
-                <SpeedIcon sx={{ fontSize: 48, color: 'error.main', mb: 1 }} />
-                <Typography variant="h6" fontWeight={600} gutterBottom>
+                <SpeedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>
                   Lightning Fast
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Powered by Groq's LPU technology - get AI responses in 3-5 seconds, 
-                  5-7x faster than traditional models
                 </Typography>
               </Box>
             </Grid>
           </Grid>
 
-          <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 3 }} />
 
-          {/* Quick Tips */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="h6" fontWeight={600} gutterBottom color="text.primary">
-              💡 Pro Tips
-            </Typography>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} md={4}>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>For Best Results:</strong> Select specific sections or questions 
-                  instead of full pages
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>Multilingual Support:</strong> Works with Hindi, Telugu, Tamil, 
-                  English, and more
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>Free Forever:</strong> No sign-up required, bring your own API key 
-                  (or use ours for limited use)
-                </Typography>
-              </Grid>
-            </Grid>
-          </Box>
-        </Paper>
-
-        {/* Footer CTA */}
-        <Box sx={{ textAlign: 'center', mt: 4 }}>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-            Transform your learning experience with AI-powered study tools
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+            Free • Open Source • Privacy Focused
           </Typography>
-        </Box>
+        </Paper>
       </Container>
     </Box>
   );
