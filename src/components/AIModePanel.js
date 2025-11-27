@@ -288,11 +288,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       return;
     }
 
-    const apiKey = localStorage.getItem('gemini_pat');
-    if (!apiKey) {
-      setError('Please set your Gemini API key in Settings');
-      return;
-    }
+    // V3.0: Removed hardcoded API key check - multi-provider system handles this
+    // Will try Groq first, then fall back to Gemini automatically
 
     setLoading(true);
     setError(null);
@@ -798,15 +795,19 @@ Return ONLY the English translation, no extra text.`;
       return;
     }
 
-    const apiKey = localStorage.getItem('gemini_pat');
-    if (!apiKey) {
-      setError('Please set your Gemini API key in Settings');
-      return;
-    }
+    // V3.0.2: Removed hardcoded API key check - let multi-provider system handle it
+    // The callLLM function will check for available providers and fall back automatically
 
     setLoading(true);
     setError(null);
     setUsedCache(false);
+    
+    console.log('📝 [Smart Explain] Starting analysis:', {
+      textLength: textToExplain.length,
+      textPreview: textToExplain.substring(0, 100),
+      isSelection: !!editableSelectedText,
+      pageNumber: currentPage
+    });
 
     try {
       // 🔍 CHECK CACHE FIRST
@@ -862,7 +863,7 @@ Return ONLY the English translation, no extra text.`;
         for (let i = 0; i < chunks.length; i++) {
           try {
             console.log(`📦 Processing chunk ${i + 1}/${chunks.length}...`);
-            const chunkResponse = await generateExplanation(chunks[i], priorContext, apiKey);
+            const chunkResponse = await generateExplanation(chunks[i], priorContext);
             
             let cleanResponse = chunkResponse
               .replace(/```json\s*/gi, '')
@@ -912,7 +913,7 @@ Return ONLY the English translation, no extra text.`;
 
       // 📡 SINGLE CHUNK PROCESSING (original flow)
       console.log(`🔄 Analyzing ${selectedText ? 'selected text' : 'full page'} for exercises and notes...`);
-      const response = await generateExplanation(textToExplain, priorContext, apiKey);
+      const response = await generateExplanation(textToExplain, priorContext);
       
       // Try to parse JSON response
       try {
@@ -957,11 +958,8 @@ Return ONLY the English translation, no extra text.`;
       return;
     }
 
-    const apiKey = localStorage.getItem('gemini_pat');
-    if (!apiKey) {
-      setError('Please set your Gemini API key in Settings');
-      return;
-    }
+    // V3.0: Removed hardcoded API key check - multi-provider system handles this
+    // Will try Groq first, then fall back to Gemini automatically
 
     setLoading(true);
     setError(null);
@@ -1116,11 +1114,8 @@ Return ONLY this valid JSON:
       return;
     }
 
-    const apiKey = localStorage.getItem('gemini_pat');
-    if (!apiKey) {
-      setError('Please set your Gemini API key in Settings');
-      return;
-    }
+    // V3.0: Removed hardcoded API key check - multi-provider system handles this
+    // Will try Groq first, then fall back to Gemini automatically
 
     setLoading(true);
     setError(null);
