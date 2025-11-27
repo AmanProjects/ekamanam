@@ -148,6 +148,9 @@ function Library({ onBack, onOpenPdf }) {
         bookName = bookName.toUpperCase();
       }
       
+      console.log('📚 ZIP extraction complete. Book name:', bookName);
+      console.log('📋 Detected metadata:', detectedMetadata);
+      
       setUploadMetadata({
         subject: detectedMetadata.subject || '',
         class: detectedMetadata.class || '',
@@ -350,8 +353,8 @@ function Library({ onBack, onOpenPdf }) {
   }, {});
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#fafafa' }}>
-      <Container maxWidth="lg" sx={{ flex: 1, display: 'flex', flexDirection: 'column', py: 3, overflow: 'hidden' }}>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#fafafa', overflow: 'hidden' }}>
+      <Container maxWidth="lg" sx={{ flex: 1, display: 'flex', flexDirection: 'column', py: 3, overflow: 'hidden', height: '100%' }}>
         {/* Header */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -468,7 +471,7 @@ function Library({ onBack, onOpenPdf }) {
         </Box>
 
         {/* Scrollable PDF List */}
-        <Box sx={{ flex: 1, overflow: 'auto', pr: 1 }}>
+        <Box sx={{ flex: 1, overflow: 'auto', pr: 1, minHeight: 0 }}>
           {loading ? (
             <Box sx={{ py: 4, textAlign: 'center' }}>
               <Typography color="text.secondary">Loading library...</Typography>
