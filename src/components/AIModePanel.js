@@ -2996,13 +2996,9 @@ Return ONLY this valid JSON:
                           <Typography variant="body2" fontWeight={600} gutterBottom>
                             📖 Model Answer:
                           </Typography>
-                          <Typography 
-                            variant="body2" 
-                            sx={{ whiteSpace: 'pre-wrap' }}
-                            dangerouslySetInnerHTML={{ 
-                              __html: formatMarkdown(examAnswers[`long_answer_${index}`]) 
-                            }}
-                          />
+                          <Box sx={{ whiteSpace: 'pre-wrap' }}>
+                            {formatMarkdown(examAnswers[`long_answer_${index}`])}
+                          </Box>
                         </Paper>
                       )}
                     </Paper>
