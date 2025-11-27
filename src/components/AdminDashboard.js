@@ -13,13 +13,19 @@ import {
   Alert,
   Chip,
   FormControlLabel,
-  Grid
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton
 } from '@mui/material';
 import {
   ExpandMore,
   Settings as SettingsIcon,
   Save as SaveIcon,
-  RestartAlt as ResetIcon
+  RestartAlt as ResetIcon,
+  Close as CloseIcon,
+  ArrowBack
 } from '@mui/icons-material';
 
 const DEFAULT_CONFIG = {
@@ -151,12 +157,18 @@ function AdminDashboard({ open, onClose }) {
     });
   };
 
-  if (!open) return null;
-
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        sx: { height: '90vh' }
+      }}
+    >
+      <DialogTitle>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SettingsIcon color="primary" />
             <Typography variant="h5" fontWeight={700}>
@@ -169,18 +181,26 @@ function AdminDashboard({ open, onClose }) {
               startIcon={<ResetIcon />}
               onClick={handleReset}
               color="warning"
+              size="small"
             >
-              Reset to Defaults
+              Reset
             </Button>
             <Button
               variant="contained"
               startIcon={<SaveIcon />}
               onClick={handleSave}
+              size="small"
             >
-              Save Configuration
+              Save
             </Button>
+            <IconButton onClick={onClose} size="small">
+              <CloseIcon />
+            </IconButton>
           </Box>
         </Box>
+      </DialogTitle>
+      
+      <DialogContent dividers sx={{ p: 3 }}>
 
         {saved && (
           <Alert severity="success" sx={{ mb: 2 }}>
@@ -393,8 +413,8 @@ function AdminDashboard({ open, onClose }) {
             </Box>
           </AccordionDetails>
         </Accordion>
-      </Paper>
-    </Box>
+      </DialogContent>
+    </Dialog>
   );
 }
 
