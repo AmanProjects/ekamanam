@@ -446,6 +446,14 @@ function App() {
         user={user}
       />
 
+      {/* Admin Dashboard */}
+      {showAdmin && (
+        <AdminDashboard 
+          open={showAdmin} 
+          onClose={() => setShowAdmin(false)}
+        />
+      )}
+
       {/* Focus Monitor Widget */}
       <FocusMonitor />
     </Box>
