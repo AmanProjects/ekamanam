@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Grid, AppBar, Toolbar, Button, IconButton, Fab, Tooltip, Chip } from '@mui/material';
-import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome } from '@mui/icons-material';
+import { Box, Grid, AppBar, Toolbar, Button, IconButton, Fab, Tooltip, Chip, Badge } from '@mui/material';
+import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon } from '@mui/icons-material';
 import packageJson from '../package.json';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -36,9 +36,34 @@ function App() {
   
   // Library state
   const [currentLibraryItem, setCurrentLibraryItem] = useState(null);
+  const [libraryCount, setLibraryCount] = useState(0);
   const autoSaveIntervalRef = useRef(null);
   const lastSavedPageRef = useRef(null);
   
+  // Load library count
+  useEffect(() => {
+    const loadLibraryCount = async () => {
+      try {
+        const { default: libraryService } = await import('./services/libraryService');
+        const pdfs = await libraryService.getAllPdfs();
+        setLibraryCount(pdfs.length);
+      } catch (error) {
+        console.error('Failed to load library count:', error);
+      }
+    };
+    
+    loadLibraryCount();
+    
+    // Reload when view changes to dashboard or library
+    const interval = setInterval(() => {
+      if (view === 'dashboard' || view === 'library') {
+        loadLibraryCount();
+      }
+    }, 2000); // Check every 2 seconds when on relevant views
+    
+    return () => clearInterval(interval);
+  }, [view]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -290,24 +315,32 @@ function App() {
           </Box>
           
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant={view === 'library' ? 'contained' : 'text'}
-              startIcon={<DashboardIcon />}
-              onClick={() => setView('library')}
-              sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
-            >
-              Library
-            </Button>
-            <IconButton 
-              onClick={() => setView('library')}
-              color={view === 'library' ? 'primary' : 'default'}
-              sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
-            >
-              <DashboardIcon />
-            </IconButton>
-            <IconButton onClick={() => setShowSettings(true)}>
-              <SettingsIcon />
-            </IconButton>
+            <Tooltip title="Home">
+              <IconButton 
+                onClick={() => setView('dashboard')}
+                color={view === 'dashboard' ? 'primary' : 'default'}
+              >
+                <DashboardIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title={`My Library${libraryCount > 0 ? ` (${libraryCount} PDFs)` : ''}`}>
+              <IconButton 
+                onClick={() => setView('library')}
+                color={view === 'library' ? 'primary' : 'default'}
+              >
+                <Badge badgeContent={libraryCount} color="error">
+                  <LibraryIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Settings">
+              <IconButton onClick={() => setShowSettings(true)}>
+                <SettingsIcon />
+              </IconButton>
+            </Tooltip>
+
             <AuthButton user={user} />
           </Box>
         </Toolbar>
@@ -345,7 +378,6 @@ function App() {
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
         {view === 'dashboard' ? (
           <Dashboard 
-            onFileSelect={handleFileSelect}
             onOpenLibrary={() => setView('library')}
           />
         ) : view === 'library' ? (

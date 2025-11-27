@@ -5,11 +5,9 @@ import {
   Paper, 
   Typography, 
   Button, 
-  Grid,
-  Divider
+  Grid
 } from '@mui/material';
 import {
-  CloudUpload as UploadIcon,
   LocalLibrary as LibraryIcon,
   School as SchoolIcon,
   TipsAndUpdates as TipsIcon,
@@ -17,21 +15,14 @@ import {
   Language as LanguageIcon
 } from '@mui/icons-material';
 
-function Dashboard({ onFileSelect, onOpenLibrary }) {
-  const handleFileInputChange = (event) => {
-    const file = event.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      onFileSelect(file);
-    }
-  };
-
+function Dashboard({ onOpenLibrary }) {
   return (
     <Box sx={{ 
       minHeight: '100vh',
       bgcolor: '#fafafa',
       py: 6
     }}>
-      <Container maxWidth="md">
+      <Container maxWidth="sm">
         {/* Logo and Title */}
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Box
@@ -57,146 +48,105 @@ function Dashboard({ onFileSelect, onOpenLibrary }) {
           </Typography>
         </Box>
 
-        {/* Main Actions */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Upload PDF */}
-          <Grid item xs={12} sm={6}>
-            <Paper 
-              elevation={0}
-              sx={{ 
-                p: 4,
-                height: '100%',
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                }
-              }}
-            >
-              <Box sx={{ textAlign: 'center' }}>
-                <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  Upload PDF
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Upload a textbook and start learning with AI-powered explanations
-                </Typography>
-                <Button
-                  component="label"
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  startIcon={<UploadIcon />}
-                >
-                  Choose File
-                  <input
-                    type="file"
-                    hidden
-                    accept="application/pdf"
-                    onChange={handleFileInputChange}
-                  />
-                </Button>
-              </Box>
-            </Paper>
-          </Grid>
-
-          {/* My Library */}
-          <Grid item xs={12} sm={6}>
-            <Paper 
-              elevation={0}
-              sx={{ 
-                p: 4,
-                height: '100%',
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                }
-              }}
-            >
-              <Box sx={{ textAlign: 'center' }}>
-                <LibraryIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  My Library
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Access your PDFs and continue from where you left off
-                </Typography>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  size="large"
-                  startIcon={<LibraryIcon />}
-                  onClick={onOpenLibrary}
-                >
-                  Open Library
-                </Button>
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
+        {/* Main Action - My Library */}
+        <Paper 
+          elevation={0}
+          sx={{ 
+            p: 6,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2,
+            textAlign: 'center',
+            mb: 4,
+            transition: 'all 0.2s',
+            '&:hover': {
+              borderColor: 'primary.main',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+            }
+          }}
+        >
+          <LibraryIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
+          <Typography variant="h5" fontWeight={600} gutterBottom>
+            My Library
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
+            Access your PDFs, track progress, and continue learning from where you left off
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<LibraryIcon />}
+            onClick={onOpenLibrary}
+            sx={{ 
+              py: 1.5,
+              px: 4,
+              fontSize: '1rem',
+              fontWeight: 600
+            }}
+          >
+            Open My Library
+          </Button>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+            Add PDFs, manage your collection, and resume reading
+          </Typography>
+        </Paper>
 
         {/* Features */}
         <Paper 
           elevation={0}
           sx={{ 
-            p: 4,
+            p: 3,
             border: '1px solid',
             borderColor: 'divider',
             borderRadius: 2
           }}
         >
-          <Typography variant="h6" fontWeight={600} gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
-            Features
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ textAlign: 'center', mb: 2 }}>
+            Learning Features
           </Typography>
           
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             <Grid item xs={6} sm={3}>
               <Box sx={{ textAlign: 'center' }}>
-                <SchoolIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-                <Typography variant="body2" fontWeight={500}>
+                <SchoolIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 0.5 }} />
+                <Typography variant="caption" fontWeight={500}>
                   Teacher Mode
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Box sx={{ textAlign: 'center' }}>
-                <TipsIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-                <Typography variant="body2" fontWeight={500}>
+                <TipsIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 0.5 }} />
+                <Typography variant="caption" fontWeight={500}>
                   Smart Explain
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Box sx={{ textAlign: 'center' }}>
-                <LanguageIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-                <Typography variant="body2" fontWeight={500}>
+                <LanguageIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 0.5 }} />
+                <Typography variant="caption" fontWeight={500}>
                   Multilingual
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Box sx={{ textAlign: 'center' }}>
-                <SpeedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-                <Typography variant="body2" fontWeight={500}>
+                <SpeedIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 0.5 }} />
+                <Typography variant="caption" fontWeight={500}>
                   Lightning Fast
                 </Typography>
               </Box>
             </Grid>
           </Grid>
+        </Paper>
 
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+        {/* Footer */}
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
+          <Typography variant="caption" color="text.secondary">
             Free • Open Source • Privacy Focused
           </Typography>
-        </Paper>
+        </Box>
       </Container>
     </Box>
   );
