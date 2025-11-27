@@ -34,21 +34,37 @@ function PDFViewer({
   useEffect(() => {
     if (!selectedFile) return;
 
+    console.log('📄 PDFViewer: Loading file:', {
+      name: selectedFile.name,
+      size: selectedFile.size,
+      type: selectedFile.type
+    });
+
     setLoading(true);
     const fileReader = new FileReader();
     
     fileReader.onload = async function() {
       try {
+        console.log('📦 FileReader loaded:', this.result.byteLength, 'bytes');
         const typedArray = new Uint8Array(this.result);
+        console.log('🔄 Creating PDF document...');
         const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+        console.log('✅ PDF loaded successfully:', pdf.numPages, 'pages');
         setPdfDocument(pdf);
         setNumPages(pdf.numPages);
         setCurrentPage(1);
       } catch (error) {
-        console.error('Error loading PDF:', error);
+        console.error('❌ Error loading PDF:', error);
+        alert(`Failed to load PDF: ${error.message}\n\nThe file may be corrupted or invalid.`);
       } finally {
         setLoading(false);
       }
+    };
+    
+    fileReader.onerror = function(error) {
+      console.error('❌ FileReader error:', error);
+      alert('Failed to read the PDF file. Please try again.');
+      setLoading(false);
     };
     
     fileReader.readAsArrayBuffer(selectedFile);

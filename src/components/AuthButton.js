@@ -99,10 +99,18 @@ function AuthButton({ user }) {
         onClick={handleClick}
         startIcon={
           <Avatar 
-            src={user.photoURL} 
+            src={user.photoURL || undefined} 
             alt={user.displayName}
             sx={{ width: 32, height: 32 }}
-          />
+            imgProps={{
+              referrerPolicy: 'no-referrer',
+              onError: (e) => {
+                console.warn('Avatar image failed to load');
+              }
+            }}
+          >
+            {!user.photoURL && (user.displayName?.charAt(0) || user.email?.charAt(0) || 'U')}
+          </Avatar>
         }
       >
         {user.displayName?.split(' ')[0] || 'User'}

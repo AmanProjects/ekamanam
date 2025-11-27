@@ -45,7 +45,7 @@ function App() {
     const loadLibraryCount = async () => {
       try {
         const { default: libraryService } = await import('./services/libraryService');
-        const pdfs = await libraryService.getAllPdfs();
+        const pdfs = await libraryService.getAllLibraryItems();
         setLibraryCount(pdfs.length);
       } catch (error) {
         console.error('Failed to load library count:', error);
@@ -175,17 +175,32 @@ function App() {
   
   const handleOpenFromLibrary = async (libraryItem) => {
     try {
-      console.log('📖 Opening from library:', libraryItem.name);
+      console.log('📖 Opening from library:', libraryItem);
+      console.log('📄 Library item details:', {
+        id: libraryItem.id,
+        name: libraryItem.name,
+        originalFileName: libraryItem.originalFileName,
+        size: libraryItem.size
+      });
       
       // Load PDF data from IndexedDB
       const pdfData = await loadPDFData(libraryItem.id);
+      console.log('📦 PDF data loaded:', pdfData ? `${pdfData.byteLength} bytes` : 'null');
+      
       if (!pdfData) {
-        throw new Error('PDF data not found');
+        throw new Error('PDF data not found in IndexedDB');
       }
       
       // Convert ArrayBuffer to File object
       const blob = new Blob([pdfData], { type: 'application/pdf' });
-      const file = new File([blob], libraryItem.originalFileName, { type: 'application/pdf' });
+      const fileName = libraryItem.originalFileName || `${libraryItem.name}.pdf`;
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+      
+      console.log('📄 File created:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
       
       // Set states
       setPdfId(libraryItem.id);
@@ -196,8 +211,8 @@ function App() {
       
       console.log(`✅ Opened from library: ${libraryItem.name}, Page: ${libraryItem.lastPage}`);
     } catch (error) {
-      console.error('Error opening from library:', error);
-      alert('Failed to open PDF from library. Please try again.');
+      console.error('❌ Error opening from library:', error);
+      alert(`Failed to open PDF from library:\n${error.message}\n\nPlease try re-uploading the file.`);
     }
   };
   

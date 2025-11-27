@@ -37,10 +37,11 @@ function Library({ onBack, onOpenPdf }) {
   const loadLibrary = async () => {
     setLoading(true);
     try {
-      const allPdfs = await libraryService.getAllPdfs();
+      const allPdfs = await libraryService.getAllLibraryItems();
       setPdfs(allPdfs);
     } catch (error) {
-      console.error('Failed to load library:', error);
+      console.error('❌ Failed to load library:', error);
+      alert(`Failed to load library:\n${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -49,34 +50,43 @@ function Library({ onBack, onOpenPdf }) {
   const handleRemove = async (id, title) => {
     if (window.confirm(`Remove "${title}" from library?`)) {
       try {
-        await libraryService.deletePdf(id);
+        await libraryService.removePDFFromLibrary(id);
         await loadLibrary();
       } catch (error) {
-        console.error('Failed to remove PDF:', error);
-        alert('Failed to remove PDF');
+        console.error('❌ Failed to remove PDF:', error);
+        alert(`Failed to remove PDF:\n${error.message}`);
       }
     }
   };
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      try {
-        const id = await libraryService.addPdf(file, {
-          title: file.name.replace('.pdf', ''),
-          currentPage: 1,
-          lastOpened: new Date().toISOString()
-        });
-        await loadLibrary();
-      } catch (error) {
-        console.error('Failed to add PDF:', error);
-        alert('Failed to add PDF to library');
-      }
+    if (!file) return;
+    
+    if (file.type !== 'application/pdf') {
+      alert('Please select a valid PDF file');
+      return;
+    }
+    
+    console.log('📄 Adding PDF to library:', file.name);
+    
+    try {
+      const libraryItem = await libraryService.addPDFToLibrary(file, {
+        name: file.name.replace('.pdf', ''),
+        subject: 'General',
+        workspace: 'My Files'
+      });
+      console.log('✅ PDF added successfully:', libraryItem);
+      await loadLibrary();
+      alert(`✅ "${file.name}" added to library!`);
+    } catch (error) {
+      console.error('❌ Failed to add PDF:', error);
+      alert(`Failed to add PDF to library:\n${error.message}\n\nPlease try again.`);
     }
   };
 
   const filteredPdfs = pdfs.filter(pdf =>
-    pdf.title?.toLowerCase().includes(searchTerm.toLowerCase())
+    pdf.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = pdfs.reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0);
@@ -227,7 +237,7 @@ function Library({ onBack, onOpenPdf }) {
                     sx={{
                       height: 140,
                       bgcolor: '#f5f5f5',
-                      backgroundImage: pdf.thumbnail ? `url(${pdf.thumbnail})` : 'none',
+                      backgroundImage: pdf.thumbnailUrl ? `url(${pdf.thumbnailUrl})` : 'none',
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       display: 'flex',
@@ -237,7 +247,7 @@ function Library({ onBack, onOpenPdf }) {
                     }}
                     onClick={() => onOpenPdf(pdf)}
                   >
-                    {!pdf.thumbnail && (
+                    {!pdf.thumbnailUrl && (
                       <MenuBook sx={{ fontSize: 48, color: 'text.disabled' }} />
                     )}
                   </CardMedia>
@@ -258,7 +268,7 @@ function Library({ onBack, onOpenPdf }) {
                         mb: 1
                       }}
                     >
-                      {pdf.title}
+                      {pdf.name}
                     </Typography>
 
                     {/* Progress */}
@@ -266,7 +276,7 @@ function Library({ onBack, onOpenPdf }) {
                       <Box sx={{ mb: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                           <Typography variant="caption" color="text.secondary">
-                            Page {pdf.currentPage || 1} of {pdf.totalPages || '?'}
+                            Page {pdf.lastPage || 1} of {pdf.totalPages || '?'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {pdf.progress?.toFixed(0)}%
@@ -293,7 +303,7 @@ function Library({ onBack, onOpenPdf }) {
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => handleRemove(pdf.id, pdf.title)}
+                        onClick={() => handleRemove(pdf.id, pdf.name)}
                       >
                         <Delete fontSize="small" />
                       </IconButton>
