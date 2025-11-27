@@ -140,16 +140,21 @@ function Library({ onBack, onOpenPdf }) {
       setExtractedPdfs(pdfFiles);
       const detectedMetadata = pdfFiles[0].metadata;
       
+      console.log('📋 First PDF metadata:', detectedMetadata);
+      console.log('📋 Collection from metadata:', detectedMetadata.collection);
+      console.log('📋 ZIP filename:', zipFile.name);
+      
       // Ensure we have a collection name
       let bookName = detectedMetadata.collection || zipFile.name.replace('.zip', '');
       
       // If bookName looks like a code (e.g., "hecu1dd"), make it more readable
       if (bookName.length < 10 && /^[a-z0-9]+$/i.test(bookName)) {
+        console.log('📋 Book name is code-like, converting to uppercase');
         bookName = bookName.toUpperCase();
       }
       
-      console.log('📚 ZIP extraction complete. Book name:', bookName);
-      console.log('📋 Detected metadata:', detectedMetadata);
+      console.log('📚 ===== FINAL BOOK NAME =====:', bookName);
+      console.log('📋 Full detected metadata:', JSON.stringify(detectedMetadata, null, 2));
       
       setUploadMetadata({
         subject: detectedMetadata.subject || '',
@@ -188,7 +193,16 @@ function Library({ onBack, onOpenPdf }) {
             message: `Adding ${pdfData.filename}...` 
           });
           
+          // Determine collection name with priority
           const collectionName = uploadMetadata.bookName || pdfData.metadata.collection || 'Book Collection';
+          
+          console.log('📚 ===== ADDING PDF TO LIBRARY =====');
+          console.log('📚 uploadMetadata.bookName:', uploadMetadata.bookName);
+          console.log('📚 pdfData.metadata.collection:', pdfData.metadata.collection);
+          console.log('📚 Final collectionName:', collectionName);
+          console.log('📚 Chapter:', pdfData.metadata.chapter);
+          console.log('📚 Filename:', pdfData.filename);
+          
           const pdfName = pdfData.metadata.type === 'chapter'
             ? `${collectionName} - ${pdfData.metadata.title}`
             : `${collectionName} - ${pdfData.metadata.title}`;
@@ -202,6 +216,8 @@ function Library({ onBack, onOpenPdf }) {
             chapter: pdfData.metadata.chapter,
             chapterTitle: pdfData.metadata.title
           });
+          
+          console.log('✅ PDF added with collection:', libraryItem.collection);
           
           // Store cover image as thumbnail if available
           if (pdfData.metadata.coverImage) {
