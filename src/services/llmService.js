@@ -213,10 +213,11 @@ async function callGemini(prompt, apiKey, config) {
 
 /**
  * Groq API (OpenAI-compatible, ultra-fast)
+ * V3.0.1: Updated to current supported model
  */
 async function callGroq(prompt, apiKey, config) {
-  const model = 'llama-3.1-70b-versatile'; // Fast & powerful
-  // Alternative: 'mixtral-8x7b-32768' for longer context
+  const model = 'llama-3.3-70b-versatile'; // V3.0.1: Updated (llama-3.1 decommissioned)
+  // Alternative models: 'mixtral-8x7b-32768' for longer context, 'llama-3.1-8b-instant' for speed
   
   const messages = [
     ...(config.systemPrompt ? [{ role: 'system', content: config.systemPrompt }] : []),
