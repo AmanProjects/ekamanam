@@ -74,7 +74,7 @@ IMPORTANT: Return ONLY the JSON object with English translations. No explanation
   });
 }
 
-export async function translateExplanationToEnglish(explainContent, apiKey) {
+export async function translateExplanationToEnglish(explainContent, apiKey = null) {
   const prompt = `You are a translator. Translate the following explanation content to English.
 
 Original Content (JSON):
@@ -108,13 +108,14 @@ IMPORTANT:
 - Preserve all structure and types
 - Translate all text content to English`;
 
-  return await callGeminiAPI(prompt, apiKey, {
+  return await callLLM(prompt, {
+    feature: 'explain',
     temperature: 0.5,
-    maxOutputTokens: 6144
+    maxTokens: 6144
   });
 }
 
-export async function generateReadAndUnderstand(paragraphText, withExplanation, apiKey) {
+export async function generateReadAndUnderstand(paragraphText, withExplanation, apiKey = null) {
   const prompt = withExplanation ? 
     `You are helping students read an educational textbook. The text below was extracted using OCR (Optical Character Recognition) from a PDF.
 
@@ -146,13 +147,14 @@ Return JSON:
   "original": "Cleaned text in original language"
 }`;
 
-  return await callGeminiAPI(prompt, apiKey, {
+  return await callLLM(prompt, {
+    feature: 'explain',
     temperature: 0.3,
-    maxOutputTokens: 2048
+    maxTokens: 2048
   });
 }
 
-export async function generateExplanation(selectedText, contextText, apiKey) {
+export async function generateExplanation(selectedText, contextText, apiKey = null) {
   // Handle case where contextText might be an array (priorContext) or string
   const contextString = Array.isArray(contextText) 
     ? contextText.map(p => `Page ${p.pageNumber}: ${p.summary}`).join('\n')
@@ -385,13 +387,14 @@ Generate 5 MCQs, 5 practice questions, 3 hands-on activities, 3 discussion promp
 For regional language content, provide BOTH original language and English for everything to help non-native students learn.
 Return ONLY the JSON.`;
 
-  return await callGeminiAPI(prompt, apiKey, {
+  return await callLLM(prompt, {
+    feature: 'activities',
     temperature: 0.7,
-    maxOutputTokens: 6144
+    maxTokens: 6144
   });
 }
 
-export async function generateAdditionalResources(selectedText, contextText, apiKey) {
+export async function generateAdditionalResources(selectedText, contextText, apiKey = null) {
   // Handle case where contextText might be an array (priorContext) or string
   const contextString = Array.isArray(contextText) 
     ? contextText.map(p => `Page ${p.pageNumber}: ${p.summary}`).join('\n')
@@ -425,13 +428,14 @@ IMPORTANT:
 
 Return ONLY the JSON.`;
 
-  return await callGeminiAPI(prompt, apiKey, {
+  return await callLLM(prompt, {
+    feature: 'resources',
     temperature: 0.7,
-    maxOutputTokens: 3072
+    maxTokens: 3072
   });
 }
 
-export async function generateWordByWordAnalysis(pageText, apiKey, excludeWords = '', batchNumber = 1) {
+export async function generateWordByWordAnalysis(pageText, apiKey = null, excludeWords = '', batchNumber = 1) {
   const sequentialInstruction = batchNumber === 1
     ? `\n\nEXTRACT WORDS SEQUENTIALLY: Start from the BEGINNING of the text and extract the first 10 important content words in the order they appear.`
     : `\n\nEXTRACT WORDS SEQUENTIALLY: You already covered these words: ${excludeWords}\nNow continue from where you left off and extract the NEXT 10 important words in sequential order.`;

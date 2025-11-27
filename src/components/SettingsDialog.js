@@ -73,9 +73,6 @@ function SettingsDialog({ open, onClose, user }) {
     }, 1500);
   };
 
-  // Import multi-provider settings
-  const [useMultiProvider, setUseMultiProvider] = useState(true);
-
   return (
     <Dialog 
       open={open} 
@@ -91,9 +88,36 @@ function SettingsDialog({ open, onClose, user }) {
       </DialogTitle>
       <DialogContent>
         <Box sx={{ py: 2 }}>
-          {/* Legacy Gemini-only settings (for backward compatibility) */}
-          {!useMultiProvider && (
-            <>
+          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} sx={{ mb: 2 }}>
+            <Tab label="🤖 Multi-Provider (Recommended)" />
+            <Tab label="Legacy (Gemini Only)" />
+          </Tabs>
+          
+          {/* Multi-Provider Settings Tab */}
+          {tabValue === 0 && (
+            <Box>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>🆕 New Feature!</strong> Configure multiple AI providers for automatic fallback and better reliability.
+                  <br />
+                  <strong>Recommended:</strong> Add Gemini + Groq for 16,000 free queries/day!
+                </Typography>
+              </Alert>
+              
+              <MultiProviderSettings />
+            </Box>
+          )}
+          
+          {/* Legacy Settings Tab */}
+          {tabValue === 1 && (
+            <Box>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  ⚠️ <strong>Legacy Mode:</strong> Only Gemini provider. 
+                  Switch to Multi-Provider for automatic fallback and better reliability.
+                </Typography>
+              </Alert>
+              
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 Gemini API Key
               </Typography>
@@ -108,59 +132,62 @@ function SettingsDialog({ open, onClose, user }) {
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 variant="outlined"
-            sx={{ mb: 2 }}
-          />
+                sx={{ mb: 2 }}
+              />
 
-          <Alert severity="info" sx={{ mb: 2 }}>
-            <Typography variant="body2">
-              <strong>How to get your API key:</strong>
-            </Typography>
-            <Typography variant="body2" component="ol" sx={{ pl: 2, mt: 1 }}>
-              <li>Visit <Link href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</Link></li>
-              <li>Sign in with your Google account</li>
-              <li>Click "Create API Key"</li>
-              <li>Copy and paste the key here</li>
-            </Typography>
-          </Alert>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>How to get your API key:</strong>
+                </Typography>
+                <Typography variant="body2" component="ol" sx={{ pl: 2, mt: 1 }}>
+                  <li>Visit <Link href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</Link></li>
+                  <li>Sign in with your Google account</li>
+                  <li>Click "Create API Key"</li>
+                  <li>Copy and paste the key here</li>
+                </Typography>
+              </Alert>
 
-          {saved && (
-            <Alert severity="success">
-              API key saved successfully!
-            </Alert>
-          )}
+              {saved && (
+                <Alert severity="success">
+                  API key saved successfully!
+                </Alert>
+              )}
 
-          <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 3 }} />
 
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Account
-          </Typography>
-          {user ? (
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Signed in as: <strong>{user.email}</strong>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Account
               </Typography>
+              {user ? (
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Signed in as: <strong>{user.email}</strong>
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Not signed in. Sign in to sync your settings across devices.
+                </Typography>
+              )}
             </Box>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              Not signed in. Sign in to sync your settings across devices.
-            </Typography>
           )}
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button 
-          variant="contained" 
-          onClick={handleSave}
-          startIcon={<Save />}
-          disabled={!apiKey.trim()}
-        >
-          Save
-        </Button>
+        <Button onClick={onClose}>Close</Button>
+        {tabValue === 1 && (
+          <Button 
+            variant="contained" 
+            onClick={handleSave}
+            startIcon={<Save />}
+            disabled={!apiKey.trim()}
+          >
+            Save
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
 }
 
 export default SettingsDialog;
-
