@@ -17,15 +17,25 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  IconButton
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress
 } from '@mui/material';
 import {
   ExpandMore,
   Settings as SettingsIcon,
   Save as SaveIcon,
   RestartAlt as ResetIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  CloudUpload,
+  Delete,
+  Folder,
+  Refresh
 } from '@mui/icons-material';
+import libraryService from '../services/libraryService';
+import zipHandler from '../services/zipHandler';
 
 const DEFAULT_CONFIG = {
   // Tab Visibility
@@ -85,6 +95,16 @@ const DEFAULT_CONFIG = {
 function AdminDashboard({ open, onClose }) {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [saved, setSaved] = useState(false);
+  
+  // Library management state
+  const [pdfs, setPdfs] = useState([]);
+  const [loadingLibrary, setLoadingLibrary] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [uploadMetadata, setUploadMetadata] = useState({
+    subject: '',
+    class: '',
+    bookName: ''
+  });
 
   // Load config from localStorage
   useEffect(() => {
@@ -96,7 +116,88 @@ function AdminDashboard({ open, onClose }) {
         console.error('Failed to load admin config:', error);
       }
     }
-  }, []);
+    
+    // Load library
+    if (open) {
+      loadLibrary();
+    }
+  }, [open]);
+  
+  const loadLibrary = async () => {
+    setLoadingLibrary(true);
+    try {
+      const allPdfs = await libraryService.getAllLibraryItems();
+      setPdfs(allPdfs);
+    } catch (error) {
+      console.error('Failed to load library:', error);
+    } finally {
+      setLoadingLibrary(false);
+    }
+  };
+  
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    setUploadingPdf(true);
+    
+    try {
+      // Check if ZIP
+      if (zipHandler.isZipFile(file)) {
+        const extracted = await zipHandler.extractZipFile(file, (current, total, message) => {
+          console.log(`Progress: ${current}/${total} - ${message}`);
+        });
+        
+        // Add all PDFs from ZIP
+        for (const pdfData of extracted.pdfFiles) {
+          await libraryService.addPDFToLibrary(pdfData.file, {
+            name: pdfData.metadata.title || pdfData.filename,
+            subject: uploadMetadata.subject || pdfData.metadata.subject,
+            class: uploadMetadata.class || pdfData.metadata.class,
+            collection: uploadMetadata.bookName || pdfData.metadata.collection,
+            chapter: pdfData.metadata.chapter,
+            chapterTitle: pdfData.metadata.title,
+            totalPages: pdfData.metadata.totalPages,
+            pdfTitle: pdfData.metadata.pdfTitle
+          });
+        }
+        
+        alert(`✅ Added ${extracted.pdfFiles.length} PDFs from ZIP`);
+      } else {
+        // Single PDF
+        await libraryService.addPDFToLibrary(file, {
+          name: file.name.replace('.pdf', ''),
+          subject: uploadMetadata.subject,
+          class: uploadMetadata.class,
+          collection: uploadMetadata.bookName || 'Uncategorized'
+        });
+        
+        alert(`✅ Added ${file.name}`);
+      }
+      
+      await loadLibrary();
+      setUploadMetadata({ subject: '', class: '', bookName: '' });
+      
+    } catch (error) {
+      console.error('Failed to upload:', error);
+      alert(`❌ Failed to upload: ${error.message}`);
+    } finally {
+      setUploadingPdf(false);
+    }
+  };
+  
+  const handleDeletePdf = async (id, name) => {
+    if (window.confirm(`Delete "${name}" from library? This cannot be undone.`)) {
+      try {
+        await libraryService.removePDFFromLibrary(id);
+        await loadLibrary();
+        alert(`✅ Deleted ${name}`);
+      } catch (error) {
+        console.error('Failed to delete:', error);
+        alert(`❌ Failed to delete: ${error.message}`);
+      }
+    }
+  };
 
   const handleSave = () => {
     localStorage.setItem('ekamanam_admin_config', JSON.stringify(config));
@@ -206,6 +307,142 @@ function AdminDashboard({ open, onClose }) {
             Configuration saved successfully! Refresh the page to apply changes.
           </Alert>
         )}
+
+        {/* Library Management Section */}
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Folder color="primary" />
+              <Typography variant="h6">📚 Library Management</Typography>
+              <Chip label={`${pdfs.length} PDFs`} size="small" color="primary" />
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <strong>Admin Only:</strong> Only admins can add or remove PDFs. Students can only view and use PDFs from the library.
+            </Alert>
+            
+            {/* Upload Section */}
+            <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Add PDFs to Library
+              </Typography>
+              
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Subject"
+                    value={uploadMetadata.subject}
+                    onChange={(e) => setUploadMetadata(prev => ({ ...prev, subject: e.target.value }))}
+                    placeholder="e.g., Mathematics"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Class"
+                    value={uploadMetadata.class}
+                    onChange={(e) => setUploadMetadata(prev => ({ ...prev, class: e.target.value }))}
+                    placeholder="e.g., 10"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Book Name"
+                    value={uploadMetadata.bookName}
+                    onChange={(e) => setUploadMetadata(prev => ({ ...prev, bookName: e.target.value }))}
+                    placeholder="e.g., Geometry"
+                  />
+                </Grid>
+              </Grid>
+              
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={uploadingPdf ? <CircularProgress size={20} /> : <CloudUpload />}
+                disabled={uploadingPdf}
+                fullWidth
+              >
+                {uploadingPdf ? 'Uploading...' : 'Upload PDF or ZIP'}
+                <input
+                  type="file"
+                  hidden
+                  accept=".pdf,.zip"
+                  onChange={handleFileUpload}
+                />
+              </Button>
+              
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                Upload a single PDF or ZIP file containing multiple chapter PDFs
+              </Typography>
+            </Paper>
+            
+            {/* PDF List */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Current Library ({pdfs.length} PDFs)
+              </Typography>
+              <IconButton onClick={loadLibrary} disabled={loadingLibrary}>
+                <Refresh />
+              </IconButton>
+            </Box>
+            
+            {loadingLibrary ? (
+              <Box sx={{ textAlign: 'center', py: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : pdfs.length === 0 ? (
+              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'background.default' }}>
+                <Typography color="text.secondary">
+                  No PDFs in library. Upload PDFs to get started.
+                </Typography>
+              </Paper>
+            ) : (
+              <List sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                {pdfs.map(pdf => (
+                  <ListItem
+                    key={pdf.id}
+                    sx={{
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      mb: 1,
+                      bgcolor: 'background.paper'
+                    }}
+                    secondaryAction={
+                      <IconButton
+                        edge="end"
+                        color="error"
+                        onClick={() => handleDeletePdf(pdf.id, pdf.name)}
+                      >
+                        <Delete />
+                      </IconButton>
+                    }
+                  >
+                    <ListItemText
+                      primary={pdf.name}
+                      secondary={
+                        <Box component="span">
+                          {pdf.subject && <Chip label={pdf.subject} size="small" sx={{ mr: 0.5 }} />}
+                          {pdf.class && <Chip label={`Class ${pdf.class}`} size="small" sx={{ mr: 0.5 }} />}
+                          {pdf.collection && <Chip label={pdf.collection} size="small" sx={{ mr: 0.5 }} />}
+                          <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                            {pdf.totalPages || 0} pages • {((pdf.size || 0) / 1024 / 1024).toFixed(2)} MB
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </AccordionDetails>
+        </Accordion>
 
         {/* Tab Visibility */}
         <Accordion defaultExpanded>

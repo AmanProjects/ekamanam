@@ -8,7 +8,7 @@ import { auth, db } from './firebase/config';
 import PDFViewer from './components/PDFViewer';
 import AIModePanel from './components/AIModePanel';
 import Dashboard from './components/Dashboard';
-import Library from './components/Library';
+import StudentLibrary from './components/StudentLibrary';
 import SettingsDialog from './components/SettingsDialog';
 import AdminDashboard from './components/AdminDashboard';
 import AdminOTPDialog from './components/AdminOTPDialog';
