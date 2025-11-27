@@ -101,39 +101,35 @@ function Dashboard({ onOpenLibrary }) {
             borderRadius: 2
           }}
         >
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ textAlign: 'center', mb: 2 }}>
-            Learning Features
-          </Typography>
-          
-          <Grid container spacing={2}>
+          <Grid container spacing={3}>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center' }}>
-                <SchoolIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 0.5 }} />
-                <Typography variant="caption" fontWeight={500}>
+              <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <SchoolIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>
                   Teacher Mode
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center' }}>
-                <TipsIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 0.5 }} />
-                <Typography variant="caption" fontWeight={500}>
+              <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <TipsIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>
                   Smart Explain
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center' }}>
-                <LanguageIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 0.5 }} />
-                <Typography variant="caption" fontWeight={500}>
+              <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <LanguageIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>
                   Multilingual
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center' }}>
-                <SpeedIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 0.5 }} />
-                <Typography variant="caption" fontWeight={500}>
+              <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <SpeedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>
                   Lightning Fast
                 </Typography>
               </Box>
