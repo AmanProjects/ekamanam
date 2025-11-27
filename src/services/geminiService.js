@@ -457,29 +457,36 @@ Return ONLY JSON, no markdown.`;
  * @param {Array<number>} pageReferences - Page numbers to focus on
  * @returns {Promise<string>} - Generated answer
  */
-export const generateLongAnswer = async (question, fullPdfText, pageReferences = []) => {
-  const prompt = `Generate exam answer for:
+export const generateLongAnswer = async (question, fullPdfText, pageReferences = [], hints = []) => {
+  const prompt = `Generate a comprehensive exam answer for this question:
 
+QUESTION:
 ${question}
 
-REFERENCE:
+${hints && hints.length > 0 ? `HINTS:
+${hints.map((h, i) => `${i + 1}. ${h}`).join('\n')}` : ''}
+
+${pageReferences && pageReferences.length > 0 ? `REFERENCE PAGES: ${pageReferences.join(', ')}` : ''}
+
+RELEVANT CONTENT FROM PDF:
 ${fullPdfText.substring(0, 4000)}
 
-${pageReferences.length > 0 ? `PAGES: ${pageReferences.join(', ')}` : ''}
+REQUIREMENTS:
+- Comprehensive, well-structured answer
+- Use the hints provided to guide your answer
+- Academic language appropriate for exams
+- Clear points with proper explanations
+- 200-300 words
+- Use ** for bold text (important terms)
+- Include relevant examples from the content
+- Structure with introduction, main points, and conclusion
 
-Requirements:
-- Comprehensive answer
-- Academic language
-- Clear points
-- 200-250 words
-- Use ** for bold
-
-Answer:`;
+Generate a model answer that would score full marks:`;
 
   const response = await callLLM(prompt, {
     feature: 'longAnswer',
     temperature: 0.7,
-    maxTokens: 1536
+    maxTokens: 2048
   });
 
   return response;

@@ -700,20 +700,27 @@ Return ONLY the English translation, no extra text.`;
       const question = examPrepResponse.longAnswer[questionIndex];
       const fullText = await extractFullPdfText(pdfDocument);
       
+      console.log('📝 Generating long answer for question:', question.question);
+      console.log('📚 Hints:', question.hints);
+      console.log('📄 Page References:', question.pageReferences);
+      
       const answer = await generateLongAnswer(
         question.question || question.original,
         fullText,
-        question.pageReferences
+        question.pageReferences,
+        question.hints
       );
+      
+      console.log('✅ Long answer generated:', answer.substring(0, 100) + '...');
       
       setExamAnswers({
         ...examAnswers,
-        [questionIndex]: answer
+        [`long_answer_${questionIndex}`]: answer
       });
       
     } catch (error) {
-      console.error('Error generating answer:', error);
-      setError('Failed to generate answer');
+      console.error('❌ Error generating long answer:', error);
+      setError(`Failed to generate answer: ${error.message}`);
     } finally {
       setGeneratingAnswer(null);
     }
@@ -2951,16 +2958,16 @@ Return ONLY this valid JSON:
                         {generatingAnswer === index ? 'Generating...' : 'Generate Answer'}
                       </Button>
 
-                      {examAnswers[index] && (
+                      {examAnswers[`long_answer_${index}`] && (
                         <Paper sx={{ p: 2, mt: 2, bgcolor: '#f5f5f5' }}>
                           <Typography variant="body2" fontWeight={600} gutterBottom>
-                            Model Answer:
+                            📖 Model Answer:
                           </Typography>
                           <Typography 
                             variant="body2" 
                             sx={{ whiteSpace: 'pre-wrap' }}
                             dangerouslySetInnerHTML={{ 
-                              __html: formatMarkdown(examAnswers[index]) 
+                              __html: formatMarkdown(examAnswers[`long_answer_${index}`]) 
                             }}
                           />
                         </Paper>
