@@ -23,10 +23,8 @@ import {
   Search,
   MenuBook,
   ExpandMore,
-  CloudDownload,
-  CircularProgress as CircularProgressIcon
+  CloudDownload
 } from '@mui/icons-material';
-import { CircularProgress } from '@mui/material';
 import libraryService from '../services/libraryService';
 
 function StudentLibrary({ onBack, onOpenPdf }) {
