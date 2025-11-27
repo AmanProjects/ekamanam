@@ -346,9 +346,7 @@ function App() {
         {view === 'dashboard' ? (
           <Dashboard 
             onFileSelect={handleFileSelect}
-            onStartReading={handleStartReading}
-            selectedFile={selectedFile}
-            onViewLibrary={() => setView('library')}
+            onOpenLibrary={() => setView('library')}
           />
         ) : view === 'library' ? (
           <Library

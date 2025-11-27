@@ -36,13 +36,14 @@ function Dashboard({ onFileSelect, onOpenLibrary }) {
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Box
             component="img"
-            src={`${process.env.PUBLIC_URL}/Ekamanaml.png`}
+            src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
             alt="Ekamanam"
             sx={{
-              width: 140,
-              height: 140,
+              maxWidth: 200,
+              height: 'auto',
               mx: 'auto',
-              mb: 2
+              mb: 2,
+              display: 'block'
             }}
           />
           <Typography variant="h3" fontWeight={600} gutterBottom sx={{ color: '#1a1a1a' }}>

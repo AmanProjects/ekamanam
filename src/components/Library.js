@@ -1,329 +1,312 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Container,
   Typography,
   Button,
-  Grid,
-  Alert,
-  CircularProgress,
   TextField,
   InputAdornment,
-  Paper,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  IconButton,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText
+  LinearProgress,
+  Paper,
+  Divider
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Search as SearchIcon,
-  Delete as DeleteIcon
+  ArrowBack,
+  Search,
+  Delete,
+  CloudUpload,
+  MenuBook
 } from '@mui/icons-material';
-import LibraryCard from './LibraryCard';
-import { 
-  getAllLibraryItems, 
-  removePDFFromLibrary,
-  searchLibrary,
-  getLibraryStats
-} from '../services/libraryService';
+import libraryService from '../services/libraryService';
 
-/**
- * Library - Main library view component
- * 
- * Props:
- * - onOpenPDF: Function to open a PDF from library
- * - onAddPDF: Function to add new PDF
- */
-const Library = ({ onOpenPDF, onAddPDF }) => {
-  const [libraryItems, setLibraryItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
+function Library({ onBack, onOpenPdf }) {
+  const [pdfs, setPdfs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [stats, setStats] = useState(null);
-  const [error, setError] = useState(null);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
 
-  // Load library on mount
   useEffect(() => {
     loadLibrary();
   }, []);
 
-  // Filter items when search changes
-  useEffect(() => {
-    const filterLibrary = async () => {
-      if (searchQuery.trim()) {
-        try {
-          const results = await searchLibrary(searchQuery);
-          setFilteredItems(results);
-        } catch (err) {
-          console.error('Error searching library:', err);
-        }
-      } else {
-        setFilteredItems(libraryItems);
-      }
-    };
-    
-    filterLibrary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, libraryItems]);
-
   const loadLibrary = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const [items, libraryStats] = await Promise.all([
-        getAllLibraryItems(),
-        getLibraryStats()
-      ]);
-      setLibraryItems(items);
-      setFilteredItems(items);
-      setStats(libraryStats);
-    } catch (err) {
-      console.error('Error loading library:', err);
-      setError('Failed to load library. Please refresh the page.');
+      const allPdfs = await libraryService.getAllPdfs();
+      setPdfs(allPdfs);
+    } catch (error) {
+      console.error('Failed to load library:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = async (query) => {
-    if (!query.trim()) {
-      setFilteredItems(libraryItems);
-      return;
-    }
-    
-    try {
-      const results = await searchLibrary(query);
-      setFilteredItems(results);
-    } catch (err) {
-      console.error('Error searching library:', err);
+  const handleRemove = async (id, title) => {
+    if (window.confirm(`Remove "${title}" from library?`)) {
+      try {
+        await libraryService.deletePdf(id);
+        await loadLibrary();
+      } catch (error) {
+        console.error('Failed to remove PDF:', error);
+        alert('Failed to remove PDF');
+      }
     }
   };
 
-  const handleRemove = (item) => {
-    setDeleteDialog({ open: true, item });
-  };
-
-  const confirmRemove = async () => {
-    const { item } = deleteDialog;
-    if (!item) return;
-
-    try {
-      await removePDFFromLibrary(item.id);
-      setLibraryItems(prev => prev.filter(i => i.id !== item.id));
-      setDeleteDialog({ open: false, item: null });
-    } catch (err) {
-      console.error('Error removing PDF:', err);
-      setError('Failed to remove PDF. Please try again.');
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      try {
+        const id = await libraryService.addPdf(file, {
+          title: file.name.replace('.pdf', ''),
+          currentPage: 1,
+          lastOpened: new Date().toISOString()
+        });
+        await loadLibrary();
+      } catch (error) {
+        console.error('Failed to add PDF:', error);
+        alert('Failed to add PDF to library');
+      }
     }
   };
 
-  const handleOpen = (item) => {
-    onOpenPDF(item);
-  };
+  const filteredPdfs = pdfs.filter(pdf =>
+    pdf.title?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Format stats
-  const formatSize = (bytes) => {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+  const totalPages = pdfs.reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0);
+  const avgProgress = pdfs.length > 0
+    ? pdfs.reduce((sum, pdf) => sum + (pdf.progress || 0), 0) / pdfs.length
+    : 0;
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" gutterBottom fontWeight={700}>
-          📚 My Library
-        </Typography>
-        
-        {/* Stats */}
-        {stats && (
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-            <Chip 
-              label={`${stats.totalPDFs} file${stats.totalPDFs !== 1 ? 's' : ''}`} 
-              color="primary" 
-            />
-            {stats.totalPages > 0 && (
-              <Chip 
-                label={`${stats.totalPages} pages`} 
-                variant="outlined"
-              />
-            )}
-            {stats.totalSize > 0 && (
-              <Chip 
-                label={formatSize(stats.totalSize)} 
-                variant="outlined"
-              />
-            )}
-            {stats.inProgressPDFs > 0 && (
-              <Chip 
-                label={`${stats.inProgressPDFs} in progress`} 
-                color="warning"
-                variant="outlined"
-              />
-            )}
-            {stats.completedPDFs > 0 && (
-              <Chip 
-                label={`${stats.completedPDFs} completed`} 
-                color="success"
-                variant="outlined"
-              />
-            )}
-          </Box>
-        )}
-
-        {/* Search and Actions */}
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <TextField
-            placeholder="Search library..."
-            variant="outlined"
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ flexGrow: 1, minWidth: '250px' }}
-          />
-          
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={onAddPDF}
-          >
-            Add PDF
-          </Button>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa', py: 3 }}>
+      <Container maxWidth="lg">
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <IconButton onClick={onBack} sx={{ mr: 2 }}>
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h5" fontWeight={600}>
+            My Library
+          </Typography>
         </Box>
-      </Box>
 
-      {/* Error Message */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Loading State */}
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      {/* Empty State */}
-      {!loading && libraryItems.length === 0 && (
-        <Paper 
-          sx={{ 
-            p: 6, 
-            textAlign: 'center', 
-            bgcolor: 'background.default',
-            flexGrow: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
-        >
-          <Typography variant="h5" gutterBottom color="text.secondary">
-            📚 Your Library is Empty
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Add your first PDF to get started with organized learning
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            startIcon={<AddIcon />}
-            onClick={onAddPDF}
-          >
-            Add Your First PDF
-          </Button>
-        </Paper>
-      )}
-
-      {/* Library Grid */}
-      {!loading && filteredItems.length > 0 && (
-        <>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Showing {filteredItems.length} of {libraryItems.length} file{libraryItems.length !== 1 ? 's' : ''}
-          </Typography>
-          
-          <Grid container spacing={3}>
-            {filteredItems.map((item) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
-                <LibraryCard
-                  item={item}
-                  onOpen={handleOpen}
-                  onRemove={handleRemove}
+        {/* Stats & Search */}
+        <Paper elevation={0} sx={{ p: 2, mb: 3, border: '1px solid', borderColor: 'divider' }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h4" fontWeight={600} color="primary.main">
+                  {pdfs.length}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  PDFs
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h4" fontWeight={600} color="primary.main">
+                  {totalPages}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Total Pages
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h4" fontWeight={600} color="primary.main">
+                  {avgProgress.toFixed(0)}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Avg Progress
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Button
+                component="label"
+                variant="contained"
+                fullWidth
+                startIcon={<CloudUpload />}
+                size="small"
+              >
+                Add PDF
+                <input
+                  type="file"
+                  hidden
+                  accept="application/pdf"
+                  onChange={handleFileUpload}
                 />
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
+
+        {/* Search */}
+        <TextField
+          fullWidth
+          placeholder="Search library..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{ mb: 3 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* PDF Grid - Compact Design */}
+        {loading ? (
+          <Box sx={{ py: 4, textAlign: 'center' }}>
+            <Typography color="text.secondary">Loading library...</Typography>
+          </Box>
+        ) : filteredPdfs.length === 0 ? (
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: 6, 
+              textAlign: 'center',
+              border: '1px dashed',
+              borderColor: 'divider'
+            }}
+          >
+            <MenuBook sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              {searchTerm ? 'No PDFs found' : 'Your library is empty'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {searchTerm ? 'Try a different search term' : 'Upload your first PDF to get started'}
+            </Typography>
+            {!searchTerm && (
+              <Button
+                component="label"
+                variant="contained"
+                startIcon={<CloudUpload />}
+              >
+                Upload PDF
+                <input
+                  type="file"
+                  hidden
+                  accept="application/pdf"
+                  onChange={handleFileUpload}
+                />
+              </Button>
+            )}
+          </Paper>
+        ) : (
+          <Grid container spacing={2}>
+            {filteredPdfs.map((pdf) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={pdf.id}>
+                <Card 
+                  elevation={0}
+                  sx={{ 
+                    height: '100%',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                    }
+                  }}
+                >
+                  {/* Thumbnail */}
+                  <CardMedia
+                    component="div"
+                    sx={{
+                      height: 140,
+                      bgcolor: '#f5f5f5',
+                      backgroundImage: pdf.thumbnail ? `url(${pdf.thumbnail})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => onOpenPdf(pdf)}
+                  >
+                    {!pdf.thumbnail && (
+                      <MenuBook sx={{ fontSize: 48, color: 'text.disabled' }} />
+                    )}
+                  </CardMedia>
+
+                  <CardContent sx={{ p: 2 }}>
+                    {/* Title */}
+                    <Typography 
+                      variant="body2" 
+                      fontWeight={600} 
+                      gutterBottom
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        minHeight: '2.5em',
+                        mb: 1
+                      }}
+                    >
+                      {pdf.title}
+                    </Typography>
+
+                    {/* Progress */}
+                    {pdf.progress > 0 && (
+                      <Box sx={{ mb: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Page {pdf.currentPage || 1} of {pdf.totalPages || '?'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {pdf.progress?.toFixed(0)}%
+                          </Typography>
+                        </Box>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={pdf.progress || 0}
+                          sx={{ height: 4, borderRadius: 2 }}
+                        />
+                      </Box>
+                    )}
+
+                    {/* Actions */}
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        fullWidth
+                        onClick={() => onOpenPdf(pdf)}
+                      >
+                        Open
+                      </Button>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleRemove(pdf.id, pdf.title)}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
               </Grid>
             ))}
           </Grid>
-        </>
-      )}
-
-      {/* No Search Results */}
-      {!loading && searchQuery && filteredItems.length === 0 && libraryItems.length > 0 && (
-        <Paper 
-          sx={{ 
-            p: 4, 
-            textAlign: 'center', 
-            bgcolor: 'background.default',
-            mt: 3
-          }}
-        >
-          <Typography variant="h6" gutterBottom color="text.secondary">
-            No results found for "{searchQuery}"
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Try a different search term
-          </Typography>
-        </Paper>
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, item: null })}
-      >
-        <DialogTitle>Remove PDF from Library?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to remove <strong>{deleteDialog.item?.name}</strong> from your library?
-            <br /><br />
-            This will delete:
-            <br />• The PDF file
-            <br />• All reading progress
-            <br />• All notes and bookmarks
-            <br /><br />
-            <strong>This action cannot be undone.</strong>
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialog({ open: false, item: null })}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={confirmRemove} 
-            color="error" 
-            variant="contained"
-            startIcon={<DeleteIcon />}
-          >
-            Remove
-          </Button>
-        </DialogActions>
-      </Dialog>
+        )}
+      </Container>
     </Box>
   );
-};
+}
 
 export default Library;
-
