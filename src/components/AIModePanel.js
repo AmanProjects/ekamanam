@@ -1255,8 +1255,16 @@ Return ONLY this valid JSON:
         <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           {showTeacherMode && <Tab icon={<TeacherIcon />} label="Teacher Mode" />}
           {showMultilingual && (
-            <Tooltip title={readTabTooltip} arrow>
-              <span>
+            <Tooltip 
+              title={readTabTooltip} 
+              arrow
+              componentsProps={{
+                tooltip: {
+                  sx: { maxWidth: 300 }
+                }
+              }}
+            >
+              <span style={{ display: 'inline-flex' }}>
                 <Tab icon={<ReadIcon />} label="Multilingual" disabled={readTabDisabled} />
               </span>
             </Tooltip>
