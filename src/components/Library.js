@@ -173,7 +173,7 @@ function Library({ onBack, onOpenPdf }) {
             ? `${uploadMetadata.bookName || 'Book'} - ${pdfData.metadata.title}`
             : `${uploadMetadata.bookName || 'Book'} - ${pdfData.metadata.title}`;
           
-          await libraryService.addPDFToLibrary(pdfData.file, {
+          const libraryItem = await libraryService.addPDFToLibrary(pdfData.file, {
             name: pdfName,
             subject: subject,
             class: uploadMetadata.class || null,
@@ -182,6 +182,16 @@ function Library({ onBack, onOpenPdf }) {
             chapter: pdfData.metadata.chapter,
             chapterTitle: pdfData.metadata.title
           });
+          
+          // Store cover image as thumbnail if available
+          if (pdfData.metadata.coverImage) {
+            try {
+              await libraryService.storeThumbnail(libraryItem.id, pdfData.metadata.coverImage);
+              console.log('✅ Cover image stored for', pdfData.metadata.title);
+            } catch (error) {
+              console.warn('⚠️ Failed to store cover image:', error);
+            }
+          }
           
           successCount++;
         }
