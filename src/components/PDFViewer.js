@@ -24,6 +24,7 @@ function PDFViewer({
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
   const containerRef = useRef(null);
+  const renderTaskRef = useRef(null); // Track current render task
   const [loading, setLoading] = useState(false);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1.5);
@@ -59,6 +60,12 @@ function PDFViewer({
 
     const renderPage = async () => {
       try {
+        // Cancel any ongoing render task before starting a new one
+        if (renderTaskRef.current) {
+          renderTaskRef.current.cancel();
+          console.log('🚫 Cancelled previous render task');
+        }
+
         const page = await pdfDocument.getPage(currentPage);
         
         // Get page rotation - PDF.js stores rotation in the page object
@@ -81,6 +88,8 @@ function PDFViewer({
         const viewport = page.getViewport({ scale }); // NEW - ignores rotation metadata
         
         const canvas = canvasRef.current;
+        if (!canvas) return;
+        
         const context = canvas.getContext('2d');
         
         // Set canvas dimensions based on viewport (already rotated)
@@ -92,8 +101,15 @@ function PDFViewer({
           viewport: viewport
         };
 
-        // Render the page with rotation applied
-        await page.render(renderContext).promise;
+        // Start render and store task reference
+        const renderTask = page.render(renderContext);
+        renderTaskRef.current = renderTask;
+
+        // Wait for render to complete
+        await renderTask.promise;
+        
+        // Clear task reference after successful render
+        renderTaskRef.current = null;
 
         // Extract text
         const textContent = await page.getTextContent();
@@ -103,11 +119,24 @@ function PDFViewer({
         // Render text layer for selection with same viewport (includes rotation)
         renderTextLayer(page, viewport);
       } catch (error) {
-        console.error('Error rendering page:', error);
+        // Ignore cancellation errors (they're expected)
+        if (error.name === 'RenderingCancelledException') {
+          console.log('✅ Render cancelled successfully');
+        } else {
+          console.error('Error rendering page:', error);
+        }
       }
     };
 
     renderPage();
+    
+    // Cleanup: Cancel any ongoing render when component unmounts or page changes
+    return () => {
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDocument, currentPage, scale, onPageTextExtract]);
 
