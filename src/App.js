@@ -8,14 +8,21 @@ import { auth, db } from './firebase/config';
 import PDFViewer from './components/PDFViewer';
 import AIModePanel from './components/AIModePanel';
 import Dashboard from './components/Dashboard';
+import Library from './components/Library';
 import SettingsDialog from './components/SettingsDialog';
 import AuthButton from './components/AuthButton';
 import FocusMonitor from './components/FocusMonitor';
 import Test3DVisualization from './components/Test3DVisualization';
+import { 
+  addPDFToLibrary, 
+  loadPDFData,
+  updateLastPage,
+  generateThumbnail 
+} from './services/libraryService';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('dashboard'); // 'dashboard' or 'reader'
+  const [view, setView] = useState('dashboard'); // 'dashboard', 'library', or 'reader'
   const [showSettings, setShowSettings] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [pdfDocument, setPdfDocument] = useState(null);
@@ -26,6 +33,10 @@ function App() {
   const [pageText, setPageText] = useState('');
   const [showAIPopup, setShowAIPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  
+  // Library state
+  const [currentLibraryItem, setCurrentLibraryItem] = useState(null);
+  const [autoSaveInterval, setAutoSaveInterval] = useState(null);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -98,12 +109,36 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  const handleFileSelect = (file) => {
+  const handleFileSelect = async (file, saveToLibrary = true) => {
     // Generate unique ID for this PDF (based on name + size + last modified)
     const uniqueId = `${file.name}_${file.size}_${file.lastModified}`;
     setPdfId(uniqueId);
     setSelectedFile(file);
+    setCurrentLibraryItem(null); // Clear library item if uploading new file
     console.log(`📚 PDF loaded: ${file.name} (ID: ${uniqueId})`);
+    
+    // Optionally save to library
+    if (saveToLibrary) {
+      try {
+        // Prompt user for metadata
+        const shouldSave = window.confirm('Would you like to save this PDF to your library for quick access later?');
+        if (shouldSave) {
+          const subject = prompt('Enter subject (e.g., Telugu, Math, Science):', 'General');
+          const workspace = prompt('Enter workspace (e.g., Class 10, Class 11):', 'My Files');
+          
+          const libraryItem = await addPDFToLibrary(file, {
+            subject: subject || 'General',
+            workspace: workspace || 'My Files',
+            userId: user?.uid
+          });
+          
+          setCurrentLibraryItem(libraryItem);
+          console.log('✅ PDF saved to library');
+        }
+      } catch (error) {
+        console.error('Error saving to library:', error);
+      }
+    }
   };
 
   const handleStartReading = () => {
@@ -111,6 +146,78 @@ function App() {
       setView('reader');
     }
   };
+  
+  const handleOpenFromLibrary = async (libraryItem) => {
+    try {
+      console.log('📖 Opening from library:', libraryItem.name);
+      
+      // Load PDF data from IndexedDB
+      const pdfData = await loadPDFData(libraryItem.id);
+      if (!pdfData) {
+        throw new Error('PDF data not found');
+      }
+      
+      // Convert ArrayBuffer to File object
+      const blob = new Blob([pdfData], { type: 'application/pdf' });
+      const file = new File([blob], libraryItem.originalFileName, { type: 'application/pdf' });
+      
+      // Set states
+      setPdfId(libraryItem.id);
+      setSelectedFile(file);
+      setCurrentLibraryItem(libraryItem);
+      setCurrentPage(libraryItem.lastPage || 1);
+      setView('reader');
+      
+      console.log(`✅ Opened from library: ${libraryItem.name}, Page: ${libraryItem.lastPage}`);
+    } catch (error) {
+      console.error('Error opening from library:', error);
+      alert('Failed to open PDF from library. Please try again.');
+    }
+  };
+  
+  const handleAddPDF = () => {
+    // Trigger file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleFileSelect(file, true);
+        setView('reader');
+      }
+    };
+    input.click();
+  };
+  
+  // Auto-save current page to library
+  useEffect(() => {
+    if (currentLibraryItem && currentPage && view === 'reader') {
+      // Clear existing interval
+      if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+      }
+      
+      // Set new interval to save every 10 seconds
+      const interval = setInterval(() => {
+        updateLastPage(currentLibraryItem.id, currentPage);
+        console.log(`💾 Auto-saved progress: Page ${currentPage}`);
+      }, 10000);
+      
+      setAutoSaveInterval(interval);
+      
+      return () => clearInterval(interval);
+    }
+  }, [currentLibraryItem, currentPage, view]);
+  
+  // Generate thumbnail when PDF is loaded
+  useEffect(() => {
+    if (pdfDocument && currentLibraryItem && !currentLibraryItem.thumbnailUrl) {
+      generateThumbnail(currentLibraryItem.id, pdfDocument).catch(err => {
+        console.error('Error generating thumbnail:', err);
+      });
+    }
+  }, [pdfDocument, currentLibraryItem]);
 
   const handleTextSelect = (text) => {
     if (text && text.trim()) {
@@ -160,16 +267,16 @@ function App() {
           
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
-              variant={view === 'dashboard' ? 'contained' : 'text'}
+              variant={view === 'library' ? 'contained' : 'text'}
               startIcon={<DashboardIcon />}
-              onClick={() => setView('dashboard')}
+              onClick={() => setView('library')}
               sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Library
             </Button>
             <IconButton 
-              onClick={() => setView('dashboard')}
-              color={view === 'dashboard' ? 'primary' : 'default'}
+              onClick={() => setView('library')}
+              color={view === 'library' ? 'primary' : 'default'}
               sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
             >
               <DashboardIcon />
@@ -217,6 +324,12 @@ function App() {
             onFileSelect={handleFileSelect}
             onStartReading={handleStartReading}
             selectedFile={selectedFile}
+            onViewLibrary={() => setView('library')}
+          />
+        ) : view === 'library' ? (
+          <Library
+            onOpenPDF={handleOpenFromLibrary}
+            onAddPDF={handleAddPDF}
           />
         ) : (
           <Grid container sx={{ height: '100%' }}>

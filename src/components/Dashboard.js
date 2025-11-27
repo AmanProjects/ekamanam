@@ -20,7 +20,7 @@ import {
   Close
 } from '@mui/icons-material';
 
-function Dashboard({ onFileSelect, onStartReading, selectedFile }) {
+function Dashboard({ onFileSelect, onStartReading, selectedFile, onViewLibrary }) {
   const handleFileInputChange = (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'application/pdf') {
