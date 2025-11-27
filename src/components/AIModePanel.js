@@ -636,14 +636,14 @@ Return ONLY the English translation, no extra text.`;
       console.log('📖 Extracting full PDF text for exam prep...');
       const fullText = await extractFullPdfText(pdfDocument);
       
-      // Split into chunks (8000 characters each)
-      const chunkSize = 8000;
+      // Split into smaller chunks (3000 characters each for better token management)
+      const chunkSize = 3000;
       const chunks = [];
       for (let i = 0; i < fullText.length; i += chunkSize) {
         chunks.push(fullText.substring(i, i + chunkSize));
       }
       
-      console.log(`📚 Processing ${chunks.length} chunks...`);
+      console.log(`📚 Processing ${chunks.length} chunks (will process first 5)...`);
       
       // Process each chunk and merge results
       const mergedResponse = {
@@ -652,13 +652,20 @@ Return ONLY the English translation, no extra text.`;
         longAnswer: []
       };
       
-      for (let i = 0; i < Math.min(chunks.length, 3); i++) { // Process first 3 chunks
-        console.log(`🔄 Processing chunk ${i + 1}/${Math.min(chunks.length, 3)}...`);
-        const chunkResponse = await generateExamPrep(fullText, chunks[i], i + 1, chunks.length);
+      for (let i = 0; i < Math.min(chunks.length, 5); i++) { // Process first 5 chunks
+        console.log(`🔄 Processing chunk ${i + 1}/${Math.min(chunks.length, 5)}...`);
         
-        if (chunkResponse.mcqs) mergedResponse.mcqs.push(...chunkResponse.mcqs);
-        if (chunkResponse.shortAnswer) mergedResponse.shortAnswer.push(...chunkResponse.shortAnswer);
-        if (chunkResponse.longAnswer) mergedResponse.longAnswer.push(...chunkResponse.longAnswer);
+        try {
+          const chunkResponse = await generateExamPrep(fullText, chunks[i], i + 1, chunks.length);
+          
+          if (chunkResponse.mcqs) mergedResponse.mcqs.push(...chunkResponse.mcqs);
+          if (chunkResponse.shortAnswer) mergedResponse.shortAnswer.push(...chunkResponse.shortAnswer);
+          if (chunkResponse.longAnswer) mergedResponse.longAnswer.push(...chunkResponse.longAnswer);
+        } catch (chunkError) {
+          console.warn(`⚠️ Chunk ${i + 1} failed:`, chunkError.message);
+          // Continue with next chunk
+          continue;
+        }
       }
       
       setExamPrepResponse(mergedResponse);
@@ -2792,14 +2799,26 @@ Return ONLY this valid JSON:
                             [`mcq_${index}`]: parseInt(e.target.value)
                           })}
                         >
-                          {mcq.options?.map((option, optIndex) => (
-                            <FormControlLabel
-                              key={optIndex}
-                              value={optIndex}
-                              control={<Radio />}
-                              label={option}
-                            />
-                          ))}
+                          <FormControlLabel
+                            value={0}
+                            control={<Radio />}
+                            label="Both A and R are true, and R is the correct explanation of A"
+                          />
+                          <FormControlLabel
+                            value={1}
+                            control={<Radio />}
+                            label="Both A and R are true, but R is NOT the correct explanation of A"
+                          />
+                          <FormControlLabel
+                            value={2}
+                            control={<Radio />}
+                            label="A is true, but R is false"
+                          />
+                          <FormControlLabel
+                            value={3}
+                            control={<Radio />}
+                            label="A is false, but R is true"
+                          />
                         </RadioGroup>
                       </FormControl>
 

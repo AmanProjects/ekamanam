@@ -382,68 +382,54 @@ RULES:
  * @returns {Promise<Object>} - Exam questions in structured format
  */
 export const generateExamPrep = async (fullPdfText, currentChunk, chunkNumber, totalChunks) => {
-  const prompt = `You are an expert exam question creator for educational content.
+  const prompt = `Expert exam creator. Generate questions from this text.
 
-TEXT TO ANALYZE (Chunk ${chunkNumber}/${totalChunks}):
-${currentChunk.substring(0, 4000)}
+TEXT (Chunk ${chunkNumber}/${totalChunks}):
+${currentChunk.substring(0, 2500)}
 
-FULL PDF CONTEXT (for reference):
-${fullPdfText.substring(0, 2000)}...
-
-Generate exam preparation questions in this EXACT JSON format:
-
+JSON format:
 {
   "mcqs": [
     {
-      "assertion": "Statement about a fact or concept",
-      "reason": "Statement explaining why or providing reasoning",
-      "options": [
-        "Both A and R are true, and R is the correct explanation of A",
-        "Both A and R are true, but R is NOT the correct explanation of A",
-        "A is true, but R is false",
-        "A is false, but R is true"
-      ],
+      "assertion": "Fact statement",
+      "reason": "Reasoning",
       "correctAnswer": 0,
-      "explanation": "Why this answer is correct",
-      "original": "Regional language version (if applicable)",
-      "english": "English version (if content is regional language)"
+      "explanation": "Why correct"
     }
   ],
   "shortAnswer": [
     {
-      "question": "Question text",
-      "answer": "Concise answer (3-4 sentences)",
-      "keywords": ["key", "terms", "to", "remember"],
-      "original": "Regional language version (if applicable)",
-      "english": "English version (if content is regional language)"
+      "question": "Question",
+      "answer": "Answer (2-3 sentences)",
+      "keywords": ["term1", "term2"]
     }
   ],
   "longAnswer": [
     {
-      "question": "Question text",
-      "hints": ["Hint 1", "Hint 2"],
-      "pageReferences": [1, 2, 3],
-      "original": "Regional language version (if applicable)",
-      "english": "English version (if content is regional language)"
+      "question": "Question",
+      "hints": ["Hint"],
+      "pageReferences": [1]
     }
   ]
 }
 
-REQUIREMENTS:
-- Generate 5 MCQs (Assertion & Reasoning type)
-- Generate 5 Short Answer Questions (with answers)
-- Generate 3 Long Answer Questions (with hints and page references)
-- If content is in a regional language, provide both original and English
-- All questions should be from the provided text chunk
-- Questions should be exam-oriented and challenging
-- Use proper academic terminology
+Generate:
+- 3 MCQs (Assertion & Reasoning)
+- 3 Short Answer (with answers)
+- 2 Long Answer (with hints)
 
-Return ONLY the JSON object, no markdown formatting.`;
+Options for MCQs are always:
+0: Both A and R true, R explains A
+1: Both A and R true, R doesn't explain A
+2: A true, R false
+3: A false, R true
+
+Return ONLY JSON, no markdown.`;
 
   const response = await callLLM(prompt, {
     feature: 'examPrep',
     temperature: 0.7,
-    maxTokens: 6144
+    maxTokens: 4096
   });
 
   // Parse JSON response
@@ -472,32 +458,28 @@ Return ONLY the JSON object, no markdown formatting.`;
  * @returns {Promise<string>} - Generated answer
  */
 export const generateLongAnswer = async (question, fullPdfText, pageReferences = []) => {
-  const prompt = `You are an expert teacher helping a student write a comprehensive exam answer.
+  const prompt = `Generate exam answer for:
 
-QUESTION:
 ${question}
 
-REFERENCE MATERIAL:
-${fullPdfText.substring(0, 6000)}
+REFERENCE:
+${fullPdfText.substring(0, 4000)}
 
-${pageReferences.length > 0 ? `FOCUS ON PAGES: ${pageReferences.join(', ')}` : ''}
+${pageReferences.length > 0 ? `PAGES: ${pageReferences.join(', ')}` : ''}
 
-Generate a comprehensive, well-structured answer that:
-- Addresses all parts of the question
-- Uses proper academic language
-- Includes relevant examples from the text
-- Is organized with clear points
-- Is exam-ready (can be written directly)
-- Length: 200-300 words
+Requirements:
+- Comprehensive answer
+- Academic language
+- Clear points
+- 200-250 words
+- Use ** for bold
 
-If the question is in a regional language, detect it and respond in the same language.
-
-Return the answer as plain text with proper formatting (use ** for bold, * for bullets).`;
+Answer:`;
 
   const response = await callLLM(prompt, {
     feature: 'longAnswer',
     temperature: 0.7,
-    maxTokens: 2048
+    maxTokens: 1536
   });
 
   return response;
