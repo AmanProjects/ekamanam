@@ -193,11 +193,6 @@ function App() {
   // Auto-save current page to library
   useEffect(() => {
     if (currentLibraryItem && currentPage && view === 'reader') {
-      // Clear existing interval
-      if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
-      }
-      
       // Set new interval to save every 10 seconds
       const interval = setInterval(() => {
         updateLastPage(currentLibraryItem.id, currentPage);
@@ -206,8 +201,11 @@ function App() {
       
       setAutoSaveInterval(interval);
       
-      return () => clearInterval(interval);
+      return () => {
+        if (interval) clearInterval(interval);
+      };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLibraryItem, currentPage, view]);
   
   // Generate thumbnail when PDF is loaded

@@ -29,7 +29,6 @@ import {
  */
 const LibraryCard = ({ item, onOpen, onRemove, onInfo }) => {
   const {
-    id,
     name,
     thumbnailUrl,
     totalPages,

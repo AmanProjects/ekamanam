@@ -52,11 +52,21 @@ const Library = ({ onOpenPDF, onAddPDF }) => {
 
   // Filter items when search changes
   useEffect(() => {
-    if (searchQuery.trim()) {
-      handleSearch(searchQuery);
-    } else {
-      setFilteredItems(libraryItems);
-    }
+    const filterLibrary = async () => {
+      if (searchQuery.trim()) {
+        try {
+          const results = await searchLibrary(searchQuery);
+          setFilteredItems(results);
+        } catch (err) {
+          console.error('Error searching library:', err);
+        }
+      } else {
+        setFilteredItems(libraryItems);
+      }
+    };
+    
+    filterLibrary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, libraryItems]);
 
   const loadLibrary = async () => {
