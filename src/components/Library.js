@@ -19,14 +19,19 @@ import {
   MenuItem,
   Select,
   FormControl,
-  InputLabel
+  InputLabel,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Divider
 } from '@mui/material';
 import {
   ArrowBack,
   Search,
   Delete,
   CloudUpload,
-  MenuBook
+  MenuBook,
+  ExpandMore
 } from '@mui/icons-material';
 import libraryService from '../services/libraryService';
 import zipHandler from '../services/zipHandler';
@@ -227,8 +232,28 @@ function Library({ onBack, onOpenPdf }) {
   };
 
   const filteredPdfs = pdfs.filter(pdf =>
-    pdf.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    pdf.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pdf.collection?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  // Group PDFs by collection
+  const groupedPdfs = filteredPdfs.reduce((groups, pdf) => {
+    const collection = pdf.collection || 'Uncategorized';
+    if (!groups[collection]) {
+      groups[collection] = [];
+    }
+    groups[collection].push(pdf);
+    return groups;
+  }, {});
+  
+  // Sort PDFs within each group by chapter number
+  Object.keys(groupedPdfs).forEach(collection => {
+    groupedPdfs[collection].sort((a, b) => {
+      const chapterA = a.chapter || 999;
+      const chapterB = b.chapter || 999;
+      return chapterA - chapterB;
+    });
+  });
 
   const totalPages = pdfs.reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0);
   const avgProgress = pdfs.length > 0
@@ -255,8 +280,8 @@ function Library({ onBack, onOpenPdf }) {
   }, {});
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa', py: 3 }}>
-      <Container maxWidth="lg">
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#fafafa' }}>
+      <Container maxWidth="lg" sx={{ flex: 1, display: 'flex', flexDirection: 'column', py: 3, overflow: 'hidden' }}>
         {/* Header */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -347,10 +372,10 @@ function Library({ onBack, onOpenPdf }) {
         {/* Search */}
         <TextField
           fullWidth
-          placeholder="Search library..."
+          placeholder="Search books and PDFs..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 3 }}
+          sx={{ mb: 2, flexShrink: 0 }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -360,12 +385,13 @@ function Library({ onBack, onOpenPdf }) {
           }}
         />
 
-        {/* PDF Grid - Compact Design */}
-        {loading ? (
-          <Box sx={{ py: 4, textAlign: 'center' }}>
-            <Typography color="text.secondary">Loading library...</Typography>
-          </Box>
-        ) : filteredPdfs.length === 0 ? (
+        {/* Scrollable PDF List */}
+        <Box sx={{ flex: 1, overflow: 'auto', pr: 1 }}>
+          {loading ? (
+            <Box sx={{ py: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">Loading library...</Typography>
+            </Box>
+          ) : filteredPdfs.length === 0 ? (
           <Paper 
             elevation={0} 
             sx={{ 
@@ -398,9 +424,77 @@ function Library({ onBack, onOpenPdf }) {
               </Button>
             )}
           </Paper>
-        ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {filteredPdfs.map((pdf) => {
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {Object.entries(groupedPdfs).map(([collection, collectionPdfs]) => {
+                const firstPdf = collectionPdfs[0];
+                const totalPages = collectionPdfs.reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0);
+                const avgProgress = collectionPdfs.reduce((sum, pdf) => sum + (pdf.progress || 0), 0) / collectionPdfs.length;
+
+                return (
+                  <Accordion 
+                    key={collection}
+                    elevation={0}
+                    sx={{ 
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      '&:before': { display: 'none' },
+                      borderRadius: '8px !important',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <AccordionSummary 
+                      expandIcon={<ExpandMore />}
+                      sx={{
+                        bgcolor: 'background.paper',
+                        '&:hover': { bgcolor: '#f5f5f5' }
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
+                        {/* Collection Icon */}
+                        <MenuBook sx={{ fontSize: 40, color: 'primary.main' }} />
+                        
+                        {/* Collection Info */}
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
+                            {collection}
+                          </Typography>
+                          
+                          {/* Metadata */}
+                          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+                            {firstPdf.subject && (
+                              <Chip 
+                                label={firstPdf.subject} 
+                                size="small" 
+                                sx={{ height: 20, fontSize: '0.7rem', bgcolor: 'primary.main', color: 'white' }} 
+                              />
+                            )}
+                            {firstPdf.class && (
+                              <Chip 
+                                label={`Class ${firstPdf.class}`} 
+                                size="small" 
+                                sx={{ height: 20, fontSize: '0.7rem', bgcolor: 'secondary.main', color: 'white' }} 
+                              />
+                            )}
+                            <Typography variant="caption" color="text.secondary">
+                              📚 {collectionPdfs.length} {collectionPdfs.length === 1 ? 'PDF' : 'PDFs'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              • 📄 {totalPages.toLocaleString()} pages
+                            </Typography>
+                            {avgProgress > 0 && (
+                              <Typography variant="caption" color="primary.main" fontWeight={500}>
+                                • {avgProgress.toFixed(0)}% complete
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </AccordionSummary>
+                    
+                    <AccordionDetails sx={{ p: 0, bgcolor: '#fafafa' }}>
+                      <Divider />
+                      {collectionPdfs.map((pdf, index) => {
               // Format size
               const formatSize = (bytes) => {
                 if (!bytes) return 'Unknown';
@@ -426,155 +520,151 @@ function Library({ onBack, onOpenPdf }) {
                 return date.toLocaleDateString();
               };
 
-              return (
-                <Card 
-                  key={pdf.id}
-                  elevation={0}
-                  sx={{ 
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    p: 2,
-                    bgcolor: 'background.paper',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      transform: 'translateX(4px)'
-                    }
-                  }}
-                >
-                  {/* Book Cover */}
-                  <Box
-                    sx={{
-                      width: 80,
-                      height: 100,
-                      flexShrink: 0,
-                      bgcolor: '#f5f5f5',
-                      backgroundImage: pdf.thumbnailUrl ? `url(${pdf.thumbnailUrl})` : 'none',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      mr: 2
-                    }}
-                    onClick={() => onOpenPdf(pdf)}
-                  >
-                    {!pdf.thumbnailUrl && (
-                      <MenuBook sx={{ fontSize: 40, color: 'text.disabled' }} />
-                    )}
-                  </Box>
+                        return (
+                          <Box
+                            key={pdf.id}
+                            sx={{ 
+                              display: 'flex',
+                              alignItems: 'center',
+                              p: 2,
+                              bgcolor: 'background.paper',
+                              borderBottom: index < collectionPdfs.length - 1 ? '1px solid' : 'none',
+                              borderColor: 'divider',
+                              transition: 'all 0.2s',
+                              '&:hover': {
+                                bgcolor: '#f5f5f5',
+                                transform: 'translateX(4px)'
+                              }
+                            }}
+                          >
+                            {/* Chapter Number Badge */}
+                            {pdf.chapter && (
+                              <Box
+                                sx={{
+                                  width: 50,
+                                  height: 50,
+                                  flexShrink: 0,
+                                  bgcolor: 'primary.main',
+                                  color: 'white',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: 1,
+                                  mr: 2,
+                                  fontWeight: 700,
+                                  fontSize: '1.2rem'
+                                }}
+                              >
+                                {pdf.chapter}
+                              </Box>
+                            )}
+                            
+                            {!pdf.chapter && (
+                              <Box
+                                sx={{
+                                  width: 50,
+                                  height: 50,
+                                  flexShrink: 0,
+                                  bgcolor: '#f5f5f5',
+                                  backgroundImage: pdf.thumbnailUrl ? `url(${pdf.thumbnailUrl})` : 'none',
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: 1,
+                                  mr: 2
+                                }}
+                              >
+                                <MenuBook sx={{ fontSize: 30, color: 'text.disabled' }} />
+                              </Box>
+                            )}
 
-                  {/* PDF Info */}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    {/* PDF Name */}
-                    <Typography 
-                      variant="body1" 
-                      fontWeight={600}
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        mb: 0.5
-                      }}
-                    >
-                      {pdf.name}
-                    </Typography>
+                            {/* PDF Info */}
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              {/* Chapter Title */}
+                              <Typography 
+                                variant="body2" 
+                                fontWeight={600}
+                                sx={{
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  mb: 0.5
+                                }}
+                              >
+                                {pdf.chapterTitle || pdf.name}
+                              </Typography>
 
-                    {/* Subject & Class */}
-                    <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-                      {pdf.subject && (
-                        <Chip 
-                          label={pdf.subject} 
-                          size="small" 
-                          sx={{ 
-                            height: 20, 
-                            fontSize: '0.7rem',
-                            bgcolor: 'primary.main',
-                            color: 'white'
-                          }} 
-                        />
-                      )}
-                      {pdf.class && (
-                        <Chip 
-                          label={`Class ${pdf.class}`} 
-                          size="small" 
-                          sx={{ 
-                            height: 20, 
-                            fontSize: '0.7rem',
-                            bgcolor: 'secondary.main',
-                            color: 'white'
-                          }} 
-                        />
-                      )}
-                    </Box>
+                              {/* Metadata Row */}
+                              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <Typography variant="caption" color="text.secondary">
+                                  📦 {formatSize(pdf.size)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  🕐 {formatLastAccessed(pdf.lastOpened)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  📄 {pdf.totalPages || '?'} pages
+                                </Typography>
+                                {pdf.storageType === 'indexeddb' && (
+                                  <Chip 
+                                    label="Cached" 
+                                    size="small" 
+                                    sx={{ 
+                                      height: 18, 
+                                      fontSize: '0.65rem',
+                                      bgcolor: 'success.light',
+                                      color: 'success.dark'
+                                    }} 
+                                  />
+                                )}
+                                {pdf.lastPage > 1 && (
+                                  <Typography variant="caption" color="primary.main" fontWeight={500}>
+                                    Page {pdf.lastPage}
+                                  </Typography>
+                                )}
+                              </Box>
 
-                    {/* Metadata Row */}
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        📦 {formatSize(pdf.size)}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        🕐 {formatLastAccessed(pdf.lastOpened)}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        📄 {pdf.totalPages || '?'} pages
-                      </Typography>
-                      {pdf.storageType === 'indexeddb' && (
-                        <Chip 
-                          label="Cached" 
-                          size="small" 
-                          sx={{ 
-                            height: 18, 
-                            fontSize: '0.65rem',
-                            bgcolor: 'success.light',
-                            color: 'success.dark'
-                          }} 
-                        />
-                      )}
-                      {pdf.lastPage > 1 && (
-                        <Typography variant="caption" color="primary.main" fontWeight={500}>
-                          Page {pdf.lastPage}
-                        </Typography>
-                      )}
-                    </Box>
+                              {/* Progress Bar (if started reading) */}
+                              {pdf.progress > 0 && (
+                                <Box sx={{ mt: 1 }}>
+                                  <LinearProgress 
+                                    variant="determinate" 
+                                    value={pdf.progress || 0}
+                                    sx={{ height: 3, borderRadius: 2 }}
+                                  />
+                                </Box>
+                              )}
+                            </Box>
 
-                    {/* Progress Bar (if started reading) */}
-                    {pdf.progress > 0 && (
-                      <Box sx={{ mt: 1 }}>
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={pdf.progress || 0}
-                          sx={{ height: 3, borderRadius: 2 }}
-                        />
-                      </Box>
-                    )}
-                  </Box>
-
-                  {/* Actions */}
-                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={() => onOpenPdf(pdf)}
-                    >
-                      Open
-                    </Button>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleRemove(pdf.id, pdf.name)}
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </Card>
-              );
-            })}
-          </Box>
-        )}
+                            {/* Actions */}
+                            <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => onOpenPdf(pdf)}
+                              >
+                                Open
+                              </Button>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleRemove(pdf.id, pdf.name)}
+                              >
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        );
+                      })}
+                    </AccordionDetails>
+                  </Accordion>
+                );
+              })}
+            </Box>
+          )}
+        </Box>
       </Container>
 
       {/* ZIP Extraction Progress Dialog */}
