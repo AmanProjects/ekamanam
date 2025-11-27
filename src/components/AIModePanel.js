@@ -120,7 +120,10 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
 
   // Helper function to detect if content is in English
   const isEnglishContent = (text) => {
-    if (!text || typeof text !== 'string') return true; // Default to English
+    if (!text || typeof text !== 'string') {
+      console.log('⚠️ No text provided for language detection, defaulting to regional (enable tab)');
+      return false; // Default to regional (enable tab) if no text
+    }
     
     // Check for regional language scripts
     const hasDevanagari = /[\u0900-\u097F]/.test(text); // Hindi, Sanskrit
@@ -136,6 +139,9 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     // If any regional script detected, it's NOT English
     if (hasDevanagari || hasTelugu || hasTamil || hasBengali || hasGujarati || 
         hasGurmukhi || hasOriya || hasMalayalam || hasKannada) {
+      console.log('🌐 Regional language detected:', { 
+        hasDevanagari, hasTelugu, hasTamil, hasBengali, hasKannada, hasMalayalam 
+      });
       return false;
     }
     

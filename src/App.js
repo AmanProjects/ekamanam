@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Grid, AppBar, Toolbar, Button, IconButton, Fab, Tooltip, Chip, Badge } from '@mui/material';
-import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon } from '@mui/icons-material';
+import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon, AdminPanelSettings } from '@mui/icons-material';
 import packageJson from '../package.json';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -10,6 +10,7 @@ import AIModePanel from './components/AIModePanel';
 import Dashboard from './components/Dashboard';
 import Library from './components/Library';
 import SettingsDialog from './components/SettingsDialog';
+import AdminDashboard from './components/AdminDashboard';
 import AuthButton from './components/AuthButton';
 import FocusMonitor from './components/FocusMonitor';
 import Test3DVisualization from './components/Test3DVisualization';
@@ -24,6 +25,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('dashboard'); // 'dashboard', 'library', or 'reader'
   const [showSettings, setShowSettings] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [pdfDocument, setPdfDocument] = useState(null);
   const [pdfId, setPdfId] = useState(null); // Unique ID for caching
@@ -353,6 +355,12 @@ function App() {
             <Tooltip title="Settings">
               <IconButton onClick={() => setShowSettings(true)}>
                 <SettingsIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Admin Dashboard">
+              <IconButton onClick={() => setShowAdmin(true)} color="secondary">
+                <AdminPanelSettings />
               </IconButton>
             </Tooltip>
 
