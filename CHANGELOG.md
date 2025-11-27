@@ -1,428 +1,358 @@
 # Changelog
 
-All notable changes to Ekamanam will be documented in this file.
+All notable changes to the Ekamanam project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.5.0] - 2024-11-27
 
-## [2.3.1] - 2025-11-26
+### 🤖 Multi-LLM Integration (MAJOR UPDATE)
 
-### 🔧 Critical Fixes
+#### Added
+- **Multi-Provider Architecture**: Support for multiple LLM providers with automatic fallback
+  - Google Gemini (primary)
+  - Groq (ultra-fast, 14,400 free queries/day)
+  - Perplexity (web-connected research)
+  - Mistral (open-source option)
+- **`llmService.js`**: New unified LLM provider manager
+  - Feature-to-provider routing
+  - Automatic fallback mechanism
+  - Usage tracking and analytics
+  - Provider-specific implementations
+- **`MultiProviderSettings.js`**: New UI component for configuring multiple API keys
+  - Accordion-based provider setup
+  - Show/hide API keys toggle
+  - Usage statistics display
+  - Active provider indicators
+- **Comprehensive Documentation**: `docs/guides/MULTI_LLM_INTEGRATION.md`
+  - Free LLM options for education
+  - Cost comparison and analysis
+  - Educational programs and grants
+  - Implementation guide
+  - Architecture recommendations
 
-#### Notes Integration Fixed
-- **PROBLEM:** Notes weren't appearing in Notes tab after clicking "Add to Notes"
-- **ROOT CAUSE:** `notesContent` state in AIModePanel wasn't connected to NotesEditor
-- **FIX:** 
-  - Removed intermediate state, now writes directly to localStorage
-  - Added custom `notesUpdated` event system
-  - NotesEditor listens for updates and reloads immediately
-- **RESULT:** ✅ Notes now appear instantly in Notes tab
+#### Changed
+- **`geminiService.js`**: Migrated all functions to use `callLLM` from `llmService`
+  - `generateTeacherMode`
+  - `translateTeacherModeToEnglish`
+  - `generateExplanation`
+  - `generateActivities`
+  - `generateAdditionalResources`
+  - `generateWordByWordAnalysis`
+  - `generateReadAndUnderstand`
+  - `translateExplanationToEnglish`
+- **`SettingsDialog.js`**: Enhanced with tab-based UI
+  - Multi-Provider tab (recommended)
+  - Legacy tab (Gemini only)
+  - Integrated `MultiProviderSettings` component
+- All `apiKey` parameters made optional for backward compatibility
+- All functions now support automatic provider fallback
 
-#### Add to Notes Button UI Improvements
-- Changed from `outlined` to `contained` variant (more prominent)
-- Changed text from `"+ Notes"` to `"Add to Notes"` (clearer)
-- Added `minWidth: 140px` for consistent button sizing
-- Removed Tooltip wrapper (cleaner, more professional look)
-
-#### Auto-Switch to Notes Tab
-- After adding notes, automatically switches to Notes tab (index 5)
-- User sees their added content immediately
-- Better UX flow - no manual tab switching needed
-
-#### State Management Cleanup
-- Removed unused `notesContent` state from AIModePanel
-- All notes now managed through localStorage exclusively
-- Single source of truth for notes data
-- Prevents state synchronization issues
-
-### 📖 How It Works Now
-1. User clicks **"Add to Notes"** on Explain tab
-2. Content written to `localStorage` with key `notes_{pdfId}`
-3. Custom event `notesUpdated` dispatched
-4. NotesEditor listens for event, reloads from localStorage
-5. User **automatically switched** to Notes tab
-6. Notes appear with full formatting, page number, and timestamp
-
-## [2.3.0] - 2025-11-26
-
-### 🎉 MAJOR FEATURES
-
-#### 📝 Rich Text Notes Editor
-- **Full-featured editor** with React-Quill
-- **Formatting toolbar**: Bold, italic, underline, headers, colors, lists, alignment
-- **Insert images and graphics** via toolbar or copy-paste
-- **Auto-save every 5 seconds** to localStorage
-- **Manual save** button with timestamp display
-- **Export to PDF** using html2canvas + jsPDF
-- **Print preview** with formatted output
-- **Clear all notes** with confirmation
-
-#### ➕ Add to Notes Functionality  
-- **"+ Notes" button** on Explain tab (next to Clear)
-- **Automatically captures** AI explanations with:
-  - Explanation text
-  - Analogies
-  - Exam questions (PYQ)
-  - Exercises and solutions (questions, answers, steps)
-- **Formatted entries** with:
-  - Page number reference
-  - Timestamp
-  - Visual separation
-  - Color-coded sections
-- **Success notification** when added
-- **Instant navigation** to Notes tab
-
-#### 🔒 Smart Tab Disabling
-- **Read & Understand tab disabled** for English PDFs
-- **Enabled only for regional languages**:
-  - Telugu, Hindi, Tamil, Bengali, Gujarati
-  - Punjabi, Oriya, Malayalam, Kannada
-- **Helpful tooltip** explains why disabled:
-  - "📖 This tab is for regional languages. English PDFs don't need word-by-word analysis."
-- **Auto-detection** using Unicode character ranges
-- **Prevents unnecessary** word analysis for English content
-
-### 📦 New Packages
-- `react-quill@2.0.0` - Industry-standard rich text editor
-- `jspdf@2.5.1` - PDF export functionality
-- `html2canvas@1.4.1` - HTML to canvas rendering
-
-### 🆕 New Component
-- `NotesEditor.js` - Complete notes management system with:
-  - Quill editor integration
-  - localStorage persistence
-  - Export/print functionality
-  - Auto-save logic
-
-### 🐛 Fixes
-- Fixed unused import warnings (IconButton, Tooltip)
-- Fixed react-hooks/exhaustive-deps warning in NotesEditor
-- Proper Clear button integration on Explain tab
-
-### 📖 User Benefits
-✅ Take comprehensive notes with rich formatting  
-✅ Capture AI explanations instantly with one click  
-✅ Export notes for offline study as PDF  
-✅ Print for physical reference  
-✅ No word analysis clutter for English PDFs  
-✅ All notes auto-saved, never lost  
-✅ Graphics and visual aids preserved in notes  
-
-## [2.2.6] - 2025-11-26
-
-### Fixed
-- 🔴 **CRITICAL: AI now generates actual visuals for "Draw" commands**
-  - **Issue:** AI was saying "Draw the pie chart" but NOT providing the chart
-  - **Fix:** Enhanced prompt with explicit rule: "When you write 'Draw X', the visualAid MUST contain the drawing of X"
-  - **Result:** AI now provides actual Chart.js/3D/SVG when it mentions drawing
-
-### Enhanced
-- 📝 **Better visualization examples** with real data (not placeholders)
-  - Pie chart example: actual labels ["Hindi","English","Telugu","Tamil"] with real data
-  - Bar chart example: complete configuration with axis labels
-  - All examples now copy-paste ready
-
-### Prompt Changes
-- Added 🚨 CRITICAL section for "Draw" detection
-- Emphasized: "NEVER tell user to draw something without providing the visual yourself"
-- Added validation: "Empty visualAid when saying 'draw' = FAILURE"
-- Clarified: "The user CANNOT draw - YOU must provide the visual"
-
-## [2.2.5] - 2025-11-26
-
-### Added
-- ✨ **Clear buttons** on all AI tabs
-  - Teacher Mode: Clear button next to "Explain This Page"
-  - Explain: Clear button next to "Explain Current Page"  
-  - Activities: Clear button next to "Generate Activities"
-  - Resources: Clear button next to "Find Additional Resources"
-  - Word Analysis: Clear button next to "Start Word Analysis"
-
-### Fixed
-- 📄 **Page-specific data display**
-  - Data only shows if it matches current page
-  - Navigating to different page hides old data
-  - Returning to original page shows cached data
-  - **Page mismatch warnings:** Alert when viewing data from wrong page
-  - Clear buttons only appear for current page's data
-
-### Implementation
-- Added `*ResponsePage` state tracking (teacherResponsePage, explainResponsePage, etc.)
-- Conditional rendering: `{response && responsePage === currentPage && ...}`
-- Clear functions reset both data and page tracking
-- Inline "Clear Old Data" buttons in mismatch warnings
-
-## [2.2.4] - 2025-11-26
-
-### Added
-- 🧪 **3D Visualization Test Page** (diagnostic tool)
-  - Test Three.js cube and sphere rendering
-  - Test Plotly 3D surface plots
-  - Test 3Dmol chemistry molecules
-  - Troubleshooting guide for WebGL issues
-  - Browser compatibility checks
-
-## [2.2.3] - 2025-11-26
-
-### Fixed
-- 🔒 **Type safety for all .split() calls**
-  - Fixed `TypeError: e.split is not a function`
-  - Added type checking in `formatMarkdown()` and `formatText()`
-  - Safe navigation for `utterance.lang.split()`
-
-## [2.2.2] - 2025-11-26
-
-### Fixed
-- 🐛 **Markdown bold syntax rendering** (`**text**` displayed literally)
-  - Enhanced `formatBoldText()` to handle bold and italic
-  - Converts `**text**` → `<strong>text</strong>`
-  - Converts `*text*` → `<em>text</em>`
-  - Applied to all AI responses (Teacher, Explain, Activities)
-
-## [2.2.1] - 2025-11-26
-
-### Fixed
-- 🐛 **Explain tab generating paragraphs instead of structured JSON**
-  - Simplified AI prompt (was too complex with 3D instructions)
-  - Condensed from 150+ lines to ~50 lines
-  - Restored excellent structured explanations with visuals
-
-## [2.2.0] - 2025-11-26
-
-### Added - 🎉 **MAJOR: 3D & Scientific Visualizations**
-
-#### **🎯 3D Geometric Shapes (Three.js)**
-- ✅ Interactive 3D shapes: cube, sphere, cone, cylinder, pyramid, torus
-- ✅ Polyhedra: dodecahedron, icosahedron, tetrahedron, octahedron
-- ✅ Customizable colors, wireframes, dimensions, labels
-- ✅ Auto-rotation, drag-to-rotate, scroll-to-zoom
-- ✅ Axis helpers for orientation
-- ✅ Edge highlighting for better visibility
-
-#### **📊 3D Scientific Plots (Plotly.js)**
-- ✅ 3D surface plots for functions z = f(x, y)
-- ✅ 3D scatter plots for data visualization
-- ✅ Vector fields for physics
-- ✅ Parametric curves
-- ✅ Heat maps and contour plots
-- ✅ Interactive rotation, zoom, pan
-- ✅ Colorscales and legends
-
-#### **🧪 Chemistry Visualization (3Dmol.js)**
-- ✅ Molecular structure viewer
-- ✅ Pre-configured molecules: water, methane, ethanol, glucose, benzene, caffeine
-- ✅ SMILES notation support
-- ✅ Stick and ball-and-stick models
-- ✅ Interactive 3D rotation and zoom
-- ✅ Atom labels
-
-#### **📐 Mathematical Formulas (KaTeX)**
-- ✅ LaTeX formula rendering
-- ✅ Chemical formulas
-- ✅ Scientific notation
-- ✅ High-quality typesetting
-
-### New Components
-- `ThreeDVisualization.js` - Three.js wrapper for 3D geometric shapes
-- `ChemistryVisualization.js` - 3Dmol.js wrapper for molecular structures
-- `PlotlyVisualization.js` - Plotly wrapper for scientific 3D plots
-- Enhanced `VisualAidRenderer.js` - Auto-detects and routes visualization types
-
-### Enhanced AI Integration
-- 🤖 **Updated `generateExplanation` prompt** with comprehensive 3D visualization instructions
-- 📚 **5 Visualization Types** supported:
-  1. Chart.js (pie, bar, line) for 2D data
-  2. Three.js 3D for geometric shapes
-  3. Plotly 3D for scientific plots
-  4. Chemistry 3Dmol for molecules
-  5. SVG for simple 2D diagrams
-- 🎯 **Selection Guide** - AI knows when to use each type
-- 📝 **Progressive Visuals** - Step-by-step 3D construction
-- 💡 **Examples** for each visualization type
-
-### Packages Installed
-- `three@0.160.0` - 3D WebGL rendering library
-- `plotly.js@2.27.1` - Interactive scientific visualizations
-- `react-plotly.js@2.6.0` - React wrapper for Plotly
-- `katex@0.16.9` - Math formula rendering
-- `react-katex@3.0.1` - React wrapper for KaTeX
-
-### Documentation
-- ✅ Created `3D_VISUALIZATION_GUIDE.md` - Comprehensive guide with examples
-- ✅ Subject-specific examples (Geometry, Chemistry, Calculus, Statistics)
-- ✅ JSON format specifications for each visualization type
-- ✅ Interactive features documentation
-
-### Benefits
-- 🎓 **For Students:**
-  - Visualize complex 3D concepts interactively
-  - Understand chemistry through 3D molecules
-  - See mathematical surfaces come to life
-  - Better retention through visual learning
-  - Explore geometric shapes from all angles
-
-- 👨‍🏫 **For Teachers:**
-  - No manual 3D modeling required
-  - AI generates appropriate visuals automatically
-  - Progressive step-by-step visualizations
-  - Bilingual support with visuals
-  - Works for Math, Science, Chemistry, Biology
-
-### Use Cases
-- **Geometry:** Draw and explore 3D shapes (cubes, spheres, pyramids, polyhedra)
-- **Calculus:** Visualize 3D surfaces and functions
-- **Chemistry:** View molecular structures in 3D
-- **Physics:** Vector fields, parametric curves
-- **Statistics:** Interactive 3D data plots
-- **Biology:** (Future) Animated cell diagrams, DNA structures
+#### Benefits
+- 🚀 **16,000 free queries/day** (Gemini 1,500 + Groq 14,400)
+- ⚡ **Ultra-fast responses** (Groq: 300+ tokens/second)
+- 🔄 **Automatic fallback** (never fails)
+- 💰 **Zero cost** for most educational users
+- 🌐 **Web-connected research** (Perplexity for citations)
 
 ---
 
-## [2.1.2] - 2025-11-26
+## [2.4.5] - 2024-11-27
 
-### Fixed
-- 🐛 **CRITICAL: Fixed `TypeError: e.split is not a function` crash**
-  - Added type checking in `formatMarkdown()`: Validates text is string before `.split()`
-  - Added type checking in `formatText()`: Validates html is string before `.split()`  
-  - Added safe navigation for `utterance.lang.split()`: Uses default 'en' if lang is undefined
-  - Prevents app crashes when AI returns non-string values (objects, arrays, null)
+### ✨ Editable Selected Text
 
-### Technical Details
-**Root Cause:**
-- AI responses sometimes return non-string values
-- Code was calling `.split()` without type validation
-- This caused TypeErrors when rendering AI content
+#### Added
+- **Editable text field**: Selected text now appears in a multiline TextField
+- **Clear Selection button**: Individual button to clear only the selected text
+- **Dynamic button text**: Changes between "Explain Selected Text" and "Analyze This Page"
 
-**Type Safety Pattern Applied:**
-```javascript
-// BEFORE (unsafe):
-if (!text) return null;
-return text.split('\n')...
+#### Changed
+- Selected text is now editable before explaining
+- Clear button now clears both explanation and selected text
+- Unified UI for all languages (no regional/English split)
 
-// AFTER (type-safe):
-if (!text || typeof text !== 'string') return null;
-return text.split('\n')...
-```
-
-**All .split() calls now type-safe:**
-- ✅ `formatMarkdown(text)` - checks `typeof text === 'string'`
-- ✅ `formatText(html)` - checks `typeof html === 'string'`
-- ✅ `utterance.lang.split()` - uses safe navigation `(lang || 'en').split()`
-
-## [2.1.1] - 2025-11-26
-
-### Fixed
-- 🎨 **Enhanced "Draw" command detection**: AI now properly recognizes when questions explicitly ask to "Draw", "Plot", "Sketch", "Graph", "Construct", or "Illustrate"
-- 📊 **Improved chart type identification**: Added validation logic to correctly distinguish between:
-  - Pie charts (parts of a whole, percentages)
-  - Bar charts (comparing separate values)
-  - Line graphs (trends over time)
-- ✅ **Visual aids now mandatory for "Draw" questions**: When a question contains drawing keywords, the AI MUST provide a visual representation
-- 🔍 **Added pre-generation validation**: AI now validates chart type selection before generating visuals
-
-### Technical
-- Updated `generateExplanation` prompt in `geminiService.js` with enhanced visual aid instructions
-- Added explicit chart type selection criteria
-- Added progressive visual construction guidelines for geometric drawings
-
-## [2.1.0] - 2025-11-26
-
-### Added
-- 🏷️ **Version display in header**: Shows current version (e.g., v2.1.0) next to logo
-- 📦 Version automatically syncs from `package.json`
-- 📱 Version chip hidden on mobile, visible on desktop
-
-### Fixed
-- 🐛 **Chart.js controller registration**: Fixed "bar/pie is not a registered controller" errors
-- ✅ Registered `PieController`, `BarController`, and `LineController` properly
-- 📊 All Chart.js visualizations now render correctly
-
-### Technical
-- Added `PieController`, `BarController`, `LineController` imports to `VisualAidRenderer.js`
-- Imported version from `package.json` in `App.js`
-- Added `Chip` component to display version in header
-
-## [2.0.0] - 2025-11-26
-
-### Major Release - React Conversion
-- 🎉 **Complete rewrite from vanilla HTML to React + Material-UI**
-- 📱 **Responsive design** with mobile-first approach
-- 🔥 **Firebase integration** for authentication and cloud storage
-- 🤖 **Gemini AI 2.5-flash** integration for all AI features
-
-### Features
-- 📚 **Teacher Mode**: Bilingual explanations with on-demand English translation
-- 📖 **Read & Understand**: Word-by-word analysis with pronunciation and meaning
-- 🎯 **Explain Tab**: Smart chunking, exercise detection, bilingual answers
-- 🎮 **Activities Tab**: Interactive MCQs with AI evaluation, practice questions
-- 🌐 **Additional Resources**: Web links and related topics
-- 🎨 **Visual Aids**: SVG diagrams and Chart.js visualizations for Math/Science
-- 💾 **Hybrid Caching System**: IndexedDB for fast page loads
-- 🔊 **Natural TTS**: Listen buttons with regional language support
-- 🎯 **Smart Text Selection**: "Analyze with AI" floating button
-- 🔐 **Google Sign-In**: Cloud sync for API keys and preferences
-
-### Technical Architecture
-- ⚛️ React 18 with functional components and hooks
-- 🎨 Material-UI v5 for consistent design system
-- 📄 PDF.js v3.11 for PDF rendering with text layer
-- 🔥 Firebase v10 for backend services
-- 🤖 Gemini API v2.5-flash for AI processing
-- 💾 IndexedDB (idb) for client-side caching
-- 🗣️ Web Speech API for text-to-speech
-- 📊 Chart.js v4.5 for data visualizations
-- 🎯 Context-aware AI with prior page summaries
-
-### File Structure
-```
-ekamanam/
-├── src/
-│   ├── components/
-│   │   ├── Dashboard.js          # Landing page
-│   │   ├── PDFViewer.js          # PDF rendering with text layer
-│   │   ├── AIModePanel.js        # All AI features (Teacher, Explain, etc.)
-│   │   ├── VisualAidRenderer.js  # SVG/Chart.js rendering
-│   │   ├── AuthButton.js         # Google Sign-In
-│   │   ├── SettingsDialog.js     # API key management
-│   │   └── FocusMonitor.js       # Optional focus tracking
-│   ├── services/
-│   │   ├── geminiService.js      # AI API integration
-│   │   └── cacheService.js       # IndexedDB operations
-│   ├── firebase/
-│   │   └── config.js             # Firebase configuration
-│   ├── App.js                    # Main app orchestration
-│   ├── theme.js                  # MUI theme configuration
-│   └── index.js                  # React entry point
-├── docs/
-│   ├── guides/                   # Documentation
-│   └── images/                   # Image assets
-├── public/
-│   ├── Ekamanaml.png            # Logo
-│   └── .nojekyll                # GitHub Pages config
-└── package.json                  # Dependencies and scripts
-```
-
-### Migration from v1
-- ✅ All features from original `index.html` preserved
-- ✅ Enhanced with better error handling and caching
-- ✅ Improved UI/UX with Material Design
-- ✅ Better performance with React optimization
-- ✅ Cloud sync with Firebase
-- ✅ Progressive Web App ready
+#### Fixed
+- Selected text state management
+- Clear functionality for Explain tab
 
 ---
 
-## Versioning Scheme
+## [2.4.4] - 2024-11-27
 
-- **Major (X.0.0)**: Complete rewrites, breaking changes, new architecture
-- **Minor (x.X.0)**: New features, enhancements, significant improvements
-- **Patch (x.x.X)**: Bug fixes, small improvements, performance tweaks
+### 🐛 Bug Fixes
+
+#### Fixed
+- **Explain tab not showing results**: Added `setExplainResponsePage(currentPage)` to single-chunk processing path
+- **Explain tab caching issues**: Removed caching for selected text explanations (only cache full page)
+- Improved logging for explain functionality
 
 ---
 
-## Links
+## [2.4.3] - 2024-11-27
 
-- **Live App**: https://amanprojects.github.io/ekamanam/
-- **Repository**: https://github.com/AmanProjects/ekamanam
-- **Original Version**: [index.html](https://amanprojects.github.io/ekamanam/original.html)
-- **Landing Page**: [Ekamanam.html](https://amanprojects.github.io/ekamanam/landing.html)
+### 🔧 Performance Improvements
+
+#### Added
+- **Auto-save optimization**: Debounced auto-save for library progress
+  - Only saves if page has changed
+  - 3-second delay before save
+  - 30-second interval
+  - Reduces console noise
+
+#### Fixed
+- Repeated "Auto-saved progress" console messages
+- Race condition in PDF canvas rendering
+
+---
+
+## [2.4.2] - 2024-11-27
+
+### 🐛 Bug Fixes
+
+#### Fixed
+- **PDF canvas race condition**: Cannot use the same canvas during multiple render operations
+- Implemented render task cancellation mechanism
+- Added `renderTaskRef` to track and cancel ongoing renders
+
+---
+
+## [2.4.1] - 2024-11-27
+
+### 🐛 Bug Fixes
+
+#### Fixed
+- **Explain Selected Text issues**: Cache key logic and response page tracking
+- Removed caching for dynamic selected text
+- Improved logging for cache hits/misses
+- Added warning when cached data is from different page
+
+---
+
+## [2.4.0] - 2024-11-27
+
+### 📚 Library & Workspace (MAJOR FEATURE)
+
+#### Added
+- **My Library**: Store and manage multiple PDF files in browser
+- **LibraryService**: IndexedDB-based PDF storage and metadata management
+- **Library UI**: Grid view with thumbnails, progress tracking, search
+- **Auto-save progress**: Automatically saves current page for each PDF
+- **Library statistics**: Total PDFs, total pages, recent activity
+- **Documentation**: `docs/guides/LIBRARY_WORKSPACE_FEATURE.md`
+
+#### Components
+- `Library.js`: Main library view component
+- `LibraryCard.js`: Individual PDF card component
+- `libraryService.js`: IndexedDB service for PDF management
+
+---
+
+## [2.3.1] - 2024-11-27
+
+### ✨ Notes Integration
+
+#### Added
+- **"Add to Notes" button**: Save explanations to Notes tab
+- **Event-driven sync**: Custom events for notes updates
+- **Auto-switch to Notes**: Automatically switches tab after adding
+
+#### Fixed
+- Notes editor not updating when content added
+- Improved UI for "Add to Notes" button
+
+---
+
+## [2.3.0] - 2024-11-27
+
+### 📝 Notes Tab (NEW FEATURE)
+
+#### Added
+- **Rich Text Editor**: React-Quill integration for notes
+- **Export to PDF**: Save notes as PDF using jsPDF + html2canvas
+- **Print functionality**: Direct print from browser
+- **Auto-save**: Automatic localStorage backup
+- **Clear functionality**: Reset notes with confirmation
+
+#### Components
+- `NotesEditor.js`: Full-featured rich text editor
+
+---
+
+## [2.2.6] - 2024-11-27
+
+### 🎨 Visualization Improvements
+
+#### Added
+- **CRITICAL instruction for "Draw" commands**: Forces AI to provide actual visualizations
+- Enhanced prompts to prevent "instruction to draw" without visual
+
+#### Fixed
+- AI instructing to draw but not providing visuals
+- Improved Chart.js, SVG, and 3D JSON generation
+
+---
+
+## [2.2.5] - 2024-11-27
+
+### 🧹 Page-Specific Data & Clear Functions
+
+#### Added
+- **Page tracking**: Track which page each AI response belongs to
+- **Auto-clear on page change**: Clears AI responses when navigating
+- **Clear buttons**: Individual clear buttons for each tab
+- **Cache warnings**: Warning when displaying cached data from different page
+
+#### Changed
+- All AI responses now page-specific
+- Clear functions for each tab (Teacher, Explain, Activities, Resources, Word Analysis)
+- UI indicators for current page data
+
+---
+
+## [2.2.4] - 2024-11-27
+
+### 🧪 3D Visualization Testing
+
+#### Added
+- **Test3DVisualization component**: Dedicated page for testing 3D renders
+- Route `/test` for 3D debugging
+- Examples for Three.js, Plotly, Chemistry visualizations
+
+---
+
+## [2.2.3] - 2024-11-27
+
+### 🐛 Bug Fixes
+
+#### Fixed
+- **Markdown bold/italic not rendering**: Enhanced `formatBoldText` and `formatText` functions
+- Type safety for text processing (`split` on non-strings)
+- Safe navigation for `utterance.lang`
+
+---
+
+## [2.2.2] - 2024-11-27
+
+### 🎨 Visualization & Formatting
+
+#### Added
+- **Markdown bold rendering**: Converts `**text**` to `<strong>`
+- **Markdown italic rendering**: Converts `*text*` to `<em>`
+- **Step-specific visuals**: Visual aids for each exercise step
+- **Bilingual display logic**: Only show English when content is regional
+
+#### Changed
+- All questions, steps, and hints now support markdown formatting
+- Improved visual aid integration
+
+---
+
+## [2.2.1] - 2024-11-27
+
+### 🔧 AI Prompt Optimization
+
+#### Changed
+- **Simplified `generateExplanation` prompt**: Reduced verbosity, clearer instructions
+- Added specific 3D visualization examples
+- Emphasized concise responses with visuals
+
+#### Fixed
+- AI generating long paragraphs instead of visuals
+- Improved JSON structure reliability
+
+---
+
+## [2.2.0] - 2024-11-27
+
+### 🎨 3D & Scientific Visualizations (MAJOR UPDATE)
+
+#### Added
+- **Three.js support**: 3D geometric shapes (cube, sphere, cone, etc.)
+- **Plotly.js support**: 3D scientific plots (surface, scatter, mesh)
+- **Chemistry visualization**: 3Dmol.js for molecular structures
+- **New dependencies**: `three`, `plotly.js`, `react-plotly.js`, `katex`, `react-katex`
+- **Documentation**: `docs/guides/3D_VISUALIZATION_GUIDE.md`
+
+#### Components
+- `ThreeDVisualization.js`: Three.js renderer
+- `ChemistryVisualization.js`: 3Dmol.js renderer
+- `PlotlyVisualization.js`: Plotly renderer
+
+#### Changed
+- `VisualAidRenderer.js`: Rewritten to dynamically import 3D components
+- Chart.js registration: Added all necessary controllers
+- AI prompts: Enhanced for 3D visualization generation
+
+---
+
+## [2.1.2] - 2024-11-27
+
+### 🐛 Type Safety
+
+#### Fixed
+- **Type safety checks**: Ensure `text` and `html` are strings before calling `.split()`
+- Safe navigation for `utterance.lang`
+- Prevents `split is not a function` errors
+
+---
+
+## [2.1.1] - 2024-11-27
+
+### 🐛 Chart.js Fix
+
+#### Added
+- Registered all Chart.js components and controllers
+- `ArcElement`, `BarController`, `PieController`, `LineController`, etc.
+
+#### Fixed
+- `"bar" is not a registered controller` error
+- `"pie" is not a registered controller` error
+
+---
+
+## [2.1.0] - 2024-11-27
+
+### 🎨 Visual Aids for Math/Science
+
+#### Added
+- **VisualAidRenderer component**: Intelligently renders visual aids
+- Support for Chart.js (pie, bar, line charts)
+- Support for SVG graphics
+- Auto-fix for common SVG issues
+
+#### Changed
+- AI prompts enhanced for visual generation
+- Explain tab now shows step-by-step visuals
+
+---
+
+## [2.0.0] - 2024-11-27
+
+### 🚀 React Migration (MAJOR UPDATE)
+
+#### Added
+- Complete migration from standalone HTML to React + MUI
+- Component-based architecture
+- Improved state management
+- Professional UI/UX with Material-UI
+- Side-by-side PDF and AI panels
+
+#### Components
+- `App.js`: Main application orchestrator
+- `Dashboard.js`: Landing page
+- `PDFViewer.js`: PDF rendering component
+- `AIModePanel.js`: AI features panel
+- `SettingsDialog.js`: API key management
+- `AuthButton.js`: Firebase authentication
+- `FocusMonitor.js`: Camera-based focus tracking
+
+#### Services
+- `geminiService.js`: Gemini AI integration
+- `cacheService.js`: IndexedDB caching
+- `firebase/config.js`: Firebase configuration
+
+---
+
+## Version Naming Convention
+
+- **Major (X.0.0)**: Breaking changes, complete rewrites
+- **Minor (x.X.0)**: New features, significant updates
+- **Patch (x.x.X)**: Bug fixes, small improvements
