@@ -36,7 +36,8 @@ function App() {
   
   // Library state
   const [currentLibraryItem, setCurrentLibraryItem] = useState(null);
-  const [autoSaveInterval, setAutoSaveInterval] = useState(null);
+  const autoSaveIntervalRef = useRef(null);
+  const lastSavedPageRef = useRef(null);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -190,20 +191,45 @@ function App() {
     input.click();
   };
   
-  // Auto-save current page to library
+  // Auto-save current page to library (debounced)
   useEffect(() => {
     if (currentLibraryItem && currentPage && view === 'reader') {
-      // Set new interval to save every 10 seconds
-      const interval = setInterval(() => {
-        updateLastPage(currentLibraryItem.id, currentPage);
-        console.log(`💾 Auto-saved progress: Page ${currentPage}`);
-      }, 10000);
+      // Clear existing interval
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
       
-      setAutoSaveInterval(interval);
+      // Debounce: Wait 3 seconds after page change, then save every 10 seconds
+      const saveTimeout = setTimeout(() => {
+        // Save immediately when page changes
+        if (lastSavedPageRef.current !== currentPage) {
+          updateLastPage(currentLibraryItem.id, currentPage);
+          lastSavedPageRef.current = currentPage;
+          console.log(`💾 Progress saved: Page ${currentPage}`);
+        }
+        
+        // Then set interval for periodic saves (if user stays on same page)
+        autoSaveIntervalRef.current = setInterval(() => {
+          // Only save if still on same page (redundant save for safety)
+          if (lastSavedPageRef.current === currentPage) {
+            updateLastPage(currentLibraryItem.id, currentPage);
+            console.log(`💾 Progress auto-saved: Page ${currentPage}`);
+          }
+        }, 30000); // Save every 30 seconds (less frequent)
+      }, 3000); // Wait 3 seconds after page change
       
       return () => {
-        if (interval) clearInterval(interval);
+        clearTimeout(saveTimeout);
+        if (autoSaveIntervalRef.current) {
+          clearInterval(autoSaveIntervalRef.current);
+        }
       };
+    } else {
+      // Clear interval when leaving reader
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+        autoSaveIntervalRef.current = null;
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLibraryItem, currentPage, view]);
