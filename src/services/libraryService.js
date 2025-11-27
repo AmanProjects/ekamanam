@@ -396,6 +396,35 @@ export const getThumbnail = async (id) => {
 };
 
 /**
+ * Store thumbnail directly (e.g., from ZIP cover)
+ * @param {string} id - Library item ID
+ * @param {string} dataUrl - Base64 data URL
+ * @returns {Promise<boolean>}
+ */
+export const storeThumbnail = async (id, dataUrl) => {
+  try {
+    const db = await initDB();
+    await db.put(STORES.THUMBNAILS, {
+      id,
+      url: dataUrl,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Update library item with thumbnail URL
+    const libraryItem = await getLibraryItem(id);
+    if (libraryItem) {
+      await updateLibraryItem(id, { thumbnailUrl: dataUrl });
+    }
+    
+    console.log('✅ Thumbnail stored for:', id);
+    return true;
+  } catch (error) {
+    console.error('❌ Error storing thumbnail:', error);
+    return false;
+  }
+};
+
+/**
  * Clear entire library (for testing/reset)
  * @returns {Promise<void>}
  */
