@@ -55,14 +55,14 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
-function AIModePanel({ currentPage, totalPages, pdfId, selectedText: initialSelectedText, pageText, user, pdfDocument }) {
+function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, user, pdfDocument }) {
   const [activeTab, setActiveTab] = useState(0);
   const [editableSelectedText, setEditableSelectedText] = useState('');
 
   // Update editable text when selection changes
   useEffect(() => {
-    setEditableSelectedText(initialSelectedText || '');
-  }, [initialSelectedText]);
+    setEditableSelectedText(selectedText || '');
+  }, [selectedText]);
 
   // Cleanup: Stop speech and clear data when page changes
   useEffect(() => {
