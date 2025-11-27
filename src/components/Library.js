@@ -6,15 +6,11 @@ import {
   Button,
   TextField,
   InputAdornment,
-  Grid,
   Card,
-  CardContent,
-  CardMedia,
   IconButton,
   Chip,
   LinearProgress,
-  Paper,
-  Divider
+  Paper
 } from '@mui/material';
 import {
   ArrowBack,
@@ -215,27 +211,56 @@ function Library({ onBack, onOpenPdf }) {
             )}
           </Paper>
         ) : (
-          <Grid container spacing={2}>
-            {filteredPdfs.map((pdf) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={pdf.id}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {filteredPdfs.map((pdf) => {
+              // Format size
+              const formatSize = (bytes) => {
+                if (!bytes) return 'Unknown';
+                if (bytes < 1024) return `${bytes} B`;
+                if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+                return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+              };
+
+              // Format last accessed
+              const formatLastAccessed = (isoString) => {
+                if (!isoString) return 'Never';
+                const date = new Date(isoString);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+
+                if (diffMins < 1) return 'Just now';
+                if (diffMins < 60) return `${diffMins}m ago`;
+                if (diffHours < 24) return `${diffHours}h ago`;
+                if (diffDays < 7) return `${diffDays}d ago`;
+                return date.toLocaleDateString();
+              };
+
+              return (
                 <Card 
+                  key={pdf.id}
                   elevation={0}
                   sx={{ 
-                    height: '100%',
-                    border: '1px solid',
-                    borderColor: 'divider',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    p: 2,
+                    bgcolor: 'background.paper',
                     transition: 'all 0.2s',
                     '&:hover': {
-                      borderColor: 'primary.main',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                      bgcolor: '#f5f5f5',
+                      transform: 'translateX(4px)'
                     }
                   }}
                 >
-                  {/* Thumbnail */}
-                  <CardMedia
-                    component="div"
+                  {/* Book Cover */}
+                  <Box
                     sx={{
-                      height: 140,
+                      width: 80,
+                      height: 100,
+                      flexShrink: 0,
                       bgcolor: '#f5f5f5',
                       backgroundImage: pdf.thumbnailUrl ? `url(${pdf.thumbnailUrl})` : 'none',
                       backgroundSize: 'cover',
@@ -243,76 +268,96 @@ function Library({ onBack, onOpenPdf }) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: 'pointer'
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      mr: 2
                     }}
                     onClick={() => onOpenPdf(pdf)}
                   >
                     {!pdf.thumbnailUrl && (
-                      <MenuBook sx={{ fontSize: 48, color: 'text.disabled' }} />
+                      <MenuBook sx={{ fontSize: 40, color: 'text.disabled' }} />
                     )}
-                  </CardMedia>
+                  </Box>
 
-                  <CardContent sx={{ p: 2 }}>
-                    {/* Title */}
+                  {/* PDF Info */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    {/* PDF Name */}
                     <Typography 
-                      variant="body2" 
-                      fontWeight={600} 
-                      gutterBottom
+                      variant="body1" 
+                      fontWeight={600}
                       sx={{
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        minHeight: '2.5em',
-                        mb: 1
+                        whiteSpace: 'nowrap',
+                        mb: 0.5
                       }}
                     >
                       {pdf.name}
                     </Typography>
 
-                    {/* Progress */}
+                    {/* Metadata Row */}
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary">
+                        📦 {formatSize(pdf.size)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        🕐 {formatLastAccessed(pdf.lastOpened)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        📄 {pdf.totalPages || '?'} pages
+                      </Typography>
+                      {pdf.storageType === 'indexeddb' && (
+                        <Chip 
+                          label="Cached" 
+                          size="small" 
+                          sx={{ 
+                            height: 18, 
+                            fontSize: '0.65rem',
+                            bgcolor: 'success.light',
+                            color: 'success.dark'
+                          }} 
+                        />
+                      )}
+                      {pdf.lastPage > 1 && (
+                        <Typography variant="caption" color="primary.main" fontWeight={500}>
+                          Page {pdf.lastPage}
+                        </Typography>
+                      )}
+                    </Box>
+
+                    {/* Progress Bar (if started reading) */}
                     {pdf.progress > 0 && (
-                      <Box sx={{ mb: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            Page {pdf.lastPage || 1} of {pdf.totalPages || '?'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {pdf.progress?.toFixed(0)}%
-                          </Typography>
-                        </Box>
+                      <Box sx={{ mt: 1 }}>
                         <LinearProgress 
                           variant="determinate" 
                           value={pdf.progress || 0}
-                          sx={{ height: 4, borderRadius: 2 }}
+                          sx={{ height: 3, borderRadius: 2 }}
                         />
                       </Box>
                     )}
+                  </Box>
 
-                    {/* Actions */}
-                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        fullWidth
-                        onClick={() => onOpenPdf(pdf)}
-                      >
-                        Open
-                      </Button>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleRemove(pdf.id, pdf.name)}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </CardContent>
+                  {/* Actions */}
+                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => onOpenPdf(pdf)}
+                    >
+                      Open
+                    </Button>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleRemove(pdf.id, pdf.name)}
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </Card>
-              </Grid>
-            ))}
-          </Grid>
+              );
+            })}
+          </Box>
         )}
       </Container>
     </Box>
