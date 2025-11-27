@@ -92,6 +92,9 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
       progress: 0,
       subject: metadata.subject || 'General',
       class: metadata.class || null,
+      collection: metadata.collection || null,  // ← THIS WAS MISSING!
+      chapter: metadata.chapter || null,
+      chapterTitle: metadata.chapterTitle || null,
       workspace: metadata.workspace || 'My Files',
       workspaceId: metadata.workspaceId || null,
       tags: metadata.tags || [],
@@ -103,6 +106,8 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
       pdfDataKey: id,
       userId: metadata.userId || null
     };
+    
+    console.log('📚 Created library item with collection:', libraryItem.collection);
 
     // Store PDF data
     await db.put(STORES.PDF_DATA, {
