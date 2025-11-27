@@ -406,7 +406,7 @@ function App() {
             onOpenLibrary={() => setView('library')}
           />
         ) : view === 'library' ? (
-          <Library
+          <StudentLibrary
             onBack={() => setView('dashboard')}
             onOpenPdf={handleOpenFromLibrary}
           />
