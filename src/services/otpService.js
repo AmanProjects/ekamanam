@@ -9,10 +9,13 @@ import emailjs from '@emailjs/browser';
 // Get your keys from: https://www.emailjs.com/
 const EMAILJS_SERVICE_ID = 'service_2n09tlh'; // Replace with your service ID
 const EMAILJS_TEMPLATE_ID = 'template_qqj7276'; // Replace with your template ID
-const EMAILJS_PUBLIC_KEY = 'EhyhDIZQ3Hvf6I71CY'; // Replace with your public key
+const EMAILJS_PUBLIC_KEY = 'EhyhDIZQ3Hvf6I71C'; // Replace with your public key
 
 // Authorized admin email
 const ADMIN_EMAIL = 'amantalwar04@gmail.com';
+
+// Initialize EmailJS
+emailjs.init(EMAILJS_PUBLIC_KEY);
 
 // OTP storage (in-memory, expires after 5 minutes)
 let currentOTP = null;
@@ -48,19 +51,35 @@ export const sendOTPToAdmin = async () => {
       timestamp: new Date().toLocaleString()
     };
     
-    await emailjs.send(
+    const response = await emailjs.send(
       EMAILJS_SERVICE_ID,
       EMAILJS_TEMPLATE_ID,
-      templateParams,
-      EMAILJS_PUBLIC_KEY
+      templateParams
     );
     
     console.log('✅ OTP sent successfully to', ADMIN_EMAIL);
+    console.log('📧 EmailJS Response:', response);
     return { success: true, message: 'OTP sent to your email' };
     
   } catch (error) {
     console.error('❌ Failed to send OTP:', error);
-    return { success: false, message: 'Failed to send OTP. Please try again.' };
+    console.error('📧 Error details:', {
+      message: error.message,
+      text: error.text,
+      status: error.status
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to send OTP. ';
+    if (error.text) {
+      errorMessage += error.text;
+    } else if (error.message) {
+      errorMessage += error.message;
+    } else {
+      errorMessage += 'Please check your EmailJS configuration.';
+    }
+    
+    return { success: false, message: errorMessage };
   }
 };
 
