@@ -119,43 +119,41 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [generatingExam, setGeneratingExam] = useState(false);
   const [generatingAnswer, setGeneratingAnswer] = useState(null);
 
-  // Helper function to detect if content is in English
-  const isEnglishContent = (text) => {
+  // Helper function to detect language and return details
+  const detectLanguage = (text) => {
     if (!text || typeof text !== 'string') {
-      console.log('⚠️ No text provided for language detection, defaulting to regional (enable tab)');
-      return false; // Default to regional (enable tab) if no text
+      return { language: 'Unknown', emoji: '❓', isEnglish: false };
     }
     
-    // V3.0.2: Enhanced logging for debugging
-    console.log('🔍 [isEnglishContent] Checking text:', {
-      textLength: text.length,
-      textPreview: text.substring(0, 50)
-    });
-    
     // Check for regional language scripts
-    const hasDevanagari = /[\u0900-\u097F]/.test(text); // Hindi, Sanskrit
+    const hasDevanagari = /[\u0900-\u097F]/.test(text); // Hindi, Sanskrit, Marathi
     const hasTelugu = /[\u0C00-\u0C7F]/.test(text);
     const hasTamil = /[\u0B80-\u0BFF]/.test(text);
     const hasBengali = /[\u0980-\u09FF]/.test(text);
     const hasGujarati = /[\u0A80-\u0AFF]/.test(text);
     const hasGurmukhi = /[\u0A00-\u0A7F]/.test(text); // Punjabi
-    const hasOriya = /[\u0B00-\u0B7F]/.test(text);
+    const hasOriya = /[\u0B00-\u0B7F]/.test(text); // Odia
     const hasMalayalam = /[\u0D00-\u0D7F]/.test(text);
     const hasKannada = /[\u0C80-\u0CFF]/.test(text);
     
-    // If any regional script detected, it's NOT English
-    if (hasDevanagari || hasTelugu || hasTamil || hasBengali || hasGujarati || 
-        hasGurmukhi || hasOriya || hasMalayalam || hasKannada) {
-      console.log('✅ Regional language detected:', { 
-        hasDevanagari, hasTelugu, hasTamil, hasBengali, hasKannada, hasMalayalam,
-        hasGujarati, hasGurmukhi, hasOriya
-      });
-      return false;
-    }
+    // Return the first detected language
+    if (hasTelugu) return { language: 'Telugu (తెలుగు)', emoji: '🇮🇳', isEnglish: false, script: 'Telugu' };
+    if (hasDevanagari) return { language: 'Hindi (हिंदी)', emoji: '🇮🇳', isEnglish: false, script: 'Devanagari' };
+    if (hasTamil) return { language: 'Tamil (தமிழ்)', emoji: '🇮🇳', isEnglish: false, script: 'Tamil' };
+    if (hasKannada) return { language: 'Kannada (ಕನ್ನಡ)', emoji: '🇮🇳', isEnglish: false, script: 'Kannada' };
+    if (hasMalayalam) return { language: 'Malayalam (മലയാളം)', emoji: '🇮🇳', isEnglish: false, script: 'Malayalam' };
+    if (hasBengali) return { language: 'Bengali (বাংলা)', emoji: '🇮🇳', isEnglish: false, script: 'Bengali' };
+    if (hasGujarati) return { language: 'Gujarati (ગુજરાતી)', emoji: '🇮🇳', isEnglish: false, script: 'Gujarati' };
+    if (hasGurmukhi) return { language: 'Punjabi (ਪੰਜਾਬੀ)', emoji: '🇮🇳', isEnglish: false, script: 'Gurmukhi' };
+    if (hasOriya) return { language: 'Odia (ଓଡ଼ିଆ)', emoji: '🇮🇳', isEnglish: false, script: 'Odia' };
     
-    console.log('ℹ️ Text appears to be English (no regional scripts detected)');
-    // Otherwise, assume English
-    return true;
+    // Default to English
+    return { language: 'English', emoji: '🇬🇧', isEnglish: true, script: 'Latin' };
+  };
+  
+  // Helper function to detect if content is in English (backward compatibility)
+  const isEnglishContent = (text) => {
+    return detectLanguage(text).isEnglish;
   };
 
   // Helper function to detect if text is likely regional language or garbled
@@ -1197,8 +1195,9 @@ Return ONLY this valid JSON:
   // Load admin configuration
   const adminConfig = useAdminConfig();
   
-  // Check if Read & Understand should be disabled (English content)
-  const isEnglish = isEnglishContent(pageText);
+  // Detect language from page text
+  const detectedLang = detectLanguage(pageText);
+  const isEnglish = detectedLang.isEnglish;
   const readTabDisabled = isEnglish;
   const readTabTooltip = readTabDisabled 
     ? "📖 This tab is for regional languages (Hindi, Telugu, Tamil, etc.). English PDFs don't need word-by-word analysis."
@@ -1206,7 +1205,8 @@ Return ONLY this valid JSON:
   
   // Debug logging for language detection
   console.log('🔍 [Language Detection]', {
-    pageText: pageText ? `${pageText.substring(0, 100)}...` : 'NULL/EMPTY',
+    detectedLanguage: detectedLang.language,
+    script: detectedLang.script,
     pageTextLength: pageText?.length || 0,
     isEnglish,
     readTabDisabled,
@@ -1225,6 +1225,40 @@ Return ONLY this valid JSON:
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       <Paper square elevation={1}>
+        {/* Language Indicator */}
+        <Box sx={{ 
+          px: 2, 
+          py: 1, 
+          bgcolor: detectedLang.isEnglish ? '#e3f2fd' : '#fff3e0',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <Chip 
+            label={`${detectedLang.emoji} ${detectedLang.language}`}
+            size="small"
+            color={detectedLang.isEnglish ? 'primary' : 'warning'}
+            sx={{ fontWeight: 600 }}
+          />
+          <Typography variant="caption" color="text.secondary">
+            {detectedLang.isEnglish 
+              ? '• Using Groq (Fast) for English content'
+              : `• Using Gemini (Better multilingual) for ${detectedLang.script} script`
+            }
+          </Typography>
+          {!detectedLang.isEnglish && (
+            <Chip 
+              label="Bilingual Mode"
+              size="small"
+              variant="outlined"
+              color="success"
+              sx={{ ml: 'auto' }}
+            />
+          )}
+        </Box>
+        
         <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           {showTeacherMode && <Tab icon={<TeacherIcon />} label="Teacher Mode" />}
           {showMultilingual && (
