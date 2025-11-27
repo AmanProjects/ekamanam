@@ -257,7 +257,7 @@ function StudentLibrary({ onBack, onOpenPdf }) {
                       <Button
                         variant="contained"
                         startIcon={<CloudDownload />}
-                        onClick={() => onOpenPdf(pdf.id)}
+                        onClick={() => onOpenPdf(pdf)}
                       >
                         Open
                       </Button>
