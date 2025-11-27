@@ -613,19 +613,26 @@ Return ONLY the English translation, no extra text.`;
     try {
       // 🔍 CHECK CACHE FIRST
       // Use different cache keys for selection vs full page
+      // For selections, use simple hash of first 30 chars (consistent and shorter)
       const cacheKey = selectedText 
-        ? `explain_selection_${selectedText.substring(0, 50)}`
+        ? `explain_selection`
         : `explain_fullpage`;
       
-      if (pdfId && currentPage) {
+      // Only use cache for full page, not selections (selections are dynamic)
+      if (pdfId && currentPage && !selectedText) {
         const cachedData = await getCachedData(pdfId, currentPage, cacheKey);
         if (cachedData) {
-          console.log(`⚡ Cache HIT: Using cached ${selectedText ? 'Selection' : 'Page'} Explanation`);
+          console.log(`⚡ Cache HIT: Using cached Page Explanation`);
           setExplainResponse(cachedData);
+          setExplainResponsePage(currentPage);
           setUsedCache(true);
           setLoading(false);
           return;
+        } else {
+          console.log(`📊 Cache MISS: Generating new explanation for page ${currentPage}`);
         }
+      } else if (selectedText) {
+        console.log(`📝 Explaining selected text (not cached): "${selectedText.substring(0, 50)}..."`);
       }
 
       // 📚 GET PRIOR CONTEXT FOR ANSWER CLUES
@@ -1587,11 +1594,7 @@ Return ONLY this valid JSON:
                       variant="outlined"
                       color="error"
                       size="large"
-                      onClick={() => {
-                        setExplainResponse(null);
-                        setExplainResponsePage(null);
-                        setError(null);
-                      }}
+                      onClick={clearExplain}
                       disabled={loading}
                     >
                       Clear
@@ -1610,6 +1613,21 @@ Return ONLY this valid JSON:
             </Box>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            
+            {/* Page mismatch warning */}
+            {explainResponse && explainResponsePage && explainResponsePage !== currentPage && (
+              <Alert 
+                severity="warning" 
+                sx={{ mb: 2 }}
+                action={
+                  <Button color="inherit" size="small" onClick={clearExplain}>
+                    Clear Old Data
+                  </Button>
+                }
+              >
+                ℹ️ Explanation is from page {explainResponsePage}. You're on page {currentPage}.
+              </Alert>
+            )}
             
             {loading && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
