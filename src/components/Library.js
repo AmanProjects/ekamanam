@@ -214,18 +214,21 @@ function Library({ onBack, onOpenPdf }) {
             workspace: 'My Files',
             collection: collectionName,
             chapter: pdfData.metadata.chapter,
-            chapterTitle: pdfData.metadata.title
+            chapterTitle: pdfData.metadata.title,
+            totalPages: pdfData.metadata.totalPages || 0,
+            pdfTitle: pdfData.metadata.pdfTitle
           });
           
           console.log('✅ PDF added with collection:', libraryItem.collection);
           
-          // Store cover image as thumbnail if available
-          if (pdfData.metadata.coverImage) {
+          // Store thumbnail (individual PDF thumbnail or cover image)
+          const thumbnailToStore = pdfData.metadata.thumbnail || pdfData.metadata.coverImage;
+          if (thumbnailToStore) {
             try {
-              await libraryService.storeThumbnail(libraryItem.id, pdfData.metadata.coverImage);
-              console.log('✅ Cover image stored for', pdfData.metadata.title);
+              await libraryService.storeThumbnail(libraryItem.id, thumbnailToStore);
+              console.log('✅ Thumbnail stored for', pdfData.metadata.title);
             } catch (error) {
-              console.warn('⚠️ Failed to store cover image:', error);
+              console.warn('⚠️ Failed to store thumbnail:', error);
             }
           }
           

@@ -99,6 +99,59 @@ const detectMetadataFromZip = (zipFilename) => {
 };
 
 /**
+ * Extract metadata from a single PDF
+ * @param {Blob} pdfBlob - PDF blob
+ * @returns {Promise<Object>} - { thumbnail, title, pageCount }
+ */
+const extractPdfMetadata = async (pdfBlob) => {
+  try {
+    const arrayBuffer = await pdfBlob.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    const metadata = {
+      thumbnail: null,
+      title: null,
+      pageCount: pdf.numPages
+    };
+    
+    // Extract thumbnail from first page
+    try {
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 0.5 }); // Smaller scale for thumbnails
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const context = canvas.getContext('2d');
+      
+      await page.render({
+        canvasContext: context,
+        viewport: viewport
+      }).promise;
+      
+      metadata.thumbnail = canvas.toDataURL('image/jpeg', 0.7);
+    } catch (error) {
+      console.warn('⚠️ Failed to extract thumbnail:', error);
+    }
+    
+    // Extract PDF metadata
+    try {
+      const pdfMetadata = await pdf.getMetadata();
+      if (pdfMetadata.info && pdfMetadata.info.Title) {
+        metadata.title = pdfMetadata.info.Title;
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to extract PDF metadata:', error);
+    }
+    
+    return metadata;
+  } catch (error) {
+    console.error('❌ Error extracting PDF metadata:', error);
+    return { thumbnail: null, title: null, pageCount: 0 };
+  }
+};
+
+/**
  * Extract metadata from Cover & Contents PDF
  * @param {Blob} coverPdfBlob - Cover PDF blob
  * @returns {Promise<Object>} - { bookTitle, chapters: [{number, title}], coverImage }
@@ -286,7 +339,7 @@ export const extractZipFile = async (zipFile, onProgress = null) => {
       const fileEntry = zip.files[filename];
       
       if (onProgress) {
-        onProgress(i + 1, fileEntries.length, `Extracting ${filename}...`);
+        onProgress(i + 1, fileEntries.length, `Processing ${filename}...`);
       }
       
       console.log(`📖 Extracting: ${filename}`);
@@ -296,6 +349,11 @@ export const extractZipFile = async (zipFile, onProgress = null) => {
       
       // Parse filename for chapter info
       const fileMetadata = parseNCERTFilename(filename);
+      
+      // Extract metadata from this PDF
+      console.log(`🔍 Extracting metadata from ${filename}...`);
+      const pdfMetadata = await extractPdfMetadata(blob);
+      console.log(`✅ Extracted: ${pdfMetadata.pageCount} pages, thumbnail: ${!!pdfMetadata.thumbnail}`);
       
       // Enhance with cover metadata if available
       if (coverMetadata && fileMetadata.chapter && coverMetadata.chapters.length > 0) {
@@ -309,7 +367,7 @@ export const extractZipFile = async (zipFile, onProgress = null) => {
       // Create File object
       const pdfFile = new File([blob], filename, { type: 'application/pdf' });
       
-      // Add metadata (including cover image for the collection)
+      // Add metadata (including individual PDF metadata)
       pdfFiles.push({
         file: pdfFile,
         filename: filename,
@@ -318,6 +376,9 @@ export const extractZipFile = async (zipFile, onProgress = null) => {
           ...fileMetadata,
           collection: zipMetadata.bookName,
           originalZip: zipFile.name,
+          thumbnail: pdfMetadata.thumbnail,
+          totalPages: pdfMetadata.pageCount,
+          pdfTitle: pdfMetadata.title,
           coverImage: fileMetadata.type === 'cover' ? coverMetadata?.coverImage : null
         }
       });
@@ -355,6 +416,7 @@ export default {
   isZipFile,
   parseNCERTFilename,
   detectMetadataFromZip,
-  extractMetadataFromCoverPdf
+  extractMetadataFromCoverPdf,
+  extractPdfMetadata
 };
 
