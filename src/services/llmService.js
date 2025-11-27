@@ -23,18 +23,40 @@ const PROVIDER_ENDPOINTS = {
   [PROVIDERS.MISTRAL]: 'https://api.mistral.ai/v1/chat/completions'
 };
 
+// Helper: Detect if text contains regional Indian languages (Unicode detection)
+const hasRegionalLanguage = (text) => {
+  if (!text || typeof text !== 'string') return false;
+  
+  // Check for Indian regional language Unicode ranges
+  const hasDevanagari = /[\u0900-\u097F]/.test(text); // Hindi, Sanskrit, Marathi
+  const hasTelugu = /[\u0C00-\u0C7F]/.test(text);
+  const hasTamil = /[\u0B80-\u0BFF]/.test(text);
+  const hasBengali = /[\u0980-\u09FF]/.test(text);
+  const hasGujarati = /[\u0A80-\u0AFF]/.test(text);
+  const hasGurmukhi = /[\u0A00-\u0A7F]/.test(text); // Punjabi
+  const hasOriya = /[\u0B00-\u0B7F]/.test(text); // Odia
+  const hasMalayalam = /[\u0D00-\u0D7F]/.test(text);
+  const hasKannada = /[\u0C80-\u0CFF]/.test(text);
+  
+  return hasDevanagari || hasTelugu || hasTamil || hasBengali || hasGujarati || 
+         hasGurmukhi || hasOriya || hasMalayalam || hasKannada;
+};
+
 // Feature-to-Provider mapping (with fallbacks)
-// OPTIMIZED: Groq first for speed (300+ tokens/s vs 40-60 for Gemini)
-// VERSION 3.0: Groq for Exam Prep & Long Answers (10x cheaper, 100x faster)
+// V3.0.3: For REGIONAL LANGUAGES (Telugu/Hindi/Tamil), Gemini is PRIORITIZED
+//         (better Unicode support, better multilingual understanding)
+// V3.0.3: For ENGLISH content, Groq is prioritized (10x faster, 90% cheaper)
+// The callLLM function will auto-detect language and swap order
 const FEATURE_PROVIDERS = {
-  teacherMode: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
-  explain: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
-  activities: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
-  resources: [PROVIDERS.PERPLEXITY, PROVIDERS.GROQ, PROVIDERS.GEMINI], // Perplexity for web search
-  wordAnalysis: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
-  examPrep: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // V3.0: Groq for fast exam generation
-  longAnswer: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // V3.0: Groq for long answers (10x cheaper)
-  general: [PROVIDERS.GROQ, PROVIDERS.GEMINI] // Groq first for speed
+  teacherMode: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Swapped for regional languages
+  explain: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Swapped for regional languages
+  activities: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Swapped for regional languages
+  resources: [PROVIDERS.PERPLEXITY, PROVIDERS.GROQ, PROVIDERS.GEMINI], // Perplexity first
+  wordAnalysis: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Swapped for regional languages
+  examPrep: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Swapped for regional languages
+  longAnswer: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Swapped for regional languages
+  quizEvaluation: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Swapped for regional languages
+  general: [PROVIDERS.GROQ, PROVIDERS.GEMINI] // Swapped for regional languages
 };
 
 // ===== MAIN API CALL FUNCTION =====
@@ -51,6 +73,21 @@ export async function callLLM(prompt, config = {}) {
   let providers = preferredProvider 
     ? [preferredProvider, ...(FEATURE_PROVIDERS[feature] || [PROVIDERS.GEMINI])]
     : (FEATURE_PROVIDERS[feature] || [PROVIDERS.GEMINI]);
+  
+  // V3.0.3: AUTO-DETECT REGIONAL LANGUAGES → PRIORITIZE GEMINI
+  // Check if prompt contains Telugu/Hindi/Tamil/etc Unicode characters
+  if (!preferredProvider && hasRegionalLanguage(prompt)) {
+    // Swap provider order: Gemini first for regional languages
+    const hasGroq = providers.includes(PROVIDERS.GROQ);
+    const hasGemini = providers.includes(PROVIDERS.GEMINI);
+    
+    if (hasGroq && hasGemini) {
+      // Swap: put Gemini before Groq
+      providers = providers.filter(p => p !== PROVIDERS.GROQ && p !== PROVIDERS.GEMINI);
+      providers.unshift(PROVIDERS.GEMINI, PROVIDERS.GROQ); // Gemini first!
+      console.log(`🌐 [${feature}] Regional language detected → Using Gemini first`);
+    }
+  }
   
   // Remove duplicates
   providers = [...new Set(providers)];
