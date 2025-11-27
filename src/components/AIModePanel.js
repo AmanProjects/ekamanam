@@ -32,7 +32,7 @@ import {
   Quiz as ExamIcon
 } from '@mui/icons-material';
 import NotesEditor from './NotesEditor';
-import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer } from '../services/geminiService';
+import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer, translateTeacherModeToEnglish } from '../services/geminiService';
 import { extractFullPdfText } from '../services/pdfExtractor';
 import {
   getCachedData,
@@ -318,7 +318,7 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       }
 
       // 📡 NO CACHE - GENERATE NEW
-      const response = await generateTeacherMode(pageText, apiKey);
+      const response = await generateTeacherMode(pageText);
       
       // Try to parse JSON response
       try {
@@ -371,38 +371,13 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   };
 
   const handleTranslateSection = async (sectionName, sectionContent) => {
-    const apiKey = localStorage.getItem('gemini_pat');
-    if (!apiKey) {
-      setError('Please set your Gemini API key in Settings');
-      return;
-    }
-
+    // V3.0.3: Use multi-provider system for translation
     setTranslatingSection(sectionName);
     setError(null);
     
     try {
-      // Create a simple translation prompt for just this section
-      const prompt = `Translate the following text to English:
-
-${sectionContent}
-
-Return ONLY the English translation, no extra text.`;
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 2048 }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Translation failed');
-      }
-
-      const data = await response.json();
-      const translation = data.candidates[0]?.content?.parts[0]?.text || '';
+      // Use the translation service from geminiService
+      const translation = await translateTeacherModeToEnglish(sectionContent);
       
       // Store translation for this section
       setTeacherEnglish(prev => ({
@@ -421,12 +396,8 @@ Return ONLY the English translation, no extra text.`;
   // Removed performOCR - using Teacher Mode technique (pageText) instead
 
   const handleWordByWordAnalysis = async (isLoadMore = false) => {
-    const apiKey = localStorage.getItem('gemini_pat');
-    if (!apiKey) {
-      setError('Please set your Gemini API key in Settings');
-      return;
-    }
-
+    // V3.0.3: Removed API key check - multi-provider handles this
+    
     if (!pageText) {
       setError('Please load a PDF page first');
       return;
@@ -462,7 +433,7 @@ Return ONLY the English translation, no extra text.`;
       const batchNumber = isLoadMore ? wordBatch + 1 : 1;
       
       // Use the SAME technique as Teacher Mode - analyze entire page at once
-      const response = await generateWordByWordAnalysis(pageText, apiKey, existingWords, batchNumber);
+      const response = await generateWordByWordAnalysis(pageText, existingWords, batchNumber);
       
       // Parse JSON response (same as Teacher Mode)
       try {
@@ -994,7 +965,7 @@ Return ONLY the English translation, no extra text.`;
       }
 
       // 📡 GENERATE NEW WITH CONTEXT
-      const response = await generateActivities(contextText, apiKey);
+      const response = await generateActivities(contextText);
       
       // Try to parse JSON response
       try {
@@ -1033,12 +1004,8 @@ Return ONLY the English translation, no extra text.`;
   const handleSubmitQuiz = async () => {
     if (!activitiesResponse?.mcqs) return;
 
-    const apiKey = localStorage.getItem('gemini_pat');
-    if (!apiKey) {
-      setError('Please set your Gemini API key in Settings');
-      return;
-    }
-
+    // V3.0.3: Removed API key check - multi-provider handles this
+    
     setSubmittingQuiz(true);
     setError(null);
 
@@ -1075,19 +1042,13 @@ Return ONLY this valid JSON:
   ]
 }`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 2048 }
-        })
+      // Use multi-provider callLLM
+      const { callLLM } = await import('../services/llmService');
+      const resultText = await callLLM(prompt, {
+        feature: 'quizEvaluation',
+        temperature: 0.5,
+        maxTokens: 2048
       });
-
-      if (!response.ok) throw new Error('Quiz evaluation failed');
-
-      const data = await response.json();
-      const resultText = data.candidates[0]?.content?.parts[0]?.text || '';
       
       let cleanResponse = resultText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
       const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
@@ -1120,7 +1081,7 @@ Return ONLY this valid JSON:
     setLoading(true);
     setError(null);
     try {
-      const response = await generateAdditionalResources(contentToAnalyze, pageText, apiKey);
+      const response = await generateAdditionalResources(contentToAnalyze, pageText);
       
       // Try to parse JSON response
       try {
@@ -2849,7 +2810,17 @@ Return ONLY this valid JSON:
                     📊 MCQs (Assertion & Reasoning)
                   </Typography>
                   
-                  {examPrepResponse.mcqs?.map((mcq, index) => (
+                  {examPrepResponse.mcqs?.map((mcq, index) => {
+                    // V3.0.3: Handle bilingual content (regional + English)
+                    const isBilingual = typeof mcq.assertion === 'object' && mcq.assertion.original && mcq.assertion.english;
+                    const assertionText = isBilingual ? mcq.assertion.original : mcq.assertion;
+                    const assertionEnglish = isBilingual ? mcq.assertion.english : '';
+                    const reasonText = isBilingual ? mcq.reason.original : mcq.reason;
+                    const reasonEnglish = isBilingual ? mcq.reason.english : '';
+                    const explanationText = isBilingual ? mcq.explanation.original : mcq.explanation;
+                    const explanationEnglish = isBilingual ? mcq.explanation.english : '';
+                    
+                    return (
                     <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
                       <Typography variant="body2" fontWeight={600} gutterBottom>
                         Question {index + 1}
@@ -2857,11 +2828,32 @@ Return ONLY this valid JSON:
                       
                       <Paper sx={{ p: 2, mb: 2, bgcolor: '#e3f2fd' }}>
                         <Typography variant="body2" fontWeight={600}>
-                          Assertion (A): {mcq.assertion || mcq.original?.assertion}
+                          Assertion (A): {assertionText}
                         </Typography>
-                        <Typography variant="body2" fontWeight={600} sx={{ mt: 1 }}>
-                          Reason (R): {mcq.reason || mcq.original?.reason}
+                        {isBilingual && assertionEnglish && (
+                          <Box sx={{ mt: 1, pl: 2, borderLeft: '3px solid', borderColor: 'info.main' }}>
+                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                              🌐 English:
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {assertionEnglish}
+                            </Typography>
+                          </Box>
+                        )}
+                        
+                        <Typography variant="body2" fontWeight={600} sx={{ mt: 2 }}>
+                          Reason (R): {reasonText}
                         </Typography>
+                        {isBilingual && reasonEnglish && (
+                          <Box sx={{ mt: 1, pl: 2, borderLeft: '3px solid', borderColor: 'info.main' }}>
+                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                              🌐 English:
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {reasonEnglish}
+                            </Typography>
+                          </Box>
+                        )}
                       </Paper>
 
                       <FormControl component="fieldset">
@@ -2905,12 +2897,23 @@ Return ONLY this valid JSON:
                             {examAnswers[`mcq_result_${index}`] ? '✅ Correct!' : '❌ Incorrect'}
                           </Typography>
                           <Typography variant="body2" sx={{ mt: 1 }}>
-                            {mcq.explanation}
+                            {explanationText}
                           </Typography>
+                          {isBilingual && explanationEnglish && (
+                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                              <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                                🌐 English:
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {explanationEnglish}
+                              </Typography>
+                            </Box>
+                          )}
                         </Paper>
                       )}
                     </Paper>
-                  ))}
+                  );
+                  })}
 
                   <Button
                     variant="contained"
@@ -2935,19 +2938,49 @@ Return ONLY this valid JSON:
                     ✍️ Short Answer Questions
                   </Typography>
                   
-                  {examPrepResponse.shortAnswer?.map((qa, index) => (
+                  {examPrepResponse.shortAnswer?.map((qa, index) => {
+                    // V3.0.3: Handle bilingual content
+                    const isBilingual = typeof qa.question === 'object' && qa.question.original && qa.question.english;
+                    const questionText = isBilingual ? qa.question.original : qa.question;
+                    const questionEnglish = isBilingual ? qa.question.english : '';
+                    const answerText = isBilingual ? qa.answer.original : qa.answer;
+                    const answerEnglish = isBilingual ? qa.answer.english : '';
+                    
+                    return (
                     <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
-                      <Typography variant="body1" fontWeight={600} gutterBottom>
-                        Q{index + 1}. {qa.question || qa.original}
-                      </Typography>
+                      <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: 'white' }}>
+                        <Typography variant="body1" fontWeight={600}>
+                          Q{index + 1}. {questionText}
+                        </Typography>
+                        {isBilingual && questionEnglish && (
+                          <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                              🌐 English:
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                              {questionEnglish}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Paper>
                       
                       <Paper sx={{ p: 2, bgcolor: '#f5f5f5' }}>
                         <Typography variant="body2" fontWeight={600} gutterBottom>
                           Answer:
                         </Typography>
                         <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                          {qa.answer || qa.english}
+                          {answerText}
                         </Typography>
+                        {isBilingual && answerEnglish && (
+                          <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                              🌐 English:
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {answerEnglish}
+                            </Typography>
+                          </Box>
+                        )}
                         
                         {qa.keywords && qa.keywords.length > 0 && (
                           <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
@@ -2959,7 +2992,8 @@ Return ONLY this valid JSON:
                         )}
                       </Paper>
                     </Paper>
-                  ))}
+                  );
+                  })}
                 </Paper>
 
                 {/* Long Answer Questions */}
@@ -2968,22 +3002,52 @@ Return ONLY this valid JSON:
                     📖 Long Answer Questions
                   </Typography>
                   
-                  {examPrepResponse.longAnswer?.map((q, index) => (
+                  {examPrepResponse.longAnswer?.map((q, index) => {
+                    // V3.0.3: Handle bilingual content
+                    const isBilingual = typeof q.question === 'object' && q.question.original && q.question.english;
+                    const questionText = isBilingual ? q.question.original : q.question;
+                    const questionEnglish = isBilingual ? q.question.english : '';
+                    
+                    return (
                     <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
-                      <Typography variant="body1" fontWeight={600} gutterBottom>
-                        Q{index + 1}. {q.question || q.original}
-                      </Typography>
+                      <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: 'white' }}>
+                        <Typography variant="body1" fontWeight={600}>
+                          Q{index + 1}. {questionText}
+                        </Typography>
+                        {isBilingual && questionEnglish && (
+                          <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                              🌐 English:
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                              {questionEnglish}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Paper>
                       
                       {q.hints && q.hints.length > 0 && (
                         <Paper sx={{ p: 2, mb: 2, bgcolor: '#fff3e0' }}>
                           <Typography variant="body2" fontWeight={600} gutterBottom>
                             💡 Hints:
                           </Typography>
-                          {q.hints.map((hint, hidx) => (
-                            <Typography key={hidx} variant="body2" sx={{ ml: 2 }}>
-                              • {hint}
-                            </Typography>
-                          ))}
+                          {q.hints.map((hint, hidx) => {
+                            const hintIsBilingual = typeof hint === 'object' && hint.original && hint.english;
+                            const hintText = hintIsBilingual ? hint.original : hint;
+                            const hintEnglish = hintIsBilingual ? hint.english : '';
+                            return (
+                            <Box key={hidx} sx={{ ml: 2, mb: 1 }}>
+                              <Typography variant="body2">
+                                • {hintText}
+                              </Typography>
+                              {hintIsBilingual && hintEnglish && (
+                                <Typography variant="caption" color="text.secondary" sx={{ ml: 2, display: 'block' }}>
+                                  🌐 {hintEnglish}
+                                </Typography>
+                              )}
+                            </Box>
+                            );
+                          })}
                         </Paper>
                       )}
                       
@@ -3014,7 +3078,8 @@ Return ONLY this valid JSON:
                         </Paper>
                       )}
                     </Paper>
-                  ))}
+                  );
+                  })}
                 </Paper>
               </Box>
             )}

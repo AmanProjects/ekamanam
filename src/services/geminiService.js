@@ -160,52 +160,76 @@ export async function generateExplanation(selectedText, contextText, apiKey = nu
     ? contextText.map(p => `Page ${p.pageNumber}: ${p.summary}`).join('\n')
     : (typeof contextText === 'string' ? contextText : '');
   
-  const prompt = `Analyze and explain this content. Detect language, respond in same language. For regional languages: bilingual (original + English).
+  const prompt = `🎓 EDUCATIONAL CONTENT ANALYZER
 
-${contextString ? `CONTEXT:\n${contextString}\n\n` : ''}CONTENT:
-"${selectedText}"
+🔴 CRITICAL LANGUAGE INSTRUCTION:
+The content below is from an Indian textbook and may contain:
+- Telugu script (తెలుగు): Unicode range U+0C00 to U+0C7F
+- Hindi/Devanagari (हिंदी): Unicode range U+0900 to U+097F  
+- Tamil (தமிழ்): Unicode range U+0B80 to U+0BFF
+- Other regional Indian languages
 
-RULES:
+⚠️ DO NOT say the content is "corrupted" or "encoded"! 
+These are VALID Unicode characters used in Indian education.
+PROCESS THE CONTENT NORMALLY.
+
+📚 LANGUAGE HANDLING:
+- If content is in Telugu → Explain in Telugu + provide English translation
+- If content is in Hindi → Explain in Hindi + provide English translation
+- If content is in Tamil → Explain in Tamil + provide English translation
+- If content is in English → Explain in English only
+
+${contextString ? `PRIOR CONTEXT (for answering exercises):\n${contextString}\n\n` : ''}
+
+📖 CONTENT TO ANALYZE:
+${selectedText}
+
+ANALYSIS RULES:
 1. Detect content type: exercise|notes|regular
-2. For exercises: complete step-by-step solutions
+2. For exercises: provide complete step-by-step solutions using prior context
 3. For "Draw" commands: provide actual visualizations in visualAid field
+4. Identify important notes in highlighted boxes
 
 VISUALIZATION FORMATS:
 - Chart: {"chartType":"pie|bar|line","data":{"labels":[...],"datasets":[{...}]}}
 - 3D: {"type":"3d","shapeType":"cube|sphere","color":"#4FC3F7","dimensions":{...}}
 - SVG: <svg viewBox="0 0 400 300">...</svg>
 
-🔴 CRITICAL: If step says "Draw X", visualAid MUST contain the actual drawing (Chart.js JSON, SVG, or 3D JSON). NOT empty when you write "draw"!
+🔴 CRITICAL: If step says "Draw X", visualAid MUST contain the actual drawing (Chart.js JSON, SVG, or 3D JSON). NOT empty!
 
-Return JSON:
+Return ONLY this JSON (no markdown blocks):
 {
   "contentType": "exercise|notes|regular",
-  "language": "Detected language",
-  "explanation": "Clear explanation",
-  "explanation_english": "English (empty if already English)",
+  "language": "Telugu|Hindi|Tamil|English|etc",
+  "explanation": "Clear explanation in ORIGINAL language (తెలుగు/हिंदी/தமிழ்)",
+  "explanation_english": "English translation (empty if already English)",
   "exercises": [{
-    "question": "Question in original",
+    "question": "Question in original language",
     "question_english": "Question in English",
-    "answer": "Complete answer",
+    "answer": "Complete answer in original language",
     "answer_english": "Answer in English",
-    "hints": ["Hint 1", "Hint 2"],
+    "hints": ["Hint 1 original", "Hint 2 original"],
     "hints_english": ["Hint 1 English", "Hint 2 English"],
     "steps": [{
-      "text": "Step in original",
+      "text": "Step in original language",
       "text_english": "Step in English",
-      "visualAid": "Chart.js JSON / SVG / 3D JSON (if needed)"
+      "visualAid": "Chart.js JSON / SVG / 3D JSON (if drawing required)"
     }]
   }],
   "importantNotes": [{
-    "title": "Note title",
-    "content": "Note content",
+    "title": "Note title in original language",
+    "title_english": "Note title in English",
+    "content": "Note content in original language",
+    "content_english": "Note content in English",
     "type": "definition|formula|reminder"
   }],
-  "analogy": "Helpful analogy",
-  "pyq": "Exam question"
+  "analogy": "Helpful analogy in original language",
+  "analogy_english": "Analogy in English",
+  "pyq": "Exam question in original language",
+  "pyq_english": "Exam question in English"
 }
 
-KEEP IT CONCISE. Use visuals for complex concepts.`;
+KEEP IT CONCISE. Use visuals for complex concepts. BILINGUAL for regional languages.`;
 
   return await callLLM(prompt, {
     feature: 'explain',
@@ -384,33 +408,45 @@ RULES:
 export const generateExamPrep = async (fullPdfText, currentChunk, chunkNumber, totalChunks) => {
   const prompt = `Expert exam creator. Generate questions from this text.
 
+LANGUAGE INSTRUCTION:
+- Detect the language of the text (Telugu, Hindi, Tamil, English, etc.)
+- If regional language: provide BILINGUAL content (original + English)
+- If already English: provide only English
+
 TEXT (Chunk ${chunkNumber}/${totalChunks}):
 ${currentChunk.substring(0, 2500)}
 
-JSON format:
+JSON format (for regional languages, include both "original" and "english" fields):
 {
   "mcqs": [
     {
-      "assertion": "Fact statement",
-      "reason": "Reasoning",
+      "assertion": { "original": "తెలుగులో", "english": "In English" },
+      "reason": { "original": "తెలుగులో", "english": "In English" },
       "correctAnswer": 0,
-      "explanation": "Why correct"
+      "explanation": { "original": "తెలుగులో", "english": "In English" }
     }
   ],
   "shortAnswer": [
     {
-      "question": "Question",
-      "answer": "Answer (2-3 sentences)",
+      "question": { "original": "తెలుగులో", "english": "In English" },
+      "answer": { "original": "తెలుగులో", "english": "In English" },
       "keywords": ["term1", "term2"]
     }
   ],
   "longAnswer": [
     {
-      "question": "Question",
-      "hints": ["Hint"],
+      "question": { "original": "తెలుగులో", "english": "In English" },
+      "hints": [{ "original": "తెలుగులో", "english": "In English" }],
       "pageReferences": [1]
     }
   ]
+}
+
+For ENGLISH content ONLY, use simple strings:
+{
+  "mcqs": [{ "assertion": "text", "reason": "text", "correctAnswer": 0, "explanation": "text" }],
+  "shortAnswer": [{ "question": "text", "answer": "text", "keywords": ["term1"] }],
+  "longAnswer": [{ "question": "text", "hints": ["hint"], "pageReferences": [1] }]
 }
 
 Generate:
@@ -418,7 +454,7 @@ Generate:
 - 3 Short Answer (with answers)
 - 2 Long Answer (with hints)
 
-Options for MCQs are always:
+MCQ Options (always same):
 0: Both A and R true, R explains A
 1: Both A and R true, R doesn't explain A
 2: A true, R false
@@ -462,18 +498,37 @@ export const generateLongAnswer = async (question, fullPdfText, pageReferences =
   // Only use first 6000 chars for better token efficiency
   const contextText = fullPdfText.substring(0, 6000);
   
+  // Detect if question is bilingual (has "original" and "english" fields)
+  const isBilingual = typeof question === 'object' && question.original && question.english;
+  const questionText = isBilingual ? question.english : (typeof question === 'string' ? question : JSON.stringify(question));
+  const originalQuestion = isBilingual ? question.original : '';
+  
   const prompt = `Generate a comprehensive exam answer for this question:
 
-QUESTION:
-${question}
+${isBilingual ? `QUESTION (Original Language): ${originalQuestion}\n` : ''}QUESTION (English): ${questionText}
 
 ${hints && hints.length > 0 ? `HINTS:
-${hints.map((h, i) => `${i + 1}. ${h}`).join('\n')}` : ''}
+${hints.map((h, i) => {
+  if (typeof h === 'object' && h.english) {
+    return `${i + 1}. ${h.original} / ${h.english}`;
+  }
+  return `${i + 1}. ${h}`;
+}).join('\n')}` : ''}
 
 ${pageReferences && pageReferences.length > 0 ? `REFERENCE PAGES: ${pageReferences.join(', ')}` : ''}
 
 RELEVANT CONTENT FROM PDF:
 ${contextText}
+
+LANGUAGE INSTRUCTION:
+${isBilingual ? `- This is a BILINGUAL question from a regional language (Telugu/Hindi/Tamil) textbook
+- Provide answer in BOTH languages
+- Return JSON format: 
+{
+  "original": "తెలుగులో లేదా हिंदी में पूरा उत्तर...",
+  "english": "Complete answer in English..."
+}` : `- This is an English question
+- Provide answer in English only (plain text, not JSON)`}
 
 REQUIREMENTS:
 - Comprehensive, well-structured answer (250-350 words)
