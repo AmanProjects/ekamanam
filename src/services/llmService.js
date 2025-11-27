@@ -24,13 +24,14 @@ const PROVIDER_ENDPOINTS = {
 };
 
 // Feature-to-Provider mapping (with fallbacks)
+// OPTIMIZED: Groq first for speed (300+ tokens/s vs 40-60 for Gemini)
 const FEATURE_PROVIDERS = {
-  teacherMode: [PROVIDERS.GEMINI, PROVIDERS.GROQ],
-  explain: [PROVIDERS.GEMINI, PROVIDERS.GROQ],
-  activities: [PROVIDERS.GEMINI, PROVIDERS.GROQ],
-  resources: [PROVIDERS.PERPLEXITY, PROVIDERS.GEMINI], // Perplexity for web search
-  wordAnalysis: [PROVIDERS.GEMINI, PROVIDERS.GROQ],
-  general: [PROVIDERS.GEMINI, PROVIDERS.GROQ]
+  teacherMode: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
+  explain: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
+  activities: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
+  resources: [PROVIDERS.PERPLEXITY, PROVIDERS.GROQ, PROVIDERS.GEMINI], // Perplexity for web search
+  wordAnalysis: [PROVIDERS.GROQ, PROVIDERS.GEMINI], // Groq first for speed
+  general: [PROVIDERS.GROQ, PROVIDERS.GEMINI] // Groq first for speed
 };
 
 // ===== MAIN API CALL FUNCTION =====

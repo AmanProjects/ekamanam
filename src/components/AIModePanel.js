@@ -1801,7 +1801,7 @@ Return ONLY this valid JSON:
                                         )}
                                         
                                         {/* Visual Aid for THIS specific step (if it has one and it's not empty) */}
-                                        <VisualAidRenderer visualAid={stepVisual} />
+                                        <VisualAidRenderer visualAid={typeof stepVisual === 'string' ? stepVisual : JSON.stringify(stepVisual)} />
                                       </Box>
                                     );
                                   })}

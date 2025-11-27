@@ -160,167 +160,57 @@ export async function generateExplanation(selectedText, contextText, apiKey = nu
     ? contextText.map(p => `Page ${p.pageNumber}: ${p.summary}`).join('\n')
     : (typeof contextText === 'string' ? contextText : '');
   
-  const prompt = `You are an expert tutor. Analyze this educational content and provide a clear, structured explanation with visuals where helpful.
+  const prompt = `Analyze and explain this content. Detect language, respond in same language. For regional languages: bilingual (original + English).
 
-${contextString ? `PRIOR CONTEXT:\n${contextString}\n\n` : ''}
-
-CONTENT TO ANALYZE:
+${contextString ? `CONTEXT:\n${contextString}\n\n` : ''}CONTENT:
 "${selectedText}"
 
-INSTRUCTIONS:
-1. Detect language and respond in the SAME language
-2. For regional languages: provide bilingual content (original + English)
-3. For English: provide only English (no duplicate translations)
-4. Identify content type: exercise, notes, or regular content
-5. For exercises: provide complete step-by-step solutions with visuals
-6. For "Draw" questions: MUST include visualizations
+RULES:
+1. Detect content type: exercise|notes|regular
+2. For exercises: complete step-by-step solutions
+3. For "Draw" commands: provide actual visualizations in visualAid field
 
-🚨 CRITICAL - "DRAW" COMMAND DETECTION:
-- If step text says "Draw the pie chart" → YOU MUST provide the actual Chart.js JSON in visualAid
-- If step text says "Draw a cube" → YOU MUST provide the actual 3D JSON in visualAid
-- If step text says "Draw a triangle" → YOU MUST provide the actual SVG in visualAid
-- NEVER tell user to draw something without providing the visual yourself
-- The visualAid field is HOW you draw it - NOT empty when you say "draw"
+VISUALIZATION FORMATS:
+- Chart: {"chartType":"pie|bar|line","data":{"labels":[...],"datasets":[{...}]}}
+- 3D: {"type":"3d","shapeType":"cube|sphere","color":"#4FC3F7","dimensions":{...}}
+- SVG: <svg viewBox="0 0 400 300">...</svg>
 
-VISUALIZATION RULES:
-- Pie/Bar/Line charts → Chart.js JSON (NOT instructions to draw, actual JSON)
-- 3D geometric shapes → Three.js 3D JSON (actual visualization, not text)
-- 3D math surfaces → Plotly JSON (actual plot data)
-- Molecules → Chemistry JSON (actual molecule)
-- Simple 2D shapes → SVG string (actual graphic)
-- Progressive visuals: Each step builds on previous (different visuals per step)
-- When you write "Draw X", the visualAid MUST contain the drawing of X
+🔴 CRITICAL: If step says "Draw X", visualAid MUST contain the actual drawing (Chart.js JSON, SVG, or 3D JSON). NOT empty when you write "draw"!
 
-Return ONLY valid JSON (no markdown, no extra text):
+Return JSON:
 {
-  "contentType": "exercise" | "notes" | "regular" | "mixed",
-  "language": "Detected language name (Telugu, Hindi, Tamil, English, etc.)",
-  "explanation": "Clear explanation in proper Unicode (NOT garbled characters)",
-  "explanation_english": "English translation of explanation",
-  "exercises": [
-    {
-      "question": "The exercise question in proper script",
-      "question_english": "Question in English",
-      "answer": "Complete answer to the question in original language",
-      "answer_english": "Complete answer in English",
-      "hints": ["Hint 1 in original language", "Hint 2"],
-      "hints_english": ["Hint 1 in English", "Hint 2 in English"],
-      "answerLocation": "Page reference if available from context",
-      "answerLocation_english": "Page reference in English",
-      "steps": [
-        {
-          "text": "Step 1 in original language",
-          "text_english": "Step 1 in English",
-          "visualAid": "SVG/HTML for THIS SPECIFIC step (only if it adds value, can be empty string)"
-        },
-        {
-          "text": "Step 2 in original language",
-          "text_english": "Step 2 in English", 
-          "visualAid": "Different visual showing PROGRESSION from step 1"
-        }
-      ],
-      "keyTerms": ["key", "terms"]
-    }
-  ],
-  "importantNotes": [
-    {
-      "title": "Note title",
-      "title_english": "Note title in English",
-      "content": "Note content in proper script",
-      "content_english": "Note content in English",
-      "type": "definition" | "formula" | "reminder" | "warning"
-    }
-  ],
-  "analogy": "Helpful analogy in same language",
-  "analogy_english": "Analogy in English",
-  "pyq": "Example exam question",
-  "pyq_english": "Example exam question in English",
-  "demo": "Interactive HTML demo if applicable, or empty string"
-}
-
-VISUALIZATION QUICK REFERENCE:
-- 2D Chart: {"chartType":"pie|bar|line","data":{"labels":[...],"datasets":[{"data":[...],"backgroundColor":[...]}]}}
-- 3D Shape: {"type":"3d","shapeType":"cube|sphere|pyramid|cone|cylinder","color":"#4FC3F7","dimensions":{...},"title":"..."}
-- 3D Plot: {"type":"plotly","data":[{"type":"surface","x":[...],"y":[...],"z":[...]}],"title":"..."}
-- Chemistry: {"type":"chemistry","moleculeData":"water|methane|benzene","format":"smiles","title":"..."}
-- 2D SVG: <svg viewBox="0 0 400 300">...</svg>
-
-REAL EXAMPLES WITH ACTUAL DATA:
-
-Pie Chart (Language Distribution):
-{"chartType":"pie","data":{"labels":["Hindi","English","Telugu","Tamil"],"datasets":[{"data":[30,25,25,20],"backgroundColor":["#FF6384","#36A2EB","#FFCE56","#4BC0C0"]}]},"options":{"responsive":true,"plugins":{"legend":{"position":"bottom"},"title":{"display":true,"text":"Language Distribution"}}}}
-
-Bar Chart (Student Count):
-{"chartType":"bar","data":{"labels":["Class A","Class B","Class C"],"datasets":[{"label":"Students","data":[45,38,52],"backgroundColor":["#FF6384","#36A2EB","#FFCE56"]}]},"options":{"responsive":true,"scales":{"y":{"beginAtZero":true}}}}
-
-3D Cube:
-{"type":"3d","shapeType":"cube","color":"#4FC3F7","dimensions":{"width":2,"height":2,"depth":2},"labels":["8 vertices","12 edges","6 faces"],"title":"Cube","rotate":true}
-
-Paraboloid Surface:
-{"type":"plotly","data":[{"type":"surface","z":[[0,1,4],[1,2,5],[4,5,8]],"colorscale":"Viridis"}],"layout":{"scene":{"xaxis":{"title":"X"},"yaxis":{"title":"Y"},"zaxis":{"title":"Z"}}},"title":"z=x²+y²"}
-
-CRITICAL RULES:
-- Clean Unicode (no garbled text)
-- Bilingual: Regional language + English (skip English duplicate if content already English)
-- Complete answers for exercises (not just hints)
-- Progressive visuals: each step different, showing progression
-- Only include visuals when valuable (not forced on every step)
-
-🔴 MOST IMPORTANT RULE - "DRAW" COMMANDS:
-- If your step says "Draw the pie chart" → visualAid MUST contain Chart.js JSON with actual data
-- If your step says "Draw a triangle" → visualAid MUST contain SVG with actual triangle
-- If your step says "Draw a cube" → visualAid MUST contain 3D JSON
-- NEVER EVER write "draw" in text without providing the drawing in visualAid
-- Empty visualAid when saying "draw" = FAILURE
-- The user CANNOT draw - YOU must provide the visual
-
-JSON STRUCTURE:
-
-{
-  "contentType": "exercise|notes|regular|mixed",
+  "contentType": "exercise|notes|regular",
   "language": "Detected language",
-  "explanation": "Clear explanation in original language",
-  "explanation_english": "English translation (empty if already English)",
-  "exercises": [
-    {
-      "question": "Question in original language",
-      "question_english": "Question in English (empty if already English)",
-      "answer": "Complete answer",
-      "answer_english": "Answer in English",
-      "hints": ["Hint 1", "Hint 2"],
-      "hints_english": ["Hint 1 English", "Hint 2 English"],
-      "answerLocation": "Page reference",
-      "steps": [
-        {
-          "text": "Step description",
-          "text_english": "Step in English",
-          "visualAid": "JSON or SVG (empty string if not needed)"
-        }
-      ],
-      "keyTerms": ["term1", "term2"]
-    }
-  ],
-  "importantNotes": [
-    {
-      "title": "Note title",
-      "title_english": "Title English",
-      "content": "Note content",
-      "content_english": "Content English",
-      "type": "definition|formula|reminder|warning"
-    }
-  ],
+  "explanation": "Clear explanation",
+  "explanation_english": "English (empty if already English)",
+  "exercises": [{
+    "question": "Question in original",
+    "question_english": "Question in English",
+    "answer": "Complete answer",
+    "answer_english": "Answer in English",
+    "hints": ["Hint 1", "Hint 2"],
+    "hints_english": ["Hint 1 English", "Hint 2 English"],
+    "steps": [{
+      "text": "Step in original",
+      "text_english": "Step in English",
+      "visualAid": "Chart.js JSON / SVG / 3D JSON (if needed)"
+    }]
+  }],
+  "importantNotes": [{
+    "title": "Note title",
+    "content": "Note content",
+    "type": "definition|formula|reminder"
+  }],
   "analogy": "Helpful analogy",
-  "analogy_english": "Analogy English",
-  "pyq": "Exam question",
-  "pyq_english": "Exam question English"
+  "pyq": "Exam question"
 }
 
-IMPORTANT: Keep response concise. Students need answers, not walls of text. Use visuals to explain complex concepts.`;
+KEEP IT CONCISE. Use visuals for complex concepts.`;
 
   return await callLLM(prompt, {
     feature: 'explain',
     temperature: 0.7,
-    maxTokens: 8192
+    maxTokens: 6144  // Reduced from 8192 for speed
   });
 }
 
