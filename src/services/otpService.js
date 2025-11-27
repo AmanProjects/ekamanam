@@ -7,9 +7,9 @@ import emailjs from '@emailjs/browser';
 
 // EmailJS Configuration
 // Get your keys from: https://www.emailjs.com/
-const EMAILJS_SERVICE_ID = 'service_ekamanam'; // Replace with your service ID
-const EMAILJS_TEMPLATE_ID = 'template_admin_otp'; // Replace with your template ID
-const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY'; // Replace with your public key
+const EMAILJS_SERVICE_ID = 'service_2n09tlh'; // Replace with your service ID
+const EMAILJS_TEMPLATE_ID = 'template_qqj7276'; // Replace with your template ID
+const EMAILJS_PUBLIC_KEY = 'EhyhDIZQ3Hvf6I71CY'; // Replace with your public key
 
 // Authorized admin email
 const ADMIN_EMAIL = 'amantalwar04@gmail.com';
@@ -39,14 +39,7 @@ export const sendOTPToAdmin = async () => {
     console.log('🔐 Generated OTP:', currentOTP); // For development - remove in production
     console.log('📧 Sending OTP to:', ADMIN_EMAIL);
     
-    // For development/testing: Show OTP in console
-    // In production, this should only send via email
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔢 DEV MODE: OTP is', currentOTP);
-      alert(`DEV MODE: Your OTP is ${currentOTP}\n\nIn production, this will be sent to ${ADMIN_EMAIL}`);
-      return { success: true, message: 'OTP sent successfully (DEV MODE)' };
-    }
-    
+
     // Send email via EmailJS
     const templateParams = {
       to_email: ADMIN_EMAIL,
