@@ -112,7 +112,7 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [explainResponsePage, setExplainResponsePage] = useState(null);
   const [explainEnglish, setExplainEnglish] = useState(null);
   const [translatingExplain, setTranslatingExplain] = useState(false);
-  const [explainScope, setExplainScope] = useState(null); // 'page' or 'chapter'
+  const [explainScope, setExplainScope] = useState('page'); // 'page' or 'chapter' - default to 'page'
   const [showExplainScopeSelector, setShowExplainScopeSelector] = useState(true);
   const [activitiesResponse, setActivitiesResponse] = useState(null);
   const [activitiesResponsePage, setActivitiesResponsePage] = useState(null);
@@ -287,7 +287,7 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setExplainEnglish(null);
     setTranslatingExplain(false);
     setUsedCache(false);
-    setExplainScope(null);
+    setExplainScope('page'); // Reset to 'page' instead of null
     setShowExplainScopeSelector(true);
     setError(null);
   };
@@ -2435,7 +2435,7 @@ Return ONLY this valid JSON:
                   <>
                     {!editableSelectedText && (
                       <ToggleButtonGroup
-                        value={explainScope || 'page'}
+                        value={explainScope}
                         exclusive
                         onChange={(e, value) => value && setExplainScope(value)}
                         fullWidth
@@ -2457,7 +2457,7 @@ Return ONLY this valid JSON:
                       variant="contained"
                       size="large"
                       startIcon={<ExplainIcon />}
-                      onClick={() => handleExplainText(editableSelectedText ? 'page' : (explainScope || 'page'))}
+                      onClick={() => handleExplainText(editableSelectedText ? 'page' : explainScope)}
                       disabled={loading || (!editableSelectedText && !pageText)}
                       sx={{ mb: 1 }}
                     >
