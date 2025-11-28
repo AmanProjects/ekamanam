@@ -21,37 +21,61 @@ async function callGeminiAPI(prompt, apiKey, config = {}) {
   });
 }
 
-export async function generateTeacherMode(pageText, apiKey = null, languageHint = null) {
+export async function generateTeacherMode(content, apiKey = null, languageHint = null) {
   // V3.0.3: Accept optional language hint from manual selection
   const languageInstruction = languageHint 
     ? `LANGUAGE: This content is in ${languageHint}. Provide explanation in ${languageHint}.`
     : `IMPORTANT INSTRUCTION:
-- Detect the language of the Page Content above
+- Detect the language of the content above
 - Provide explanation in the SAME LANGUAGE as the textbook content
 - If Telugu, explain in Telugu. If Hindi, explain in Hindi. If English, explain in English.`;
   
+  // Determine if this is a long chapter or a single page
+  const isChapter = content && content.length > 5000;
+  const contentType = isChapter ? 'Chapter' : 'Page';
+  const maxLength = isChapter ? 30000 : 5000;
+  const truncatedContent = content.substring(0, maxLength);
+  
   const prompt = `You are an experienced teacher helping students understand textbook content.
 
-Page Content:
-${pageText}
+${contentType} Content:
+${truncatedContent}
 
 ${languageInstruction}
 
+${isChapter ? `
+NOTE: This is a FULL CHAPTER. Provide:
+- A comprehensive summary of the entire chapter's key concepts
+- Important themes and main ideas
+- Connections between different sections
+- Broader context and applications
+` : `
+NOTE: This is a SINGLE PAGE. Provide:
+- Focused explanation of this specific page
+- Key concepts on this page
+- Direct examples related to this content
+`}
+
 Return ONLY this valid JSON (no extra text before or after):
 {
-  "summary": "Brief summary in the SAME LANGUAGE as the textbook (2-3 sentences with <p> tags)",
-  "keyPoints": ["point 1 in same language", "point 2 in same language", "point 3 in same language"],
-  "explanation": "Detailed explanation in the SAME LANGUAGE (use <p> and <b> tags for formatting)",
-  "examples": "Real-world examples in same language (use <p> tags)",
-  "exam": "Exam tips in same language (use <p> and <ul><li> tags)"
+  "summary": "${isChapter ? 'Comprehensive chapter summary' : 'Brief page summary'} in the SAME LANGUAGE (${isChapter ? '5-7' : '2-3'} sentences with <p> tags)",
+  "keyPoints": ["${isChapter ? '5-8 major themes/concepts' : '3-5 key points'} in same language"],
+  "explanation": "Detailed ${isChapter ? 'chapter overview' : 'page explanation'} in the SAME LANGUAGE (use <p>, <b>, <ul>, <li> tags for rich formatting)",
+  "examples": "Real-world examples and applications in same language (use <p> tags)",
+  "exam": "Exam tips and important topics to remember in same language (use <p> and <ul><li> tags)"
 }
 
-IMPORTANT: Return ONLY the JSON object. No explanations, no markdown code blocks, just valid JSON. Make it engaging, clear, and helpful for students!`;
+IMPORTANT: 
+- Return ONLY the JSON object
+- No explanations, no markdown code blocks, just valid JSON
+- Use HTML tags (<p>, <b>, <ul>, <li>, <strong>) for formatting
+- Make it ${isChapter ? 'comprehensive, well-organized, and covering all major concepts' : 'clear, focused, and engaging'}!`;
 
   return await callLLM(prompt, {
     feature: 'teacherMode',
     temperature: 0.7,
-    maxTokens: 4096
+    maxTokens: isChapter ? 6144 : 4096, // More tokens for chapter explanations
+    languageHint // Pass language hint to callLLM for provider selection
   });
 }
 

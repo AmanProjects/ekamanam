@@ -18,7 +18,11 @@ import {
   FormControl,
   FormControlLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { 
   School as TeacherIcon,
@@ -93,6 +97,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [teacherEnglish, setTeacherEnglish] = useState({});
   const [translatingSection, setTranslatingSection] = useState(null);
   const [usedCache, setUsedCache] = useState(false);
+  const [teacherScope, setTeacherScope] = useState(null); // 'page' or 'chapter'
+  const [showScopeSelector, setShowScopeSelector] = useState(true);
   const [cacheStats, setCacheStats] = useState(null);
   const [explainResponse, setExplainResponse] = useState('');
   const [explainResponsePage, setExplainResponsePage] = useState(null);
@@ -246,6 +252,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setTeacherEnglish({});
     setTranslatingSection(null);
     setUsedCache(false);
+    setTeacherScope(null);
+    setShowScopeSelector(true);
     setError(null);
   };
 
@@ -311,14 +319,20 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setActiveTab(5); // Switch to Notes tab (index 5)
   };
 
-  const handleTeacherMode = async () => {
-    if (!pageText) {
+  const handleTeacherMode = async (scope) => {
+    if (!pageText && scope === 'page') {
       setError('No page content available. Please load a PDF page first.');
       return;
     }
+    
+    if (!pdfDocument && scope === 'chapter') {
+      setError('PDF document not loaded. Please try again.');
+      return;
+    }
 
-    // V3.0: Removed hardcoded API key check - multi-provider system handles this
-    // Will try Groq first, then fall back to Gemini automatically
+    // V3.0.3: Store scope selection and hide selector
+    setTeacherScope(scope);
+    setShowScopeSelector(false);
 
     setLoading(true);
     setError(null);
@@ -326,28 +340,52 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setUsedCache(false);
 
     try {
-      // 🔍 CHECK CACHE FIRST
-      if (pdfId && currentPage) {
-        const cachedData = await getCachedData(pdfId, currentPage, 'teacherMode');
-        if (cachedData) {
-          console.log('⚡ Cache HIT: Using cached Teacher Mode data');
-          setTeacherResponse(cachedData);
-          setUsedCache(true);
-          
-          // Update cache stats
-          const stats = await getCacheStats(pdfId);
-          setCacheStats(stats);
-          console.log(`📊 Cache: ${stats.pagesCached} pages, ${stats.cacheSizeKB} KB`);
-          
-          setLoading(false);
-          return;
-        } else {
-          console.log('❌ Cache MISS: Generating new data...');
+      let contentToAnalyze = '';
+      let cacheKey = '';
+      
+      if (scope === 'page') {
+        // 📄 CURRENT PAGE ONLY
+        contentToAnalyze = pageText;
+        cacheKey = 'teacherMode';
+        
+        // Check cache for page
+        if (pdfId && currentPage) {
+          const cachedData = await getCachedData(pdfId, currentPage, cacheKey);
+          if (cachedData) {
+            console.log('⚡ Cache HIT: Using cached Teacher Mode (Page)');
+            setTeacherResponse(cachedData);
+            setUsedCache(true);
+            
+            // Update cache stats
+            const stats = await getCacheStats(pdfId);
+            setCacheStats(stats);
+            console.log(`📊 Cache: ${stats.pagesCached} pages, ${stats.cacheSizeKB} KB`);
+            
+            setLoading(false);
+            return;
+          } else {
+            console.log('📊 Cache MISS: Generating Teacher Mode for current page...');
+          }
         }
+      } else {
+        // 📚 ENTIRE CHAPTER
+        console.log('📖 Extracting full chapter text for comprehensive explanation...');
+        contentToAnalyze = await extractFullPdfText(pdfDocument);
+        
+        // Limit to first 30,000 characters to avoid token issues
+        if (contentToAnalyze.length > 30000) {
+          contentToAnalyze = contentToAnalyze.substring(0, 30000);
+          console.log('⚠️ Chapter text truncated to 30,000 characters for processing');
+        }
+        
+        cacheKey = 'teacherMode_chapter';
+        console.log(`📊 Generating Teacher Mode for entire chapter (${contentToAnalyze.length} chars)...`);
       }
 
-      // 📡 NO CACHE - GENERATE NEW
-      const response = await generateTeacherMode(pageText);
+      // 📡 GENERATE NEW EXPLANATION
+      // V3.0.3: Multi-provider system handles API keys automatically
+      const finalLanguage = manualLanguage || detectedLang.language || 'English';
+      const response = await generateTeacherMode(contentToAnalyze, null, finalLanguage);
       
       // Try to parse JSON response
       try {
@@ -370,16 +408,16 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
           .replace(/\n\s*\n/g, '\n') // Remove empty lines
           .trim();
         
-        console.log('Parsing Teacher Mode JSON, first 200 chars:', cleanResponse.substring(0, 200));
+        console.log(`✅ Parsing Teacher Mode (${scope}) JSON, first 200 chars:`, cleanResponse.substring(0, 200));
         const parsedResponse = JSON.parse(cleanResponse);
-        console.log('Successfully parsed Teacher Mode response');
+        console.log(`✅ Successfully parsed Teacher Mode (${scope}) response`);
         setTeacherResponse(parsedResponse);
         setTeacherResponsePage(currentPage); // Track which page this data is for
 
         // 💾 SAVE TO CACHE
         if (pdfId && currentPage) {
-          await saveCachedData(pdfId, currentPage, 'teacherMode', parsedResponse);
-          console.log('💾 Saved to cache: Teacher Mode');
+          await saveCachedData(pdfId, currentPage, cacheKey, parsedResponse);
+          console.log(`💾 Saved to cache: Teacher Mode (${scope})`);
           
           // Update cache stats
           const stats = await getCacheStats(pdfId);
@@ -1395,33 +1433,54 @@ Return ONLY this valid JSON:
         <TabPanel value={activeTab} index={0}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="success"
-                  size="large"
-                  startIcon={<TeacherIcon />}
-                  onClick={handleTeacherMode}
-                  disabled={loading}
-                >
-                  {loading ? 'Generating...' : 'Explain This Page'}
-                </Button>
-                {teacherResponse && teacherResponsePage === currentPage && (
+              {!teacherResponse ? (
+                <>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      startIcon={<TeacherIcon />}
+                      onClick={() => handleTeacherMode('page')}
+                      disabled={loading}
+                    >
+                      {loading && teacherScope === 'page' ? 'Generating...' : 'Explain This Page'}
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="success"
+                      size="large"
+                      startIcon={<TeacherIcon />}
+                      onClick={() => handleTeacherMode('chapter')}
+                      disabled={loading}
+                    >
+                      {loading && teacherScope === 'chapter' ? 'Generating...' : 'Explain Entire Chapter'}
+                    </Button>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                    📄 Get explanation for <strong>current page</strong> (fast) or 📚 <strong>entire chapter</strong> (comprehensive)
+                  </Typography>
+                </>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Chip 
+                    label={teacherScope === 'page' ? '📄 Page Explanation' : '📚 Chapter Explanation'} 
+                    color="primary" 
+                    variant="outlined"
+                  />
                   <Button
                     variant="outlined"
                     color="error"
-                    size="large"
+                    size="small"
                     onClick={clearTeacherMode}
                     disabled={loading}
                   >
-                    Clear
+                    Clear & Start Over
                   </Button>
-                )}
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                Get a comprehensive teacher-style explanation of the current page
-              </Typography>
+                </Box>
+              )}
             </Box>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
