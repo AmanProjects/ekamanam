@@ -105,7 +105,7 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [teacherEnglish, setTeacherEnglish] = useState({});
   const [translatingSection, setTranslatingSection] = useState(null);
   const [usedCache, setUsedCache] = useState(false);
-  const [teacherScope, setTeacherScope] = useState(null); // 'page' or 'chapter'
+  const [teacherScope, setTeacherScope] = useState('page'); // 'page' or 'chapter' - default to 'page'
   const [showScopeSelector, setShowScopeSelector] = useState(true);
   const [cacheStats, setCacheStats] = useState(null);
   const [explainResponse, setExplainResponse] = useState('');
@@ -276,7 +276,7 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setTeacherEnglish({});
     setTranslatingSection(null);
     setUsedCache(false);
-    setTeacherScope(null);
+    setTeacherScope('page'); // Reset to 'page' instead of null
     setShowScopeSelector(true);
     setError(null);
   };
@@ -2504,18 +2504,40 @@ Return ONLY this valid JSON:
                           } else {
                             content = `
                               ${explainResponse.explanation ? `<div><h4>Explanation</h4><p>${explainResponse.explanation}</p></div>` : ''}
-                              ${explainResponse.analogy ? `<div><h4>Analogy</h4><p>${explainResponse.analogy}</p></div>` : ''}
+                              ${explainResponse.analogy ? `<div><h4>💡 Analogy</h4><p>${explainResponse.analogy}</p></div>` : ''}
                               ${explainResponse.pyq ? `<div><h4>📝 Exam Question</h4><p>${explainResponse.pyq}</p></div>` : ''}
                               ${explainResponse.exercises && explainResponse.exercises.length > 0 ? `
                                 <div><h4>✏️ Exercises & Solutions</h4>
                                 ${explainResponse.exercises.map((ex, idx) => `
                                   <div style="margin-bottom: 16px; border-left: 3px solid #1976d2; padding-left: 12px;">
                                     <p><strong>Question ${idx + 1}:</strong> ${ex.question || ex.question_english || ''}</p>
-                                    <p><strong>Answer:</strong> ${ex.answer || ex.answer_english || ''}</p>
+                                    ${ex.answer ? `<p><strong>Answer:</strong> ${ex.answer}</p>` : ''}
+                                    ${ex.answer_english ? `<p><strong>Answer (English):</strong> ${ex.answer_english}</p>` : ''}
                                     ${ex.steps && ex.steps.length > 0 ? `
                                       <p><strong>Steps:</strong></p>
-                                      <ol>${ex.steps.map(step => `<li>${step.step || step.step_english || ''}</li>`).join('')}</ol>
+                                      <ol>${ex.steps.map(step => {
+                                        const stepText = typeof step === 'string' ? step : (step?.text || step?.step || '');
+                                        return `<li>${stepText}</li>`;
+                                      }).join('')}</ol>
                                     ` : ''}
+                                    ${ex.hints && ex.hints.length > 0 ? `
+                                      <p><strong>Hints:</strong></p>
+                                      <ul>${ex.hints.map(hint => `<li>${hint}</li>`).join('')}</ul>
+                                    ` : ''}
+                                  </div>
+                                `).join('')}
+                                </div>
+                              ` : ''}
+                              ${explainResponse.importantNotes && explainResponse.importantNotes.length > 0 ? `
+                                <div><h4>📌 Important Notes</h4>
+                                ${explainResponse.importantNotes.map((note, idx) => `
+                                  <div style="margin-bottom: 12px; padding: 12px; background: #f5f5f5; border-left: 4px solid ${
+                                    note.type === 'formula' ? '#9c27b0' :
+                                    note.type === 'warning' ? '#f44336' :
+                                    note.type === 'definition' ? '#2196f3' : '#757575'
+                                  };">
+                                    <p><strong>${note.title || `Note ${idx + 1}`}</strong></p>
+                                    <p>${note.content || ''}</p>
                                   </div>
                                 `).join('')}
                                 </div>
