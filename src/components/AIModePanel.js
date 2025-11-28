@@ -116,7 +116,7 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [showExplainScopeSelector, setShowExplainScopeSelector] = useState(true);
   const [activitiesResponse, setActivitiesResponse] = useState(null);
   const [activitiesResponsePage, setActivitiesResponsePage] = useState(null);
-  const [activitiesScope, setActivitiesScope] = useState(null); // 'page' or 'chapter'
+  const [activitiesScope, setActivitiesScope] = useState('page'); // 'page' or 'chapter' - default to 'page'
   const [showActivitiesScopeSelector, setShowActivitiesScopeSelector] = useState(true);
   const [resourcesResponse, setResourcesResponse] = useState('');
   const [resourcesResponsePage, setResourcesResponsePage] = useState(null);
@@ -3141,7 +3141,7 @@ Return ONLY this valid JSON:
               {!activitiesResponse ? (
                 <>
                   <ToggleButtonGroup
-                    value={activitiesScope || 'page'}
+                    value={activitiesScope}
                     exclusive
                     onChange={(e, value) => value && setActivitiesScope(value)}
                     fullWidth
@@ -3162,8 +3162,8 @@ Return ONLY this valid JSON:
                     variant="contained"
                     size="large"
                     startIcon={<ActivitiesIcon />}
-                    onClick={() => handleGenerateActivities(activitiesScope || 'page')}
-                    disabled={loading || !activitiesScope}
+                    onClick={() => handleGenerateActivities(activitiesScope)}
+                    disabled={loading || !pageText}
                     sx={{ mb: 1 }}
                   >
                     {loading ? 'Generating...' : 'Generate Activities'}
