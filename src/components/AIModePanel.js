@@ -769,19 +769,19 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
 
   // Fun exam prep tips for progress display
   const examPrepTips = [
-    "🧠 Did you know? Active recall is proven to boost memory retention by 50%!",
-    "💡 Pro tip: Taking breaks every 25 minutes improves focus and retention!",
-    "📚 Fun fact: Teaching concepts to others is one of the best ways to learn!",
-    "🎯 Remember: Practice questions are better than just reading for exams!",
-    "⚡ Studies show spaced repetition is more effective than cramming!",
-    "🌟 Tip: Writing answers by hand activates more brain regions than typing!",
-    "🔍 Research suggests testing yourself is better than re-reading notes!",
-    "🚀 Fun fact: Exercise before studying can boost memory by up to 20%!",
-    "💪 Remember: Consistency beats intensity when preparing for exams!",
-    "🎓 Pro tip: Explaining concepts aloud helps identify knowledge gaps!",
-    "📝 Did you know? Handwritten notes lead to better conceptual understanding!",
-    "🌈 Fun fact: Using multiple study methods creates stronger neural pathways!",
-    "⭐ Tip: Getting enough sleep consolidates learning into long-term memory!",
+    "Did you know? Active recall is proven to boost memory retention by 50%!",
+    "Pro tip: Taking breaks every 25 minutes improves focus and retention!",
+    "Fun fact: Teaching concepts to others is one of the best ways to learn!",
+    "Remember: Practice questions are better than just reading for exams!",
+    "Studies show spaced repetition is more effective than cramming!",
+    "Tip: Writing answers by hand activates more brain regions than typing!",
+    "Research suggests testing yourself is better than re-reading notes!",
+    "Fun fact: Exercise before studying can boost memory by up to 20%!",
+    "Remember: Consistency beats intensity when preparing for exams!",
+    "Pro tip: Explaining concepts aloud helps identify knowledge gaps!",
+    "Did you know? Handwritten notes lead to better conceptual understanding!",
+    "Fun fact: Using multiple study methods creates stronger neural pathways!",
+    "Tip: Getting enough sleep consolidates learning into long-term memory!",
     "🎨 Visual learners: Try creating mind maps to connect concepts!",
     "🔥 Remember: Short, focused study sessions are more effective than long ones!"
   ];
@@ -1493,8 +1493,8 @@ Return ONLY this valid JSON:
   const isEnglish = detectedLang.isEnglish;
   const readTabDisabled = isEnglish;
   const readTabTooltip = readTabDisabled 
-    ? "📖 This tab is for regional languages (Hindi, Telugu, Tamil, etc.). English PDFs don't need word-by-word analysis."
-    : "📚 Word-by-word analysis with pronunciation and meaning";
+    ? "This tab is for regional languages (Hindi, Telugu, Tamil, etc.). English PDFs don't need word-by-word analysis."
+    : "Word-by-word analysis with pronunciation and meaning";
   
   // Debug logging for language detection
   console.log('🔍 [Language Detection]', {
@@ -1581,7 +1581,7 @@ Return ONLY this valid JSON:
           
           {!manualLanguage && (
             <Chip 
-              label={`🔍 ${autoDetectedLang.language}`}
+              label={autoDetectedLang.language}
               size="small"
               color={autoDetectedLang.isEnglish ? 'primary' : 'warning'}
               variant="outlined"
@@ -2072,7 +2072,7 @@ Return ONLY this valid JSON:
                   disabled={analyzingWords}
                   sx={{ flex: 1 }}
                 >
-                  {analyzingWords ? 'Loading...' : `📖 Load More Words (Batch ${wordBatch + 1})`}
+                  {analyzingWords ? 'Loading...' : `Load More Words (Batch ${wordBatch + 1})`}
                 </Button>
               )}
             </Box>
@@ -2293,8 +2293,8 @@ Return ONLY this valid JSON:
                             content = explainResponse;
                           } else {
                             content = `
-                              ${explainResponse.explanation ? `<div><h4>📖 Explanation</h4><p>${explainResponse.explanation}</p></div>` : ''}
-                              ${explainResponse.analogy ? `<div><h4>💡 Analogy</h4><p>${explainResponse.analogy}</p></div>` : ''}
+                              ${explainResponse.explanation ? `<div><h4>Explanation</h4><p>${explainResponse.explanation}</p></div>` : ''}
+                              ${explainResponse.analogy ? `<div><h4>Analogy</h4><p>${explainResponse.analogy}</p></div>` : ''}
                               ${explainResponse.pyq ? `<div><h4>📝 Exam Question</h4><p>${explainResponse.pyq}</p></div>` : ''}
                               ${explainResponse.exercises && explainResponse.exercises.length > 0 ? `
                                 <div><h4>✏️ Exercises & Solutions</h4>
@@ -2332,13 +2332,10 @@ Return ONLY this valid JSON:
                   </Box>
                 )}
               </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
                 {editableSelectedText 
-                  ? '🔍 Analyzes selected text and detects: exercises, important notes, formulas, warnings'
-                  : '🤖 Smart AI Analysis: Automatically detects exercises, notes, and provides answer clues with page references'}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontStyle: 'italic' }}>
-                💡 Tip: For best results on large pages, select specific sections (exercises, notes, etc.)
+                  ? 'Analyzes selected text and detects exercises, notes, formulas, and important points'
+                  : 'Smart AI analysis with exercise detection and answer guidance'}
               </Typography>
             </Box>
 
@@ -2373,7 +2370,7 @@ Return ONLY this valid JSON:
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                         <Typography variant="h6" fontWeight={700}>
-                          💡 Analysis & Solutions
+                          Analysis & Solutions
                         </Typography>
                         {explainResponse.language && (
                           <Chip 
@@ -2387,8 +2384,8 @@ Return ONLY this valid JSON:
                           <Chip 
                             label={
                               explainResponse.contentType === 'exercise' ? '📝 Exercises' :
-                              explainResponse.contentType === 'notes' ? '📌 Notes' :
-                              explainResponse.contentType === 'mixed' ? '📝📌 Mixed' : '📖 Content'
+                              explainResponse.contentType === 'notes' ? 'Notes' :
+                              explainResponse.contentType === 'mixed' ? 'Mixed' : 'Content'
                             }
                             size="small"
                             color={explainResponse.contentType === 'exercise' ? 'warning' : 'default'}
@@ -2538,7 +2535,7 @@ Return ONLY this valid JSON:
                             {exercise.hints && exercise.hints.length > 0 && (
                               <Box sx={{ mb: 2 }}>
                                 <Typography variant="subtitle2" fontWeight={700} color="success.dark" gutterBottom>
-                                  💡 Helpful Hints:
+                                  Helpful Hints:
                                 </Typography>
                                   {exercise.hints.map((hint, hintIdx) => (
                                   <Box key={hintIdx} sx={{ mb: 0.5 }}>
@@ -2612,9 +2609,9 @@ Return ONLY this valid JSON:
                           >
                             <Typography variant="subtitle2" fontWeight={700} gutterBottom>
                               {note.type === 'formula' && '📐 '}
-                              {note.type === 'warning' && '⚠️ '}
-                              {note.type === 'definition' && '📖 '}
-                              {note.type === 'reminder' && '💭 '}
+                              {note.type === 'warning' && 'Warning: '}
+                              {note.type === 'definition' && 'Definition: '}
+                              {note.type === 'reminder' && 'Reminder: '}
                               {note.title}
                             </Typography>
                             <Typography variant="body2">{note.content}</Typography>
@@ -2647,7 +2644,7 @@ Return ONLY this valid JSON:
                     {explainResponse.explanation && (
                       <Box>
                         <Typography variant="h6" fontWeight={700} gutterBottom>
-                          💡 Detailed Explanation
+                          Detailed Explanation
                         </Typography>
                         <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
                           <Box dangerouslySetInnerHTML={{ __html: explainResponse.explanation }} />
@@ -2684,7 +2681,7 @@ Return ONLY this valid JSON:
                     {explainResponse.analogy && (
                       <Paper sx={{ p: 2, bgcolor: 'warning.lighter' }}>
                         <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                          💡 Helpful Analogy:
+                          Helpful Analogy:
                         </Typography>
                         <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
                           {explainResponse.analogy}
@@ -3027,7 +3024,7 @@ Return ONLY this valid JSON:
                                     )}
                                     {quizResults.questionFeedback[idx]?.feedback && (
                                       <Typography variant="body2" sx={{ mt: 1.5, pt: 1, borderTop: '1px dashed', borderColor: 'divider', fontStyle: 'italic' }}>
-                                        💡 {quizResults.questionFeedback[idx].feedback}
+                                        {quizResults.questionFeedback[idx].feedback}
                                       </Typography>
                                     )}
                                   </Paper>
@@ -3357,19 +3354,20 @@ Return ONLY this valid JSON:
         {/* Exam Prep Tab */}
         <TabPanel value={activeTab} index={4}>
           <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Exam Preparation
-            </Typography>
-            
             <Button
+              fullWidth
               variant="contained"
+              size="large"
               onClick={handleGenerateExamPrep}
               disabled={generatingExam || !pdfDocument}
               startIcon={generatingExam ? null : <ExamIcon />}
-              sx={{ mb: 2 }}
+              sx={{ mb: 1 }}
             >
               {generatingExam ? 'Processing...' : 'Generate Exam Questions'}
             </Button>
+            <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 2 }}>
+              AI-generated MCQs, short answers, and long answer questions
+            </Typography>
 
             {/* Professional Progress Display */}
             {generatingExam && examTotalChunks > 0 && (
@@ -3472,7 +3470,7 @@ Return ONLY this valid JSON:
                 {/* MCQs - Assertion & Reasoning */}
                 <Paper sx={{ p: 2, mb: 3 }}>
                   <Typography variant="h6" fontWeight={600} gutterBottom>
-                    📊 MCQs (Assertion & Reasoning)
+                    MCQs (Assertion & Reasoning)
                   </Typography>
                   
                   {examPrepResponse.mcqs?.map((mcq, index) => {
@@ -3664,7 +3662,7 @@ Return ONLY this valid JSON:
                 {/* Long Answer Questions */}
                 <Paper sx={{ p: 2, mb: 3 }}>
                   <Typography variant="h6" fontWeight={600} gutterBottom>
-                    📖 Long Answer Questions
+                    Long Answer Questions
                   </Typography>
                   
                   {examPrepResponse.longAnswer?.map((q, index) => {
@@ -3694,7 +3692,7 @@ Return ONLY this valid JSON:
                       {q.hints && q.hints.length > 0 && (
                         <Paper sx={{ p: 2, mb: 2, bgcolor: '#fff3e0' }}>
                           <Typography variant="body2" fontWeight={600} gutterBottom>
-                            💡 Hints:
+                            Hints:
                           </Typography>
                           {q.hints.map((hint, hidx) => {
                             const hintIsBilingual = typeof hint === 'object' && hint.original && hint.english;
@@ -3735,7 +3733,7 @@ Return ONLY this valid JSON:
                       {examAnswers[`long_answer_${index}`] && (
                         <Paper sx={{ p: 2, mt: 2, bgcolor: '#f5f5f5' }}>
                           <Typography variant="body2" fontWeight={600} gutterBottom>
-                            📖 Model Answer:
+                            Model Answer:
                           </Typography>
                           <Box sx={{ whiteSpace: 'pre-wrap' }}>
                             {formatMarkdown(examAnswers[`long_answer_${index}`])}
