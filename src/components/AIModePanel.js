@@ -339,7 +339,9 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     
     // Show success message and switch to Notes tab
     alert(`✅ Added to Notes! Switching to Notes tab...`);
-    setActiveTab(5); // Switch to Notes tab (index 5)
+    if (tabIndices.notes !== undefined) {
+      setActiveTab(tabIndices.notes); // Switch to Notes tab (dynamic index)
+    }
   };
 
   const handleTeacherMode = async (scope) => {
@@ -1565,6 +1567,17 @@ Return ONLY this valid JSON:
   const showResources = isTabEnabled(adminConfig, 'resources');
   const showNotes = isTabEnabled(adminConfig, 'notes');
 
+  // Calculate dynamic tab indices based on which tabs are enabled
+  const tabIndices = {};
+  let currentIndex = 0;
+  if (showTeacherMode) { tabIndices.teacher = currentIndex++; }
+  if (showMultilingual) { tabIndices.multilingual = currentIndex++; }
+  if (showExplain) { tabIndices.explain = currentIndex++; }
+  if (showActivities) { tabIndices.activities = currentIndex++; }
+  if (showExamPrep) { tabIndices.examPrep = currentIndex++; }
+  if (showResources) { tabIndices.resources = currentIndex++; }
+  if (showNotes) { tabIndices.notes = currentIndex++; }
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       <Paper square elevation={1}>
@@ -1722,7 +1735,7 @@ Return ONLY this valid JSON:
 
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
         {/* Teacher Mode Tab */}
-        <TabPanel value={activeTab} index={0}>
+        {showTeacherMode && <TabPanel value={activeTab} index={tabIndices.teacher}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
               {!teacherResponse ? (
@@ -2197,10 +2210,10 @@ Return ONLY this valid JSON:
               </Paper>
             )}
           </Box>
-        </TabPanel>
+        </TabPanel>}
 
         {/* Read & Understand Tab */}
-        <TabPanel value={activeTab} index={1}>
+        {showMultilingual && <TabPanel value={activeTab} index={tabIndices.multilingual}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
               <Button
@@ -2353,10 +2366,10 @@ Return ONLY this valid JSON:
               </Box>
             )}
           </Box>
-        </TabPanel>
+        </TabPanel>}
 
         {/* Explain Tab */}
-        <TabPanel value={activeTab} index={2}>
+        {showExplain && <TabPanel value={activeTab} index={tabIndices.explain}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2 }}>
               {/* Stop Speech Button (Global) */}
@@ -3040,10 +3053,10 @@ Return ONLY this valid JSON:
               </Paper>
             )}
           </Box>
-        </TabPanel>
+        </TabPanel>}
 
         {/* Activities Tab */}
-        <TabPanel value={activeTab} index={3}>
+        {showActivities && <TabPanel value={activeTab} index={tabIndices.activities}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
               {!activitiesResponse ? (
@@ -3518,10 +3531,10 @@ Return ONLY this valid JSON:
               </Paper>
             )}
           </Box>
-        </TabPanel>
+        </TabPanel>}
 
         {/* Additional Resources Tab */}
-        <TabPanel value={activeTab} index={5}>
+        {showResources && <TabPanel value={activeTab} index={tabIndices.resources}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2 }}>
               {selectedText && !isRegionalLanguageOrGarbled(selectedText) && (
@@ -3646,10 +3659,10 @@ Return ONLY this valid JSON:
               </Paper>
             )}
           </Box>
-        </TabPanel>
+        </TabPanel>}
 
         {/* Exam Prep Tab */}
-        <TabPanel value={activeTab} index={4}>
+        {showExamPrep && <TabPanel value={activeTab} index={tabIndices.examPrep}>
           <Box>
             <Button
               fullWidth
@@ -4044,12 +4057,12 @@ Return ONLY this valid JSON:
               </Box>
             )}
           </Box>
-        </TabPanel>
+        </TabPanel>}
 
         {/* Notes Tab */}
-        <TabPanel value={activeTab} index={6}>
+        {showNotes && <TabPanel value={activeTab} index={tabIndices.notes}>
           <NotesEditor pdfId={pdfId} />
-        </TabPanel>
+        </TabPanel>}
       </Box>
     </Box>
   );
