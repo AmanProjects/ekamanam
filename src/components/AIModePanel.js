@@ -35,7 +35,12 @@ import {
   Link as LinkIcon,
   MenuBook as ReadIcon,
   AddCircle as AddToNotesIcon,
-  Quiz as ExamIcon
+  Quiz as ExamIcon,
+  Description as DescriptionIcon,
+  Translate as TranslateIcon,
+  Clear as ClearIcon,
+  AutoAwesome as GenerateIcon,
+  PlayArrow as PlayIcon
 } from '@mui/icons-material';
 import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer, translateTeacherModeToEnglish } from '../services/geminiService';
@@ -1637,45 +1642,42 @@ Return ONLY this valid JSON:
                     <Button
                       fullWidth
                       variant="contained"
-                      color="primary"
                       size="large"
-                      startIcon={<TeacherIcon />}
+                      startIcon={<DescriptionIcon />}
                       onClick={() => handleTeacherMode('page')}
                       disabled={loading}
                     >
-                      {loading && teacherScope === 'page' ? 'Generating...' : 'Explain This Page'}
+                      {loading && teacherScope === 'page' ? 'Generating...' : 'This Page'}
                     </Button>
                     <Button
                       fullWidth
                       variant="contained"
-                      color="success"
                       size="large"
-                      startIcon={<TeacherIcon />}
+                      startIcon={<ReadIcon />}
                       onClick={() => handleTeacherMode('chapter')}
                       disabled={loading}
                     >
-                      {loading && teacherScope === 'chapter' ? 'Generating...' : 'Explain Entire Chapter'}
+                      {loading && teacherScope === 'chapter' ? 'Generating...' : 'Entire Chapter'}
                     </Button>
                   </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-                    📄 Get explanation for <strong>current page</strong> (fast) or 📚 <strong>entire chapter</strong> (comprehensive)
+                  <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
+                    AI-powered teacher-style explanation
                   </Typography>
                 </>
               ) : (
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <Chip 
-                    label={teacherScope === 'page' ? '📄 Page Explanation' : '📚 Chapter Explanation'} 
-                    color="primary" 
-                    variant="outlined"
-                  />
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                    {teacherScope === 'page' ? 'Page Explanation' : 'Chapter Explanation'}
+                  </Typography>
                   <Button
                     variant="outlined"
                     color="error"
                     size="small"
+                    startIcon={<ClearIcon />}
                     onClick={clearTeacherMode}
                     disabled={loading}
                   >
-                    Clear & Start Over
+                    Clear
                   </Button>
                 </Box>
               )}
@@ -1702,22 +1704,7 @@ Return ONLY this valid JSON:
             {teacherResponse && teacherResponsePage === currentPage && !loading && (
               <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="h6" fontWeight={600}>Teacher's Explanation</Typography>
-                    {usedCache && teacherResponse && (
-                      <Chip 
-                        label="⚡ Cached" 
-                        color="success" 
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
-                  </Box>
-                  <Tooltip title={isSpeaking ? "Stop" : "Listen"}>
-                    <IconButton onClick={() => handleSpeak(typeof teacherResponse === 'string' ? teacherResponse : JSON.stringify(teacherResponse))} color="primary">
-                      {isSpeaking ? <Stop /> : <VolumeUp />}
-                    </IconButton>
-                  </Tooltip>
+                  <Typography variant="h6" fontWeight={600}>Teacher's Explanation</Typography>
                 </Box>
                 
                 {/* Render structured content with optional English translation */}
@@ -1727,15 +1714,15 @@ Return ONLY this valid JSON:
                     {teacherResponse.summary && (
                       <Box sx={{ mb: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
-                          <Typography variant="overline" color="primary" fontWeight={700}>
-                            📝 Summary
+                          <Typography variant="h6" fontWeight={600}>
+                            Summary
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             {/* Listen/Stop Button */}
                             {speakingSection === 'summary' ? (
                               <Button
                                 size="small"
-                                variant="contained"
+                                variant="outlined"
                                 color="error"
                                 onClick={handleStopSpeaking}
                                 startIcon={<Stop />}
@@ -1746,7 +1733,6 @@ Return ONLY this valid JSON:
                               <Button
                                 size="small"
                                 variant="outlined"
-                                color="primary"
                                 onClick={() => handleSpeakSection('summary', teacherResponse.summary)}
                                 startIcon={<VolumeUp />}
                               >
@@ -1758,12 +1744,11 @@ Return ONLY this valid JSON:
                               <Button
                                 size="small"
                                 variant="outlined"
-                                color="info"
                                 onClick={() => handleTranslateSection('summary', teacherResponse.summary)}
                                 disabled={translatingSection === 'summary'}
-                                startIcon={translatingSection === 'summary' ? <CircularProgress size={14} /> : <ExplainIcon />}
+                                startIcon={translatingSection === 'summary' ? <CircularProgress size={14} /> : <TranslateIcon />}
                               >
-                                Explain in English
+                                English
                               </Button>
                             )}
                           </Box>
@@ -1772,9 +1757,9 @@ Return ONLY this valid JSON:
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.summary }} />
                         </Paper>
                         {teacherEnglish.summary && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'info.lighter' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} gutterBottom display="block">
-                              🌐 English Explanation:
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
+                              English Explanation:
                             </Typography>
                             <Box 
                               sx={{ '& p': { mb: 1 }, '& ul': { pl: 2, mb: 1 }, '& strong': { fontWeight: 600 } }}
@@ -1789,15 +1774,15 @@ Return ONLY this valid JSON:
                     {teacherResponse.keyPoints && (
                       <Box sx={{ mb: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
-                          <Typography variant="overline" color="secondary" fontWeight={700}>
-                            🎯 Key Points
+                          <Typography variant="h6" fontWeight={600}>
+                            Key Points
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             {/* Listen/Stop Button */}
                             {speakingSection === 'keyPoints' ? (
                               <Button
                                 size="small"
-                                variant="contained"
+                                variant="outlined"
                                 color="error"
                                 onClick={handleStopSpeaking}
                                 startIcon={<Stop />}
@@ -1808,7 +1793,6 @@ Return ONLY this valid JSON:
                               <Button
                                 size="small"
                                 variant="outlined"
-                                color="secondary"
                                 onClick={() => handleSpeakSection('keyPoints', `<ul>${teacherResponse.keyPoints.map(p => `<li>${p}</li>`).join('')}</ul>`)}
                                 startIcon={<VolumeUp />}
                               >
@@ -1820,12 +1804,11 @@ Return ONLY this valid JSON:
                               <Button
                                 size="small"
                                 variant="outlined"
-                                color="info"
                                 onClick={() => handleTranslateSection('keyPoints', teacherResponse.keyPoints.join('\n'))}
                                 disabled={translatingSection === 'keyPoints'}
-                                startIcon={translatingSection === 'keyPoints' ? <CircularProgress size={14} /> : <ExplainIcon />}
+                                startIcon={translatingSection === 'keyPoints' ? <CircularProgress size={14} /> : <TranslateIcon />}
                               >
-                                Explain in English
+                                English
                               </Button>
                             )}
                           </Box>
@@ -1838,9 +1821,9 @@ Return ONLY this valid JSON:
                           </ul>
                         </Paper>
                         {teacherEnglish.keyPoints && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'info.lighter' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} gutterBottom display="block">
-                              🌐 English Explanation:
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
+                              English Explanation:
                             </Typography>
                             <Box 
                               sx={{ '& p': { mb: 1 }, '& ul': { pl: 2, mb: 1 }, '& strong': { fontWeight: 600 } }}
@@ -1855,8 +1838,8 @@ Return ONLY this valid JSON:
                     {teacherResponse.explanation && (
                       <Box sx={{ mb: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
-                          <Typography variant="overline" color="success.main" fontWeight={700}>
-                            📚 Detailed Explanation
+                          <Typography variant="h6" fontWeight={600}>
+                            Detailed Explanation
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             {/* Listen/Stop Button */}
@@ -1900,9 +1883,9 @@ Return ONLY this valid JSON:
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.explanation }} />
                         </Paper>
                         {teacherEnglish.explanation && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'info.lighter' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} gutterBottom display="block">
-                              🌐 English Explanation:
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
+                              English Explanation:
                             </Typography>
                             <Box 
                               sx={{ '& p': { mb: 1 }, '& ul': { pl: 2, mb: 1 }, '& strong': { fontWeight: 600 } }}
@@ -1917,8 +1900,8 @@ Return ONLY this valid JSON:
                     {teacherResponse.examples && (
                       <Box sx={{ mb: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
-                          <Typography variant="overline" color="warning.main" fontWeight={700}>
-                            💡 Examples
+                          <Typography variant="h6" fontWeight={600}>
+                            Examples
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             {/* Listen/Stop Button */}
@@ -1962,9 +1945,9 @@ Return ONLY this valid JSON:
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.examples }} />
                         </Paper>
                         {teacherEnglish.examples && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'info.lighter' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} gutterBottom display="block">
-                              🌐 English Explanation:
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
+                              English Explanation:
                             </Typography>
                             <Box 
                               sx={{ '& p': { mb: 1 }, '& ul': { pl: 2, mb: 1 }, '& strong': { fontWeight: 600 } }}
@@ -1979,8 +1962,8 @@ Return ONLY this valid JSON:
                     {teacherResponse.exam && (
                       <Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
-                          <Typography variant="overline" color="error.main" fontWeight={700}>
-                            🎓 Exam Tips
+                          <Typography variant="h6" fontWeight={600}>
+                            Exam Tips
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             {/* Listen/Stop Button */}
@@ -2024,9 +2007,9 @@ Return ONLY this valid JSON:
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.exam }} />
                         </Paper>
                         {teacherEnglish.exam && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'info.lighter' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} gutterBottom display="block">
-                              🌐 English Explanation:
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
+                              English Explanation:
                             </Typography>
                             <Box 
                               sx={{ '& p': { mb: 1 }, '& ul': { pl: 2, mb: 1 }, '& strong': { fontWeight: 600 } }}
@@ -2102,8 +2085,8 @@ Return ONLY this valid JSON:
                   <Box>
                     {/* Page Summary */}
                     {wordAnalysis[0].summary && (
-                      <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'info.lighter' }}>
-                        <Typography variant="caption" color="info.main" fontWeight={600} display="block" gutterBottom>
+                      <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'grey.100' }}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
                           📄 Page Summary:
                         </Typography>
                         <Typography variant="body2">
@@ -2114,12 +2097,9 @@ Return ONLY this valid JSON:
                     
                     {/* Language Badge */}
                     {wordAnalysis[0].language && (
-                      <Chip 
-                        label={`Language: ${wordAnalysis[0].language}`}
-                        color="primary"
-                        size="small"
-                        sx={{ mb: 2 }}
-                      />
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Language: {wordAnalysis[0].language}
+                      </Typography>
                     )}
 
                     {/* Words */}
@@ -2145,30 +2125,27 @@ Return ONLY this valid JSON:
                                   {word.word}
                                 </Typography>
                                 {word.partOfSpeech && (
-                                  <Chip 
-                                    label={word.partOfSpeech}
-                                    size="small"
-                                    color="secondary"
-                                    sx={{ mt: 0.5 }}
-                                  />
+                                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                                    ({word.partOfSpeech})
+                                  </Typography>
                                 )}
                               </Box>
                               <Button
                                 size="small"
-                                variant={speakingWordIndex === idx ? "contained" : "outlined"}
-                                color="secondary"
-                                startIcon={speakingWordIndex === idx ? '⏸️' : '🔊'}
+                                variant="outlined"
+                                color={speakingWordIndex === idx ? "error" : "default"}
+                                startIcon={speakingWordIndex === idx ? <Stop /> : <VolumeUp />}
                                 onClick={() => handleSpeakWord(word.word, wordAnalysis[0].language, idx)}
                                 sx={{ minWidth: 100 }}
                               >
-                                {speakingWordIndex === idx ? 'Speaking...' : 'Listen'}
+                                {speakingWordIndex === idx ? 'Stop' : 'Listen'}
                               </Button>
                             </Box>
 
                             {/* Pronunciation Guide */}
                             <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
                               <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
-                                🗣️ Pronunciation Guide:
+                                Pronunciation:
                               </Typography>
                               <Typography variant="body2" fontStyle="italic" color="text.secondary">
                                 {word.pronunciation}
@@ -2176,9 +2153,9 @@ Return ONLY this valid JSON:
                             </Box>
 
                             {/* English Meaning */}
-                            <Box sx={{ bgcolor: 'info.lighter', p: 1.5, borderRadius: 1 }}>
-                              <Typography variant="caption" color="info.main" fontWeight={600} display="block" gutterBottom>
-                                🌐 English Meaning:
+                            <Box sx={{ bgcolor: 'grey.100', p: 1.5, borderRadius: 1 }}>
+                              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
+                                English Meaning:
                               </Typography>
                               <Typography variant="body1" fontWeight={500}>
                                 {word.meaning}
@@ -2218,12 +2195,13 @@ Return ONLY this valid JSON:
                   sx={{ mb: 2 }}
                   action={
                     <Button 
-                      color="inherit" 
                       size="small" 
+                      variant="outlined"
+                      color="error"
                       onClick={handleStopSpeech}
-                      startIcon="⏹️"
+                      startIcon={<Stop />}
                     >
-                      Stop Speaking
+                      Stop
                     </Button>
                   }
                 >
@@ -2232,7 +2210,7 @@ Return ONLY this valid JSON:
               )}
               
               {selectedText && !isRegionalLanguageOrGarbled(selectedText) && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'warning.lighter' }}>
+                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.100' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600}>
                     Selected Text:
                   </Typography>
@@ -2242,9 +2220,9 @@ Return ONLY this valid JSON:
                 </Paper>
               )}
               {selectedText && isRegionalLanguageOrGarbled(selectedText) && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'info.lighter' }}>
-                  <Typography variant="caption" color="info.main" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <span>ℹ️</span> Regional Language Text Selected
+                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.100' }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                    Regional Language Text Selected
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
                     {selectedText.length} characters selected. Click below to get explanation.
@@ -2258,49 +2236,45 @@ Return ONLY this valid JSON:
                       <Button
                         fullWidth
                         variant="contained"
-                        color="primary"
                         size="large"
-                        startIcon={<ExplainIcon />}
+                        startIcon={<DescriptionIcon />}
                         onClick={() => handleExplainText('page')}
                         disabled={loading || (!editableSelectedText && !pageText)}
                       >
                         {loading && explainScope === 'page' ? 'Analyzing...' : 
-                         editableSelectedText ? 'Explain Selected Text' : 
-                         '📝 Explain This Page'}
+                         editableSelectedText ? 'Explain Selection' : 
+                         'This Page'}
                       </Button>
                       {!editableSelectedText && (
                         <Button
                           fullWidth
                           variant="contained"
-                          color="success"
                           size="large"
-                          startIcon={<ExplainIcon />}
+                          startIcon={<ReadIcon />}
                           onClick={() => handleExplainText('chapter')}
                           disabled={loading}
                         >
-                          {loading && explainScope === 'chapter' ? 'Analyzing...' : '📚 Explain Entire Chapter'}
+                          {loading && explainScope === 'chapter' ? 'Analyzing...' : 'Entire Chapter'}
                         </Button>
                       )}
                     </Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
                       {editableSelectedText 
-                        ? 'Get detailed explanation of selected text with exercises and solutions'
-                        : '📄 Explain <strong>current page</strong> (fast) or 📚 <strong>entire chapter</strong> (comprehensive)'}
+                        ? 'Get detailed explanation with exercises and solutions'
+                        : 'AI-powered analysis with visual aids'}
                     </Typography>
                   </>
                 ) : (
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                     {explainScope && (
-                      <Chip 
-                        label={explainScope === 'page' ? '📄 Page Explanation' : '📚 Chapter Explanation'} 
-                        color="primary" 
-                        variant="outlined"
-                      />
+                      <Typography variant="body2" color="text.secondary">
+                        {explainScope === 'page' ? 'Page Explanation' : 'Chapter Explanation'}
+                      </Typography>
                     )}
                     <Button
                       variant="contained"
-                      color="success"
-                      size="large"
+                      size="small"
+                      startIcon={<AddToNotesIcon />}
                       onClick={() => {
                           let content = '';
                           if (typeof explainResponse === 'string') {
@@ -2329,7 +2303,6 @@ Return ONLY this valid JSON:
                           addToNotes(content, `📚 Explanation - Page ${currentPage}`);
                         }}
                         disabled={loading}
-                        startIcon={<AddToNotesIcon />}
                         sx={{ minWidth: '140px' }}
                       >
                         Add to Notes
@@ -2338,12 +2311,12 @@ Return ONLY this valid JSON:
                         variant="outlined"
                         color="error"
                         size="small"
+                        startIcon={<ClearIcon />}
                         onClick={clearExplain}
                         disabled={loading}
                       >
-                        Clear & Start Over
+                        Clear
                       </Button>
-                    )}
                   </Box>
                 )}
               </Box>
@@ -2352,7 +2325,7 @@ Return ONLY this valid JSON:
                   ? '🔍 Analyzes selected text and detects: exercises, important notes, formulas, warnings'
                   : '🤖 Smart AI Analysis: Automatically detects exercises, notes, and provides answer clues with page references'}
               </Typography>
-              <Typography variant="caption" color="info.main" sx={{ mt: 0.5, display: 'block', fontStyle: 'italic' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontStyle: 'italic' }}>
                 💡 Tip: For best results on large pages, select specific sections (exercises, notes, etc.)
               </Typography>
             </Box>
@@ -2362,15 +2335,15 @@ Return ONLY this valid JSON:
             {/* Page mismatch warning */}
             {explainResponse && explainResponsePage && explainResponsePage !== currentPage && (
               <Alert 
-                severity="warning" 
+                severity="info" 
                 sx={{ mb: 2 }}
                 action={
-                  <Button color="inherit" size="small" onClick={clearExplain}>
-                    Clear Old Data
+                  <Button size="small" variant="outlined" color="error" onClick={clearExplain}>
+                    Clear
                   </Button>
                 }
               >
-                ℹ️ Explanation is from page {explainResponsePage}. You're on page {currentPage}.
+                Explanation is from page {explainResponsePage}. You're viewing page {currentPage}.
               </Alert>
             )}
             
@@ -2434,7 +2407,7 @@ Return ONLY this valid JSON:
                                 dangerouslySetInnerHTML={{ __html: `Q${idx + 1}. ${formatBoldText(exercise.question)}` }}
                               />
                               {exercise.question_english && exercise.question_english.trim() !== "" && exercise.question_english !== exercise.question && (
-                                <Paper sx={{ p: 1.5, bgcolor: 'info.lighter', mt: 1, borderLeft: '4px solid', borderColor: 'info.main' }}>
+                                <Paper sx={{ p: 1.5, bgcolor: 'grey.100', mt: 1, borderLeft: '4px solid', borderColor: 'info.main' }}>
                                   <Typography 
                                     variant="body2" 
                                     color="info.dark"
@@ -2477,7 +2450,7 @@ Return ONLY this valid JSON:
                                 </Paper>
                                 
                                 {exercise.answer_english && exercise.answer_english.trim() !== "" && exercise.answer_english !== exercise.answer && (
-                                  <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'info.lighter', borderLeft: '4px solid', borderColor: 'info.main' }}>
+                                  <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'grey.100', borderLeft: '4px solid', borderColor: 'info.main' }}>
                                     <Typography variant="subtitle2" fontWeight={700} color="info.dark" gutterBottom>
                                       🌐 Answer in English:
                                     </Typography>
@@ -2576,7 +2549,7 @@ Return ONLY this valid JSON:
 
                             {/* Answer Location */}
                             {exercise.answerLocation && (
-                              <Paper sx={{ p: 1.5, bgcolor: 'info.lighter' }}>
+                              <Paper sx={{ p: 1.5, bgcolor: 'grey.100' }}>
                                 <Typography variant="caption" fontWeight={700} color="info.dark">
                                   📍 {exercise.answerLocation}
                                 </Typography>
@@ -2677,7 +2650,7 @@ Return ONLY this valid JSON:
                         </Paper>
                         
                         {explainResponse.explanation_english && explainResponse.explanation_english !== explainResponse.explanation && (
-                          <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'info.lighter', borderLeft: '4px solid', borderColor: 'info.main' }}>
+                          <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'grey.100', borderLeft: '4px solid', borderColor: 'info.main' }}>
                             <Typography variant="subtitle2" fontWeight={700} color="info.dark" gutterBottom>
                               🌐 Explanation in English:
                             </Typography>
@@ -2744,7 +2717,7 @@ Return ONLY this valid JSON:
                     {/* Visual Diagram */}
                     {explainResponse.visual && (
                       <Box>
-                        <Typography variant="overline" color="info.main" fontWeight={700} gutterBottom>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
                           Visual Diagram
                         </Typography>
                         <Paper 
@@ -2767,7 +2740,7 @@ Return ONLY this valid JSON:
                     {/* Interactive Demo */}
                     {explainResponse.demo && (
                       <Box>
-                        <Typography variant="overline" color="secondary" fontWeight={700} gutterBottom>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
                           Interactive Demo
                         </Typography>
                         <Paper 
@@ -2874,23 +2847,22 @@ Return ONLY this valid JSON:
                   </Typography>
                 </>
               ) : (
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                   {activitiesScope && (
-                    <Chip 
-                      label={activitiesScope === 'page' ? '📄 Page Activities' : '📚 Chapter Activities'} 
-                      color="secondary" 
-                      variant="outlined"
-                    />
+                    <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                      {activitiesScope === 'page' ? 'Page Activities' : 'Chapter Activities'}
+                    </Typography>
                   )}
                   {activitiesResponse && activitiesResponsePage === currentPage && (
                     <Button
                       variant="outlined"
                       color="error"
                       size="small"
+                      startIcon={<ClearIcon />}
                       onClick={clearActivities}
                       disabled={loading}
                     >
-                      Clear & Start Over
+                      Clear
                     </Button>
                   )}
                 </Box>
@@ -2901,11 +2873,16 @@ Return ONLY this valid JSON:
             
             {/* Show page mismatch warning */}
             {activitiesResponse && activitiesResponsePage && activitiesResponsePage !== currentPage && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                📄 Activities are from page {activitiesResponsePage}. You're on page {currentPage}. 
-                <Button size="small" onClick={clearActivities} sx={{ ml: 1 }}>
-                  Clear Old Data
-                </Button>
+              <Alert 
+                severity="info" 
+                sx={{ mb: 2 }}
+                action={
+                  <Button size="small" variant="outlined" color="error" onClick={clearActivities}>
+                    Clear
+                  </Button>
+                }
+              >
+                Activities are from page {activitiesResponsePage}. You're viewing page {currentPage}.
               </Alert>
             )}
 
@@ -2928,8 +2905,8 @@ Return ONLY this valid JSON:
                     {/* MCQ Quiz Section */}
                     {activitiesResponse.mcqs && activitiesResponse.mcqs.length > 0 && (
                       <Box>
-                        <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          📝 Multiple Choice Quiz
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          Multiple Choice Quiz
                         </Typography>
                         {activitiesResponse.mcqs.map((mcq, idx) => {
                           // Handle both bilingual object format and simple string format
@@ -2951,8 +2928,8 @@ Return ONLY this valid JSON:
                                 </Typography>
                                 {questionOriginal && (
                                   <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                                    <Typography variant="caption" color="info.main" fontWeight={600} display="block" gutterBottom>
-                                      🌐 English:
+                                    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
+                                      English:
                                     </Typography>
                                     <Typography variant="subtitle1" fontWeight={500} color="text.secondary">
                                       {questionEnglish}
@@ -2993,7 +2970,7 @@ Return ONLY this valid JSON:
                                                 </Typography>
                                                 {optionOrig && (
                                                   <Box sx={{ mt: 0.5, pl: 1, borderLeft: '2px solid', borderColor: 'info.main' }}>
-                                                    <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                                                    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                                                       🌐 English:
                                                     </Typography>
                                                     <Typography variant="body2" color="text.secondary">
@@ -3024,8 +3001,8 @@ Return ONLY this valid JSON:
                                     </Typography>
                                     {explanationOriginal && (
                                       <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                                        <Typography variant="caption" color="info.main" fontWeight={600} display="block" gutterBottom>
-                                          🌐 English Explanation:
+                                        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
+                                          English Explanation:
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
                                           {explanationEnglish}
@@ -3098,10 +3075,10 @@ Return ONLY this valid JSON:
                                     </Typography>
                                   </Paper>
                                 )}
-                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'info.lighter' }}>
+                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.100' }}>
                                   {originalText && (
-                                    <Typography variant="caption" color="info.main" fontWeight={600} display="block" gutterBottom>
-                                      🌐 English:
+                                    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
+                                      English:
                                     </Typography>
                                   )}
                                   <Typography variant="body2">
@@ -3136,10 +3113,10 @@ Return ONLY this valid JSON:
                                     </Typography>
                                   </Paper>
                                 )}
-                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'info.lighter' }}>
+                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.100' }}>
                                   {original && (
-                                    <Typography variant="caption" color="info.main" fontWeight={600} display="block" gutterBottom>
-                                      🌐 English:
+                                    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
+                                      English:
                                     </Typography>
                                   )}
                                   <Typography variant="body2">
@@ -3174,10 +3151,10 @@ Return ONLY this valid JSON:
                                     </Typography>
                                   </Paper>
                                 )}
-                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'info.lighter' }}>
+                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.100' }}>
                                   {original && (
-                                    <Typography variant="caption" color="info.main" fontWeight={600} display="block" gutterBottom>
-                                      🌐 English:
+                                    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
+                                      English:
                                     </Typography>
                                   )}
                                   <Typography variant="body2">
@@ -3212,10 +3189,10 @@ Return ONLY this valid JSON:
                                     </Typography>
                                   </Paper>
                                 )}
-                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'info.lighter' }}>
+                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.100' }}>
                                   {original && (
-                                    <Typography variant="caption" color="info.main" fontWeight={600} display="block" gutterBottom>
-                                      🌐 English:
+                                    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
+                                      English:
                                     </Typography>
                                   )}
                                   <Typography variant="body2">
@@ -3240,7 +3217,7 @@ Return ONLY this valid JSON:
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2 }}>
               {selectedText && !isRegionalLanguageOrGarbled(selectedText) && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'info.lighter' }}>
+                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.100' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600}>
                     Selected Text:
                   </Typography>
@@ -3306,7 +3283,7 @@ Return ONLY this valid JSON:
                     {/* Web Resources */}
                     {resourcesResponse.webResources && resourcesResponse.webResources.length > 0 && (
                       <Box>
-                        <Typography variant="overline" color="primary" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography variant="h6" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                           <LinkIcon /> Recommended Resources
                         </Typography>
                         {resourcesResponse.webResources.map((resource, idx) => (
@@ -3344,7 +3321,7 @@ Return ONLY this valid JSON:
                     {/* Related Topics */}
                     {resourcesResponse.relatedTopics && resourcesResponse.relatedTopics.length > 0 && (
                       <Box>
-                        <Typography variant="overline" color="secondary" fontWeight={700}>
+                        <Typography variant="h6" fontWeight={600}>
                           Related Topics
                         </Typography>
                         <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -3508,7 +3485,7 @@ Return ONLY this valid JSON:
                         </Typography>
                         {isBilingual && assertionEnglish && (
                           <Box sx={{ mt: 1, pl: 2, borderLeft: '3px solid', borderColor: 'info.main' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                               🌐 English:
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
@@ -3522,7 +3499,7 @@ Return ONLY this valid JSON:
                         </Typography>
                         {isBilingual && reasonEnglish && (
                           <Box sx={{ mt: 1, pl: 2, borderLeft: '3px solid', borderColor: 'info.main' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                               🌐 English:
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
@@ -3577,7 +3554,7 @@ Return ONLY this valid JSON:
                           </Typography>
                           {isBilingual && explanationEnglish && (
                             <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                              <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                                 🌐 English:
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
@@ -3630,7 +3607,7 @@ Return ONLY this valid JSON:
                         </Typography>
                         {isBilingual && questionEnglish && (
                           <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                               🌐 English:
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
@@ -3649,7 +3626,7 @@ Return ONLY this valid JSON:
                         </Typography>
                         {isBilingual && answerEnglish && (
                           <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                               🌐 English:
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -3692,7 +3669,7 @@ Return ONLY this valid JSON:
                         </Typography>
                         {isBilingual && questionEnglish && (
                           <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                            <Typography variant="caption" color="info.main" fontWeight={600} display="block">
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                               🌐 English:
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
