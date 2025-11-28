@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Grid, AppBar, Toolbar, Button, IconButton, Fab, Tooltip, Chip, Badge } from '@mui/material';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Box, Grid, AppBar, Toolbar, Button, IconButton, Fab, Tooltip, Chip, Badge, ThemeProvider, CssBaseline } from '@mui/material';
 import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon, AdminPanelSettings } from '@mui/icons-material';
 import packageJson from '../package.json';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -9,12 +9,13 @@ import PDFViewer from './components/PDFViewer';
 import AIModePanel from './components/AIModePanel';
 import Dashboard from './components/Dashboard';
 import StudentLibrary from './components/StudentLibrary';
-import SettingsDialog from './components/SettingsDialog';
+import EnhancedSettingsDialog from './components/EnhancedSettingsDialog';
 import AdminDashboard from './components/AdminDashboard';
 import AdminOTPDialog from './components/AdminOTPDialog';
 import AuthButton from './components/AuthButton';
 import FocusMonitor from './components/FocusMonitor';
 import Test3DVisualization from './components/Test3DVisualization';
+import { lightTheme, darkTheme, getThemePreference } from './theme.js';
 import { 
   addPDFToLibrary, 
   loadPDFData,
@@ -38,11 +39,30 @@ function App() {
   const [showAIPopup, setShowAIPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
   
+  // Theme state
+  const [themeMode, setThemeMode] = useState('light');
+  
   // Library state
   const [currentLibraryItem, setCurrentLibraryItem] = useState(null);
   const [libraryCount, setLibraryCount] = useState(0);
   const autoSaveIntervalRef = useRef(null);
   const lastSavedPageRef = useRef(null);
+
+  // Initialize theme from localStorage
+  useEffect(() => {
+    const savedTheme = getThemePreference();
+    setThemeMode(savedTheme);
+  }, []);
+
+  // Memoize theme object
+  const theme = useMemo(() => {
+    return themeMode === 'dark' ? darkTheme : lightTheme;
+  }, [themeMode]);
+
+  // Handle theme change from settings
+  const handleThemeChange = (newMode) => {
+    setThemeMode(newMode);
+  };
   
   // Load library count
   useEffect(() => {
@@ -307,7 +327,9 @@ function App() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Header */}
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
@@ -441,11 +463,12 @@ function App() {
         )}
       </Box>
 
-      {/* Settings Dialog */}
-      <SettingsDialog 
+      {/* Enhanced Settings Dialog */}
+      <EnhancedSettingsDialog 
         open={showSettings} 
         onClose={() => setShowSettings(false)}
         user={user}
+        onThemeChange={handleThemeChange}
       />
 
       {/* Admin OTP Dialog */}
@@ -468,7 +491,8 @@ function App() {
 
       {/* Focus Monitor Widget */}
       <FocusMonitor />
-    </Box>
+      </Box>
+    </ThemeProvider>
   );
 }
 

@@ -1,58 +1,46 @@
 import { createTheme } from '@mui/material/styles';
 
-const theme = createTheme({
+// Light theme
+export const lightTheme = createTheme({
   palette: {
+    mode: 'light',
     primary: {
-      main: '#4f46e5',
-      light: '#6366f1',
-      dark: '#4338ca',
+      main: '#1976d2',
     },
     secondary: {
-      main: '#9333ea',
-      light: '#a855f7',
-      dark: '#7e22ce',
+      main: '#dc004e',
     },
     background: {
-      default: '#f8fafc',
+      default: '#f5f5f5',
       paper: '#ffffff',
-    },
-  },
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontFamily: '"Merriweather", serif',
-    },
-    h2: {
-      fontFamily: '"Merriweather", serif',
-    },
-    h3: {
-      fontFamily: '"Merriweather", serif',
-    },
-    h4: {
-      fontFamily: '"Merriweather", serif',
-    },
-  },
-  shape: {
-    borderRadius: 12,
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          fontWeight: 600,
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-        },
-      },
     },
   },
 });
 
-export default theme;
+// Dark theme
+export const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#90caf9',
+    },
+    secondary: {
+      main: '#f48fb1',
+    },
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+  },
+});
 
+// Get user's theme preference
+export const getThemePreference = () => {
+  const saved = localStorage.getItem('theme_mode');
+  return saved || 'light';
+};
+
+// Save user's theme preference
+export const saveThemePreference = (mode) => {
+  localStorage.setItem('theme_mode', mode);
+};

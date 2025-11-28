@@ -40,6 +40,7 @@ import {
 import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer, translateTeacherModeToEnglish } from '../services/geminiService';
 import { extractFullPdfText } from '../services/pdfExtractor';
+import { getBestVoice } from '../services/voiceService';
 import {
   getCachedData,
   saveCachedData,
