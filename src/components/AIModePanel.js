@@ -1570,18 +1570,19 @@ Return ONLY this valid JSON:
       <Paper square elevation={1}>
         {/* Language Indicator & Selector */}
         <Box sx={{ 
-          px: 2, 
-          py: 1, 
+          px: { xs: 1.5, md: 2 }, 
+          py: { xs: 0.75, md: 1 }, 
           bgcolor: detectedLang.isEnglish ? '#e3f2fd' : '#fff3e0',
           borderBottom: '1px solid',
           borderColor: 'divider',
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5
+          gap: { xs: 1, md: 1.5 },
+          flexWrap: 'wrap'
         }}>
           {/* Language Selector Dropdown */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
               Language:
             </Typography>
             <Select
@@ -1590,11 +1591,11 @@ Return ONLY this valid JSON:
               size="small"
               variant="outlined"
               sx={{ 
-                minWidth: 180,
-                height: 32,
-                fontSize: '0.875rem',
+                minWidth: { xs: 140, sm: 160, md: 180 },
+                height: { xs: 28, md: 32 },
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
                 '& .MuiSelect-select': {
-                  py: 0.5,
+                  py: { xs: 0.25, md: 0.5 },
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5
@@ -1632,12 +1633,27 @@ Return ONLY this valid JSON:
               size="small"
               color={autoDetectedLang.isEnglish ? 'primary' : 'warning'}
               variant="outlined"
-              sx={{ fontWeight: 500 }}
+              sx={{ 
+                fontWeight: 500,
+                height: { xs: 20, md: 24 },
+                fontSize: { xs: '0.7rem', md: '0.75rem' },
+                '& .MuiChip-label': {
+                  px: { xs: 0.75, md: 1 }
+                }
+              }}
             />
           )}
           
           {/* Provider Info */}
-          <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+          <Typography 
+            variant="caption" 
+            color="text.secondary" 
+            sx={{ 
+              flex: 1,
+              fontSize: { xs: '0.65rem', md: '0.75rem' },
+              display: { xs: 'none', sm: 'block' }
+            }}
+          >
             {detectedLang.isEnglish 
               ? '• Using Groq (Fast) for English'
               : `• Using Gemini (Better multilingual) for ${detectedLang.script}`
@@ -1651,11 +1667,35 @@ Return ONLY this valid JSON:
               size="small"
               variant="outlined"
               color="success"
+              sx={{
+                height: { xs: 20, md: 24 },
+                fontSize: { xs: '0.7rem', md: '0.75rem' },
+                '& .MuiChip-label': {
+                  px: { xs: 0.75, md: 1 }
+                }
+              }}
             />
           )}
         </Box>
         
-        <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
+        <Tabs 
+          value={activeTab} 
+          onChange={handleTabChange} 
+          variant="scrollable" 
+          scrollButtons="auto"
+          sx={{
+            minHeight: { xs: 48, md: 64 },
+            '& .MuiTab-root': {
+              minHeight: { xs: 48, md: 64 },
+              fontSize: { xs: '0.75rem', sm: '0.8125rem', md: '0.875rem' },
+              py: { xs: 1, md: 1.5 },
+              px: { xs: 1, sm: 1.5, md: 2 },
+              '& .MuiSvgIcon-root': {
+                fontSize: { xs: '1.2rem', md: '1.5rem' }
+              }
+            }
+          }}
+        >
           {showTeacherMode && <Tab icon={<TeacherIcon />} label="Teacher Mode" />}
           {showMultilingual && (
             <Tooltip 
