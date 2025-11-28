@@ -162,7 +162,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   // Save language preference when changed
   const handleLanguageChange = (event) => {
     const selectedLang = event.target.value;
-    setManualLanguage(selectedLang === 'auto' ? null : selectedLang);
+    const newManualLang = selectedLang === 'auto' ? null : selectedLang;
+    setManualLanguage(newManualLang);
     
     if (pdfId) {
       if (selectedLang === 'auto') {
@@ -172,7 +173,11 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       }
     }
     
-    console.log(`🔧 Language manually set to: ${selectedLang}`);
+    console.log(`🔧 Language manually set to: ${selectedLang}`, {
+      newManualLang,
+      isEnglish: selectedLang === 'en',
+      willEnableMultilingual: selectedLang !== 'en' && selectedLang !== 'auto'
+    });
   };
 
   // Helper function to detect language and return details
