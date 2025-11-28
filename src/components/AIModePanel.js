@@ -621,15 +621,18 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
 
   const handleWordByWordAnalysis = async (isLoadMore = false) => {
     // V3.0.3: Removed API key check - multi-provider handles this
+    console.log('🔍 [Multilingual] Button clicked:', { isLoadMore, hasPageText: !!pageText, pageTextLength: pageText?.length });
     
     if (!pageText) {
       setError('Please load a PDF page first');
+      console.error('❌ [Multilingual] No pageText available');
       return;
     }
 
     setAnalyzingWords(true);
     setError(null);
     setUsedCache(false);
+    console.log('🔄 [Multilingual] Starting word analysis...');
     
     if (!isLoadMore) {
       setWordAnalysis([]);
