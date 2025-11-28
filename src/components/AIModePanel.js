@@ -143,6 +143,9 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [examTotalChunks, setExamTotalChunks] = useState(0);
   const [examCurrentTip, setExamCurrentTip] = useState(0);
   
+  // Progress tracking for chapter generation (Teacher, Explain, Activities)
+  const [chapterProgress, setChapterProgress] = useState({ current: 0, total: 0, tipIndex: 0 });
+  
   // Manual language selection (overrides auto-detection)
   const [manualLanguage, setManualLanguage] = useState(null);
 
@@ -358,6 +361,16 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setError(null);
     setTeacherEnglish({}); // Reset English translations
     setUsedCache(false);
+
+    // Initialize progress tracking for chapter generation
+    if (scope === 'chapter') {
+      setChapterProgress({ current: 0, total: 3, tipIndex: 0 });
+      // Simulate progress steps
+      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 1 })), 1000);
+      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 2 })), 3000);
+    } else {
+      setChapterProgress({ current: 0, total: 0, tipIndex: 0 });
+    }
 
     try {
       let contentToAnalyze = '';
@@ -796,6 +809,16 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     }
   }, [generatingExam, examTotalChunks, examPrepTips.length]);
 
+  // Rotate tips every 3 seconds during chapter generation
+  useEffect(() => {
+    if (loading && chapterProgress.total > 0) {
+      const interval = setInterval(() => {
+        setChapterProgress(prev => ({ ...prev, tipIndex: (prev.tipIndex + 1) % examPrepTips.length }));
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [loading, chapterProgress.total, examPrepTips.length]);
+
   // Exam Preparation handlers
   const handleGenerateExamPrep = async () => {
     if (!pdfDocument) {
@@ -1019,6 +1042,16 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setError(null);
     setUsedCache(false);
     
+    // Initialize progress tracking for chapter generation
+    if (scope === 'chapter') {
+      setChapterProgress({ current: 0, total: 3, tipIndex: 0 });
+      // Simulate progress steps
+      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 1 })), 1000);
+      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 2 })), 3000);
+    } else {
+      setChapterProgress({ current: 0, total: 0, tipIndex: 0 });
+    }
+    
     console.log(`📝 [Smart Explain] Starting analysis (${scope}):`, {
       textLength: textToExplain.length,
       textPreview: textToExplain.substring(0, 100),
@@ -1210,6 +1243,16 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setQuizAnswers({});
     setQuizResults(null);
     setUsedCache(false);
+    
+    // Initialize progress tracking for chapter generation
+    if (scope === 'chapter') {
+      setChapterProgress({ current: 0, total: 3, tipIndex: 0 });
+      // Simulate progress steps
+      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 1 })), 1000);
+      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 2 })), 3000);
+    } else {
+      setChapterProgress({ current: 0, total: 0, tipIndex: 0 });
+    }
     
     try {
       // 🔍 CHECK CACHE FIRST
@@ -1696,14 +1739,90 @@ Return ONLY this valid JSON:
             {/* Show page mismatch warning */}
             {teacherResponse && teacherResponsePage && teacherResponsePage !== currentPage && (
               <Alert severity="info" sx={{ mb: 2 }}>
-                Teacher Mode data is from page {teacherResponsePage}. You're viewing page {currentPage}. 
+                Teacher Mode data is from page {teacherResponsePage}. You're viewing page {currentPage}.
                 <Button size="small" onClick={clearTeacherMode} sx={{ ml: 1 }}>
                   Clear Old Data
                 </Button>
               </Alert>
             )}
             
-            {loading && (
+            {/* Progress Display for Chapter Generation */}
+            {loading && teacherScope === 'chapter' && chapterProgress.total > 0 && (
+              <Paper 
+                elevation={2} 
+                sx={{ 
+                  p: 3, 
+                  mb: 3, 
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <CircularProgress 
+                    variant="determinate" 
+                    value={(chapterProgress.current / chapterProgress.total) * 100}
+                    size={56}
+                    thickness={5}
+                    sx={{ color: 'primary.main' }}
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" fontWeight={600} color="text.primary">
+                      Analyzing Entire Chapter
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Processing section {chapterProgress.current} of {chapterProgress.total}
+                    </Typography>
+                  </Box>
+                  <Typography variant="h6" fontWeight={700} color="primary.main">
+                    {Math.round((chapterProgress.current / chapterProgress.total) * 100)}%
+                  </Typography>
+                </Box>
+
+                <Box sx={{ mb: 2.5 }}>
+                  <Box 
+                    sx={{ 
+                      width: '100%', 
+                      height: 8, 
+                      bgcolor: 'action.hover', 
+                      borderRadius: 1,
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <Box 
+                      sx={{ 
+                        width: `${(chapterProgress.current / chapterProgress.total) * 100}%`,
+                        height: '100%',
+                        bgcolor: 'primary.main',
+                        borderRadius: 1,
+                        transition: 'width 0.4s ease-in-out'
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                <Alert 
+                  severity="info" 
+                  icon={false}
+                  sx={{ mb: 0, '& .MuiAlert-message': { width: '100%', py: 0.5 } }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      lineHeight: 1.6,
+                      minHeight: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: 'info.dark'
+                    }}
+                  >
+                    {examPrepTips[chapterProgress.tipIndex]}
+                  </Typography>
+                </Alert>
+              </Paper>
+            )}
+            
+            {loading && (!teacherScope || teacherScope === 'page') && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                 <CircularProgress />
               </Box>
@@ -2217,26 +2336,6 @@ Return ONLY this valid JSON:
                 </Alert>
               )}
               
-              {selectedText && !isRegionalLanguageOrGarbled(selectedText) && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.100' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    Selected Text:
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    "{selectedText}"
-                  </Typography>
-                </Paper>
-              )}
-              {selectedText && isRegionalLanguageOrGarbled(selectedText) && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.100' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    Regional Language Text Selected
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-                    {selectedText.length} characters selected. Click below to get explanation.
-                  </Typography>
-                </Paper>
-              )}
               <Box sx={{ display: 'flex', gap: 1, mb: 1, flexDirection: 'column' }}>
                 {!explainResponse ? (
                   <>
@@ -2356,7 +2455,83 @@ Return ONLY this valid JSON:
               </Alert>
             )}
             
-            {loading && (
+            {/* Progress Display for Chapter Generation */}
+            {loading && explainScope === 'chapter' && chapterProgress.total > 0 && (
+              <Paper 
+                elevation={2} 
+                sx={{ 
+                  p: 3, 
+                  mb: 3, 
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <CircularProgress 
+                    variant="determinate" 
+                    value={(chapterProgress.current / chapterProgress.total) * 100}
+                    size={56}
+                    thickness={5}
+                    sx={{ color: 'primary.main' }}
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" fontWeight={600} color="text.primary">
+                      Analyzing Entire Chapter
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Processing section {chapterProgress.current} of {chapterProgress.total}
+                    </Typography>
+                  </Box>
+                  <Typography variant="h6" fontWeight={700} color="primary.main">
+                    {Math.round((chapterProgress.current / chapterProgress.total) * 100)}%
+                  </Typography>
+                </Box>
+
+                <Box sx={{ mb: 2.5 }}>
+                  <Box 
+                    sx={{ 
+                      width: '100%', 
+                      height: 8, 
+                      bgcolor: 'action.hover', 
+                      borderRadius: 1,
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <Box 
+                      sx={{ 
+                        width: `${(chapterProgress.current / chapterProgress.total) * 100}%`,
+                        height: '100%',
+                        bgcolor: 'primary.main',
+                        borderRadius: 1,
+                        transition: 'width 0.4s ease-in-out'
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                <Alert 
+                  severity="info" 
+                  icon={false}
+                  sx={{ mb: 0, '& .MuiAlert-message': { width: '100%', py: 0.5 } }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      lineHeight: 1.6,
+                      minHeight: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: 'info.dark'
+                    }}
+                  >
+                    {examPrepTips[chapterProgress.tipIndex]}
+                  </Typography>
+                </Alert>
+              </Paper>
+            )}
+            
+            {loading && (!explainScope || explainScope === 'page' || editableSelectedText) && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                 <CircularProgress />
               </Box>
@@ -2485,7 +2660,7 @@ Return ONLY this valid JSON:
                             {exercise.steps && exercise.steps.length > 0 && (
                               <Box sx={{ mb: 2 }}>
                                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                                  📋 Step-by-Step Solution:
+                                  Step-by-Step Solution:
                                 </Typography>
                                 <Paper sx={{ p: 2, bgcolor: 'white' }}>
                                   {exercise.steps.map((step, stepIdx) => {
@@ -2508,12 +2683,14 @@ Return ONLY this valid JSON:
                                             variant="body2" 
                                             color="info.dark" 
                                             sx={{ ml: 2, fontStyle: 'italic', mb: 1 }}
-                                            dangerouslySetInnerHTML={{ __html: `🌐 ${formatBoldText(stepEnglish)}` }}
+                                            dangerouslySetInnerHTML={{ __html: formatBoldText(stepEnglish) }}
                                           />
                                         )}
                                         
                                         {/* Visual Aid for THIS specific step (if it has one and it's not empty) */}
-                                        <VisualAidRenderer visualAid={typeof stepVisual === 'string' ? stepVisual : JSON.stringify(stepVisual)} />
+                                        {stepVisual && stepVisual !== 'null' && stepVisual !== 'none' && (
+                                          <VisualAidRenderer visualAid={typeof stepVisual === 'string' ? stepVisual : JSON.stringify(stepVisual)} />
+                                        )}
                                       </Box>
                                     );
                                   })}
@@ -2899,7 +3076,83 @@ Return ONLY this valid JSON:
               </Alert>
             )}
 
-            {loading && (
+            {/* Progress Display for Chapter Generation */}
+            {loading && activitiesScope === 'chapter' && chapterProgress.total > 0 && (
+              <Paper 
+                elevation={2} 
+                sx={{ 
+                  p: 3, 
+                  mb: 3, 
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <CircularProgress 
+                    variant="determinate" 
+                    value={(chapterProgress.current / chapterProgress.total) * 100}
+                    size={56}
+                    thickness={5}
+                    sx={{ color: 'primary.main' }}
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" fontWeight={600} color="text.primary">
+                      Generating Activities for Chapter
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Processing section {chapterProgress.current} of {chapterProgress.total}
+                    </Typography>
+                  </Box>
+                  <Typography variant="h6" fontWeight={700} color="primary.main">
+                    {Math.round((chapterProgress.current / chapterProgress.total) * 100)}%
+                  </Typography>
+                </Box>
+
+                <Box sx={{ mb: 2.5 }}>
+                  <Box 
+                    sx={{ 
+                      width: '100%', 
+                      height: 8, 
+                      bgcolor: 'action.hover', 
+                      borderRadius: 1,
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <Box 
+                      sx={{ 
+                        width: `${(chapterProgress.current / chapterProgress.total) * 100}%`,
+                        height: '100%',
+                        bgcolor: 'primary.main',
+                        borderRadius: 1,
+                        transition: 'width 0.4s ease-in-out'
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                <Alert 
+                  severity="info" 
+                  icon={false}
+                  sx={{ mb: 0, '& .MuiAlert-message': { width: '100%', py: 0.5 } }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      lineHeight: 1.6,
+                      minHeight: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: 'info.dark'
+                    }}
+                  >
+                    {examPrepTips[chapterProgress.tipIndex]}
+                  </Typography>
+                </Alert>
+              </Paper>
+            )}
+
+            {loading && (!activitiesScope || activitiesScope === 'page') && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                 <CircularProgress />
               </Box>
