@@ -388,6 +388,16 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
         contentToAnalyze = pageText;
         cacheKey = 'teacherMode';
         
+        // 🔍 DEBUG: Log page text extraction
+        console.log('🔍 [Teacher Mode - Page Text Debug]', {
+          pageTextLength: pageText?.length || 0,
+          hasPageText: !!pageText,
+          firstChars: pageText?.substring(0, 200) || '[NO TEXT]',
+          lastChars: pageText?.substring(pageText.length - 100) || '[NO TEXT]',
+          language: detectedLang.language,
+          isEnglish: detectedLang.isEnglish
+        });
+        
         // Check cache for page
         if (pdfId && currentPage) {
           const cachedData = await getCachedData(pdfId, currentPage, cacheKey);
@@ -412,6 +422,15 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
         console.log('📖 Extracting full chapter text for comprehensive explanation...');
         contentToAnalyze = await extractFullPdfText(pdfDocument);
         
+        // 🔍 DEBUG: Log chapter text extraction
+        console.log('🔍 [Teacher Mode - Chapter Text Debug]', {
+          fullTextLength: contentToAnalyze?.length || 0,
+          hasText: !!contentToAnalyze,
+          firstChars: contentToAnalyze?.substring(0, 200) || '[NO TEXT]',
+          language: detectedLang.language,
+          isEnglish: detectedLang.isEnglish
+        });
+        
         // Limit to first 30,000 characters to avoid token issues
         if (contentToAnalyze.length > 30000) {
           contentToAnalyze = contentToAnalyze.substring(0, 30000);
@@ -425,6 +444,16 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       // 📡 GENERATE NEW EXPLANATION
       // V3.0.3: Multi-provider system handles API keys automatically
       const finalLanguage = manualLanguage || detectedLang.language || 'English';
+      
+      // 🔍 DEBUG: Log what we're sending to AI
+      console.log('🔍 [Teacher Mode - Sending to AI]', {
+        contentLength: contentToAnalyze?.length || 0,
+        language: finalLanguage,
+        detectedLanguage: detectedLang.language,
+        manualLanguage: manualLanguage,
+        contentPreview: contentToAnalyze?.substring(0, 300) || '[NO CONTENT]'
+      });
+      
       const response = await generateTeacherMode(contentToAnalyze, null, finalLanguage);
       
       // Try to parse JSON response
