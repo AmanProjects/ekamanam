@@ -493,52 +493,41 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     // Create speech utterance
     const utterance = new SpeechSynthesisUtterance(plainText);
     
-    // Detect language and set voice
+    // V3.0.3: Use voice service for intelligent voice selection
+    // Detect language and set voice based on user preference
     const isEnglish = detectedLang?.isEnglish || manualLanguage === 'English';
     const language = manualLanguage || detectedLang?.language || 'English';
     
-    if (isEnglish) {
-      // English: Use US English voice
-      utterance.lang = 'en-US';
-      utterance.rate = 0.95; // Slightly slower for clarity
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      
-      // Try to get a high-quality US English voice
-      const voices = window.speechSynthesis.getVoices();
-      const usVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Samantha')) 
-                   || voices.find(v => v.lang === 'en-US' && v.name.includes('Google'))
-                   || voices.find(v => v.lang === 'en-US');
-      if (usVoice) {
-        utterance.voice = usVoice;
-        console.log(`🔊 Using voice: ${usVoice.name} (${usVoice.lang})`);
-      }
+    // Map detected language to language code
+    const langCodes = {
+      'English': 'en-US',
+      'Telugu': 'te-IN',
+      'Hindi': 'hi-IN',
+      'Tamil': 'ta-IN',
+      'Kannada': 'kn-IN',
+      'Malayalam': 'ml-IN',
+      'Bengali': 'bn-IN',
+      'Marathi': 'mr-IN',
+      'Gujarati': 'gu-IN'
+    };
+    
+    const languageCode = isEnglish ? 'en-US' : (langCodes[language] || 'hi-IN');
+    
+    // Get best matching voice based on user preference
+    const selectedVoice = getBestVoice(languageCode);
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
+      console.log(`🔊 Using preferred voice: ${selectedVoice.name} (${selectedVoice.lang})`);
     } else {
-      // Regional language: Set appropriate language code
-      const langCodes = {
-        'Telugu': 'te-IN',
-        'Hindi': 'hi-IN',
-        'Tamil': 'ta-IN',
-        'Kannada': 'kn-IN',
-        'Malayalam': 'ml-IN',
-        'Bengali': 'bn-IN',
-        'Marathi': 'mr-IN',
-        'Gujarati': 'gu-IN'
-      };
-      
-      utterance.lang = langCodes[language] || 'hi-IN'; // Default to Hindi
-      utterance.rate = 0.9; // Slower for regional languages
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      
-      // Try to get native voice for the language
-      const voices = window.speechSynthesis.getVoices();
-      const nativeVoice = voices.find(v => v.lang.startsWith(utterance.lang.split('-')[0]));
-      if (nativeVoice) {
-        utterance.voice = nativeVoice;
-        console.log(`🔊 Using voice: ${nativeVoice.name} (${nativeVoice.lang})`);
-      }
+      utterance.lang = languageCode;
+      console.log(`🔊 Using default language: ${languageCode}`);
     }
+    
+    // Set speech parameters
+    utterance.rate = isEnglish ? 0.95 : 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
 
     // Event handlers
     utterance.onstart = () => {
