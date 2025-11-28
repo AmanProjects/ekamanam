@@ -100,8 +100,9 @@ IMPORTANT:
 - Just the pure text content from the image
 - Maintain readability and structure`;
 
-    // Call Gemini Vision API
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Call Gemini Vision API (v1beta supports vision/multimodal)
+    // Note: gemini-1.5-flash and gemini-1.5-pro support vision, gemini-2.5-flash is text-only
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
       method: 'POST',
