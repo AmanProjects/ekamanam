@@ -1202,6 +1202,12 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       console.log(`🔄 Analyzing ${selectedText ? 'selected text' : 'full page'} for exercises and notes...`);
       const response = await generateExplanation(textToExplain, priorContext);
       
+      console.log('📝 [Smart Explain] Raw AI response:', {
+        length: response?.length || 0,
+        preview: response?.substring(0, 200) || '[EMPTY]',
+        hasContent: !!response
+      });
+      
       // Try to parse JSON response
       try {
         // Remove markdown code blocks if present
@@ -1213,7 +1219,18 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
           cleanResponse = jsonMatch[0];
         }
         
+        console.log('📝 [Smart Explain] Attempting to parse JSON, first 300 chars:', cleanResponse.substring(0, 300));
+        
         const parsedResponse = JSON.parse(cleanResponse);
+        
+        console.log('✅ [Smart Explain] Successfully parsed JSON:', {
+          hasExplanation: !!parsedResponse.explanation,
+          hasExercises: !!parsedResponse.exercises,
+          hasImportantNotes: !!parsedResponse.importantNotes,
+          exerciseCount: parsedResponse.exercises?.length || 0,
+          keys: Object.keys(parsedResponse)
+        });
+        
         setExplainResponse(parsedResponse);
         setExplainResponsePage(currentPage); // ✅ Track which page this explanation is for
 
@@ -1225,10 +1242,10 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
           console.log('✅ Explanation generated for selected text (not cached)');
         }
       } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        console.error('Response that failed to parse:', response);
-        // If parsing fails, store as plain text
-        setExplainResponse({ explanation: response });
+        console.error('❌ [Smart Explain] JSON parse error:', parseError);
+        console.error('❌ [Smart Explain] Response that failed to parse:', response?.substring(0, 500));
+        // If parsing fails, store as plain text with explanation field
+        setExplainResponse({ explanation: response || 'No response received' });
         setExplainResponsePage(currentPage); // ✅ Still track the page
         console.log('⚠️ Stored as plain text due to parse error');
       }
@@ -2633,7 +2650,7 @@ Return ONLY this valid JSON:
 
             {explainResponse && explainResponsePage === currentPage && !loading && (
               <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
-                {typeof explainResponse === 'object' && explainResponse.explanation ? (
+                {typeof explainResponse === 'object' && (explainResponse.explanation || explainResponse.exercises || explainResponse.importantNotes) ? (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {/* Header with Language Badge */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
