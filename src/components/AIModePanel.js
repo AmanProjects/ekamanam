@@ -22,7 +22,9 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  ToggleButton,
+  ToggleButtonGroup
 } from '@mui/material';
 import { 
   School as TeacherIcon,
@@ -1638,29 +1640,35 @@ Return ONLY this valid JSON:
             <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
               {!teacherResponse ? (
                 <>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      size="large"
-                      startIcon={<DescriptionIcon />}
-                      onClick={() => handleTeacherMode('page')}
-                      disabled={loading}
-                    >
-                      {loading && teacherScope === 'page' ? 'Generating...' : 'This Page'}
-                    </Button>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      size="large"
-                      startIcon={<ReadIcon />}
-                      onClick={() => handleTeacherMode('chapter')}
-                      disabled={loading}
-                    >
-                      {loading && teacherScope === 'chapter' ? 'Generating...' : 'Entire Chapter'}
-                    </Button>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
+                  <ToggleButtonGroup
+                    value={teacherScope || 'page'}
+                    exclusive
+                    onChange={(e, value) => value && setTeacherScope(value)}
+                    fullWidth
+                    size="large"
+                    sx={{ mb: 2 }}
+                  >
+                    <ToggleButton value="page">
+                      <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
+                      This Page
+                    </ToggleButton>
+                    <ToggleButton value="chapter">
+                      <ReadIcon fontSize="small" sx={{ mr: 1 }} />
+                      Entire Chapter
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    startIcon={<TeacherIcon />}
+                    onClick={() => handleTeacherMode(teacherScope || 'page')}
+                    disabled={loading || !teacherScope}
+                    sx={{ mb: 1 }}
+                  >
+                    {loading ? 'Generating...' : 'Generate Explanation'}
+                  </Button>
+                  <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
                     AI-powered teacher-style explanation
                   </Typography>
                 </>
@@ -2232,33 +2240,37 @@ Return ONLY this valid JSON:
               <Box sx={{ display: 'flex', gap: 1, mb: 1, flexDirection: 'column' }}>
                 {!explainResponse ? (
                   <>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
+                    {!editableSelectedText && (
+                      <ToggleButtonGroup
+                        value={explainScope || 'page'}
+                        exclusive
+                        onChange={(e, value) => value && setExplainScope(value)}
                         fullWidth
-                        variant="contained"
                         size="large"
-                        startIcon={<DescriptionIcon />}
-                        onClick={() => handleExplainText('page')}
-                        disabled={loading || (!editableSelectedText && !pageText)}
+                        sx={{ mb: 2 }}
                       >
-                        {loading && explainScope === 'page' ? 'Analyzing...' : 
-                         editableSelectedText ? 'Explain Selection' : 
-                         'This Page'}
-                      </Button>
-                      {!editableSelectedText && (
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          size="large"
-                          startIcon={<ReadIcon />}
-                          onClick={() => handleExplainText('chapter')}
-                          disabled={loading}
-                        >
-                          {loading && explainScope === 'chapter' ? 'Analyzing...' : 'Entire Chapter'}
-                        </Button>
-                      )}
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
+                        <ToggleButton value="page">
+                          <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
+                          This Page
+                        </ToggleButton>
+                        <ToggleButton value="chapter">
+                          <ReadIcon fontSize="small" sx={{ mr: 1 }} />
+                          Entire Chapter
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    )}
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      startIcon={<ExplainIcon />}
+                      onClick={() => handleExplainText(editableSelectedText ? 'page' : (explainScope || 'page'))}
+                      disabled={loading || (!editableSelectedText && !pageText)}
+                      sx={{ mb: 1 }}
+                    >
+                      {loading ? 'Analyzing...' : editableSelectedText ? 'Explain Selection' : 'Analyze & Explain'}
+                    </Button>
+                    <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
                       {editableSelectedText 
                         ? 'Get detailed explanation with exercises and solutions'
                         : 'AI-powered analysis with visual aids'}
@@ -2818,32 +2830,36 @@ Return ONLY this valid JSON:
             <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
               {!activitiesResponse ? (
                 <>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="secondary"
-                      size="large"
-                      startIcon={<ActivitiesIcon />}
-                      onClick={() => handleGenerateActivities('page')}
-                      disabled={loading}
-                    >
-                      {loading && activitiesScope === 'page' ? 'Generating...' : '📄 Generate for This Page'}
-                    </Button>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="success"
-                      size="large"
-                      startIcon={<ActivitiesIcon />}
-                      onClick={() => handleGenerateActivities('chapter')}
-                      disabled={loading}
-                    >
-                      {loading && activitiesScope === 'chapter' ? 'Generating...' : '📚 Generate for Entire Chapter'}
-                    </Button>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-                    📄 Generate RBL, CBL, and SEA activities for <strong>current page</strong> (fast) or 📚 <strong>entire chapter</strong> (comprehensive)
+                  <ToggleButtonGroup
+                    value={activitiesScope || 'page'}
+                    exclusive
+                    onChange={(e, value) => value && setActivitiesScope(value)}
+                    fullWidth
+                    size="large"
+                    sx={{ mb: 2 }}
+                  >
+                    <ToggleButton value="page">
+                      <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
+                      This Page
+                    </ToggleButton>
+                    <ToggleButton value="chapter">
+                      <ReadIcon fontSize="small" sx={{ mr: 1 }} />
+                      Entire Chapter
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    startIcon={<ActivitiesIcon />}
+                    onClick={() => handleGenerateActivities(activitiesScope || 'page')}
+                    disabled={loading || !activitiesScope}
+                    sx={{ mb: 1 }}
+                  >
+                    {loading ? 'Generating...' : 'Generate Activities'}
+                  </Button>
+                  <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                    Interactive activities and practice questions
                   </Typography>
                 </>
               ) : (
