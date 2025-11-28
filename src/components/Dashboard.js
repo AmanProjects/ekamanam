@@ -140,7 +140,7 @@ function Dashboard({ onOpenLibrary }) {
         {/* Footer */}
         <Box sx={{ textAlign: 'center', mt: 4 }}>
           <Typography variant="caption" color="text.secondary">
-            Free • Open Source • Privacy Focused
+            © 2025 <a href="https://www.linkedin.com/in/amantalwar/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Amandeep Singh Talwar</a>
           </Typography>
         </Box>
       </Container>
