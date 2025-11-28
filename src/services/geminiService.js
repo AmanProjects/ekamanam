@@ -5,9 +5,72 @@
  * All functions have been updated to use callLLM instead of direct Gemini API calls.
  * 
  * Supports: Gemini (primary), Groq (fallback), Perplexity (web), Mistral (optional)
+ * 
+ * V3.1: REGIONAL LANGUAGE HANDLING
+ * - Groq is TERRIBLE at Telugu/Hindi/Tamil (generates generic placeholder text)
+ * - Gemini is EXCELLENT at all Indian languages
+ * - We FORCE Gemini for all regional language content
  */
 
 import { callLLM, PROVIDERS } from './llmService';
+
+/**
+ * Detect if content contains regional Indian language or if language hint suggests it
+ * @param {string} content - Text content to analyze
+ * @param {string} languageHint - Manual language selection (e.g., "Telugu (తెలుగు)")
+ * @returns {boolean} - True if regional language detected
+ */
+function isRegionalLanguageContent(content = '', languageHint = null) {
+  // Check language hint first (most reliable)
+  if (languageHint) {
+    const regionalLanguages = ['Telugu', 'Hindi', 'Tamil', 'Kannada', 'Malayalam', 
+                               'Bengali', 'Gujarati', 'Punjabi', 'Odia', 'Marathi'];
+    if (regionalLanguages.some(lang => languageHint.includes(lang))) {
+      return true;
+    }
+  }
+  
+  // Check for Unicode script ranges in content
+  if (content && typeof content === 'string') {
+    const hasDevanagari = /[\u0900-\u097F]/.test(content); // Hindi, Marathi
+    const hasTelugu = /[\u0C00-\u0C7F]/.test(content);
+    const hasTamil = /[\u0B80-\u0BFF]/.test(content);
+    const hasBengali = /[\u0980-\u09FF]/.test(content);
+    const hasGujarati = /[\u0A80-\u0AFF]/.test(content);
+    const hasGurmukhi = /[\u0A00-\u0A7F]/.test(content); // Punjabi
+    const hasOriya = /[\u0B00-\u0B7F]/.test(content); // Odia
+    const hasMalayalam = /[\u0D00-\u0D7F]/.test(content);
+    const hasKannada = /[\u0C80-\u0CFF]/.test(content);
+    
+    if (hasDevanagari || hasTelugu || hasTamil || hasBengali || hasGujarati || 
+        hasGurmukhi || hasOriya || hasMalayalam || hasKannada) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Create config object that forces Gemini for regional languages
+ * @param {string} feature - Feature name (teacherMode, explain, etc.)
+ * @param {object} baseConfig - Base configuration
+ * @param {string} content - Content to analyze
+ * @param {string} languageHint - Language hint
+ * @returns {object} - Configuration with preferredProvider set if needed
+ */
+function createLLMConfig(feature, baseConfig, content = '', languageHint = null) {
+  const config = { ...baseConfig, feature };
+  
+  // FORCE Gemini for regional languages (Groq is bad at Telugu/Hindi/Tamil)
+  if (isRegionalLanguageContent(content, languageHint)) {
+    config.preferredProvider = PROVIDERS.GEMINI;
+    const langName = languageHint || 'Regional Language';
+    console.log(`🌐 [${feature}] ${langName} detected → FORCING Gemini (Groq is bad at this)`);
+  }
+  
+  return config;
+}
 
 // Legacy function for backward compatibility
 // Now routes through llmService with multi-provider support
@@ -22,6 +85,20 @@ async function callGeminiAPI(prompt, apiKey, config = {}) {
 }
 
 export async function generateTeacherMode(content, apiKey = null, languageHint = null) {
+  // V3.1: Detect if this is a regional language (Telugu, Hindi, etc.)
+  const isRegionalLanguage = languageHint && (
+    languageHint.includes('Telugu') ||
+    languageHint.includes('Hindi') ||
+    languageHint.includes('Tamil') ||
+    languageHint.includes('Kannada') ||
+    languageHint.includes('Malayalam') ||
+    languageHint.includes('Bengali') ||
+    languageHint.includes('Gujarati') ||
+    languageHint.includes('Punjabi') ||
+    languageHint.includes('Odia') ||
+    languageHint.includes('Marathi')
+  );
+  
   // V3.0.3: Accept optional language hint from manual selection
   const languageInstruction = languageHint 
     ? `LANGUAGE: This content is in ${languageHint}. Provide explanation in ${languageHint}.`
@@ -74,12 +151,13 @@ IMPORTANT:
 - Use HTML tags (<p>, <b>, <ul>, <li>, <strong>, <h4>) for formatting
 ${isChapter ? '- CHAPTER MODE: Be VERY comprehensive - cover all major topics, show connections between concepts, explain progression, use multiple detailed paragraphs' : '- PAGE MODE: Be clear, focused, and engaging'}!`;
 
-  return await callLLM(prompt, {
-    feature: 'teacherMode',
+  // V3.1: Use helper to force Gemini for regional languages
+  const config = createLLMConfig('teacherMode', {
     temperature: 0.7,
-    maxTokens: isChapter ? 8192 : 4096, // 2x tokens for chapter explanations
-    languageHint // Pass language hint to callLLM for provider selection
-  });
+    maxTokens: isChapter ? 8192 : 4096 // 2x tokens for chapter explanations
+  }, content, languageHint);
+  
+  return await callLLM(prompt, config);
 }
 
 export async function translateTeacherModeToEnglish(teacherContent, apiKey) {
@@ -282,11 +360,13 @@ FOR ENGLISH:
 
 KEEP IT CONCISE. Use visuals for complex concepts. NO BILINGUAL for step-by-step solutions.`;
 
-  return await callLLM(prompt, {
-    feature: 'explain',
+  // V3.1: Force Gemini for regional languages
+  const config = createLLMConfig('explain', {
     temperature: 0.7,
-    maxTokens: 6144  // Reduced from 8192 for speed
-  });
+    maxTokens: 6144
+  }, selectedText + contextString, null);
+
+  return await callLLM(prompt, config);
 }
 
 export async function generateActivities(pageText, apiKey = null) {
@@ -355,11 +435,13 @@ Generate 5 MCQs, 5 practice questions, 3 hands-on activities, 3 discussion promp
 For regional language content, use the ORIGINAL LANGUAGE ONLY (students reading Telugu PDFs understand Telugu).
 Return ONLY the JSON.`;
 
-  return await callLLM(prompt, {
-    feature: 'activities',
+  // V3.1: Force Gemini for regional languages
+  const config = createLLMConfig('activities', {
     temperature: 0.7,
     maxTokens: 6144
-  });
+  }, pageText, null);
+
+  return await callLLM(prompt, config);
 }
 
 export async function generateAdditionalResources(selectedText, contextText, apiKey = null) {
@@ -444,11 +526,13 @@ RULES:
 - Simple pronunciation
 - ONLY valid JSON (no code blocks)`;
 
-  return await callLLM(prompt, {
-    feature: 'explain',
+  // V3.1: Force Gemini for regional languages
+  const config = createLLMConfig('wordAnalysis', {
     temperature: 0.7,
     maxTokens: 8192
-  });
+  }, pageText, null);
+
+  return await callLLM(prompt, config);
 }
 
 /**
@@ -516,11 +600,13 @@ MCQ Options (always same):
 
 Return ONLY JSON, no markdown.`;
 
-  const response = await callLLM(prompt, {
-    feature: 'examPrep',
+  // V3.1: Force Gemini for regional languages
+  const config = createLLMConfig('examPrep', {
     temperature: 0.7,
     maxTokens: 4096
-  });
+  }, currentChunk, null);
+
+  const response = await callLLM(prompt, config);
 
   // Parse JSON response
   try {
