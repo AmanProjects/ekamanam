@@ -3390,162 +3390,99 @@ Return ONLY this valid JSON:
               {generatingExam ? 'Processing...' : 'Generate Exam Questions'}
             </Button>
 
-            {/* Fun Animated Progress Display */}
+            {/* Professional Progress Display */}
             {generatingExam && examTotalChunks > 0 && (
               <Paper 
-                elevation={3} 
+                elevation={2} 
                 sx={{ 
                   p: 3, 
                   mb: 3, 
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  position: 'relative',
-                  overflow: 'hidden'
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper'
                 }}
               >
-                {/* Animated background elements */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: -50,
-                    right: -50,
-                    width: 200,
-                    height: 200,
-                    borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    animation: 'pulse 2s ease-in-out infinite'
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: -30,
-                    left: -30,
-                    width: 150,
-                    height: 150,
-                    borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    animation: 'pulse 3s ease-in-out infinite'
-                  }}
-                />
-
-                <Box sx={{ position: 'relative', zIndex: 1 }}>
-                  {/* Progress Header */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                    <CircularProgress 
-                      variant="determinate" 
-                      value={(examChunkProgress / examTotalChunks) * 100}
-                      size={60}
-                      thickness={4}
-                      sx={{ 
-                        color: 'white',
-                        '& .MuiCircularProgress-circle': {
-                          strokeLinecap: 'round',
-                        }
-                      }}
-                    />
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" fontWeight={700}>
-                        🎯 Analyzing Your Chapter...
-                      </Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                        Processing section {examChunkProgress} of {examTotalChunks}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Progress Bar */}
-                  <Box sx={{ mb: 3 }}>
-                    <Box 
-                      sx={{ 
-                        width: '100%', 
-                        height: 12, 
-                        bgcolor: 'rgba(255, 255, 255, 0.2)', 
-                        borderRadius: 2,
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <Box 
-                        sx={{ 
-                          width: `${(examChunkProgress / examTotalChunks) * 100}%`,
-                          height: '100%',
-                          bgcolor: 'white',
-                          borderRadius: 2,
-                          transition: 'width 0.5s ease-in-out',
-                          boxShadow: '0 0 20px rgba(255, 255, 255, 0.5)'
-                        }}
-                      />
-                    </Box>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        display: 'block', 
-                        textAlign: 'right', 
-                        mt: 0.5,
-                        fontWeight: 600 
-                      }}
-                    >
-                      {Math.round((examChunkProgress / examTotalChunks) * 100)}% Complete
+                {/* Progress Header */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <CircularProgress 
+                    variant="determinate" 
+                    value={(examChunkProgress / examTotalChunks) * 100}
+                    size={56}
+                    thickness={5}
+                    sx={{ 
+                      color: 'primary.main'
+                    }}
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" fontWeight={600} color="text.primary">
+                      Generating Exam Questions
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Processing section {examChunkProgress} of {examTotalChunks}
                     </Typography>
                   </Box>
+                  <Chip 
+                    label={`${Math.round((examChunkProgress / examTotalChunks) * 100)}%`}
+                    color="primary"
+                    sx={{ fontWeight: 600, fontSize: '0.875rem' }}
+                  />
+                </Box>
 
-                  {/* Rotating Tips */}
-                  <Paper 
-                    elevation={0}
+                {/* Progress Bar */}
+                <Box sx={{ mb: 2.5 }}>
+                  <Box 
                     sx={{ 
-                      p: 2, 
-                      bgcolor: 'rgba(255, 255, 255, 0.15)',
-                      backdropFilter: 'blur(10px)',
-                      borderRadius: 2,
-                      border: '1px solid rgba(255, 255, 255, 0.2)'
+                      width: '100%', 
+                      height: 8, 
+                      bgcolor: 'action.hover', 
+                      borderRadius: 1,
+                      overflow: 'hidden'
                     }}
                   >
-                    <Typography 
-                      variant="body1" 
+                    <Box 
                       sx={{ 
-                        fontStyle: 'italic',
-                        lineHeight: 1.6,
-                        minHeight: '48px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        animation: 'fadeIn 0.5s ease-in'
+                        width: `${(examChunkProgress / examTotalChunks) * 100}%`,
+                        height: '100%',
+                        bgcolor: 'primary.main',
+                        borderRadius: 1,
+                        transition: 'width 0.4s ease-in-out'
                       }}
-                    >
-                      {examPrepTips[examCurrentTip]}
-                    </Typography>
-                  </Paper>
-
-                  {/* Fun emoji animations */}
-                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
-                    {['📚', '💡', '🎯', '⚡', '🌟'].map((emoji, idx) => (
-                      <Typography 
-                        key={idx}
-                        variant="h4"
-                        sx={{
-                          animation: `bounce 1s ease-in-out infinite`,
-                          animationDelay: `${idx * 0.2}s`,
-                          opacity: 0.8
-                        }}
-                      >
-                        {emoji}
-                      </Typography>
-                    ))}
+                    />
                   </Box>
                 </Box>
 
+                {/* Rotating Tips */}
+                <Alert 
+                  severity="info" 
+                  icon={false}
+                  sx={{ 
+                    mb: 0,
+                    '& .MuiAlert-message': { 
+                      width: '100%',
+                      py: 0.5
+                    }
+                  }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      lineHeight: 1.6,
+                      minHeight: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      animation: 'fadeIn 0.4s ease-in',
+                      color: 'info.dark'
+                    }}
+                  >
+                    {examPrepTips[examCurrentTip]}
+                  </Typography>
+                </Alert>
+
                 {/* CSS Animations */}
                 <style>{`
-                  @keyframes pulse {
-                    0%, 100% { transform: scale(1); opacity: 0.3; }
-                    50% { transform: scale(1.1); opacity: 0.5; }
-                  }
                   @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                  }
-                  @keyframes bounce {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-10px); }
+                    from { opacity: 0; }
+                    to { opacity: 1; }
                   }
                 `}</style>
               </Paper>
