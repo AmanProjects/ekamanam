@@ -1538,7 +1538,10 @@ Return ONLY this valid JSON:
   const autoDetectedLang = detectLanguage(pageText);
   
   // Use manual selection if set, otherwise use auto-detection
-  const detectedLang = manualLanguage ? languageOptions[manualLanguage] : autoDetectedLang;
+  // IMPORTANT: If 'auto' is selected, use auto-detection (don't use languageOptions['auto'])
+  const detectedLang = (manualLanguage && manualLanguage !== 'auto') 
+    ? languageOptions[manualLanguage] 
+    : autoDetectedLang;
   const isEnglish = detectedLang.isEnglish;
   const readTabDisabled = isEnglish;
   const readTabTooltip = readTabDisabled 
