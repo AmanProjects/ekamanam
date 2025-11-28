@@ -131,6 +131,9 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [examAnswers, setExamAnswers] = useState({});
   const [generatingExam, setGeneratingExam] = useState(false);
   const [generatingAnswer, setGeneratingAnswer] = useState(null);
+  const [examChunkProgress, setExamChunkProgress] = useState(0);
+  const [examTotalChunks, setExamTotalChunks] = useState(0);
+  const [examCurrentTip, setExamCurrentTip] = useState(0);
   
   // Manual language selection (overrides auto-detection)
   const [manualLanguage, setManualLanguage] = useState(null);
@@ -767,6 +770,35 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
 
   // Removed Read Text and Explain features - user requested to remove these functions
 
+  // Fun exam prep tips for progress display
+  const examPrepTips = [
+    "🧠 Did you know? Active recall is proven to boost memory retention by 50%!",
+    "💡 Pro tip: Taking breaks every 25 minutes improves focus and retention!",
+    "📚 Fun fact: Teaching concepts to others is one of the best ways to learn!",
+    "🎯 Remember: Practice questions are better than just reading for exams!",
+    "⚡ Studies show spaced repetition is more effective than cramming!",
+    "🌟 Tip: Writing answers by hand activates more brain regions than typing!",
+    "🔍 Research suggests testing yourself is better than re-reading notes!",
+    "🚀 Fun fact: Exercise before studying can boost memory by up to 20%!",
+    "💪 Remember: Consistency beats intensity when preparing for exams!",
+    "🎓 Pro tip: Explaining concepts aloud helps identify knowledge gaps!",
+    "📝 Did you know? Handwritten notes lead to better conceptual understanding!",
+    "🌈 Fun fact: Using multiple study methods creates stronger neural pathways!",
+    "⭐ Tip: Getting enough sleep consolidates learning into long-term memory!",
+    "🎨 Visual learners: Try creating mind maps to connect concepts!",
+    "🔥 Remember: Short, focused study sessions are more effective than long ones!"
+  ];
+
+  // Rotate tips every 3 seconds during exam prep
+  useEffect(() => {
+    if (generatingExam && examTotalChunks > 0) {
+      const interval = setInterval(() => {
+        setExamCurrentTip((prev) => (prev + 1) % examPrepTips.length);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [generatingExam, examTotalChunks, examPrepTips.length]);
+
   // Exam Preparation handlers
   const handleGenerateExamPrep = async () => {
     if (!pdfDocument) {
@@ -776,6 +808,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
 
     setGeneratingExam(true);
     setError(null);
+    setExamChunkProgress(0);
+    setExamCurrentTip(0);
 
     try {
       // Check cache first
@@ -787,6 +821,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
         setExamPrepPage(currentPage);
         setUsedCache(true);
         setGeneratingExam(false);
+        setExamChunkProgress(0);
+        setExamTotalChunks(0);
         return;
       }
 
@@ -801,7 +837,9 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
         chunks.push(fullText.substring(i, i + chunkSize));
       }
       
-      console.log(`📚 Processing ${chunks.length} chunks (will process first 5)...`);
+      const totalChunksToProcess = Math.min(chunks.length, 5);
+      setExamTotalChunks(totalChunksToProcess);
+      console.log(`📚 Processing ${totalChunksToProcess} chunks...`);
       
       // Process each chunk and merge results
       const mergedResponse = {
@@ -810,8 +848,9 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
         longAnswer: []
       };
       
-      for (let i = 0; i < Math.min(chunks.length, 5); i++) { // Process first 5 chunks
-        console.log(`🔄 Processing chunk ${i + 1}/${Math.min(chunks.length, 5)}...`);
+      for (let i = 0; i < totalChunksToProcess; i++) { // Process first 5 chunks
+        setExamChunkProgress(i + 1);
+        console.log(`🔄 Processing chunk ${i + 1}/${totalChunksToProcess}...`);
         
         try {
           const chunkResponse = await generateExamPrep(fullText, chunks[i], i + 1, chunks.length);
@@ -839,6 +878,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       setError(error.message || 'Failed to generate exam preparation');
     } finally {
       setGeneratingExam(false);
+      setExamChunkProgress(0);
+      setExamTotalChunks(0);
     }
   };
 
@@ -3343,11 +3384,172 @@ Return ONLY this valid JSON:
               variant="contained"
               onClick={handleGenerateExamPrep}
               disabled={generatingExam || !pdfDocument}
-              startIcon={generatingExam ? <CircularProgress size={20} /> : null}
+              startIcon={generatingExam ? null : <ExamIcon />}
               sx={{ mb: 2 }}
             >
-              {generatingExam ? 'Generating Questions...' : 'Generate Exam Questions'}
+              {generatingExam ? 'Processing...' : 'Generate Exam Questions'}
             </Button>
+
+            {/* Fun Animated Progress Display */}
+            {generatingExam && examTotalChunks > 0 && (
+              <Paper 
+                elevation={3} 
+                sx={{ 
+                  p: 3, 
+                  mb: 3, 
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Animated background elements */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -50,
+                    right: -50,
+                    width: 200,
+                    height: 200,
+                    borderRadius: '50%',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    animation: 'pulse 2s ease-in-out infinite'
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: -30,
+                    left: -30,
+                    width: 150,
+                    height: 150,
+                    borderRadius: '50%',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    animation: 'pulse 3s ease-in-out infinite'
+                  }}
+                />
+
+                <Box sx={{ position: 'relative', zIndex: 1 }}>
+                  {/* Progress Header */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                    <CircularProgress 
+                      variant="determinate" 
+                      value={(examChunkProgress / examTotalChunks) * 100}
+                      size={60}
+                      thickness={4}
+                      sx={{ 
+                        color: 'white',
+                        '& .MuiCircularProgress-circle': {
+                          strokeLinecap: 'round',
+                        }
+                      }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" fontWeight={700}>
+                        🎯 Analyzing Your Chapter...
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                        Processing section {examChunkProgress} of {examTotalChunks}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Progress Bar */}
+                  <Box sx={{ mb: 3 }}>
+                    <Box 
+                      sx={{ 
+                        width: '100%', 
+                        height: 12, 
+                        bgcolor: 'rgba(255, 255, 255, 0.2)', 
+                        borderRadius: 2,
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <Box 
+                        sx={{ 
+                          width: `${(examChunkProgress / examTotalChunks) * 100}%`,
+                          height: '100%',
+                          bgcolor: 'white',
+                          borderRadius: 2,
+                          transition: 'width 0.5s ease-in-out',
+                          boxShadow: '0 0 20px rgba(255, 255, 255, 0.5)'
+                        }}
+                      />
+                    </Box>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        display: 'block', 
+                        textAlign: 'right', 
+                        mt: 0.5,
+                        fontWeight: 600 
+                      }}
+                    >
+                      {Math.round((examChunkProgress / examTotalChunks) * 100)}% Complete
+                    </Typography>
+                  </Box>
+
+                  {/* Rotating Tips */}
+                  <Paper 
+                    elevation={0}
+                    sx={{ 
+                      p: 2, 
+                      bgcolor: 'rgba(255, 255, 255, 0.15)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 2,
+                      border: '1px solid rgba(255, 255, 255, 0.2)'
+                    }}
+                  >
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        fontStyle: 'italic',
+                        lineHeight: 1.6,
+                        minHeight: '48px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        animation: 'fadeIn 0.5s ease-in'
+                      }}
+                    >
+                      {examPrepTips[examCurrentTip]}
+                    </Typography>
+                  </Paper>
+
+                  {/* Fun emoji animations */}
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
+                    {['📚', '💡', '🎯', '⚡', '🌟'].map((emoji, idx) => (
+                      <Typography 
+                        key={idx}
+                        variant="h4"
+                        sx={{
+                          animation: `bounce 1s ease-in-out infinite`,
+                          animationDelay: `${idx * 0.2}s`,
+                          opacity: 0.8
+                        }}
+                      >
+                        {emoji}
+                      </Typography>
+                    ))}
+                  </Box>
+                </Box>
+
+                {/* CSS Animations */}
+                <style>{`
+                  @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 0.3; }
+                    50% { transform: scale(1.1); opacity: 0.5; }
+                  }
+                  @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                  }
+                  @keyframes bounce {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                  }
+                `}</style>
+              </Paper>
+            )}
 
             {examPrepResponse && examPrepPage === currentPage && (
               <Box>
