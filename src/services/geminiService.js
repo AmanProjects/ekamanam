@@ -60,21 +60,24 @@ Return ONLY this valid JSON (no extra text before or after):
 {
   "summary": "${isChapter ? 'Comprehensive chapter summary' : 'Brief page summary'} in the SAME LANGUAGE (${isChapter ? '5-7' : '2-3'} sentences with <p> tags)",
   "keyPoints": ["${isChapter ? '5-8 major themes/concepts' : '3-5 key points'} in same language"],
-  "explanation": "Detailed ${isChapter ? 'chapter overview' : 'page explanation'} in the SAME LANGUAGE (use <p>, <b>, <ul>, <li> tags for rich formatting)",
-  "examples": "Real-world examples and applications in same language (use <p> tags)",
-  "exam": "Exam tips and important topics to remember in same language (use <p> and <ul><li> tags)"
+  "explanation": "${isChapter ? 
+    'COMPREHENSIVE chapter overview (500-800 words). Include: main concepts, how topics connect, progression through the chapter, important formulas/definitions, conceptual understanding, practical applications. Use multiple paragraphs with clear section breaks.' : 
+    'Detailed page explanation (200-300 words)'
+  } in the SAME LANGUAGE (use <p>, <b>, <ul>, <li>, <h4> tags for rich formatting)",
+  "examples": "${isChapter ? 'Multiple real-world examples from different sections with applications' : 'Real-world examples and applications'} in same language (use <p> tags)",
+  "exam": "${isChapter ? 'Comprehensive exam strategy covering all chapter topics, common question patterns, important topics to focus on, and preparation tips' : 'Exam tips and important topics to remember'} in same language (use <p> and <ul><li> tags)"
 }
 
 IMPORTANT: 
 - Return ONLY the JSON object
 - No explanations, no markdown code blocks, just valid JSON
-- Use HTML tags (<p>, <b>, <ul>, <li>, <strong>) for formatting
-- Make it ${isChapter ? 'comprehensive, well-organized, and covering all major concepts' : 'clear, focused, and engaging'}!`;
+- Use HTML tags (<p>, <b>, <ul>, <li>, <strong>, <h4>) for formatting
+${isChapter ? '- CHAPTER MODE: Be VERY comprehensive - cover all major topics, show connections between concepts, explain progression, use multiple detailed paragraphs' : '- PAGE MODE: Be clear, focused, and engaging'}!`;
 
   return await callLLM(prompt, {
     feature: 'teacherMode',
     temperature: 0.7,
-    maxTokens: isChapter ? 6144 : 4096, // More tokens for chapter explanations
+    maxTokens: isChapter ? 8192 : 4096, // 2x tokens for chapter explanations
     languageHint // Pass language hint to callLLM for provider selection
   });
 }

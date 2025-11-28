@@ -119,6 +119,7 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [speakingWordIndex, setSpeakingWordIndex] = useState(null);
   const [currentSpeakingId, setCurrentSpeakingId] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakingSection, setSpeakingSection] = useState(null); // Track which teacher section is speaking
   
   // Exam Prep state
   const [examPrepResponse, setExamPrepResponse] = useState(null);
@@ -457,6 +458,105 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
       setError(`Failed to translate ${sectionName}`);
     } finally {
       setTranslatingSection(null);
+    }
+  };
+
+  // V3.0.3: Natural text-to-speech for Teacher Mode sections
+  const handleSpeakSection = (sectionName, htmlContent) => {
+    // Stop any current speech
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+
+    // Extract plain text from HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    const plainText = tempDiv.textContent || tempDiv.innerText || '';
+
+    if (!plainText.trim()) {
+      console.log('⚠️ No text to speak');
+      return;
+    }
+
+    // Create speech utterance
+    const utterance = new SpeechSynthesisUtterance(plainText);
+    
+    // Detect language and set voice
+    const isEnglish = detectedLang?.isEnglish || manualLanguage === 'English';
+    const language = manualLanguage || detectedLang?.language || 'English';
+    
+    if (isEnglish) {
+      // English: Use US English voice
+      utterance.lang = 'en-US';
+      utterance.rate = 0.95; // Slightly slower for clarity
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
+      // Try to get a high-quality US English voice
+      const voices = window.speechSynthesis.getVoices();
+      const usVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Samantha')) 
+                   || voices.find(v => v.lang === 'en-US' && v.name.includes('Google'))
+                   || voices.find(v => v.lang === 'en-US');
+      if (usVoice) {
+        utterance.voice = usVoice;
+        console.log(`🔊 Using voice: ${usVoice.name} (${usVoice.lang})`);
+      }
+    } else {
+      // Regional language: Set appropriate language code
+      const langCodes = {
+        'Telugu': 'te-IN',
+        'Hindi': 'hi-IN',
+        'Tamil': 'ta-IN',
+        'Kannada': 'kn-IN',
+        'Malayalam': 'ml-IN',
+        'Bengali': 'bn-IN',
+        'Marathi': 'mr-IN',
+        'Gujarati': 'gu-IN'
+      };
+      
+      utterance.lang = langCodes[language] || 'hi-IN'; // Default to Hindi
+      utterance.rate = 0.9; // Slower for regional languages
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
+      // Try to get native voice for the language
+      const voices = window.speechSynthesis.getVoices();
+      const nativeVoice = voices.find(v => v.lang.startsWith(utterance.lang.split('-')[0]));
+      if (nativeVoice) {
+        utterance.voice = nativeVoice;
+        console.log(`🔊 Using voice: ${nativeVoice.name} (${nativeVoice.lang})`);
+      }
+    }
+
+    // Event handlers
+    utterance.onstart = () => {
+      setSpeakingSection(sectionName);
+      setIsSpeaking(true);
+      console.log(`🔊 Speaking section: ${sectionName}`);
+    };
+
+    utterance.onend = () => {
+      setSpeakingSection(null);
+      setIsSpeaking(false);
+      console.log('🔇 Speech ended');
+    };
+
+    utterance.onerror = (event) => {
+      console.error('❌ Speech error:', event.error);
+      setSpeakingSection(null);
+      setIsSpeaking(false);
+    };
+
+    // Speak
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleStopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setSpeakingSection(null);
+      setIsSpeaking(false);
+      console.log('🔇 Speech stopped by user');
     }
   };
 
@@ -1528,22 +1628,47 @@ Return ONLY this valid JSON:
                     {/* Summary */}
                     {teacherResponse.summary && (
                       <Box sx={{ mb: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
                           <Typography variant="overline" color="primary" fontWeight={700}>
                             📝 Summary
                           </Typography>
-                          {!teacherEnglish.summary && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="info"
-                              onClick={() => handleTranslateSection('summary', teacherResponse.summary)}
-                              disabled={translatingSection === 'summary'}
-                              startIcon={translatingSection === 'summary' ? <CircularProgress size={14} /> : <ExplainIcon />}
-                            >
-                              Explain in English
-                            </Button>
-                          )}
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            {/* Listen/Stop Button */}
+                            {speakingSection === 'summary' ? (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="error"
+                                onClick={handleStopSpeaking}
+                                startIcon={<Stop />}
+                              >
+                                Stop
+                              </Button>
+                            ) : (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="primary"
+                                onClick={() => handleSpeakSection('summary', teacherResponse.summary)}
+                                startIcon={<VolumeUp />}
+                              >
+                                Listen
+                              </Button>
+                            )}
+                            {/* Explain in English - Only for non-English content */}
+                            {!detectedLang?.isEnglish && manualLanguage !== 'English' && !teacherEnglish.summary && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                onClick={() => handleTranslateSection('summary', teacherResponse.summary)}
+                                disabled={translatingSection === 'summary'}
+                                startIcon={translatingSection === 'summary' ? <CircularProgress size={14} /> : <ExplainIcon />}
+                              >
+                                Explain in English
+                              </Button>
+                            )}
+                          </Box>
                         </Box>
                         <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.summary }} />
@@ -1565,22 +1690,47 @@ Return ONLY this valid JSON:
                     {/* Key Points */}
                     {teacherResponse.keyPoints && (
                       <Box sx={{ mb: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
                           <Typography variant="overline" color="secondary" fontWeight={700}>
                             🎯 Key Points
                           </Typography>
-                          {!teacherEnglish.keyPoints && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="info"
-                              onClick={() => handleTranslateSection('keyPoints', teacherResponse.keyPoints.join('\n'))}
-                              disabled={translatingSection === 'keyPoints'}
-                              startIcon={translatingSection === 'keyPoints' ? <CircularProgress size={14} /> : <ExplainIcon />}
-                            >
-                              Explain in English
-                            </Button>
-                          )}
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            {/* Listen/Stop Button */}
+                            {speakingSection === 'keyPoints' ? (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="error"
+                                onClick={handleStopSpeaking}
+                                startIcon={<Stop />}
+                              >
+                                Stop
+                              </Button>
+                            ) : (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="secondary"
+                                onClick={() => handleSpeakSection('keyPoints', `<ul>${teacherResponse.keyPoints.map(p => `<li>${p}</li>`).join('')}</ul>`)}
+                                startIcon={<VolumeUp />}
+                              >
+                                Listen
+                              </Button>
+                            )}
+                            {/* Explain in English - Only for non-English content */}
+                            {!detectedLang?.isEnglish && manualLanguage !== 'English' && !teacherEnglish.keyPoints && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                onClick={() => handleTranslateSection('keyPoints', teacherResponse.keyPoints.join('\n'))}
+                                disabled={translatingSection === 'keyPoints'}
+                                startIcon={translatingSection === 'keyPoints' ? <CircularProgress size={14} /> : <ExplainIcon />}
+                              >
+                                Explain in English
+                              </Button>
+                            )}
+                          </Box>
                         </Box>
                         <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
                           <ul style={{ margin: 0, paddingLeft: '20px' }}>
@@ -1606,22 +1756,47 @@ Return ONLY this valid JSON:
                     {/* Detailed Explanation */}
                     {teacherResponse.explanation && (
                       <Box sx={{ mb: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
                           <Typography variant="overline" color="success.main" fontWeight={700}>
                             📚 Detailed Explanation
                           </Typography>
-                          {!teacherEnglish.explanation && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="info"
-                              onClick={() => handleTranslateSection('explanation', teacherResponse.explanation)}
-                              disabled={translatingSection === 'explanation'}
-                              startIcon={translatingSection === 'explanation' ? <CircularProgress size={14} /> : <ExplainIcon />}
-                            >
-                              Explain in English
-                            </Button>
-                          )}
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            {/* Listen/Stop Button */}
+                            {speakingSection === 'explanation' ? (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="error"
+                                onClick={handleStopSpeaking}
+                                startIcon={<Stop />}
+                              >
+                                Stop
+                              </Button>
+                            ) : (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="success"
+                                onClick={() => handleSpeakSection('explanation', teacherResponse.explanation)}
+                                startIcon={<VolumeUp />}
+                              >
+                                Listen
+                              </Button>
+                            )}
+                            {/* Explain in English - Only for non-English content */}
+                            {!detectedLang?.isEnglish && manualLanguage !== 'English' && !teacherEnglish.explanation && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                onClick={() => handleTranslateSection('explanation', teacherResponse.explanation)}
+                                disabled={translatingSection === 'explanation'}
+                                startIcon={translatingSection === 'explanation' ? <CircularProgress size={14} /> : <ExplainIcon />}
+                              >
+                                Explain in English
+                              </Button>
+                            )}
+                          </Box>
                         </Box>
                         <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.explanation }} />
@@ -1643,22 +1818,47 @@ Return ONLY this valid JSON:
                     {/* Examples */}
                     {teacherResponse.examples && (
                       <Box sx={{ mb: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
                           <Typography variant="overline" color="warning.main" fontWeight={700}>
                             💡 Examples
                           </Typography>
-                          {!teacherEnglish.examples && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="info"
-                              onClick={() => handleTranslateSection('examples', teacherResponse.examples)}
-                              disabled={translatingSection === 'examples'}
-                              startIcon={translatingSection === 'examples' ? <CircularProgress size={14} /> : <ExplainIcon />}
-                            >
-                              Explain in English
-                            </Button>
-                          )}
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            {/* Listen/Stop Button */}
+                            {speakingSection === 'examples' ? (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="error"
+                                onClick={handleStopSpeaking}
+                                startIcon={<Stop />}
+                              >
+                                Stop
+                              </Button>
+                            ) : (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="warning"
+                                onClick={() => handleSpeakSection('examples', teacherResponse.examples)}
+                                startIcon={<VolumeUp />}
+                              >
+                                Listen
+                              </Button>
+                            )}
+                            {/* Explain in English - Only for non-English content */}
+                            {!detectedLang?.isEnglish && manualLanguage !== 'English' && !teacherEnglish.examples && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                onClick={() => handleTranslateSection('examples', teacherResponse.examples)}
+                                disabled={translatingSection === 'examples'}
+                                startIcon={translatingSection === 'examples' ? <CircularProgress size={14} /> : <ExplainIcon />}
+                              >
+                                Explain in English
+                              </Button>
+                            )}
+                          </Box>
                         </Box>
                         <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.examples }} />
@@ -1680,22 +1880,47 @@ Return ONLY this valid JSON:
                     {/* Exam Tips */}
                     {teacherResponse.exam && (
                       <Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
                           <Typography variant="overline" color="error.main" fontWeight={700}>
                             🎓 Exam Tips
                           </Typography>
-                          {!teacherEnglish.exam && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="info"
-                              onClick={() => handleTranslateSection('exam', teacherResponse.exam)}
-                              disabled={translatingSection === 'exam'}
-                              startIcon={translatingSection === 'exam' ? <CircularProgress size={14} /> : <ExplainIcon />}
-                            >
-                              Explain in English
-                            </Button>
-                          )}
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            {/* Listen/Stop Button */}
+                            {speakingSection === 'exam' ? (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="error"
+                                onClick={handleStopSpeaking}
+                                startIcon={<Stop />}
+                              >
+                                Stop
+                              </Button>
+                            ) : (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                onClick={() => handleSpeakSection('exam', teacherResponse.exam)}
+                                startIcon={<VolumeUp />}
+                              >
+                                Listen
+                              </Button>
+                            )}
+                            {/* Explain in English - Only for non-English content */}
+                            {!detectedLang?.isEnglish && manualLanguage !== 'English' && !teacherEnglish.exam && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                onClick={() => handleTranslateSection('exam', teacherResponse.exam)}
+                                disabled={translatingSection === 'exam'}
+                                startIcon={translatingSection === 'exam' ? <CircularProgress size={14} /> : <ExplainIcon />}
+                              >
+                                Explain in English
+                              </Button>
+                            )}
+                          </Box>
                         </Box>
                         <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.exam }} />
