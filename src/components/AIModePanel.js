@@ -298,7 +298,7 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setQuizAnswers({});
     setQuizResults(null);
     setUsedCache(false);
-    setActivitiesScope(null);
+    setActivitiesScope('page'); // Reset to 'page' instead of null
     setShowActivitiesScopeSelector(true);
     setError(null);
   };
