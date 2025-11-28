@@ -444,6 +444,7 @@ function App() {
                 setCurrentPage={setCurrentPage}
                 onTextSelect={handleTextSelect}
                 onPageTextExtract={setPageText}
+                detectedLanguage={pageText}
               />
             </Grid>
 

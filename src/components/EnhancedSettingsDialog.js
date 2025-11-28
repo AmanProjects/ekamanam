@@ -26,7 +26,8 @@ import {
   Palette,
   VolumeUp,
   Key,
-  Info
+  Info,
+  Visibility
 } from '@mui/icons-material';
 import { getThemePreference, saveThemePreference } from '../theme.js';
 import { 
@@ -36,12 +37,19 @@ import {
   saveVoicePreference,
   testVoice 
 } from '../services/voiceService';
+import { getVisionSettings, updateVisionSettings } from '../services/visionService';
 import MultiProviderSettings from './MultiProviderSettings';
 
 function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
   const [selectedOption, setSelectedOption] = useState('appearance');
   const [darkMode, setDarkMode] = useState(false);
   const [voicePreference, setVoicePreference] = useState(VOICE_OPTIONS.FEMALE_US);
+  const [visionSettings, setVisionSettings] = useState({
+    enabled: true,
+    threshold: 0.30,
+    quality: 0.8,
+    forceForRegional: false
+  });
 
   // Load preferences
   useEffect(() => {
@@ -49,6 +57,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       const theme = getThemePreference();
       setDarkMode(theme === 'dark');
       setVoicePreference(getVoicePreference());
+      setVisionSettings(getVisionSettings());
     }
   }, [open]);
 
@@ -84,6 +93,12 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       label: 'Voice & Speech',
       icon: <VolumeUp />,
       description: 'Text-to-speech preferences'
+    },
+    {
+      id: 'vision',
+      label: 'Vision Mode',
+      icon: <Visibility />,
+      description: 'AI Vision extraction settings'
     },
     {
       id: 'ai',
@@ -226,6 +241,135 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
           </Box>
         );
 
+      case 'vision':
+        return (
+          <Box>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              Vision Mode Settings
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Control how PDF text is extracted. Vision mode uses AI to "see" the page like a human, perfect for regional languages.
+            </Typography>
+
+            <Alert severity="warning" sx={{ mb: 3 }}>
+              <Typography variant="body2">
+                💰 <strong>Cost Notice:</strong> Vision mode costs ~$0.0002 per page with Gemini Flash. 
+                1000 pages ≈ $0.20. Text extraction is free but may be garbled for Telugu/Hindi/Tamil PDFs.
+              </Typography>
+            </Alert>
+
+            {/* Enable Vision Fallback */}
+            <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography fontWeight={600}>Enable Vision Fallback</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Automatically use AI Vision when text extraction produces garbled results
+                  </Typography>
+                </Box>
+                <Switch
+                  checked={visionSettings.enabled}
+                  onChange={(e) => {
+                    const newSettings = { ...visionSettings, enabled: e.target.checked };
+                    setVisionSettings(newSettings);
+                    updateVisionSettings(newSettings);
+                  }}
+                  color="primary"
+                />
+              </Box>
+            </Box>
+
+            {/* Force Vision for Regional Languages */}
+            <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography fontWeight={600}>Always Use Vision for Regional Languages</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Skip text extraction, use Vision directly for Telugu/Hindi/Tamil PDFs
+                  </Typography>
+                </Box>
+                <Switch
+                  checked={visionSettings.forceForRegional}
+                  onChange={(e) => {
+                    const newSettings = { ...visionSettings, forceForRegional: e.target.checked };
+                    setVisionSettings(newSettings);
+                    updateVisionSettings(newSettings);
+                  }}
+                  color="primary"
+                  disabled={!visionSettings.enabled}
+                />
+              </Box>
+            </Box>
+
+            {/* Garbled Text Threshold */}
+            <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+              <Typography fontWeight={600} gutterBottom>
+                Garbled Text Threshold: {(visionSettings.threshold * 100).toFixed(0)}%
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Text with more than this % of special characters triggers Vision mode
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                {[0.20, 0.30, 0.40, 0.50].map(val => (
+                  <Button
+                    key={val}
+                    size="small"
+                    variant={visionSettings.threshold === val ? 'contained' : 'outlined'}
+                    onClick={() => {
+                      const newSettings = { ...visionSettings, threshold: val };
+                      setVisionSettings(newSettings);
+                      updateVisionSettings(newSettings);
+                    }}
+                    disabled={!visionSettings.enabled}
+                  >
+                    {(val * 100).toFixed(0)}%
+                  </Button>
+                ))}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Lower = more sensitive (uses Vision more often, higher cost)
+              </Typography>
+            </Box>
+
+            {/* Image Quality */}
+            <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+              <Typography fontWeight={600} gutterBottom>
+                Image Quality: {(visionSettings.quality * 100).toFixed(0)}%
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Higher quality = better accuracy but larger file size and slower upload
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                {[0.6, 0.7, 0.8, 0.9].map(val => (
+                  <Button
+                    key={val}
+                    size="small"
+                    variant={visionSettings.quality === val ? 'contained' : 'outlined'}
+                    onClick={() => {
+                      const newSettings = { ...visionSettings, quality: val };
+                      setVisionSettings(newSettings);
+                      updateVisionSettings(newSettings);
+                    }}
+                    disabled={!visionSettings.enabled}
+                  >
+                    {(val * 100).toFixed(0)}%
+                  </Button>
+                ))}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Recommended: 80% (good balance of quality and speed)
+              </Typography>
+            </Box>
+
+            <Alert severity="success">
+              <Typography variant="body2">
+                ✨ <strong>Recommended Settings:</strong> Enable fallback, 30% threshold, 80% quality. 
+                This gives great results for most PDFs with minimal cost.
+              </Typography>
+            </Alert>
+          </Box>
+        );
+
       case 'ai':
         return (
           <Box>
@@ -268,7 +412,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2">Version:</Typography>
-                <Chip label="3.1.2" size="small" color="primary" />
+                <Chip label="3.2.0" size="small" color="primary" />
               </Box>
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>

@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Paper, IconButton, Typography, TextField, CircularProgress } from '@mui/material';
+import { Box, Paper, IconButton, Typography, TextField, CircularProgress, Chip, Tooltip } from '@mui/material';
 import { 
   ChevronLeft, 
   ChevronRight, 
   ZoomIn, 
   ZoomOut,
-  Note as NoteIcon
+  Note as NoteIcon,
+  TextFields as TextIcon,
+  Visibility as VisionIcon,
+  Error as ErrorIcon
 } from '@mui/icons-material';
 import * as pdfjsLib from 'pdfjs-dist';
+import { smartHybridExtraction, getVisionSettings, extractTextWithVision } from '../services/visionService';
 
 // Set worker path
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -19,7 +23,8 @@ function PDFViewer({
   currentPage, 
   setCurrentPage,
   onTextSelect,
-  onPageTextExtract
+  onPageTextExtract,
+  detectedLanguage
 }) {
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
@@ -29,6 +34,8 @@ function PDFViewer({
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1.5);
   const [showNotes, setShowNotes] = useState(false);
+  const [extractionMethod, setExtractionMethod] = useState(null); // 'text', 'vision', 'text-garbled', 'failed'
+  const [extracting, setExtracting] = useState(false);
 
   // Load PDF
   useEffect(() => {
@@ -127,20 +134,47 @@ function PDFViewer({
         // Clear task reference after successful render
         renderTaskRef.current = null;
 
-        // Extract text using PDF.js (simple and fast)
-        // V3.1.1: Even if text looks garbled, Gemini can handle it!
-        const textContent = await page.getTextContent();
-        const textItems = textContent.items.map(item => item.str).join(' ');
+        // V3.1.3: HYBRID EXTRACTION - Text first, Vision fallback if garbled
+        setExtracting(true);
+        const visionSettings = getVisionSettings();
         
-        console.log('📝 [PDFViewer] Text extracted:', {
-          length: textItems.length,
-          preview: textItems.substring(0, 100),
-          hasDevanagari: /[\u0900-\u097F]/.test(textItems),
-          hasTelugu: /[\u0C00-\u0C7F]/.test(textItems),
-          hasTamil: /[\u0B80-\u0BFF]/.test(textItems)
+        // Check if we should force vision for regional languages
+        const isRegionalLanguage = detectedLanguage && !detectedLanguage.includes('English');
+        const shouldUseVision = visionSettings.forceForRegional && isRegionalLanguage;
+        
+        let extractedText, method;
+        
+        if (shouldUseVision && visionSettings.enabled) {
+          console.log('📸 [PDFViewer] Regional language + force vision enabled → Using vision');
+          try {
+            extractedText = await extractTextWithVision(canvas, detectedLanguage);
+            method = 'vision';
+          } catch (error) {
+            console.warn('⚠️ [PDFViewer] Vision failed, falling back to text:', error);
+            const textContent = await page.getTextContent();
+            extractedText = textContent.items.map(item => item.str).join(' ');
+            method = 'text-fallback';
+          }
+        } else {
+          // Smart hybrid: try text first, vision if garbled
+          const result = await smartHybridExtraction(page, canvas, detectedLanguage);
+          extractedText = result.text;
+          method = result.method;
+        }
+        
+        setExtracting(false);
+        setExtractionMethod(method);
+        
+        console.log('📝 [PDFViewer] Extraction complete:', {
+          method,
+          length: extractedText.length,
+          preview: extractedText.substring(0, 100),
+          hasDevanagari: /[\u0900-\u097F]/.test(extractedText),
+          hasTelugu: /[\u0C00-\u0C7F]/.test(extractedText),
+          hasTamil: /[\u0B80-\u0BFF]/.test(extractedText)
         });
         
-        onPageTextExtract(textItems);
+        onPageTextExtract(extractedText);
 
         // Render text layer for selection with same viewport (includes rotation)
         renderTextLayer(page, viewport);
@@ -279,6 +313,51 @@ function PDFViewer({
           <IconButton onClick={handleNextPage} disabled={currentPage >= numPages}>
             <ChevronRight />
           </IconButton>
+          
+          {/* Extraction Method Indicator */}
+          {extracting && (
+            <Chip 
+              size="small"
+              label="Extracting..."
+              color="info"
+              sx={{ ml: 1 }}
+            />
+          )}
+          {!extracting && extractionMethod && (
+            <Tooltip title={
+              extractionMethod === 'text' ? 'Text extracted from PDF (fast, free)' :
+              extractionMethod === 'vision' ? 'Text extracted using AI Vision (accurate, small cost)' :
+              extractionMethod === 'text-garbled' ? 'Using garbled text (Vision disabled in settings)' :
+              extractionMethod === 'text-fallback' ? 'Vision failed, using text extraction' :
+              'Text extraction method'
+            }>
+              <Chip 
+                size="small"
+                icon={
+                  extractionMethod === 'text' ? <TextIcon /> :
+                  extractionMethod === 'vision' ? <VisionIcon /> :
+                  extractionMethod === 'text-garbled' ? <ErrorIcon /> :
+                  extractionMethod === 'text-fallback' ? <TextIcon /> :
+                  <TextIcon />
+                }
+                label={
+                  extractionMethod === 'text' ? 'Text' :
+                  extractionMethod === 'vision' ? 'Vision' :
+                  extractionMethod === 'text-garbled' ? 'Garbled' :
+                  extractionMethod === 'text-fallback' ? 'Text' :
+                  extractionMethod
+                }
+                color={
+                  extractionMethod === 'text' ? 'success' :
+                  extractionMethod === 'vision' ? 'primary' :
+                  extractionMethod === 'text-garbled' ? 'warning' :
+                  extractionMethod === 'text-fallback' ? 'success' :
+                  'default'
+                }
+                sx={{ ml: 1 }}
+              />
+            </Tooltip>
+          )}
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
