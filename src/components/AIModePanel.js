@@ -1688,7 +1688,7 @@ Return ONLY this valid JSON:
             {/* Show page mismatch warning */}
             {teacherResponse && teacherResponsePage && teacherResponsePage !== currentPage && (
               <Alert severity="info" sx={{ mb: 2 }}>
-                📄 Teacher Mode data is from page {teacherResponsePage}. You're on page {currentPage}. 
+                Teacher Mode data is from page {teacherResponsePage}. You're viewing page {currentPage}. 
                 <Button size="small" onClick={clearTeacherMode} sx={{ ml: 1 }}>
                   Clear Old Data
                 </Button>
@@ -2041,7 +2041,7 @@ Return ONLY this valid JSON:
                 disabled={analyzingWords || !pageText}
                 sx={{ flex: 1 }}
               >
-                {analyzingWords && wordBatch === 1 ? 'Analyzing...' : '📚 Start Word Analysis'}
+                {analyzingWords && wordBatch === 1 ? 'Analyzing...' : 'Start Analysis'}
               </Button>
               {wordAnalysis.length > 0 && wordAnalysisPage === currentPage && (
                 <Button
@@ -2078,7 +2078,7 @@ Return ONLY this valid JSON:
             {wordAnalysis.length > 0 && (
               <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
                 <Typography variant="h6" fontWeight={600} gutterBottom>
-                  📚 Word-by-Word Analysis
+                  Word-by-Word Analysis
                 </Typography>
                 
                 {wordAnalysis[0] && (
@@ -2087,7 +2087,7 @@ Return ONLY this valid JSON:
                     {wordAnalysis[0].summary && (
                       <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'grey.100' }}>
                         <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
-                          📄 Page Summary:
+                          Page Summary:
                         </Typography>
                         <Typography variant="body2">
                           {wordAnalysis[0].summary}
@@ -2205,7 +2205,7 @@ Return ONLY this valid JSON:
                     </Button>
                   }
                 >
-                  🔊 Voice is playing...
+                  Voice is playing...
                 </Alert>
               )}
               
@@ -3024,7 +3024,6 @@ Return ONLY this valid JSON:
                         {!quizResults ? (
                           <Button
                             variant="contained"
-                            color="primary"
                             onClick={handleSubmitQuiz}
                             disabled={submittingQuiz || Object.keys(quizAnswers).length < activitiesResponse.mcqs.length}
                             startIcon={submittingQuiz ? <CircularProgress size={20} /> : null}
@@ -3033,14 +3032,13 @@ Return ONLY this valid JSON:
                             {submittingQuiz ? 'Evaluating...' : 'Submit Quiz'}
                           </Button>
                         ) : (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: 'primary.lighter' }}>
+                          <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: 'grey.100' }}>
                             <Typography variant="h6" fontWeight={600} gutterBottom>
-                              📊 Quiz Results: {quizResults.score} ({quizResults.percentage}%)
+                              Quiz Results: {quizResults.score} ({quizResults.percentage}%)
                             </Typography>
                             <Typography variant="body1">{quizResults.feedback}</Typography>
                             <Button
                               variant="outlined"
-                              color="primary"
                               onClick={() => {
                                 setQuizResults(null);
                                 setQuizAnswers({});
@@ -3344,7 +3342,7 @@ Return ONLY this valid JSON:
         <TabPanel value={activeTab} index={4}>
           <Box>
             <Typography variant="h6" fontWeight={600} gutterBottom>
-              📝 Exam Preparation
+              Exam Preparation
             </Typography>
             
             <Button
@@ -3388,11 +3386,9 @@ Return ONLY this valid JSON:
                       Processing section {examChunkProgress} of {examTotalChunks}
                     </Typography>
                   </Box>
-                  <Chip 
-                    label={`${Math.round((examChunkProgress / examTotalChunks) * 100)}%`}
-                    color="primary"
-                    sx={{ fontWeight: 600, fontSize: '0.875rem' }}
-                  />
+                  <Typography variant="h6" fontWeight={700} color="primary.main">
+                    {Math.round((examChunkProgress / examTotalChunks) * 100)}%
+                  </Typography>
                 </Box>
 
                 {/* Progress Bar */}
