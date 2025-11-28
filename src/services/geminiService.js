@@ -361,9 +361,11 @@ FOR ENGLISH:
 KEEP IT CONCISE. Use visuals for complex concepts. NO BILINGUAL for step-by-step solutions.`;
 
   // V3.1: Force Gemini for regional languages
+  // V3.1.4: Increase tokens for regional languages (Telugu/Hindi need more space)
+  const isRegional = isRegionalLanguageContent(selectedText + contextString, null);
   const config = createLLMConfig('explain', {
     temperature: 0.7,
-    maxTokens: 6144
+    maxTokens: isRegional ? 8192 : 6144  // 8K for regional, 6K for English
   }, selectedText + contextString, null);
 
   return await callLLM(prompt, config);
@@ -436,9 +438,11 @@ For regional language content, use the ORIGINAL LANGUAGE ONLY (students reading 
 Return ONLY the JSON.`;
 
   // V3.1: Force Gemini for regional languages
+  // V3.1.4: Increase tokens for regional languages
+  const isRegional = isRegionalLanguageContent(pageText, null);
   const config = createLLMConfig('activities', {
     temperature: 0.7,
-    maxTokens: 6144
+    maxTokens: isRegional ? 8192 : 6144
   }, pageText, null);
 
   return await callLLM(prompt, config);
@@ -527,9 +531,11 @@ RULES:
 - ONLY valid JSON (no code blocks)`;
 
   // V3.1: Force Gemini for regional languages
+  // V3.1.4: Already 8K, increase to 16K for word analysis (lots of bilingual data)
+  const isRegional = isRegionalLanguageContent(pageText, null);
   const config = createLLMConfig('wordAnalysis', {
     temperature: 0.7,
-    maxTokens: 8192
+    maxTokens: isRegional ? 16384 : 8192  // 16K for regional, 8K for English
   }, pageText, null);
 
   return await callLLM(prompt, config);
