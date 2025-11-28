@@ -104,8 +104,12 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
   const [explainResponsePage, setExplainResponsePage] = useState(null);
   const [explainEnglish, setExplainEnglish] = useState(null);
   const [translatingExplain, setTranslatingExplain] = useState(false);
+  const [explainScope, setExplainScope] = useState(null); // 'page' or 'chapter'
+  const [showExplainScopeSelector, setShowExplainScopeSelector] = useState(true);
   const [activitiesResponse, setActivitiesResponse] = useState(null);
   const [activitiesResponsePage, setActivitiesResponsePage] = useState(null);
+  const [activitiesScope, setActivitiesScope] = useState(null); // 'page' or 'chapter'
+  const [showActivitiesScopeSelector, setShowActivitiesScopeSelector] = useState(true);
   const [resourcesResponse, setResourcesResponse] = useState('');
   const [resourcesResponsePage, setResourcesResponsePage] = useState(null);
   const [notes, setNotes] = useState('');
@@ -264,6 +268,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setExplainEnglish(null);
     setTranslatingExplain(false);
     setUsedCache(false);
+    setExplainScope(null);
+    setShowExplainScopeSelector(true);
     setError(null);
   };
 
@@ -273,6 +279,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setQuizAnswers({});
     setQuizResults(null);
     setUsedCache(false);
+    setActivitiesScope(null);
+    setShowActivitiesScopeSelector(true);
     setError(null);
   };
 
@@ -924,36 +932,66 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setError(null);
   };
 
-  const handleExplainText = async () => {
-    // Use editable selected text if available, otherwise use full page text
-    const textToExplain = editableSelectedText || pageText;
-    
-    if (!textToExplain) {
+  const handleExplainText = async (scope) => {
+    // V3.0.3: Support page/chapter scope selection
+    if (!pageText && scope === 'page') {
       setError('Please load a PDF page first');
       return;
     }
+    
+    if (!pdfDocument && scope === 'chapter') {
+      setError('PDF document not loaded. Please try again.');
+      return;
+    }
 
-    // V3.0.2: Removed hardcoded API key check - let multi-provider system handle it
-    // The callLLM function will check for available providers and fall back automatically
+    // Store scope selection and hide selector
+    setExplainScope(scope);
+    setShowExplainScopeSelector(false);
+
+    // Determine text to analyze based on scope and selection
+    let textToExplain;
+    let cacheKey;
+    
+    if (editableSelectedText) {
+      // If there's selected text, always use that regardless of scope
+      textToExplain = editableSelectedText;
+      cacheKey = 'explain_selection';
+    } else if (scope === 'page') {
+      textToExplain = pageText;
+      cacheKey = 'explain_fullpage';
+    } else {
+      // Chapter mode: extract full text
+      console.log('📖 Extracting full chapter text for Smart Explain...');
+      textToExplain = await extractFullPdfText(pdfDocument);
+      
+      // Limit to first 25,000 characters
+      if (textToExplain.length > 25000) {
+        textToExplain = textToExplain.substring(0, 25000);
+        console.log('⚠️ Chapter text truncated to 25,000 characters');
+      }
+      cacheKey = 'explain_chapter';
+    }
+
+    if (!textToExplain) {
+      setError('No content available to analyze');
+      return;
+    }
 
     setLoading(true);
     setError(null);
     setUsedCache(false);
     
-    console.log('📝 [Smart Explain] Starting analysis:', {
+    console.log(`📝 [Smart Explain] Starting analysis (${scope}):`, {
       textLength: textToExplain.length,
       textPreview: textToExplain.substring(0, 100),
       isSelection: !!editableSelectedText,
-      pageNumber: currentPage
+      pageNumber: currentPage,
+      scope
     });
 
     try {
       // 🔍 CHECK CACHE FIRST
-      // Use different cache keys for selection vs full page
-      // For selections, use simple hash of first 30 chars (consistent and shorter)
-      const cacheKey = selectedText 
-        ? `explain_selection`
-        : `explain_fullpage`;
+      // Use different cache keys for selection vs full page vs chapter
       
       // Only use cache for full page, not selections (selections are dynamic)
       if (pdfId && currentPage && !editableSelectedText) {
@@ -1090,10 +1128,40 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     }
   };
 
-  const handleGenerateActivities = async () => {
-    if (!pageText) {
+  const handleGenerateActivities = async (scope = 'page') => {
+    // V3.0.3: Support page/chapter scope selection
+    if (!pageText && scope === 'page') {
       setError('No page content available. Please load a PDF page first.');
       return;
+    }
+    
+    if (!pdfDocument && scope === 'chapter') {
+      setError('PDF document not loaded. Please try again.');
+      return;
+    }
+
+    // Store scope selection and hide selector
+    setActivitiesScope(scope);
+    setShowActivitiesScopeSelector(false);
+
+    // Determine text to analyze based on scope
+    let contextText;
+    let cacheKey;
+    
+    if (scope === 'page') {
+      contextText = pageText;
+      cacheKey = 'activities';
+    } else {
+      // Chapter mode: extract full text
+      console.log('📖 Extracting full chapter text for Activities...');
+      contextText = await extractFullPdfText(pdfDocument);
+      
+      // Limit to first 20,000 characters
+      if (contextText.length > 20000) {
+        contextText = contextText.substring(0, 20000);
+        console.log('⚠️ Chapter text truncated to 20,000 characters');
+      }
+      cacheKey = 'activities_chapter';
     }
 
     // V3.0: Removed hardcoded API key check - multi-provider system handles this
@@ -1108,9 +1176,9 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     try {
       // 🔍 CHECK CACHE FIRST
       if (pdfId && currentPage) {
-        const cachedData = await getCachedData(pdfId, currentPage, 'activities');
+        const cachedData = await getCachedData(pdfId, currentPage, cacheKey);
         if (cachedData) {
-          console.log('⚡ Cache HIT: Using cached Activities');
+          console.log(`⚡ Cache HIT: Using cached Activities (${scope})`);
           setActivitiesResponse(cachedData);
           setUsedCache(true);
           setLoading(false);
@@ -1118,9 +1186,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
         }
       }
 
-      // 📚 GET PRIOR CONTEXT FOR EXERCISES
-      let contextText = pageText;
-      if (pdfId && currentPage > 1) {
+      // 📚 GET PRIOR CONTEXT FOR EXERCISES (only for page mode)
+      if (scope === 'page' && pdfId && currentPage > 1) {
         const priorContext = await getPriorPagesContext(pdfId, currentPage, 5);
         if (priorContext && priorContext.length > 0) {
           console.log(`📖 Using context from ${priorContext.length} prior pages for exercises`);
@@ -2153,22 +2220,52 @@ Return ONLY this valid JSON:
                   </Typography>
                 </Paper>
               )}
-              <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  startIcon={<ExplainIcon />}
-                  onClick={handleExplainText}
-                  disabled={loading || (!editableSelectedText && !pageText)}
-                >
-                  {loading ? 'Analyzing...' : 
-                   editableSelectedText ? 'Explain Selected Text' : 
-                   '📝 Analyze This Page'}
-                </Button>
-                {explainResponse && explainResponsePage === currentPage && (
+              <Box sx={{ display: 'flex', gap: 1, mb: 1, flexDirection: 'column' }}>
+                {!explainResponse ? (
                   <>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        startIcon={<ExplainIcon />}
+                        onClick={() => handleExplainText('page')}
+                        disabled={loading || (!editableSelectedText && !pageText)}
+                      >
+                        {loading && explainScope === 'page' ? 'Analyzing...' : 
+                         editableSelectedText ? 'Explain Selected Text' : 
+                         '📝 Explain This Page'}
+                      </Button>
+                      {!editableSelectedText && (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          color="success"
+                          size="large"
+                          startIcon={<ExplainIcon />}
+                          onClick={() => handleExplainText('chapter')}
+                          disabled={loading}
+                        >
+                          {loading && explainScope === 'chapter' ? 'Analyzing...' : '📚 Explain Entire Chapter'}
+                        </Button>
+                      )}
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                      {editableSelectedText 
+                        ? 'Get detailed explanation of selected text with exercises and solutions'
+                        : '📄 Explain <strong>current page</strong> (fast) or 📚 <strong>entire chapter</strong> (comprehensive)'}
+                    </Typography>
+                  </>
+                ) : (
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                    {explainScope && (
+                      <Chip 
+                        label={explainScope === 'page' ? '📄 Page Explanation' : '📚 Chapter Explanation'} 
+                        color="primary" 
+                        variant="outlined"
+                      />
+                    )}
                     <Button
                       variant="contained"
                       color="success"
@@ -2206,16 +2303,17 @@ Return ONLY this valid JSON:
                       >
                         Add to Notes
                       </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="large"
-                      onClick={clearExplain}
-                      disabled={loading}
-                    >
-                      Clear
-                    </Button>
-                  </>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={clearExplain}
+                        disabled={loading}
+                      >
+                        Clear & Start Over
+                      </Button>
+                    )}
+                  </Box>
                 )}
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
@@ -2714,33 +2812,58 @@ Return ONLY this valid JSON:
         <TabPanel value={activeTab} index={3}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="secondary"
-                  size="large"
-                  startIcon={<ActivitiesIcon />}
-                  onClick={handleGenerateActivities}
-                  disabled={loading}
-                >
-                  {loading ? 'Generating...' : 'Generate Activities'}
-                </Button>
-                {activitiesResponse && activitiesResponsePage === currentPage && (
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    size="large"
-                    onClick={clearActivities}
-                    disabled={loading}
-                  >
-                    Clear
-                  </Button>
-                )}
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                Generate RBL, CBL, and SEA activities based on current page content
-              </Typography>
+              {!activitiesResponse ? (
+                <>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="secondary"
+                      size="large"
+                      startIcon={<ActivitiesIcon />}
+                      onClick={() => handleGenerateActivities('page')}
+                      disabled={loading}
+                    >
+                      {loading && activitiesScope === 'page' ? 'Generating...' : '📄 Generate for This Page'}
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="success"
+                      size="large"
+                      startIcon={<ActivitiesIcon />}
+                      onClick={() => handleGenerateActivities('chapter')}
+                      disabled={loading}
+                    >
+                      {loading && activitiesScope === 'chapter' ? 'Generating...' : '📚 Generate for Entire Chapter'}
+                    </Button>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                    📄 Generate RBL, CBL, and SEA activities for <strong>current page</strong> (fast) or 📚 <strong>entire chapter</strong> (comprehensive)
+                  </Typography>
+                </>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  {activitiesScope && (
+                    <Chip 
+                      label={activitiesScope === 'page' ? '📄 Page Activities' : '📚 Chapter Activities'} 
+                      color="secondary" 
+                      variant="outlined"
+                    />
+                  )}
+                  {activitiesResponse && activitiesResponsePage === currentPage && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={clearActivities}
+                      disabled={loading}
+                    >
+                      Clear & Start Over
+                    </Button>
+                  )}
+                </Box>
+              )}
             </Box>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -3520,4 +3643,5 @@ Return ONLY this valid JSON:
 }
 
 export default AIModePanel;
+
 
