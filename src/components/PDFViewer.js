@@ -1,13 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Paper, IconButton, Typography, TextField, CircularProgress } from '@mui/material';
+import { Box, Paper, IconButton, Typography, TextField, CircularProgress, Chip, Tooltip } from '@mui/material';
 import { 
   ChevronLeft, 
   ChevronRight, 
   ZoomIn, 
   ZoomOut,
-  Note as NoteIcon
+  Note as NoteIcon,
+  CheckCircle as CheckIcon,
+  Error as ErrorIcon
 } from '@mui/icons-material';
 import * as pdfjsLib from 'pdfjs-dist';
+import { smartTextExtraction, isTextGarbled } from '../services/ocrService';
 
 // Set worker path
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -19,7 +22,9 @@ function PDFViewer({
   currentPage, 
   setCurrentPage,
   onTextSelect,
-  onPageTextExtract 
+  onPageTextExtract,
+  pdfId,
+  detectedLanguage
 }) {
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
@@ -29,6 +34,8 @@ function PDFViewer({
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1.5);
   const [showNotes, setShowNotes] = useState(false);
+  const [extractionMethod, setExtractionMethod] = useState(null); // Track how text was extracted
+  const [extracting, setExtracting] = useState(false); // Track OCR progress
 
   // Load PDF
   useEffect(() => {
@@ -127,17 +134,29 @@ function PDFViewer({
         // Clear task reference after successful render
         renderTaskRef.current = null;
 
-        // Extract text
-        const textContent = await page.getTextContent();
-        const textItems = textContent.items.map(item => item.str).join(' ');
-        console.log('📝 [PDFViewer] Text extracted:', {
-          length: textItems.length,
-          preview: textItems.substring(0, 100),
-          hasDevanagari: /[\u0900-\u097F]/.test(textItems),
-          hasTelugu: /[\u0C00-\u0C7F]/.test(textItems),
-          hasTamil: /[\u0B80-\u0BFF]/.test(textItems)
+        // 🧠 SMART TEXT EXTRACTION: Try PDF.js first, fallback to OCR if garbled
+        setExtracting(true);
+        const { text: extractedText, method } = await smartTextExtraction(
+          page, 
+          canvas, 
+          pdfId, 
+          currentPage, 
+          detectedLanguage
+        );
+        setExtracting(false);
+        setExtractionMethod(method);
+        
+        console.log('📝 [PDFViewer] Text extraction complete:', {
+          method,
+          length: extractedText.length,
+          preview: extractedText.substring(0, 100),
+          hasDevanagari: /[\u0900-\u097F]/.test(extractedText),
+          hasTelugu: /[\u0C00-\u0C7F]/.test(extractedText),
+          hasTamil: /[\u0B80-\u0BFF]/.test(extractedText),
+          isGarbled: isTextGarbled(extractedText)
         });
-        onPageTextExtract(textItems);
+        
+        onPageTextExtract(extractedText);
 
         // Render text layer for selection with same viewport (includes rotation)
         renderTextLayer(page, viewport);
@@ -276,6 +295,41 @@ function PDFViewer({
           <IconButton onClick={handleNextPage} disabled={currentPage >= numPages}>
             <ChevronRight />
           </IconButton>
+          
+          {/* Extraction Method Indicator */}
+          {extracting && (
+            <Chip 
+              size="small"
+              label="Extracting..."
+              color="info"
+              sx={{ ml: 1 }}
+            />
+          )}
+          {!extracting && extractionMethod && (
+            <Tooltip title={
+              extractionMethod === 'pdfjs' ? 'Text extracted from PDF (fast)' :
+              extractionMethod === 'ocr' ? 'Text extracted using OCR (accurate for images)' :
+              extractionMethod === 'cache' ? 'Text loaded from cache (instant)' :
+              'Text extraction method'
+            }>
+              <Chip 
+                size="small"
+                icon={extractionMethod === 'ocr' ? <CheckIcon /> : <CheckIcon />}
+                label={
+                  extractionMethod === 'pdfjs' ? 'PDF.js' :
+                  extractionMethod === 'ocr' ? 'OCR' :
+                  extractionMethod === 'cache' ? 'Cached' :
+                  extractionMethod
+                }
+                color={
+                  extractionMethod === 'ocr' ? 'success' :
+                  extractionMethod === 'cache' ? 'info' :
+                  'default'
+                }
+                sx={{ ml: 1 }}
+              />
+            </Tooltip>
+          )}
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

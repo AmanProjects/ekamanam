@@ -438,12 +438,14 @@ function App() {
             <Grid item xs={12} md={6} sx={{ height: '100%', borderRight: 1, borderColor: 'divider' }}>
               <PDFViewer
                 selectedFile={selectedFile}
-              pdfDocument={pdfDocument}
-              setPdfDocument={setPdfDocument}
-              currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
-              onTextSelect={handleTextSelect}
-              onPageTextExtract={setPageText}
+                pdfDocument={pdfDocument}
+                setPdfDocument={setPdfDocument}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                onTextSelect={handleTextSelect}
+                onPageTextExtract={setPageText}
+                pdfId={pdfId}
+                detectedLanguage={pageText}
               />
             </Grid>
 
