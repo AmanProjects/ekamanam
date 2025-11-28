@@ -361,16 +361,9 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setError(null);
     setTeacherEnglish({}); // Reset English translations
     setUsedCache(false);
-
-    // Initialize progress tracking for chapter generation
-    if (scope === 'chapter') {
-      setChapterProgress({ current: 0, total: 3, tipIndex: 0 });
-      // Simulate progress steps
-      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 1 })), 1000);
-      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 2 })), 3000);
-    } else {
-      setChapterProgress({ current: 0, total: 0, tipIndex: 0 });
-    }
+    
+    // Reset progress (Teacher Mode doesn't use chunking, so no progress bar)
+    setChapterProgress({ current: 0, total: 0, tipIndex: 0 });
 
     try {
       let contentToAnalyze = '';
@@ -1042,15 +1035,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setError(null);
     setUsedCache(false);
     
-    // Initialize progress tracking for chapter generation
-    if (scope === 'chapter') {
-      setChapterProgress({ current: 0, total: 3, tipIndex: 0 });
-      // Simulate progress steps
-      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 1 })), 1000);
-      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 2 })), 3000);
-    } else {
-      setChapterProgress({ current: 0, total: 0, tipIndex: 0 });
-    }
+    // Initialize progress tracking (will be updated once we know chunk count)
+    setChapterProgress({ current: 0, total: 0, tipIndex: 0 });
     
     console.log(`📝 [Smart Explain] Starting analysis (${scope}):`, {
       textLength: textToExplain.length,
@@ -1105,11 +1091,22 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
         
         console.log(`📦 Processing ${chunks.length} chunks...`);
         
+        // Update progress with actual chunk count
+        if (scope === 'chapter') {
+          setChapterProgress({ current: 0, total: chunks.length, tipIndex: 0 });
+        }
+        
         // Process each chunk
         const chunkResults = [];
         for (let i = 0; i < chunks.length; i++) {
           try {
             console.log(`📦 Processing chunk ${i + 1}/${chunks.length}...`);
+            
+            // Update progress
+            if (scope === 'chapter') {
+              setChapterProgress(prev => ({ ...prev, current: i + 1 }));
+            }
+            
             const chunkResponse = await generateExplanation(chunks[i], priorContext);
             
             let cleanResponse = chunkResponse
@@ -1244,15 +1241,8 @@ function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, u
     setQuizResults(null);
     setUsedCache(false);
     
-    // Initialize progress tracking for chapter generation
-    if (scope === 'chapter') {
-      setChapterProgress({ current: 0, total: 3, tipIndex: 0 });
-      // Simulate progress steps
-      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 1 })), 1000);
-      setTimeout(() => setChapterProgress(prev => ({ ...prev, current: 2 })), 3000);
-    } else {
-      setChapterProgress({ current: 0, total: 0, tipIndex: 0 });
-    }
+    // Reset progress (Activities doesn't use chunking, so no progress bar)
+    setChapterProgress({ current: 0, total: 0, tipIndex: 0 });
     
     try {
       // 🔍 CHECK CACHE FIRST
