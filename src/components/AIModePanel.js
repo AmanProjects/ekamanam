@@ -1795,7 +1795,7 @@ Return ONLY this valid JSON:
               {!teacherResponse ? (
                 <>
                   <ToggleButtonGroup
-                    value={teacherScope || 'page'}
+                    value={teacherScope}
                     exclusive
                     onChange={(e, value) => value && setTeacherScope(value)}
                     fullWidth
@@ -1816,8 +1816,8 @@ Return ONLY this valid JSON:
                     variant="contained"
                     size="large"
                     startIcon={<TeacherIcon />}
-                    onClick={() => handleTeacherMode(teacherScope || 'page')}
-                    disabled={loading || !teacherScope}
+                    onClick={() => handleTeacherMode(teacherScope)}
+                    disabled={loading || !pageText}
                     sx={{ mb: 1 }}
                   >
                     {loading ? 'Generating...' : 'Generate Explanation'}
