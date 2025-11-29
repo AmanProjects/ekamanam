@@ -13,7 +13,7 @@ import EnhancedSettingsDialog from './components/EnhancedSettingsDialog';
 import AdminDashboard from './components/AdminDashboard';
 import AdminOTPDialog from './components/AdminOTPDialog';
 import AuthButton from './components/AuthButton';
-import FocusMonitor from './components/FocusMonitor';
+import EkyomChatbot from './components/EkyomChatbot';
 import Test3DVisualization from './components/Test3DVisualization';
 import { lightTheme, darkTheme, getThemePreference } from './theme.js';
 import { 
@@ -604,8 +604,14 @@ function App() {
         />
       )}
 
-      {/* Focus Monitor Widget */}
-      <FocusMonitor />
+      {/* Ekyom Chatbot - Safe learning assistant */}
+      {view === 'reader' && (
+        <EkyomChatbot
+          pdfContext={pageText}
+          currentPage={currentPage}
+          pdfDocument={pdfDocument}
+        />
+      )}
       </Box>
     </ThemeProvider>
   );
