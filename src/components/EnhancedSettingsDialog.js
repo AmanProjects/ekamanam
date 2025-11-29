@@ -482,19 +482,30 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
           </List>
         </Box>
 
-        {/* Right Panel - Content */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* Close Button */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
-            <IconButton onClick={onClose} size="small">
-              <Close />
-            </IconButton>
+          {/* Right Panel - Content */}
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Content Area */}
+            <DialogContent sx={{ 
+              flex: 1, 
+              overflow: 'auto',
+              p: 3,
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'divider',
+                borderRadius: '4px',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                }
+              }
+            }}>
+              {renderContent()}
+            </DialogContent>
           </Box>
-
-          {/* Content Area */}
-          <DialogContent sx={{ flex: 1, pt: 0 }}>
-            {renderContent()}
-          </DialogContent>
         </Box>
       </Box>
     </Dialog>
