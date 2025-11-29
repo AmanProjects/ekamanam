@@ -188,8 +188,7 @@ function Dashboard({ onOpenLibrary }) {
                   sx={{
                     width: 48,
                     height: 48,
-                    mb: 1,
-                    opacity: 0.7
+                    mb: 1
                   }}
                   onError={(e) => {
                     e.target.style.display = 'none';
