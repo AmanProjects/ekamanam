@@ -137,17 +137,21 @@ End your response with action tags when relevant:
 - "[Use Multilingual]"
 
 3D VISUALIZATION CAPABILITY:
-You can generate 3D models for geometry, chemistry, and math! For visualization requests, output JSON:
-{
-  "type": "3d",
-  "shapeType": "cube|sphere|cone|cylinder|pyramid|torus",
-  "color": "#4FC3F7",
-  "dimensions": {"width": 2, "height": 2, "depth": 2},
-  "title": "Cube Visualization",
-  "rotate": true
-}
+When students ask to "generate/show/visualize a 3D model", output ONLY the JSON object!
 
-For molecules: {"type": "chemistry", "moleculeData": "water", "format": "smiles", "title": "Water Molecule"}
+Example for shapes (output this JSON directly):
+{"type": "3d", "shapeType": "cube", "color": "#4FC3F7", "dimensions": {"width": 2, "height": 2, "depth": 2}, "title": "Cube", "rotate": true}
+
+Available shapes: cube, sphere, cone, cylinder, pyramid, torus
+Available colors: #4FC3F7 (blue), #66BB6A (green), #FFA726 (orange), #EF5350 (red)
+
+For molecules:
+{"type": "chemistry", "moleculeData": "water", "format": "smiles", "title": "Water Molecule"}
+
+IMPORTANT: 
+- First explain what you're creating (1-2 sentences)
+- Then output the JSON on ONE LINE  
+- Do NOT wrap in code blocks or add extra text after the JSON!
 
 GETTING STARTED HELP:
 If user asks "help me get started" or "how to configure", guide them:
@@ -219,15 +223,57 @@ YOUR RESPONSE:`;
 
       // Check if response contains 3D visualization JSON
       let visualAid = null;
-      const jsonMatch = finalResponse.match(/\{[\s\S]*?"type":\s*["'](3d|chemistry|plotly)["'][\s\S]*?\}/);
+      
+      // Strategy 1: Look for JSON code blocks (```json ... ```)
+      let jsonMatch = finalResponse.match(/```json\s*(\{[\s\S]*?\})\s*```/);
       if (jsonMatch) {
         try {
-          visualAid = JSON.parse(jsonMatch[0]);
-          // Remove JSON from text response
+          visualAid = JSON.parse(jsonMatch[1]);
           finalResponse = finalResponse.replace(jsonMatch[0], '').trim();
-          console.log('🎨 Vyonn: Generated 3D visualization:', visualAid);
+          console.log('🎨 Vyonn: Generated 3D visualization (from code block):', visualAid);
         } catch (e) {
-          console.warn('Failed to parse 3D visualization JSON:', e);
+          console.warn('Failed to parse 3D visualization JSON from code block:', e);
+        }
+      }
+      
+      // Strategy 2: Look for inline JSON with "type" field (if Strategy 1 failed)
+      if (!visualAid) {
+        // More robust regex: Find JSON object with "type" field
+        // This handles multi-line JSON with whitespace
+        jsonMatch = finalResponse.match(/\{\s*"type"\s*:\s*["'](3d|chemistry|plotly)["'][\s\S]*?\}/);
+        
+        if (!jsonMatch) {
+          // Try alternative format: "type" might not be first
+          jsonMatch = finalResponse.match(/\{[\s\S]*?"type"\s*:\s*["'](3d|chemistry|plotly)["'][\s\S]*?\}/);
+        }
+        
+        if (jsonMatch) {
+          try {
+            // Clean up the JSON (remove extra whitespace between key-value pairs)
+            const cleanJson = jsonMatch[0].replace(/\n\s*/g, '');
+            visualAid = JSON.parse(cleanJson);
+            // Remove JSON and any leading text like "using the following JSON data:"
+            const jsonStartIndex = finalResponse.indexOf(jsonMatch[0]);
+            if (jsonStartIndex > 0) {
+              // Remove everything from "JSON" or "json" keyword onwards
+              const preText = finalResponse.substring(0, jsonStartIndex);
+              const lastJsonMention = Math.max(
+                preText.lastIndexOf('JSON'),
+                preText.lastIndexOf('json'),
+                preText.lastIndexOf('following data')
+              );
+              if (lastJsonMention > 0) {
+                finalResponse = finalResponse.substring(0, lastJsonMention).trim();
+              } else {
+                finalResponse = finalResponse.replace(jsonMatch[0], '').trim();
+              }
+            } else {
+              finalResponse = finalResponse.replace(jsonMatch[0], '').trim();
+            }
+            console.log('🎨 Vyonn: Generated 3D visualization (inline):', visualAid);
+          } catch (e) {
+            console.warn('Failed to parse 3D visualization JSON:', e);
+          }
         }
       }
 
