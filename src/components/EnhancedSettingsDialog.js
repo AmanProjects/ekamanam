@@ -384,7 +384,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2">Version:</Typography>
-                <Chip label="3.3.2" size="small" color="primary" />
+                <Chip label="3.3.3" size="small" color="primary" />
               </Box>
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
