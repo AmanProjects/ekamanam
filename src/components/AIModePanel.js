@@ -2523,6 +2523,7 @@ Return ONLY this valid JSON:
                       onClick={() => handleExplainText(editableSelectedText ? 'page' : explainScope)}
                       disabled={loading || (!editableSelectedText && !pageText)}
                       sx={{ mb: 1 }}
+                      data-vyonn-trigger="explain"
                     >
                       {loading ? 'Analyzing...' : editableSelectedText ? 'Explain Selection' : 'Analyze & Explain'}
                     </Button>
