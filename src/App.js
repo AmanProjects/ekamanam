@@ -373,10 +373,19 @@ function App() {
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, gap: 2 }}>
-            <img 
+            <Box
+              component="img"
               src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
-              alt="Ekamanam" 
-              style={{ height: 40, width: 40, objectFit: 'contain' }}
+              alt="Ekamanam"
+              sx={{
+                height: 40,
+                width: 40,
+                objectFit: 'contain',
+                filter: (theme) => theme.palette.mode === 'dark'
+                  ? 'drop-shadow(0 0 15px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.2))'
+                  : 'none',
+                transition: 'filter 0.3s ease'
+              }}
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
