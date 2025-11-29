@@ -609,18 +609,18 @@ function App() {
         />
       )}
 
-      {/* Vyonn - The Pattern-Seeker */}
-      {view === 'reader' && (
-        <VyonnChatbot
-          pdfContext={pageText}
-          currentPage={currentPage}
-          pdfDocument={pdfDocument}
-          onSwitchTab={(tabIndex) => {
-            console.log('🔮 Vyonn: Switching to tab', tabIndex);
+      {/* Vyonn - The Pattern-Seeker (Always Available!) */}
+      <VyonnChatbot
+        pdfContext={view === 'reader' ? pageText : null}
+        currentPage={view === 'reader' ? currentPage : null}
+        pdfDocument={view === 'reader' ? pdfDocument : null}
+        onSwitchTab={(tabIndex) => {
+          console.log('🔮 Vyonn: Switching to tab', tabIndex);
+          if (view === 'reader') {
             setAiPanelTab(tabIndex);
-          }}
-        />
-      )}
+          }
+        }}
+      />
       </Box>
     </ThemeProvider>
   );

@@ -22,7 +22,17 @@ function Dashboard({ onOpenLibrary }) {
       bgcolor: 'background.default',
       py: 4,
       display: 'flex',
-      alignItems: 'center'
+      alignItems: 'center',
+      '@keyframes pulse': {
+        '0%, 100%': {
+          opacity: 1,
+          transform: 'scale(1)'
+        },
+        '50%': {
+          opacity: 0.6,
+          transform: 'scale(1.2)'
+        }
+      }
     }}>
       <Container maxWidth="md">
 
@@ -174,13 +184,36 @@ function Dashboard({ onOpenLibrary }) {
                   borderRadius: 1,
                   textAlign: 'center',
                   transition: 'all 0.2s',
+                  cursor: 'pointer',
+                  position: 'relative',
                   '&:hover': {
                     borderColor: 'primary.main',
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    bgcolor: 'action.hover'
+                  }
+                }}
+                onClick={() => {
+                  // Trigger Vyonn FAB button click
+                  const vyonnButton = document.querySelector('[aria-label="chat with Vyonn"]');
+                  if (vyonnButton) {
+                    vyonnButton.click();
                   }
                 }}
               >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    width: 8,
+                    height: 8,
+                    bgcolor: 'success.main',
+                    borderRadius: '50%',
+                    boxShadow: '0 0 8px rgba(76, 175, 80, 0.6)',
+                    animation: 'pulse 2s infinite'
+                  }}
+                />
                 <Box
                   component="img"
                   src={`${process.env.PUBLIC_URL}/vyonn.png`}
@@ -196,6 +229,9 @@ function Dashboard({ onOpenLibrary }) {
                 />
                 <Typography variant="body2" fontWeight={500}>
                   Vyonn AI
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.7rem', mt: 0.5, fontStyle: 'italic' }}>
+                  Click to start →
                 </Typography>
               </Paper>
             </Grid>
