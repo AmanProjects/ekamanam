@@ -16,7 +16,10 @@ import {
   Divider,
   CardMedia,
   Button,
-  CircularProgress
+  CircularProgress,
+  Tabs,
+  Tab,
+  Stack
 } from '@mui/material';
 import {
   ArrowBack,
@@ -24,14 +27,30 @@ import {
   LocalLibrary,
   ExpandMore,
   CloudDownload,
-  MenuBook as SampleIcon
+  MenuBook as SampleIcon,
+  TrendingUp as StatsIcon
 } from '@mui/icons-material';
 import libraryService from '../services/libraryService';
+
+function TabPanel({ children, value, index, ...other }) {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`library-tabpanel-${index}`}
+      aria-labelledby={`library-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
   const [pdfs, setPdfs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     loadLibrary();
@@ -84,7 +103,7 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
   const totalPages = pdfs.reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0);
 
   // Group PDFs by collection
-  const groupedPdfs = pdfs.reduce((groups, pdf) => {
+  const groupedPdfs = filteredPdfs.reduce((groups, pdf) => {
     const collection = pdf.collection || 'Uncategorized';
     if (!groups[collection]) {
       groups[collection] = [];
@@ -103,263 +122,352 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
     });
   });
 
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   if (loading) {
     return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <CircularProgress />
-        <Typography variant="body2" sx={{ mt: 2 }}>Loading your library...</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <CircularProgress size={48} />
+          <Typography variant="body2" sx={{ mt: 2 }}>Loading your library...</Typography>
+        </Box>
       </Box>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3, height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton onClick={onBack} color="primary">
-            <ArrowBack />
-          </IconButton>
-          <Typography variant="h4" fontWeight={700}>
-            My Library
-          </Typography>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+      {/* Compact Header */}
+      <Paper elevation={0} sx={{ borderBottom: 1, borderColor: 'divider', px: 3, py: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <IconButton onClick={onBack} size="small">
+              <ArrowBack />
+            </IconButton>
+            <Typography variant="h5" fontWeight={600}>
+              My Library
+            </Typography>
+            {totalPdfs > 0 && (
+              <Chip label={`${totalPdfs} PDFs`} size="small" />
+            )}
+          </Box>
+          
+          {/* Compact Stats */}
+          <Stack direction="row" spacing={2} divider={<Divider orientation="vertical" flexItem />}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" display="block">Subjects</Typography>
+              <Typography variant="body2" fontWeight={600}>{uniqueSubjects.length}</Typography>
+            </Box>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" display="block">Classes</Typography>
+              <Typography variant="body2" fontWeight={600}>{uniqueClasses.length}</Typography>
+            </Box>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" display="block">Pages</Typography>
+              <Typography variant="body2" fontWeight={600}>{totalPages}</Typography>
+            </Box>
+          </Stack>
         </Box>
-      </Box>
 
-      {/* Stats */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item>
-            <Typography variant="h6" fontWeight={600}>{totalPdfs}</Typography>
-            <Typography variant="caption" color="text.secondary">PDFs</Typography>
-          </Grid>
-          <Divider orientation="vertical" flexItem />
-          <Grid item>
-            <Typography variant="h6" fontWeight={600}>{uniqueSubjects.length}</Typography>
-            <Typography variant="caption" color="text.secondary">Subjects</Typography>
-          </Grid>
-          <Divider orientation="vertical" flexItem />
-          <Grid item>
-            <Typography variant="h6" fontWeight={600}>{uniqueClasses.length}</Typography>
-            <Typography variant="caption" color="text.secondary">Classes</Typography>
-          </Grid>
-          <Divider orientation="vertical" flexItem />
-          <Grid item>
-            <Typography variant="h6" fontWeight={600}>{totalPages}</Typography>
-            <Typography variant="caption" color="text.secondary">Total Pages</Typography>
-          </Grid>
-        </Grid>
+        {/* Search & Tabs */}
+        <Box sx={{ mt: 2 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by title, subject, or collection..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" />
+                </InputAdornment>
+              )
+            }}
+            sx={{ mb: 2 }}
+          />
+          
+          <Tabs 
+            value={activeTab} 
+            onChange={handleTabChange}
+            sx={{ minHeight: 40 }}
+          >
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LocalLibrary fontSize="small" />
+                  My PDFs
+                </Box>
+              }
+              sx={{ minHeight: 40, py: 1 }}
+            />
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SampleIcon fontSize="small" />
+                  Samples
+                  <Chip label="2" size="small" color="success" sx={{ height: 20, fontSize: '0.7rem' }} />
+                </Box>
+              }
+              sx={{ minHeight: 40, py: 1 }}
+            />
+          </Tabs>
+        </Box>
       </Paper>
 
-      {/* Search */}
-      <TextField
-        fullWidth
-        placeholder="Search by title, subject, or collection..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Search />
-            </InputAdornment>
-          )
-        }}
-        sx={{ mb: 3 }}
-      />
-
-      {/* Sample PDFs Section */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SampleIcon sx={{ color: 'success.main' }} />
-          Sample PDFs
-          <Chip label="Try Features" size="small" color="success" sx={{ ml: 1 }} />
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={4}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.5,
-                border: '2px dashed',
-                borderColor: 'success.main',
-                borderRadius: 2,
-                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.1)' : 'success.lighter',
-                cursor: 'pointer',
-                transition: 'all 0.3s',
-                height: '100%',
-                '&:hover': {
-                  borderColor: 'success.dark',
-                  boxShadow: '0 4px 12px rgba(76, 175, 80, 0.2)',
-                  transform: 'translateY(-2px)'
-                }
-              }}
-              onClick={() => onOpenSamplePDF && onOpenSamplePDF('coordinate-geometry')}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
-                <SampleIcon sx={{ fontSize: 32, color: 'success.main' }} />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" fontWeight={600} color="success.dark">
-                    Coordinate Geometry
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Mathematics • Class 10
-                  </Typography>
-                </Box>
-              </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.85rem' }}>
-                Learn about points, lines, and coordinate systems with AI explanations
-              </Typography>
-              <Chip label="Math" size="small" sx={{ mr: 0.5 }} />
-              <Chip label="English" size="small" />
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.5,
-                border: '2px dashed',
-                borderColor: 'info.main',
-                borderRadius: 2,
-                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.1)' : 'info.lighter',
-                cursor: 'pointer',
-                transition: 'all 0.3s',
-                height: '100%',
-                '&:hover': {
-                  borderColor: 'info.dark',
-                  boxShadow: '0 4px 12px rgba(33, 150, 243, 0.2)',
-                  transform: 'translateY(-2px)'
-                }
-              }}
-              onClick={() => onOpenSamplePDF && onOpenSamplePDF('freedom-movement')}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
-                <SampleIcon sx={{ fontSize: 32, color: 'info.main' }} />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" fontWeight={600} color="info.dark">
-                    Freedom Movement in Hyderabad
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Social Studies • Class 8
-                  </Typography>
-                </Box>
-              </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.85rem' }}>
-                Explore Indian history with multilingual support and voice features
-              </Typography>
-              <Chip label="History" size="small" sx={{ mr: 0.5 }} />
-              <Chip label="Telugu" size="small" />
-            </Paper>
-          </Grid>
-        </Grid>
-        <Divider sx={{ mt: 4, mb: 3 }} />
-      </Box>
-
-      {/* PDF Collections */}
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 'calc(100vh - 350px)' }}>
-        {sortedCollections.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <LocalLibrary sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No PDFs in library
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Contact your administrator to add learning materials
-            </Typography>
-          </Paper>
-        ) : (
-          sortedCollections.map(collection => (
-            <Accordion key={collection} defaultExpanded={sortedCollections.length === 1}>
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                  {groupedPdfs[collection][0]?.coverImage && (
-                    <CardMedia
-                      component="img"
-                      src={groupedPdfs[collection][0].coverImage}
-                      alt={collection}
-                      sx={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 1 }}
-                    />
-                  )}
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" fontWeight={600}>
-                      {collection}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {groupedPdfs[collection].length} PDFs • {groupedPdfs[collection].reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0)} pages
-                    </Typography>
-                  </Box>
-                </Box>
-              </AccordionSummary>
-              
-              <AccordionDetails>
-                {groupedPdfs[collection]
-                  .filter(pdf =>
-                    pdf.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    pdf.subject?.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                  .map(pdf => (
-                    <Paper
-                      key={pdf.id}
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        '&:hover': { bgcolor: 'action.hover' }
-                      }}
-                    >
-                      {/* Thumbnail */}
-                      <CardMedia
-                        component="img"
-                        src={pdf.thumbnailUrl || pdf.coverImage || '/placeholder.png'}
-                        alt={pdf.name}
-                        sx={{ width: 60, height: 80, objectFit: 'cover', borderRadius: 1 }}
-                        onError={(e) => {
-                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="80"%3E%3Crect fill="%23e0e0e0" width="60" height="80"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23999" font-size="24"%3E📄%3C/text%3E%3C/svg%3E';
-                        }}
-                      />
-
-                      {/* Info */}
+      {/* Tab Content - Scrollable */}
+      <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+        {/* My PDFs Tab */}
+        <TabPanel value={activeTab} index={0}>
+          <Container maxWidth="xl" sx={{ height: 'calc(100vh - 240px)', overflowY: 'auto' }}>
+            {sortedCollections.length === 0 ? (
+              <Paper sx={{ p: 6, textAlign: 'center', mt: 4 }}>
+                <LocalLibrary sx={{ fontSize: 80, color: 'text.secondary', mb: 2, opacity: 0.3 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No PDFs in library yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Try our sample PDFs to explore features
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={() => setActiveTab(1)}
+                  startIcon={<SampleIcon />}
+                >
+                  View Sample PDFs
+                </Button>
+              </Paper>
+            ) : (
+              sortedCollections.map(collection => (
+                <Accordion 
+                  key={collection} 
+                  defaultExpanded={sortedCollections.length === 1}
+                  sx={{ mb: 2, '&:before': { display: 'none' } }}
+                >
+                  <AccordionSummary 
+                    expandIcon={<ExpandMore />}
+                    sx={{ bgcolor: 'action.hover' }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                      {groupedPdfs[collection][0]?.coverImage && (
+                        <CardMedia
+                          component="img"
+                          src={groupedPdfs[collection][0].coverImage}
+                          alt={collection}
+                          sx={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 1 }}
+                        />
+                      )}
                       <Box sx={{ flexGrow: 1 }}>
                         <Typography variant="subtitle1" fontWeight={600}>
-                          {pdf.name}
+                          {collection}
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-                          {pdf.subject && <Chip label={pdf.subject} size="small" color="primary" variant="outlined" />}
-                          {pdf.class && <Chip label={`Class ${pdf.class}`} size="small" color="secondary" variant="outlined" />}
-                          <Chip label={`${pdf.totalPages || 0} pages`} size="small" variant="outlined" />
-                        </Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                          {formatSize(pdf.size)} • Last accessed: {formatLastAccessed(pdf.lastOpened)}
+                        <Typography variant="caption" color="text.secondary">
+                          {groupedPdfs[collection].length} PDF{groupedPdfs[collection].length > 1 ? 's' : ''}
                         </Typography>
-                        {pdf.lastPage > 1 && (
-                          <LinearProgress
-                            variant="determinate"
-                            value={(pdf.lastPage / (pdf.totalPages || 1)) * 100}
-                            sx={{ mt: 1, height: 6, borderRadius: 1 }}
-                          />
-                        )}
                       </Box>
+                    </Box>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={2}>
+                      {groupedPdfs[collection].map(pdf => (
+                        <Grid item xs={12} sm={6} md={4} lg={3} key={pdf.id}>
+                          <Paper
+                            elevation={0}
+                            sx={{
+                              p: 2,
+                              border: 1,
+                              borderColor: 'divider',
+                              borderRadius: 2,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              height: '100%',
+                              '&:hover': {
+                                borderColor: 'primary.main',
+                                boxShadow: 2,
+                                transform: 'translateY(-2px)'
+                              }
+                            }}
+                            onClick={() => onOpenPdf(pdf)}
+                          >
+                            {pdf.coverImage && (
+                              <CardMedia
+                                component="img"
+                                src={pdf.coverImage}
+                                alt={pdf.name}
+                                sx={{
+                                  width: '100%',
+                                  height: 120,
+                                  objectFit: 'cover',
+                                  borderRadius: 1,
+                                  mb: 1.5,
+                                  bgcolor: 'action.hover'
+                                }}
+                              />
+                            )}
+                            <Typography variant="subtitle2" fontWeight={600} gutterBottom noWrap>
+                              {pdf.chapter ? `Ch ${pdf.chapter}: ` : ''}{pdf.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                              {pdf.subject && pdf.class ? `${pdf.subject} • Class ${pdf.class}` : pdf.subject || pdf.class || 'No category'}
+                            </Typography>
+                            
+                            {pdf.lastAccessed && (
+                              <Box sx={{ mt: 1 }}>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={(pdf.lastPage || 0) / (pdf.totalPages || 1) * 100}
+                                  sx={{ height: 4, borderRadius: 1, mb: 0.5 }}
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                  Page {pdf.lastPage || 1} of {pdf.totalPages || '?'} • {formatLastAccessed(pdf.lastAccessed)}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Paper>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              ))
+            )}
+          </Container>
+        </TabPanel>
 
-                      {/* Actions */}
-                      <Button
-                        variant="contained"
-                        startIcon={<CloudDownload />}
-                        onClick={() => onOpenPdf(pdf)}
-                      >
-                        Open
-                      </Button>
-                    </Paper>
-                  ))}
-              </AccordionDetails>
-            </Accordion>
-          ))
-        )}
+        {/* Samples Tab */}
+        <TabPanel value={activeTab} index={1}>
+          <Container maxWidth="lg" sx={{ height: 'calc(100vh - 240px)', overflowY: 'auto' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Try our sample PDFs to explore all features without uploading your own files
+            </Typography>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    border: 2,
+                    borderColor: 'success.main',
+                    borderRadius: 2,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    height: '100%',
+                    '&:hover': {
+                      boxShadow: 4,
+                      transform: 'translateY(-4px)'
+                    }
+                  }}
+                  onClick={() => onOpenSamplePDF && onOpenSamplePDF('coordinate-geometry')}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 2,
+                        bgcolor: 'success.lighter',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <SampleIcon sx={{ fontSize: 28, color: 'success.main' }} />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" fontWeight={600} gutterBottom>
+                        Coordinate Geometry
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Mathematics • Class 10
+                      </Typography>
+                      <Stack direction="row" spacing={0.5} sx={{ mt: 1 }}>
+                        <Chip label="Math" size="small" />
+                        <Chip label="English" size="small" />
+                      </Stack>
+                    </Box>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Learn about points, lines, and coordinate systems with AI explanations, 3D visualizations, and practice problems.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    fullWidth
+                    size="large"
+                  >
+                    Open Sample
+                  </Button>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    border: 2,
+                    borderColor: 'info.main',
+                    borderRadius: 2,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    height: '100%',
+                    '&:hover': {
+                      boxShadow: 4,
+                      transform: 'translateY(-4px)'
+                    }
+                  }}
+                  onClick={() => onOpenSamplePDF && onOpenSamplePDF('freedom-movement')}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 2,
+                        bgcolor: 'info.lighter',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <SampleIcon sx={{ fontSize: 28, color: 'info.main' }} />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" fontWeight={600} gutterBottom>
+                        Freedom Movement in Hyderabad
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Social Studies • Class 8
+                      </Typography>
+                      <Stack direction="row" spacing={0.5} sx={{ mt: 1 }}>
+                        <Chip label="History" size="small" />
+                        <Chip label="Telugu" size="small" />
+                      </Stack>
+                    </Box>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Explore Indian history with multilingual support, voice features, and comprehensive study materials.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="info"
+                    fullWidth
+                    size="large"
+                  >
+                    Open Sample
+                  </Button>
+                </Paper>
+              </Grid>
+            </Grid>
+          </Container>
+        </TabPanel>
       </Box>
-    </Container>
+    </Box>
   );
 }
 
 export default StudentLibrary;
-
