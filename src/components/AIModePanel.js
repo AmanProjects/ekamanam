@@ -523,7 +523,19 @@ function AIModePanel({
         console.log(`✅ Parsing Teacher Mode (${scope}) JSON, first 200 chars:`, cleanResponse.substring(0, 200));
         const parsedResponse = JSON.parse(cleanResponse);
         console.log(`✅ Successfully parsed Teacher Mode (${scope}) response`);
-        setTeacherResponse(parsedResponse);
+        
+        // 🎨 Extract 3D visualizations from all text fields
+        const { response: cleanedResponse, visualizations } = extractFromStructuredResponse(parsedResponse);
+        
+        console.log('🎨 [Teacher Mode] Extracted visualizations:', {
+          count: visualizations.length,
+          sections: visualizations.map(v => v.section)
+        });
+        
+        // Add visualizations array to response for rendering
+        cleanedResponse._visualizations = visualizations;
+        
+        setTeacherResponse(cleanedResponse);
         setTeacherResponsePage(currentPage); // Track which page this data is for
 
         // 💾 SAVE TO CACHE
@@ -1277,7 +1289,18 @@ function AIModePanel({
           keys: Object.keys(parsedResponse)
         });
         
-        setExplainResponse(parsedResponse);
+        // 🎨 Extract 3D visualizations from all text fields
+        const { response: cleanedResponse, visualizations } = extractFromStructuredResponse(parsedResponse);
+        
+        console.log('🎨 [Smart Explain] Extracted visualizations:', {
+          count: visualizations.length,
+          sections: visualizations.map(v => v.section)
+        });
+        
+        // Add visualizations array to response for rendering
+        cleanedResponse._visualizations = visualizations;
+        
+        setExplainResponse(cleanedResponse);
         setExplainResponsePage(currentPage); // ✅ Track which page this explanation is for
 
         // 💾 SAVE TO CACHE (only for full page, not selections)
@@ -3014,6 +3037,16 @@ Return ONLY this valid JSON:
                             Listen to Explanation
                           </Button>
                         </Paper>
+                        
+                        {/* 🎨 Render 3D Visualizations from Explanation */}
+                        {explainResponse._visualizations && explainResponse._visualizations.filter(v => v.section === 'explanation').map((viz, idx) => (
+                          <Box key={idx} sx={{ mt: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontStyle: 'italic' }}>
+                              🎨 Interactive Visualization:
+                            </Typography>
+                            <VisualAidRenderer visualAid={JSON.stringify(viz.visualAid)} />
+                          </Box>
+                        ))}
                         
                         {explainResponse.explanation_english && explainResponse.explanation_english !== explainResponse.explanation && (
                           <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'action.hover', borderLeft: '4px solid', borderColor: 'info.main' }}>
