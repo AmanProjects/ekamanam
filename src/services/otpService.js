@@ -4,6 +4,7 @@
  */
 
 import emailjs from '@emailjs/browser';
+import { getParentEmail } from './profileService';
 
 // EmailJS Configuration
 // Get your keys from: https://www.emailjs.com/
@@ -11,8 +12,15 @@ const EMAILJS_SERVICE_ID = 'service_2n09tlh'; // Replace with your service ID
 const EMAILJS_TEMPLATE_ID = 'template_qqj7276'; // Replace with your template ID
 const EMAILJS_PUBLIC_KEY = 'EhyhDIZQ3Hvf6I71C'; // Replace with your public key
 
-// Authorized admin email
-const ADMIN_EMAIL = 'amantalwar04@gmail.com';
+// Get admin email from profile (parent email)
+const getAdminEmail = () => {
+  const parentEmail = getParentEmail();
+  if (!parentEmail) {
+    console.warn('⚠️ No parent email found in profile. Please set it in Settings > General.');
+    return 'amantalwar04@gmail.com'; // Fallback for development
+  }
+  return parentEmail;
+};
 
 // Initialize EmailJS
 emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -35,17 +43,19 @@ const generateOTP = () => {
  */
 export const sendOTPToAdmin = async () => {
   try {
+    const adminEmail = getAdminEmail();
+    
     // Generate new OTP
     currentOTP = generateOTP();
     otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes from now
     
     console.log('🔐 Generated OTP:', currentOTP); // For development - remove in production
-    console.log('📧 Sending OTP to:', ADMIN_EMAIL);
+    console.log('📧 Sending OTP to:', adminEmail);
     
 
     // Send email via EmailJS
     const templateParams = {
-      to_email: ADMIN_EMAIL,
+      to_email: adminEmail,
       to_name: 'Admin',
       otp_code: currentOTP,
       expiry_minutes: 5,
@@ -61,7 +71,7 @@ export const sendOTPToAdmin = async () => {
       templateParams
     );
     
-    console.log('✅ OTP sent successfully to', ADMIN_EMAIL);
+    console.log('✅ OTP sent successfully to', adminEmail);
     console.log('📧 EmailJS Response:', response);
     return { success: true, message: 'OTP sent to your email' };
     

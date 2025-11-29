@@ -19,14 +19,17 @@ import {
   Divider,
   IconButton,
   Alert,
-  Chip
+  Chip,
+  TextField
 } from '@mui/material';
 import {
   Close,
   Palette,
   VolumeUp,
   Key,
-  Info
+  Info,
+  Person,
+  PlayArrow
 } from '@mui/icons-material';
 import { getThemePreference, saveThemePreference } from '../theme.js';
 import { 
@@ -36,12 +39,22 @@ import {
   saveVoicePreference,
   testVoice 
 } from '../services/voiceService';
+import {
+  getProfile,
+  saveProfile
+} from '../services/profileService';
 import MultiProviderSettings from './MultiProviderSettings';
 
 function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
-  const [selectedOption, setSelectedOption] = useState('appearance');
+  const [selectedOption, setSelectedOption] = useState('general');
   const [darkMode, setDarkMode] = useState(false);
-  const [voicePreference, setVoicePreference] = useState(VOICE_OPTIONS.FEMALE_US);
+  const [voicePreference, setVoicePreference] = useState(VOICE_OPTIONS.INDIAN_ENGLISH_FEMALE);
+  
+  // Profile state
+  const [studentName, setStudentName] = useState('');
+  const [parentName, setParentName] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
+  const [profileSaved, setProfileSaved] = useState(false);
 
   // Load preferences
   useEffect(() => {
@@ -49,6 +62,13 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       const theme = getThemePreference();
       setDarkMode(theme === 'dark');
       setVoicePreference(getVoicePreference());
+      
+      // Load profile
+      const profile = getProfile();
+      setStudentName(profile.studentName || '');
+      setParentName(profile.parentName || '');
+      setParentEmail(profile.parentEmail || '');
+      setProfileSaved(false);
     }
   }, [open]);
 
@@ -69,10 +89,33 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
   };
 
   const handleTestVoice = () => {
-    testVoice(voicePreference, "Hello! This is how I sound. I hope you like my voice!");
+    const testText = voicePreference.includes('hindi') 
+      ? "नमस्ते! यह मेरी आवाज़ है।" 
+      : voicePreference.includes('telugu')
+      ? "హలో! ఇది నా వాయిస్."
+      : voicePreference.includes('tamil')
+      ? "வணக்கம்! இது என் குரல்."
+      : "Hello! This is how I sound. I hope you like my voice!";
+    testVoice(voicePreference, testText);
+  };
+
+  const handleSaveProfile = () => {
+    saveProfile({
+      studentName,
+      parentName,
+      parentEmail
+    });
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 3000);
   };
 
   const settingsOptions = [
+    {
+      id: 'general',
+      label: 'General',
+      icon: <Person />,
+      description: 'Student and parent information'
+    },
     {
       id: 'appearance',
       label: 'Appearance',
@@ -83,7 +126,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       id: 'voice',
       label: 'Voice & Speech',
       icon: <VolumeUp />,
-      description: 'Text-to-speech preferences'
+      description: 'Natural Indian voices'
     },
     {
       id: 'ai',
@@ -101,6 +144,75 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
 
   const renderContent = () => {
     switch (selectedOption) {
+      case 'general':
+        return (
+          <Box>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              General Settings
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Set up student and parent information. Parent email will be used for Admin Dashboard OTP verification.
+            </Typography>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 3 }}>
+              <TextField
+                label="Student Name"
+                value={studentName}
+                onChange={(e) => setStudentName(e.target.value)}
+                fullWidth
+                variant="outlined"
+                helperText="The name of the student using Ekamanam"
+              />
+
+              <TextField
+                label="Parent Name"
+                value={parentName}
+                onChange={(e) => setParentName(e.target.value)}
+                fullWidth
+                variant="outlined"
+                helperText="Parent/guardian's full name"
+              />
+
+              <TextField
+                label="Parent Email"
+                type="email"
+                value={parentEmail}
+                onChange={(e) => setParentEmail(e.target.value)}
+                fullWidth
+                variant="outlined"
+                helperText="This email will receive OTP for Admin Dashboard access"
+                required
+                error={parentEmail && !parentEmail.includes('@')}
+              />
+
+              <Button 
+                variant="contained" 
+                onClick={handleSaveProfile}
+                sx={{ alignSelf: 'flex-start' }}
+                disabled={!studentName || !parentName || !parentEmail || !parentEmail.includes('@')}
+              >
+                Save Profile
+              </Button>
+
+              {profileSaved && (
+                <Alert severity="success">
+                  ✅ Profile saved successfully! Parent email will be used for Admin Dashboard OTP.
+                </Alert>
+              )}
+
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2" fontWeight={600} gutterBottom>
+                  📧 Important: Admin Dashboard Access
+                </Typography>
+                <Typography variant="body2">
+                  The parent email address will receive OTP codes for accessing the Admin Dashboard. 
+                  Only parents should have access to configure prompts, settings, and manage content.
+                </Typography>
+              </Alert>
+            </Box>
+          </Box>
+        );
+
       case 'appearance':
         return (
           <Box>
