@@ -167,6 +167,94 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
         sx={{ mb: 3 }}
       />
 
+      {/* Sample PDFs Section */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <SampleIcon sx={{ color: 'success.main' }} />
+          Sample PDFs
+          <Chip label="Try Features" size="small" color="success" sx={{ ml: 1 }} />
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                border: '2px dashed',
+                borderColor: 'success.main',
+                borderRadius: 2,
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.1)' : 'success.lighter',
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+                height: '100%',
+                '&:hover': {
+                  borderColor: 'success.dark',
+                  boxShadow: '0 4px 12px rgba(76, 175, 80, 0.2)',
+                  transform: 'translateY(-2px)'
+                }
+              }}
+              onClick={() => onOpenSamplePDF && onOpenSamplePDF('coordinate-geometry')}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                <SampleIcon sx={{ fontSize: 32, color: 'success.main' }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle1" fontWeight={600} color="success.dark">
+                    Coordinate Geometry
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Mathematics • Class 10
+                  </Typography>
+                </Box>
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.85rem' }}>
+                Learn about points, lines, and coordinate systems with AI explanations
+              </Typography>
+              <Chip label="Math" size="small" sx={{ mr: 0.5 }} />
+              <Chip label="English" size="small" />
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                border: '2px dashed',
+                borderColor: 'info.main',
+                borderRadius: 2,
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.1)' : 'info.lighter',
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+                height: '100%',
+                '&:hover': {
+                  borderColor: 'info.dark',
+                  boxShadow: '0 4px 12px rgba(33, 150, 243, 0.2)',
+                  transform: 'translateY(-2px)'
+                }
+              }}
+              onClick={() => onOpenSamplePDF && onOpenSamplePDF('freedom-movement')}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                <SampleIcon sx={{ fontSize: 32, color: 'info.main' }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle1" fontWeight={600} color="info.dark">
+                    Freedom Movement in Hyderabad
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Social Studies • Class 8
+                  </Typography>
+                </Box>
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.85rem' }}>
+                Explore Indian history with multilingual support and voice features
+              </Typography>
+              <Chip label="History" size="small" sx={{ mr: 0.5 }} />
+              <Chip label="Telugu" size="small" />
+            </Paper>
+          </Grid>
+        </Grid>
+        <Divider sx={{ mt: 4, mb: 3 }} />
+      </Box>
+
       {/* PDF Collections */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 'calc(100vh - 350px)' }}>
         {sortedCollections.length === 0 ? (
