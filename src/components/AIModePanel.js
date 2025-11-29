@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import VisualAidRenderer from './VisualAidRenderer';
 import { useAdminConfig, isTabEnabled } from '../hooks/useAdminConfig';
+import { extract3DVisualization, extractFromStructuredResponse } from '../utils/visualizationExtractor';
 import { 
   Box, 
   Paper, 

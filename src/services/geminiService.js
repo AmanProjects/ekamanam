@@ -145,10 +145,24 @@ Return ONLY this valid JSON (no extra text before or after):
   "exam": "${isChapter ? 'Comprehensive exam strategy covering all chapter topics, common question patterns, important topics to focus on, and preparation tips' : 'Exam tips and important topics to remember'} in same language (use <p> and <ul><li> tags)"
 }
 
+🎨 3D VISUALIZATION CAPABILITY:
+If the content involves geometric shapes, molecules, or 3D concepts, you can include interactive 3D visualizations!
+
+For GEOMETRIC SHAPES, add JSON directly in the explanation:
+{"type": "3d", "shapeType": "cube", "color": "#4FC3F7", "dimensions": {"width": 2, "height": 2, "depth": 2}, "title": "Cube", "rotate": true}
+
+Available shapes: cube, sphere, cone, cylinder, pyramid, torus
+
+For MOLECULES, add JSON directly in the explanation:
+{"type": "chemistry", "moleculeData": "water", "format": "smiles", "title": "Water Molecule"}
+
+Available molecules: water, methane, ethanol, glucose, benzene, caffeine, aspirin, and 100+ million molecules from PubChem!
+
 IMPORTANT: 
 - Return ONLY the JSON object
 - No explanations, no markdown code blocks, just valid JSON
 - Use HTML tags (<p>, <b>, <ul>, <li>, <strong>, <h4>) for formatting
+- Include 3D visualizations when discussing geometric shapes, molecules, or 3D concepts
 ${isChapter ? '- CHAPTER MODE: Be VERY comprehensive - cover all major topics, show connections between concepts, explain progression, use multiple detailed paragraphs' : '- PAGE MODE: Be clear, focused, and engaging'}!`;
 
   // V3.1: Use helper to force Gemini for regional languages
@@ -305,8 +319,12 @@ ANALYSIS RULES:
 
 VISUALIZATION FORMATS:
 - Chart: {"chartType":"pie|bar|line","data":{"labels":[...],"datasets":[{...}]}}
-- 3D: {"type":"3d","shapeType":"cube|sphere","color":"#4FC3F7","dimensions":{...}}
+- 3D Shapes: {"type":"3d","shapeType":"cube|sphere|cone|cylinder|pyramid|torus","color":"#4FC3F7","dimensions":{...},"rotate":true}
+- Molecules: {"type":"chemistry","moleculeData":"water|ethanol|glucose|benzene|etc","format":"smiles","title":"Water Molecule"}
 - SVG: <svg viewBox="0 0 400 300">...</svg>
+
+Available shapes: cube, sphere, cone, cylinder, pyramid, torus
+Available molecules: water, methane, ethanol, glucose, benzene, caffeine, aspirin, and 100+ million from PubChem!
 
 🔴 CRITICAL: If step says "Draw X", visualAid MUST contain the actual drawing (Chart.js JSON, SVG, or 3D JSON). NOT empty!
 
