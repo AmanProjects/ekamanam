@@ -185,7 +185,6 @@ function Dashboard({ onOpenLibrary }) {
                   textAlign: 'center',
                   transition: 'all 0.2s',
                   cursor: 'pointer',
-                  position: 'relative',
                   '&:hover': {
                     borderColor: 'primary.main',
                     transform: 'translateY(-2px)',
@@ -202,26 +201,16 @@ function Dashboard({ onOpenLibrary }) {
                 }}
               >
                 <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    width: 8,
-                    height: 8,
-                    bgcolor: 'success.main',
-                    borderRadius: '50%',
-                    boxShadow: '0 0 8px rgba(76, 175, 80, 0.6)',
-                    animation: 'pulse 2s infinite'
-                  }}
-                />
-                <Box
                   component="img"
                   src={`${process.env.PUBLIC_URL}/vyonn.png`}
                   alt="Vyonn AI"
                   sx={{
                     width: 48,
                     height: 48,
-                    mb: 1
+                    mb: 1,
+                    filter: (theme) => theme.palette.mode === 'dark' 
+                      ? 'brightness(0.8) saturate(0.7)' 
+                      : 'brightness(0) saturate(0%) opacity(0.54)'
                   }}
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -229,9 +218,6 @@ function Dashboard({ onOpenLibrary }) {
                 />
                 <Typography variant="body2" fontWeight={500}>
                   Vyonn AI
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.7rem', mt: 0.5, fontStyle: 'italic' }}>
-                  Click to start →
                 </Typography>
               </Paper>
             </Grid>
