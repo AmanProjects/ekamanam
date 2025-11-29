@@ -19,6 +19,7 @@ const ChemistryVisualization = ({
   const viewerRef = useRef(null);
   const containerRef = useRef(null);
   const [error, setError] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
 
   useEffect(() => {
     // Load 3Dmol.js from CDN
@@ -38,6 +39,46 @@ const ChemistryVisualization = ({
       });
     };
 
+    // Fetch molecule from PubChem API
+    const fetchFromPubChem = async (moleculeName) => {
+      setLoading(true);
+      try {
+        console.log('🔍 Fetching molecule from PubChem:', moleculeName);
+        
+        // Step 1: Search for compound by name
+        const searchUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(moleculeName)}/cids/JSON`;
+        const searchResponse = await fetch(searchUrl);
+        
+        if (!searchResponse.ok) {
+          throw new Error('Molecule not found in PubChem database');
+        }
+        
+        const searchData = await searchResponse.json();
+        const cid = searchData.IdentifierList.CID[0];
+        
+        console.log('✅ Found PubChem CID:', cid);
+        
+        // Step 2: Get 3D SDF structure
+        const sdfUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/record/SDF/?record_type=3d`;
+        const sdfResponse = await fetch(sdfUrl);
+        
+        if (!sdfResponse.ok) {
+          throw new Error('3D structure not available');
+        }
+        
+        const sdfData = await sdfResponse.text();
+        console.log('✅ Downloaded 3D structure from PubChem');
+        
+        setLoading(false);
+        return { success: true, data: sdfData, format: 'sdf' };
+        
+      } catch (err) {
+        console.warn('⚠️ PubChem fetch failed:', err.message);
+        setLoading(false);
+        return { success: false, error: err.message };
+      }
+    };
+
     const initViewer = async () => {
       try {
         const $3Dmol = await load3Dmol();
@@ -51,25 +92,71 @@ const ChemistryVisualization = ({
 
         // Add molecule based on format
         if (format === 'smiles') {
-          // Convert SMILES to 3D (requires RDKit or similar)
-          // For now, we'll show common molecules by name
-          const commonMolecules = {
-            'water': 'H2O',
-            'methane': 'CH4',
-            'ethanol': 'CCO',
-            'glucose': 'C([C@@H]1[C@H]([C@@H]([C@H]([C@H](O1)O)O)O)O)O',
-            'benzene': 'c1ccccc1',
-            'caffeine': 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',
+          // Hardcoded PDB structures for offline fallback
+          const commonMoleculesPDB = {
+            'water': `COMPND    WATER
+HETATM    1  O   HOH     1       0.000   0.000   0.000  1.00  0.00           O
+HETATM    2  H   HOH     1       0.957   0.000   0.000  1.00  0.00           H
+HETATM    3  H   HOH     1      -0.240   0.927   0.000  1.00  0.00           H
+CONECT    1    2    3
+CONECT    2    1
+CONECT    3    1
+END`,
+            'methane': `COMPND    METHANE
+HETATM    1  C   CH4     1       0.000   0.000   0.000  1.00  0.00           C
+HETATM    2  H   CH4     1       0.629   0.629   0.629  1.00  0.00           H
+HETATM    3  H   CH4     1      -0.629  -0.629   0.629  1.00  0.00           H
+HETATM    4  H   CH4     1      -0.629   0.629  -0.629  1.00  0.00           H
+HETATM    5  H   CH4     1       0.629  -0.629  -0.629  1.00  0.00           H
+CONECT    1    2    3    4    5
+CONECT    2    1
+CONECT    3    1
+CONECT    4    1
+CONECT    5    1
+END`,
+            'ammonia': `COMPND    AMMONIA
+HETATM    1  N   NH3     1       0.000   0.000   0.000  1.00  0.00           N
+HETATM    2  H   NH3     1       0.943   0.000   0.333  1.00  0.00           H
+HETATM    3  H   NH3     1      -0.471   0.816   0.333  1.00  0.00           H
+HETATM    4  H   NH3     1      -0.471  -0.816   0.333  1.00  0.00           H
+CONECT    1    2    3    4
+CONECT    2    1
+CONECT    3    1
+CONECT    4    1
+END`,
+            'carbon dioxide': `COMPND    CARBON DIOXIDE
+HETATM    1  C   CO2     1       0.000   0.000   0.000  1.00  0.00           C
+HETATM    2  O   CO2     1       1.160   0.000   0.000  1.00  0.00           O
+HETATM    3  O   CO2     1      -1.160   0.000   0.000  1.00  0.00           O
+CONECT    1    2    2    3    3
+CONECT    2    1    1
+CONECT    3    1    1
+END`
           };
 
-          const smilesData = commonMolecules[moleculeData.toLowerCase()] || moleculeData;
+          // Strategy 1: Try hardcoded molecules first (fast, offline)
+          const pdbData = commonMoleculesPDB[moleculeData.toLowerCase()];
           
-          // Note: Full SMILES support requires backend/RDKit
-          // For demo, we'll show a message
-          if (!commonMolecules[moleculeData.toLowerCase()]) {
-            setError('Full SMILES support requires additional backend setup. Showing placeholder.');
+          if (pdbData) {
+            viewer.addModel(pdbData, 'pdb');
+            console.log('✅ Loaded molecule from local library:', moleculeData);
+          } else {
+            // Strategy 2: Fetch from PubChem API (online, any molecule)
+            console.log('🌐 Molecule not in local library, fetching from PubChem...');
+            const result = await fetchFromPubChem(moleculeData);
+            
+            if (result.success) {
+              viewer.addModel(result.data, result.format);
+              console.log('✅ Loaded molecule from PubChem:', moleculeData);
+            } else {
+              // Both strategies failed
+              setError(`Molecule "${moleculeData}" not found. Try: water, methane, ammonia, ethanol, glucose, benzene, caffeine, etc.`);
+              console.warn('⚠️ Molecule not available:', moleculeData);
+              return; // Don't render empty viewer
+            }
           }
         } else {
+          // Other formats (pdb, mol2, sdf, xyz) - use directly
           viewer.addModel(moleculeData, format);
         }
 
@@ -87,6 +174,7 @@ const ChemistryVisualization = ({
       } catch (err) {
         console.error('Error initializing 3Dmol viewer:', err);
         setError(err.message);
+        setLoading(false);
       }
     };
 
@@ -124,11 +212,26 @@ const ChemistryVisualization = ({
           height: 400,
           borderRadius: 1,
           border: '1px solid #e0e0e0',
-          position: 'relative'
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: loading ? 'action.hover' : 'transparent'
         }}
-      />
+      >
+        {loading && (
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              🌐 Fetching molecule from PubChem...
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              (First time may take a few seconds)
+            </Typography>
+          </Box>
+        )}
+      </Box>
       <Typography variant="caption" display="block" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
-        Drag to rotate • Scroll to zoom • Right-click to pan
+        {loading ? 'Loading...' : 'Drag to rotate • Scroll to zoom • Right-click to pan'}
       </Typography>
     </Paper>
   );
