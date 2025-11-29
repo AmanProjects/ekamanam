@@ -34,11 +34,7 @@ function Dashboard({ onOpenLibrary }) {
               height: 'auto',
               mx: 'auto',
               mb: 2,
-              display: 'block',
-              filter: (theme) => theme.palette.mode === 'dark' 
-                ? 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.15))'
-                : 'none',
-              transition: 'filter 0.3s ease'
+              display: 'block'
             }}
           />
           <Typography variant="h3" fontWeight={600} gutterBottom color="text.primary">
