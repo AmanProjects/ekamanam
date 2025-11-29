@@ -2397,7 +2397,7 @@ Return ONLY this valid JSON:
                             </Box>
 
                             {/* Pronunciation Guide */}
-                            <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                            <Box sx={{ bgcolor: 'background.paper', p: 1.5, borderRadius: 1 }}>
                               <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
                                 Pronunciation:
                               </Typography>
@@ -2943,7 +2943,7 @@ Return ONLY this valid JSON:
                             <Typography variant="body2">{note.content}</Typography>
                             
                             {note.title_english && note.title_english !== note.title && (
-                              <Paper sx={{ p: 1.5, mt: 1.5, bgcolor: 'white' }}>
+                              <Paper sx={{ p: 1.5, mt: 1.5, bgcolor: 'background.paper' }}>
                                 <Typography variant="subtitle2" fontWeight={700} color="info.dark" gutterBottom>
                                   🌐 {note.title_english}
                                 </Typography>
@@ -4013,7 +4013,7 @@ Return ONLY this valid JSON:
                     
                     return (
                     <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
-                      <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: 'white' }}>
+                      <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: 'background.paper' }}>
                         <Typography variant="body1" fontWeight={600}>
                           Q{index + 1}. {questionText}
                         </Typography>
@@ -4075,7 +4075,7 @@ Return ONLY this valid JSON:
                     
                     return (
                     <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
-                      <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: 'white' }}>
+                      <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: 'background.paper' }}>
                         <Typography variant="body1" fontWeight={600}>
                           Q{index + 1}. {questionText}
                         </Typography>

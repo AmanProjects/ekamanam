@@ -241,12 +241,15 @@ YOUR RESPONSE:`;
               bottom: 24,
               right: 24,
               zIndex: 1000,
-              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              background: 'linear-gradient(135deg, #2d3561 0%, #1e4976 50%, #0f5fa8 100%)',
               color: '#fff',
+              boxShadow: '0 4px 20px rgba(15, 95, 168, 0.5), 0 0 40px rgba(15, 95, 168, 0.3)',
               '&:hover': {
-                background: 'linear-gradient(135deg, #16213e 0%, #0f3460 100%)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
-              }
+                background: 'linear-gradient(135deg, #3d4578 0%, #2e5a8f 50%, #1a6fb8 100%)',
+                boxShadow: '0 6px 30px rgba(15, 95, 168, 0.7), 0 0 50px rgba(15, 95, 168, 0.4)',
+                transform: 'scale(1.08)'
+              },
+              transition: 'all 0.3s ease'
             }}
           >
             <Box
@@ -256,7 +259,7 @@ YOUR RESPONSE:`;
               sx={{
                 width: 32,
                 height: 32,
-                filter: 'brightness(1.2)'
+                filter: 'brightness(1.5) drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))'
               }}
               onError={(e) => {
                 // Fallback: show text if image fails
