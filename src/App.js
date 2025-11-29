@@ -296,6 +296,45 @@ function App() {
     };
     input.click();
   };
+
+  const handleOpenSamplePDF = async (sampleId) => {
+    try {
+      const samples = {
+        'coordinate-geometry': {
+          filename: '7.Coordinate Geometry.pdf',
+          displayName: 'Coordinate Geometry',
+          id: 'sample-coordinate-geometry'
+        },
+        'freedom-movement': {
+          filename: '8th Class-TS-EM-Social Studies-12 –Freedom Movement in Hyderabad State.pdf',
+          displayName: 'Freedom Movement in Hyderabad State',
+          id: 'sample-freedom-movement'
+        }
+      };
+
+      const sample = samples[sampleId];
+      if (!sample) {
+        throw new Error('Sample not found');
+      }
+
+      // Fetch the sample PDF from public folder
+      const response = await fetch(`${process.env.PUBLIC_URL}/samples/${sample.filename}`);
+      const blob = await response.blob();
+      const file = new File([blob], sample.displayName + '.pdf', { type: 'application/pdf' });
+      
+      // Open it without saving to library
+      setPdfId(sample.id);
+      setSelectedFile(file);
+      setCurrentLibraryItem(null);
+      setCurrentPage(1);
+      setView('reader');
+      
+      console.log(`✅ Opened sample PDF: ${sample.displayName}`);
+    } catch (error) {
+      console.error('❌ Error loading sample PDF:', error);
+      alert('Failed to load sample PDF. Please try again.');
+    }
+  };
   
   // Auto-save current page to library (debounced)
   useEffect(() => {
@@ -488,6 +527,7 @@ function App() {
         {view === 'dashboard' ? (
           <Dashboard 
             onOpenLibrary={() => setView('library')}
+            onOpenSamplePDF={handleOpenSamplePDF}
           />
         ) : view === 'library' ? (
           <StudentLibrary

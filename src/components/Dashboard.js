@@ -12,10 +12,11 @@ import {
   School as SchoolIcon,
   TipsAndUpdates as TipsIcon,
   AssignmentTurnedIn as ExamIcon,
-  Language as LanguageIcon
+  Language as LanguageIcon,
+  MenuBook as SampleIcon
 } from '@mui/icons-material';
 
-function Dashboard({ onOpenLibrary }) {
+function Dashboard({ onOpenLibrary, onOpenSamplePDF }) {
   return (
     <Box sx={{ 
       minHeight: 'calc(100vh - 80px)',
@@ -75,6 +76,100 @@ function Dashboard({ onOpenLibrary }) {
             Open My Library
           </Button>
         </Paper>
+
+        {/* Sample PDFs */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            📚 Sample PDFs
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 400 }}>
+              (Try features without uploading)
+            </Typography>
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 3,
+                  border: '2px dashed',
+                  borderColor: 'success.main',
+                  borderRadius: 2,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.1)' : 'success.lighter',
+                  transition: 'all 0.3s',
+                  cursor: 'pointer',
+                  height: '100%',
+                  '&:hover': {
+                    borderColor: 'success.dark',
+                    boxShadow: '0 4px 16px rgba(76, 175, 80, 0.2)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+                onClick={() => onOpenSamplePDF && onOpenSamplePDF('coordinate-geometry')}
+              >
+                <SampleIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
+                <Typography variant="h6" fontWeight={600} color="success.dark" gutterBottom>
+                  Coordinate Geometry
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Mathematics • Class 10
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                  Learn about points, lines, and coordinate systems with AI explanations
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="small"
+                  fullWidth
+                  sx={{ fontWeight: 600 }}
+                >
+                  Open Sample
+                </Button>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 3,
+                  border: '2px dashed',
+                  borderColor: 'info.main',
+                  borderRadius: 2,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.1)' : 'info.lighter',
+                  transition: 'all 0.3s',
+                  cursor: 'pointer',
+                  height: '100%',
+                  '&:hover': {
+                    borderColor: 'info.dark',
+                    boxShadow: '0 4px 16px rgba(33, 150, 243, 0.2)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+                onClick={() => onOpenSamplePDF && onOpenSamplePDF('freedom-movement')}
+              >
+                <SampleIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
+                <Typography variant="h6" fontWeight={600} color="info.dark" gutterBottom>
+                  Freedom Movement in Hyderabad
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Social Studies • Class 8 • Telangana
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                  Explore Indian history with multilingual support and voice features
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="info"
+                  size="small"
+                  fullWidth
+                  sx={{ fontWeight: 600 }}
+                >
+                  Open Sample
+                </Button>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Box>
 
         {/* Learning Features */}
         <Box sx={{ mb: 2 }}>
