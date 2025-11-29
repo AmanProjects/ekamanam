@@ -507,21 +507,55 @@ function AIModePanel({
           .replace(/```\s*/g, '')
           .trim();
         
-        // Extract JSON object - handle multi-line JSON
-        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          throw new Error('No JSON found in response');
+        // Extract JSON object using balanced brace matching
+        let braceCount = 0;
+        let jsonStart = -1;
+        let jsonEnd = -1;
+        
+        for (let i = 0; i < cleanResponse.length; i++) {
+          if (cleanResponse[i] === '{') {
+            if (jsonStart === -1) jsonStart = i;
+            braceCount++;
+          }
+          if (cleanResponse[i] === '}') {
+            braceCount--;
+            if (braceCount === 0 && jsonStart !== -1) {
+              jsonEnd = i + 1;
+              break;
+            }
+          }
         }
         
-        cleanResponse = jsonMatch[0];
+        if (jsonStart === -1 || jsonEnd === -1) {
+          throw new Error('No complete JSON object found in response');
+        }
         
-        // Clean up any remaining artifacts
-        cleanResponse = cleanResponse
-          .replace(/\n\s*\n/g, '\n') // Remove empty lines
-          .trim();
+        cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
         
-        console.log(`✅ Parsing Teacher Mode (${scope}) JSON, first 200 chars:`, cleanResponse.substring(0, 200));
-        const parsedResponse = JSON.parse(cleanResponse);
+        console.log(`✅ Parsing Teacher Mode (${scope}) JSON, length: ${cleanResponse.length} chars`);
+        
+        let parsedResponse;
+        try {
+          parsedResponse = JSON.parse(cleanResponse);
+        } catch (firstParseError) {
+          console.warn('⚠️ First parse failed, attempting JSON repair...');
+          
+          // Attempt to repair common JSON issues
+          let repairedJson = cleanResponse
+            // Fix truncated strings in arrays (missing quotes)
+            .replace(/"([^"]*?)$/gm, '"$1"')
+            // Fix missing commas before object/array elements
+            .replace(/"\s*\n\s*"/g, '",\n"')
+            .replace(/"\s*\n\s*\{/g, '",\n{')
+            .replace(/\}\s*\n\s*\{/g, '},\n{')
+            // Remove trailing commas
+            .replace(/,\s*([}\]])/g, '$1');
+          
+          console.log('🔧 Attempting to parse repaired JSON...');
+          parsedResponse = JSON.parse(repairedJson);
+          console.log('✅ JSON repair successful!');
+        }
+        
         console.log(`✅ Successfully parsed Teacher Mode (${scope}) response`);
         
         // 🎨 Extract 3D visualizations from all text fields
@@ -540,7 +574,7 @@ function AIModePanel({
 
         // 💾 SAVE TO CACHE
         if (pdfId && currentPage) {
-          await saveCachedData(pdfId, currentPage, cacheKey, parsedResponse);
+          await saveCachedData(pdfId, currentPage, cacheKey, cleanedResponse);
           console.log(`💾 Saved to cache: Teacher Mode (${scope})`);
           
           // Update cache stats
@@ -549,10 +583,14 @@ function AIModePanel({
           console.log(`📊 Cache: ${stats.pagesCached} pages, ${stats.cacheSizeKB} KB`);
         }
       } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        console.error('Response was:', response.substring(0, 500));
-        // If parsing fails, store as plain object
-        setTeacherResponse({ explanation: response });
+        console.error('❌ JSON parse error (even after repair):', parseError);
+        console.error('❌ Response was:', response.substring(0, 800));
+        // If parsing fails, store as plain object with the raw response
+        setTeacherResponse({ 
+          explanation: '<div><h4>Raw Response (Parse Failed)</h4><pre>' + response + '</pre></div>',
+          _parseError: true 
+        });
+        setTeacherResponsePage(currentPage);
       }
     } catch (err) {
       setError(err.message);
@@ -1271,15 +1309,54 @@ function AIModePanel({
         // Remove markdown code blocks if present
         let cleanResponse = response.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
         
-        // Try to extract JSON if there's extra text
-        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          cleanResponse = jsonMatch[0];
+        // Extract JSON using balanced brace matching
+        let braceCount = 0;
+        let jsonStart = -1;
+        let jsonEnd = -1;
+        
+        for (let i = 0; i < cleanResponse.length; i++) {
+          if (cleanResponse[i] === '{') {
+            if (jsonStart === -1) jsonStart = i;
+            braceCount++;
+          }
+          if (cleanResponse[i] === '}') {
+            braceCount--;
+            if (braceCount === 0 && jsonStart !== -1) {
+              jsonEnd = i + 1;
+              break;
+            }
+          }
         }
         
-        console.log('📝 [Smart Explain] Attempting to parse JSON, first 300 chars:', cleanResponse.substring(0, 300));
+        if (jsonStart === -1 || jsonEnd === -1) {
+          throw new Error('No complete JSON object found in response');
+        }
         
-        const parsedResponse = JSON.parse(cleanResponse);
+        cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
+        
+        console.log('📝 [Smart Explain] Attempting to parse JSON, length:', cleanResponse.length);
+        
+        let parsedResponse;
+        try {
+          parsedResponse = JSON.parse(cleanResponse);
+        } catch (firstParseError) {
+          console.warn('⚠️ First parse failed, attempting JSON repair...');
+          
+          // Attempt to repair common JSON issues
+          let repairedJson = cleanResponse
+            // Fix truncated strings in arrays (missing quotes)
+            .replace(/"([^"]*?)$/gm, '"$1"')
+            // Fix missing commas before object/array elements
+            .replace(/"\s*\n\s*"/g, '",\n"')
+            .replace(/"\s*\n\s*\{/g, '",\n{')
+            .replace(/\}\s*\n\s*\{/g, '},\n{')
+            // Remove trailing commas
+            .replace(/,\s*([}\]])/g, '$1');
+          
+          console.log('🔧 Attempting to parse repaired JSON...');
+          parsedResponse = JSON.parse(repairedJson);
+          console.log('✅ JSON repair successful!');
+        }
         
         console.log('✅ [Smart Explain] Successfully parsed JSON:', {
           hasExplanation: !!parsedResponse.explanation,
@@ -1305,16 +1382,19 @@ function AIModePanel({
 
         // 💾 SAVE TO CACHE (only for full page, not selections)
         if (pdfId && currentPage && !editableSelectedText) {
-          await saveCachedData(pdfId, currentPage, cacheKey, parsedResponse);
+          await saveCachedData(pdfId, currentPage, cacheKey, cleanedResponse);
           console.log('💾 Saved to cache: Explanation');
         } else if (editableSelectedText) {
           console.log('✅ Explanation generated for selected text (not cached)');
         }
       } catch (parseError) {
-        console.error('❌ [Smart Explain] JSON parse error:', parseError);
-        console.error('❌ [Smart Explain] Response that failed to parse:', response?.substring(0, 500));
+        console.error('❌ [Smart Explain] JSON parse error (even after repair):', parseError);
+        console.error('❌ [Smart Explain] Response:', response?.substring(0, 800));
         // If parsing fails, store as plain text with explanation field
-        setExplainResponse({ explanation: response || 'No response received' });
+        setExplainResponse({ 
+          explanation: '<div><h4>Explanation</h4><pre>' + (response || 'No response received') + '</pre></div>',
+          _parseError: true
+        });
         setExplainResponsePage(currentPage); // ✅ Still track the page
         console.log('⚠️ Stored as plain text due to parse error');
       }

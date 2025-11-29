@@ -168,7 +168,7 @@ ${isChapter ? '- CHAPTER MODE: Be VERY comprehensive - cover all major topics, s
   // V3.1: Use helper to force Gemini for regional languages
   const config = createLLMConfig('teacherMode', {
     temperature: 0.7,
-    maxTokens: isChapter ? 8192 : 4096 // 2x tokens for chapter explanations
+    maxTokens: isChapter ? 8192 : 6144 // Increased from 4096 to 6144 to prevent truncation
   }, content, languageHint);
   
   return await callLLM(prompt, config);
