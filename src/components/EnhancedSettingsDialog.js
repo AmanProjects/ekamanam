@@ -264,62 +264,66 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                 Select Voice Type
               </FormLabel>
               <RadioGroup value={voicePreference} onChange={handleVoiceChange}>
-                <FormControlLabel
-                  value={VOICE_OPTIONS.FEMALE_US}
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Typography>{VOICE_LABELS[VOICE_OPTIONS.FEMALE_US]}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Clear, natural American English (Recommended)
-                      </Typography>
-                    </Box>
-                  }
-                  sx={{ mb: 1.5, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-                />
-                <FormControlLabel
-                  value={VOICE_OPTIONS.MALE_US}
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Typography>{VOICE_LABELS[VOICE_OPTIONS.MALE_US]}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Professional American English voice
-                      </Typography>
-                    </Box>
-                  }
-                  sx={{ mb: 1.5, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-                />
-                <FormControlLabel
-                  value={VOICE_OPTIONS.FEMALE_INDIAN}
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Typography>{VOICE_LABELS[VOICE_OPTIONS.FEMALE_INDIAN]}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Indian English accent for regional content
-                      </Typography>
-                    </Box>
-                  }
-                  sx={{ mb: 1.5, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-                />
-                <FormControlLabel
-                  value={VOICE_OPTIONS.MALE_INDIAN}
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Typography>{VOICE_LABELS[VOICE_OPTIONS.MALE_INDIAN]}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Male Indian English voice
-                      </Typography>
-                    </Box>
-                  }
-                  sx={{ mb: 1.5, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-                />
+                {Object.entries(VOICE_LABELS).map(([key, label]) => (
+                  <Box 
+                    key={key}
+                    sx={{
+                      mb: 1.5,
+                      p: 1.5,
+                      border: '1px solid',
+                      borderColor: voicePreference === key ? 'primary.main' : 'divider',
+                      borderRadius: 2,
+                      bgcolor: voicePreference === key ? 'action.selected' : 'transparent',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        bgcolor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <FormControlLabel
+                      value={key}
+                      control={<Radio />}
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                          <Box>
+                            <Typography variant="body1" fontWeight={voicePreference === key ? 600 : 400}>
+                              {label}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {key.includes('english') && 'Clear Indian English accent'}
+                              {key.includes('hindi') && 'Natural Hindi pronunciation'}
+                              {key.includes('telugu') && 'Native Telugu speaker'}
+                              {key.includes('tamil') && 'Native Tamil speaker'}
+                            </Typography>
+                          </Box>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const testText = key.includes('hindi') 
+                                ? "नमस्ते! यह मेरी आवाज़ है।" 
+                                : key.includes('telugu')
+                                ? "హలో! ఇది నా వాయిస్."
+                                : key.includes('tamil')
+                                ? "வணக்கம்! இது என் குரல்."
+                                : "Hello! This is how I sound. Clear and natural!";
+                              testVoice(key, testText);
+                            }}
+                            color="primary"
+                          >
+                            <VolumeUp />
+                          </IconButton>
+                        </Box>
+                      }
+                      sx={{ width: '100%', m: 0 }}
+                    />
+                  </Box>
+                ))}
               </RadioGroup>
 
               <Button
-                variant="outlined"
+                variant="contained"
                 startIcon={<VolumeUp />}
                 onClick={handleTestVoice}
                 sx={{ mt: 2 }}
@@ -329,9 +333,22 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
               </Button>
 
               <Alert severity="info" sx={{ mt: 3 }}>
+                <Typography variant="body2" fontWeight={600} gutterBottom>
+                  🇮🇳 About Indian Voices
+                </Typography>
                 <Typography variant="body2">
-                  🎤 <strong>Note:</strong> Voice availability depends on your device and browser. 
-                  The app will automatically select the best matching voice.
+                  • Natural-sounding voices for better learning<br />
+                  • Automatically adapts to your PDF's language<br />
+                  • Indian English for English content<br />
+                  • Regional language voices (Hindi, Telugu, Tamil)<br />
+                  • Used across all "Listen" features
+                </Typography>
+              </Alert>
+
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  <strong>Note:</strong> Voice quality depends on your browser and OS. 
+                  <strong> Chrome and Edge</strong> provide the best Indian voice support.
                 </Typography>
               </Alert>
             </FormControl>
