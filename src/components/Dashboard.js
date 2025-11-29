@@ -11,65 +11,43 @@ import {
   LocalLibrary as LibraryIcon,
   School as SchoolIcon,
   TipsAndUpdates as TipsIcon,
-  Speed as SpeedIcon,
+  AssignmentTurnedIn as ExamIcon,
   Language as LanguageIcon
 } from '@mui/icons-material';
 
 function Dashboard({ onOpenLibrary }) {
   return (
     <Box sx={{ 
-      minHeight: '100vh',
+      minHeight: 'calc(100vh - 80px)',
       bgcolor: 'background.default',
-      py: 6
+      py: 4,
+      display: 'flex',
+      alignItems: 'center'
     }}>
-      <Container maxWidth="sm">
-        {/* Logo and Title */}
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Box
-            component="img"
-            src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
-            alt="Ekamanam"
-            sx={{
-              maxWidth: 200,
-              height: 'auto',
-              mx: 'auto',
-              mb: 2,
-              display: 'block'
-            }}
-          />
-          <Typography variant="h3" fontWeight={600} gutterBottom color="text.primary">
-            Ekamanam
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
-            एकमनम् | ఏకమనం | ஏகமனம்
-          </Typography>
-          <Typography variant="h6" color="text.secondary" fontWeight={300}>
-            AI-Powered Learning Platform
-          </Typography>
-        </Box>
+      <Container maxWidth="md">
 
-        {/* Main Action - My Library */}
+        {/* Primary CTA - My Library */}
         <Paper 
           elevation={0}
           sx={{ 
-            p: 6,
-            border: '1px solid',
+            p: 4,
+            border: '2px solid',
             borderColor: 'divider',
             borderRadius: 2,
             textAlign: 'center',
-            mb: 4,
-            transition: 'all 0.2s',
+            mb: 3,
+            transition: 'all 0.3s',
             '&:hover': {
               borderColor: 'primary.main',
               boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
             }
           }}
         >
-          <LibraryIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
+          <LibraryIcon sx={{ fontSize: 56, color: 'primary.main', mb: 1.5 }} />
           <Typography variant="h5" fontWeight={600} gutterBottom>
             My Library
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, maxWidth: 500, mx: 'auto' }}>
             Access your PDFs, track progress, and continue learning from where you left off
           </Typography>
           <Button
@@ -78,7 +56,7 @@ function Dashboard({ onOpenLibrary }) {
             startIcon={<LibraryIcon />}
             onClick={onOpenLibrary}
             sx={{ 
-              py: 1.5,
+              py: 1.75,
               px: 4,
               fontSize: '1rem',
               fontWeight: 600
@@ -86,59 +64,111 @@ function Dashboard({ onOpenLibrary }) {
           >
             Open My Library
           </Button>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-            Add PDFs, manage your collection, and resume reading
-          </Typography>
         </Paper>
 
-        {/* Features */}
-        <Paper 
-          elevation={0}
-          sx={{ 
-            p: 3,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2
-          }}
-        >
-          <Grid container spacing={3}>
+        {/* Learning Features */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+            Learning Features
+          </Typography>
+          <Grid container spacing={2}>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <SchoolIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  textAlign: 'center',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                  }
+                }}
+              >
+                <SchoolIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
                 <Typography variant="body2" fontWeight={500}>
                   Teacher Mode
                 </Typography>
-              </Box>
+              </Paper>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <TipsIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  textAlign: 'center',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                  }
+                }}
+              >
+                <TipsIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
                 <Typography variant="body2" fontWeight={500}>
                   Smart Explain
                 </Typography>
-              </Box>
+              </Paper>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <LanguageIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  textAlign: 'center',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                  }
+                }}
+              >
+                <LanguageIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
                 <Typography variant="body2" fontWeight={500}>
                   Multilingual
                 </Typography>
-              </Box>
+              </Paper>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <SpeedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  textAlign: 'center',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                  }
+                }}
+              >
+                <ExamIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
                 <Typography variant="body2" fontWeight={500}>
-                  Lightning Fast
+                  Exam Prep
                 </Typography>
-              </Box>
+              </Paper>
             </Grid>
           </Grid>
-        </Paper>
+        </Box>
 
         {/* Footer */}
-        <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <Box sx={{ textAlign: 'center', mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
           <Typography variant="caption" color="text.secondary">
             © 2025 <a href="https://www.linkedin.com/in/amantalwar/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Amandeep Singh Talwar</a>
           </Typography>

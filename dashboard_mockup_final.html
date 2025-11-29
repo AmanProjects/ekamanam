@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ekamanam Dashboard - Final Design (Light & Dark Mode)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Light Mode (Default) */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+      background-color: #f5f7fa;
+      color: #1a202c;
+      transition: all 0.3s ease;
+    }
+
+    /* Dark Mode */
+    body.dark-mode {
+      background-color: #0a1929;
+      color: #ffffff;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 24px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: all 0.2s;
+      z-index: 1000;
+    }
+
+    .theme-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+
+    /* Header - Compact Horizontal Layout */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    body.dark-mode .header {
+      border-bottom-color: #2d3843;
+    }
+
+    .logo {
+      width: auto;
+      height: 72px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .brand-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 12px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .title {
+      font-size: 32px;
+      font-weight: 600;
+      color: #1a202c;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    body.dark-mode .title {
+      color: #ffffff;
+    }
+
+    .version {
+      font-size: 11px;
+      padding: 3px 12px;
+      background: #1976d2;
+      color: white;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    body.dark-mode .version {
+      background: #90caf9;
+      color: #0a1929;
+    }
+
+    body.dark-mode .version {
+      background: rgba(144, 202, 249, 0.15);
+      color: #90caf9;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    body.dark-mode .subtitle {
+      color: #b0b8c1;
+    }
+
+    /* Library Card - Primary CTA */
+    .library-card {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 24px;
+      transition: all 0.3s;
+    }
+
+    body.dark-mode .library-card {
+      background: #1a2332;
+      border-color: #2d3843;
+    }
+
+    .library-card:hover {
+      border-color: #1976d2;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    body.dark-mode .library-card:hover {
+      border-color: #90caf9;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .library-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+    }
+
+    .library-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1a202c;
+    }
+
+    body.dark-mode .library-title {
+      color: #ffffff;
+    }
+
+    .library-description {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 20px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    body.dark-mode .library-description {
+      color: #b0b8c1;
+    }
+
+    .library-button {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .library-button:hover {
+      background: #1565c0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+    }
+
+    /* Features Section */
+    .features-section {
+      margin-bottom: 24px;
+    }
+
+    .features-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1a202c;
+    }
+
+    body.dark-mode .features-title {
+      color: #ffffff;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .feature-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px 12px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    body.dark-mode .feature-card {
+      background: #1a2332;
+      border-color: #2d3843;
+    }
+
+    .feature-card:hover {
+      border-color: #1976d2;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    body.dark-mode .feature-card:hover {
+      border-color: #90caf9;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .feature-icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+      filter: grayscale(0.3);
+    }
+
+    .feature-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1a202c;
+    }
+
+    body.dark-mode .feature-name {
+      color: #ffffff;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    body.dark-mode .footer {
+      border-top-color: #2d3843;
+    }
+
+    .footer-text {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    body.dark-mode .footer-text {
+      color: #b0b8c1;
+    }
+
+    .footer-link {
+      color: #1976d2;
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    body.dark-mode .footer-link {
+      color: #90caf9;
+    }
+
+    /* Viewport Info */
+    .viewport-info {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      padding: 8px 16px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border-radius: 8px;
+      font-size: 11px;
+      font-family: monospace;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <!-- Theme Toggle -->
+  <button class="theme-toggle" onclick="toggleTheme()">
+    🌓 Toggle Dark Mode
+  </button>
+
+  <!-- Viewport Info (for reference) -->
+  <div class="viewport-info" id="viewport-info">
+    Viewport: <span id="viewport-height"></span>px
+  </div>
+
+  <div class="container">
+    <!-- Header - Compact Horizontal Layout with Logo Height = Text Height -->
+    <div class="header">
+      <img src="Ekamanam_logo.png" alt="Ekamanam" class="logo" onerror="this.style.display='none'">
+      <div class="brand-info">
+        <div class="title-row">
+          <div class="title">Ekamanam</div>
+          <span class="version">v3.3.3</span>
+        </div>
+        <div class="subtitle">एकमनम् | ఏకమనం | ஏகமனம் • AI-Powered Learning</div>
+      </div>
+    </div>
+
+    <!-- Primary CTA - My Library -->
+    <div class="library-card">
+      <div class="library-icon">📚</div>
+      <div class="library-title">My Library</div>
+      <div class="library-description">
+        Access your PDFs, track progress, and continue learning from where you left off
+      </div>
+      <button class="library-button">
+        <span>📚</span>
+        Open My Library
+      </button>
+    </div>
+
+    <!-- Learning Features -->
+    <div class="features-section">
+      <div class="features-title">Learning Features</div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🎓</div>
+          <div class="feature-name">Teacher Mode</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💡</div>
+          <div class="feature-name">Smart Explain</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <div class="feature-name">Multilingual</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <div class="feature-name">Exam Prep</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-text">
+        © 2025 <a href="https://www.linkedin.com/in/amantalwar/" target="_blank" class="footer-link">Amandeep Singh Talwar</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle dark mode
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('mockup-theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+
+    // Load saved theme
+    if (localStorage.getItem('mockup-theme') === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
+
+    // Update viewport info
+    function updateViewportInfo() {
+      document.getElementById('viewport-height').textContent = window.innerHeight;
+    }
+    updateViewportInfo();
+    window.addEventListener('resize', updateViewportInfo);
+  </script>
+</body>
+</html>
+

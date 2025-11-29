@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Comparison - Current vs Option 4</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+
+    .comparison-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+
+    .mockup-wrapper {
+      position: relative;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    .mockup-header {
+      background: #1976d2;
+      color: white;
+      padding: 12px 20px;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge {
+      background: rgba(255,255,255,0.2);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .viewport-indicator {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: red;
+      z-index: 100;
+      box-shadow: 0 0 10px red;
+    }
+
+    .viewport-label {
+      position: absolute;
+      right: 10px;
+      margin-top: -20px;
+      background: red;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .mockup-content {
+      height: 800px;
+      overflow-y: auto;
+      background: #f5f7fa;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Current Dashboard Styles */
+    .current .logo-section {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .current .logo {
+      width: 200px;
+      height: auto;
+      margin-bottom: 16px;
+    }
+
+    .current .title {
+      font-size: 48px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .current .subtitle {
+      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .current .tagline {
+      font-size: 20px;
+      color: #64748b;
+      font-weight: 300;
+    }
+
+    .current .library-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 48px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .current .library-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .current .library-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .current .library-desc {
+      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 24px;
+    }
+
+    .current .library-button {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+
+    .current .library-caption {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .current .features-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .current .features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .current .feature-item {
+      text-align: center;
+    }
+
+    .current .feature-icon {
+      font-size: 40px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .current .feature-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .current .footer {
+      text-align: center;
+      margin-top: 32px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    /* New Dashboard Styles (Option 4) */
+    .new .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .new .logo {
+      width: 80px;
+      height: 80px;
+    }
+
+    .new .brand-info {
+      flex: 1;
+    }
+
+    .new .title {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .new .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .new .version {
+      display: inline-block;
+      font-size: 11px;
+      padding: 4px 10px;
+      background: rgba(25, 118, 210, 0.1);
+      color: #1976d2;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .new .library-card {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .new .library-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+    }
+
+    .new .library-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .new .library-desc {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    .new .library-button {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .new .features-section {
+      margin-bottom: 20px;
+    }
+
+    .new .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .new .features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .new .feature-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 8px;
+      text-align: center;
+    }
+
+    .new .feature-icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+
+    .new .feature-name {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .new .benefits {
+      background: rgba(25, 118, 210, 0.05);
+      border: 1px solid rgba(25, 118, 210, 0.1);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .new .benefits-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #1976d2;
+    }
+
+    .new .benefits-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .new .benefit-item {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .new .benefit-item::before {
+      content: '✓ ';
+      color: #66bb6a;
+      font-weight: bold;
+    }
+
+    .new .footer {
+      text-align: center;
+      padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .footer-link {
+      color: #1976d2;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align: center; margin-bottom: 20px; font-size: 24px;">
+    Dashboard Comparison: Current vs Option 4 (Hybrid Compact)
+  </h1>
+  <p style="text-align: center; margin-bottom: 30px; color: #64748b;">
+    Red line shows viewport bottom at 100% zoom (~800px height). Everything below is hidden without scrolling.
+  </p>
+
+  <div class="comparison-container">
+    <!-- CURRENT DASHBOARD -->
+    <div class="mockup-wrapper">
+      <div class="mockup-header">
+        <span>Current Dashboard</span>
+        <span class="badge">Requires Scrolling ⚠️</span>
+      </div>
+      <div class="viewport-indicator" style="top: 864px;">
+        <div class="viewport-label">← Viewport Bottom (100% zoom)</div>
+      </div>
+      <div class="mockup-content current">
+        <div class="container">
+          <!-- Logo and Title -->
+          <div class="logo-section">
+            <img src="Ekamanam_logo.png" alt="Ekamanam" class="logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231976d2%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22 font-size=%2260%22 font-family=%22sans-serif%22%3EE%3C/text%3E%3C/svg%3E'">
+            <div class="title">Ekamanam</div>
+            <div class="subtitle">एकमनम् | ఏకమనం | ஏகமனம்</div>
+            <div class="tagline">AI-Powered Learning Platform</div>
+          </div>
+
+          <!-- Library Card -->
+          <div class="library-card">
+            <div class="library-icon">📚</div>
+            <div class="library-title">My Library</div>
+            <div class="library-desc">
+              Access your PDFs, track progress, and continue learning from where you left off
+            </div>
+            <button class="library-button">📚 Open My Library</button>
+            <div class="library-caption">Add PDFs, manage your collection, and resume reading</div>
+          </div>
+
+          <!-- Features -->
+          <div class="features-card">
+            <div class="features-grid">
+              <div class="feature-item">
+                <div class="feature-icon">🎓</div>
+                <div class="feature-name">Teacher Mode</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">💡</div>
+                <div class="feature-name">Smart Explain</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">🌐</div>
+                <div class="feature-name">Multilingual</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-name">Lightning Fast</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="footer">
+            © 2025 <a href="https://www.linkedin.com/in/amantalwar/" target="_blank" class="footer-link">Amandeep Singh Talwar</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW DASHBOARD (OPTION 4) -->
+    <div class="mockup-wrapper">
+      <div class="mockup-header" style="background: #66bb6a;">
+        <span>Option 4: Hybrid Compact</span>
+        <span class="badge">Fits Without Scrolling ✅</span>
+      </div>
+      <div class="viewport-indicator" style="top: 864px;">
+        <div class="viewport-label">← Viewport Bottom (100% zoom)</div>
+      </div>
+      <div class="mockup-content new">
+        <div class="container">
+          <!-- Compact Header -->
+          <div class="header">
+            <img src="Ekamanam_logo.png" alt="Ekamanam" class="logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231976d2%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22 font-size=%2260%22 font-family=%22sans-serif%22%3EE%3C/text%3E%3C/svg%3E'">
+            <div class="brand-info">
+              <div class="title">Ekamanam</div>
+              <div class="subtitle">एकमनम् | ఏకమనం | ஏகமனம் • AI-Powered Learning</div>
+              <span class="version">v3.3.3</span>
+            </div>
+          </div>
+
+          <!-- Library Card -->
+          <div class="library-card">
+            <div class="library-icon">📚</div>
+            <div class="library-title">My Library</div>
+            <div class="library-desc">
+              Access your PDFs, track progress, and continue learning from where you left off
+            </div>
+            <button class="library-button">📚 Open My Library</button>
+          </div>
+
+          <!-- Features -->
+          <div class="features-section">
+            <div class="section-title">Learning Features</div>
+            <div class="features-grid">
+              <div class="feature-card">
+                <div class="feature-icon">🎓</div>
+                <div class="feature-name">Teacher Mode</div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">💡</div>
+                <div class="feature-name">Smart Explain</div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <div class="feature-name">Multilingual</div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <div class="feature-name">Exam Prep</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Benefits -->
+          <div class="benefits">
+            <div class="benefits-title">Why Ekamanam?</div>
+            <div class="benefits-list">
+              <div class="benefit-item">AI-powered explanations</div>
+              <div class="benefit-item">Multilingual support</div>
+              <div class="benefit-item">Visual aids & graphics</div>
+              <div class="benefit-item">Exam preparation tools</div>
+              <div class="benefit-item">Interactive activities</div>
+              <div class="benefit-item">Natural voice reading</div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="footer">
+            © 2025 <a href="https://www.linkedin.com/in/amantalwar/" target="_blank" class="footer-link">Amandeep Singh Talwar</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 20px; padding: 20px; background: white; border-radius: 8px; max-width: 800px; margin: 20px auto;">
+    <h3 style="margin-bottom: 10px;">Key Improvements in Option 4:</h3>
+    <ul style="text-align: left; display: inline-block; color: #64748b; line-height: 1.8;">
+      <li>✅ Everything fits in viewport (no scroll needed)</li>
+      <li>✅ Logo reduced from 200px to 80px (more compact)</li>
+      <li>✅ Horizontal brand layout (saves vertical space)</li>
+      <li>✅ Library card padding reduced: 48px → 32px</li>
+      <li>✅ Removed redundant library caption</li>
+      <li>✅ Features remain prominent and scannable</li>
+      <li>✅ Added "Why Ekamanam" benefits section</li>
+      <li>✅ Footer always visible (no hidden content)</li>
+      <li>✅ Reduced overall py: 6 → 3 units</li>
+      <li>✅ Professional, global-ready appearance</li>
+    </ul>
+  </div>
+</body>
+</html>
+

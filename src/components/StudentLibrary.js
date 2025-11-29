@@ -21,7 +21,7 @@ import {
 import {
   ArrowBack,
   Search,
-  MenuBook,
+  LocalLibrary,
   ExpandMore,
   CloudDownload
 } from '@mui/icons-material';
@@ -120,7 +120,7 @@ function StudentLibrary({ onBack, onOpenPdf }) {
             <ArrowBack />
           </IconButton>
           <Typography variant="h4" fontWeight={700}>
-            📚 My Library
+            My Library
           </Typography>
         </Box>
       </Box>
@@ -170,7 +170,7 @@ function StudentLibrary({ onBack, onOpenPdf }) {
       <Box sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 'calc(100vh - 350px)' }}>
         {sortedCollections.length === 0 ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <MenuBook sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <LocalLibrary sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
               No PDFs in library
             </Typography>

@@ -371,36 +371,47 @@ function App() {
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Header */}
       <AppBar position="static" color="default" elevation={1}>
-        <Toolbar>
-          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, gap: 2 }}>
+        <Toolbar sx={{ py: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', flexGrow: 1, gap: 2 }}>
             <Box
               component="img"
               src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
               alt="Ekamanam"
               sx={{
-                height: 40,
-                width: 40,
+                height: 56,
+                width: 'auto',
                 objectFit: 'contain',
-                filter: (theme) => theme.palette.mode === 'dark'
-                  ? 'drop-shadow(0 0 15px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.2))'
-                  : 'none',
-                transition: 'filter 0.3s ease'
+                flexShrink: 0
               }}
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
             />
-            <Chip 
-              label={`v${packageJson.version}`}
-              size="small"
-              color="primary"
-              variant="outlined"
-              sx={{ 
-                fontWeight: 600, 
-                fontSize: '0.75rem',
-                display: { xs: 'none', md: 'flex' }
-              }}
-            />
+            <Box sx={{ flex: 1, pt: '18px', display: { xs: 'none', sm: 'block' } }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 0.3 }}>
+                <Box component="span" sx={{ fontSize: '1.5rem', fontWeight: 600, lineHeight: 1, letterSpacing: '-0.02em' }}>
+                  Ekamanam
+                </Box>
+                <Chip 
+                  label={`v${packageJson.version}`}
+                  size="small"
+                  sx={{ 
+                    height: 20,
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '& .MuiChip-label': {
+                      px: 1.5,
+                      py: 0
+                    }
+                  }}
+                />
+              </Box>
+              <Box component="span" sx={{ fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1.4 }}>
+                एकमनम् | ఏకమనం | ஏகமனம் • AI-Powered Learning
+              </Box>
+            </Box>
           </Box>
           
           <Box sx={{ display: 'flex', gap: 1 }}>

@@ -5,6 +5,7 @@ import {
   ChevronRight, 
   ZoomIn, 
   ZoomOut,
+  FitScreen as FitHeightIcon,
   Note as NoteIcon
 } from '@mui/icons-material';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -29,6 +30,7 @@ function PDFViewer({
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1.5);
   const [showNotes, setShowNotes] = useState(false);
+  const [fitToHeight, setFitToHeight] = useState(true); // Auto-fit to container height
 
   // Load PDF
   useEffect(() => {
@@ -69,6 +71,51 @@ function PDFViewer({
     
     fileReader.readAsArrayBuffer(selectedFile);
   }, [selectedFile, setPdfDocument, setCurrentPage]);
+
+  // Calculate optimal scale to fit container height
+  useEffect(() => {
+    if (!pdfDocument || !currentPage || !fitToHeight || !containerRef.current) return;
+
+    const calculateFitToHeightScale = async () => {
+      try {
+        const page = await pdfDocument.getPage(currentPage);
+        const baseViewport = page.getViewport({ scale: 1 });
+        const container = containerRef.current;
+        
+        // Get available height (container height minus padding)
+        const availableHeight = container.clientHeight - 32; // 32px for padding (16px * 2)
+        
+        // Calculate scale to fit height
+        const calculatedScale = availableHeight / baseViewport.height;
+        
+        console.log('📏 Auto-fit scale calculated:', {
+          pageHeight: baseViewport.height,
+          availableHeight,
+          calculatedScale: calculatedScale.toFixed(2)
+        });
+        
+        setScale(calculatedScale);
+      } catch (error) {
+        console.error('Error calculating fit-to-height scale:', error);
+      }
+    };
+
+    calculateFitToHeightScale();
+  }, [pdfDocument, currentPage, fitToHeight]);
+
+  // Handle window resize to recalculate scale
+  useEffect(() => {
+    if (!fitToHeight) return;
+
+    const handleResize = () => {
+      // Trigger scale recalculation by toggling fitToHeight
+      setFitToHeight(false);
+      setTimeout(() => setFitToHeight(true), 10);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [fitToHeight]);
 
   // Render page
   useEffect(() => {
@@ -213,13 +260,19 @@ function PDFViewer({
   };
 
   const handleZoomIn = () => {
+    setFitToHeight(false); // Disable auto-fit when manually zooming
     setScale(scale + 0.2);
   };
 
   const handleZoomOut = () => {
     if (scale > 0.5) {
+      setFitToHeight(false); // Disable auto-fit when manually zooming
       setScale(scale - 0.2);
     }
+  };
+
+  const handleFitToHeight = () => {
+    setFitToHeight(true);
   };
 
   const handlePageInput = (e) => {
@@ -291,6 +344,13 @@ function PDFViewer({
           <IconButton onClick={handleZoomIn}>
             <ZoomIn />
           </IconButton>
+          <IconButton 
+            onClick={handleFitToHeight} 
+            color={fitToHeight ? 'primary' : 'default'}
+            title="Fit to Height"
+          >
+            <FitHeightIcon />
+          </IconButton>
           <IconButton onClick={() => setShowNotes(!showNotes)} color={showNotes ? 'primary' : 'default'}>
             <NoteIcon />
           </IconButton>
@@ -302,10 +362,11 @@ function PDFViewer({
         ref={containerRef}
         sx={{ 
           flexGrow: 1, 
-          overflow: 'auto', 
+          overflow: fitToHeight ? 'hidden' : 'auto', 
           p: 2,
           display: 'flex',
           justifyContent: 'center',
+          alignItems: fitToHeight ? 'center' : 'flex-start',
           bgcolor: '#525659'
         }}
       >
