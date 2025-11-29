@@ -452,7 +452,7 @@ function App() {
                 />
               </Box>
               <Box component="span" sx={{ fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1.4 }}>
-                एकमनम् | ఏకమనం | ஏகமனம் • AI-Powered Learning
+                One Focus, Limitless Learning
               </Box>
             </Box>
           </Box>
