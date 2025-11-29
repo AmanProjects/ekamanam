@@ -268,11 +268,11 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                   <Box 
                     key={key}
                     sx={{
-                      mb: 1.5,
-                      p: 1.5,
+                      mb: 1,
+                      p: 1,
                       border: '1px solid',
                       borderColor: voicePreference === key ? 'primary.main' : 'divider',
-                      borderRadius: 2,
+                      borderRadius: 1,
                       bgcolor: voicePreference === key ? 'action.selected' : 'transparent',
                       transition: 'all 0.2s',
                       '&:hover': {
@@ -326,29 +326,16 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                 variant="contained"
                 startIcon={<VolumeUp />}
                 onClick={handleTestVoice}
-                sx={{ mt: 2 }}
+                sx={{ mt: 1.5 }}
                 fullWidth
+                size="medium"
               >
-                Test Selected Voice
+                Test Voice
               </Button>
 
-              <Alert severity="info" sx={{ mt: 3 }}>
-                <Typography variant="body2" fontWeight={600} gutterBottom>
-                  🇮🇳 About Indian Voices
-                </Typography>
-                <Typography variant="body2">
-                  • Natural-sounding voices for better learning<br />
-                  • Automatically adapts to your PDF's language<br />
-                  • Indian English for English content<br />
-                  • Regional language voices (Hindi, Telugu, Tamil)<br />
-                  • Used across all "Listen" features
-                </Typography>
-              </Alert>
-
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                <Typography variant="body2">
-                  <strong>Note:</strong> Voice quality depends on your browser and OS. 
-                  <strong> Chrome and Edge</strong> provide the best Indian voice support.
+              <Alert severity="info" sx={{ mt: 2, py: 0.5 }}>
+                <Typography variant="caption" display="block">
+                  <strong>Natural Indian Voices</strong> • Adapts to PDF language • Chrome/Edge recommended
                 </Typography>
               </Alert>
             </FormControl>
@@ -429,34 +416,46 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       fullWidth
       PaperProps={{
         sx: {
-          height: '80vh',
-          maxHeight: 600
+          height: '85vh',
+          maxHeight: '85vh'
         }
       }}
     >
-      <Box sx={{ display: 'flex', height: '100%' }}>
-        {/* Left Panel - Options */}
-        <Box
-          sx={{
-            width: 240,
-            borderRight: 1,
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          {/* Header */}
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" fontWeight={600}>
-              Settings
-            </Typography>
-          </Box>
+      <Box sx={{ display: 'flex', height: '100%', flexDirection: 'column' }}>
+        {/* Header with Close Button */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          p: 2, 
+          borderBottom: 1, 
+          borderColor: 'divider' 
+        }}>
+          <Typography variant="h6" fontWeight={600}>
+            Settings
+          </Typography>
+          <IconButton onClick={onClose} size="small">
+            <Close />
+          </IconButton>
+        </Box>
 
-          {/* Options List */}
-          <List sx={{ flex: 1, py: 0 }}>
-            {settingsOptions.map((option) => (
-              <ListItem key={option.id} disablePadding>
-                <ListItemButton
+        <Box sx={{ display: 'flex', height: 'calc(100% - 64px)' }}>
+          {/* Left Panel - Options */}
+          <Box
+            sx={{
+              width: 200,
+              borderRight: 1,
+              borderColor: 'divider',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'auto'
+            }}
+          >
+            {/* Options List */}
+            <List sx={{ py: 0 }}>
+              {settingsOptions.map((option) => (
+                <ListItem key={option.id} disablePadding>
+                  <ListItemButton
                   selected={selectedOption === option.id}
                   onClick={() => setSelectedOption(option.id)}
                   sx={{

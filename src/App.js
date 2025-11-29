@@ -42,6 +42,10 @@ function App() {
   // Theme state
   const [themeMode, setThemeMode] = useState('light');
   
+  // Layout state - resizable divider (percentage for PDF viewer, rest for AI panel)
+  const [pdfWidth, setPdfWidth] = useState(50); // 50% by default
+  const [isResizing, setIsResizing] = useState(false);
+  
   // Library state
   const [currentLibraryItem, setCurrentLibraryItem] = useState(null);
   const [libraryCount, setLibraryCount] = useState(0);
@@ -63,6 +67,41 @@ function App() {
   const handleThemeChange = (newMode) => {
     setThemeMode(newMode);
   };
+
+  // Handle divider resize
+  const handleMouseDown = () => {
+    setIsResizing(true);
+  };
+
+  const handleMouseUp = () => {
+    setIsResizing(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isResizing) return;
+    
+    const container = document.getElementById('pdf-ai-container');
+    if (!container) return;
+    
+    const containerRect = container.getBoundingClientRect();
+    const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+    
+    // Constrain between 15% and 85%
+    if (newWidth >= 15 && newWidth <= 85) {
+      setPdfWidth(newWidth);
+    }
+  };
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing]);
   
   // Load library count
   useEffect(() => {
@@ -433,9 +472,25 @@ function App() {
             onOpenPdf={handleOpenFromLibrary}
           />
         ) : (
-          <Grid container sx={{ height: '100%' }}>
+          <Box 
+            id="pdf-ai-container"
+            sx={{ 
+              display: 'flex', 
+              height: '100%',
+              position: 'relative',
+              userSelect: isResizing ? 'none' : 'auto'
+            }}
+          >
             {/* Left Side - PDF Viewer */}
-            <Grid item xs={12} md={6} sx={{ height: '100%', borderRight: 1, borderColor: 'divider' }}>
+            <Box 
+              sx={{ 
+                width: `${pdfWidth}%`,
+                height: '100%',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
               <PDFViewer
                 selectedFile={selectedFile}
                 pdfDocument={pdfDocument}
@@ -445,10 +500,50 @@ function App() {
                 onTextSelect={handleTextSelect}
                 onPageTextExtract={setPageText}
               />
-            </Grid>
+            </Box>
+
+            {/* Resizable Divider */}
+            <Box
+              onMouseDown={handleMouseDown}
+              sx={{
+                width: '8px',
+                height: '100%',
+                backgroundColor: 'divider',
+                cursor: 'col-resize',
+                position: 'relative',
+                transition: isResizing ? 'none' : 'background-color 0.2s',
+                '&:hover': {
+                  backgroundColor: 'primary.main',
+                  '&::before': {
+                    opacity: 1
+                  }
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '2px',
+                  height: '40px',
+                  backgroundColor: 'background.paper',
+                  borderRadius: '2px',
+                  opacity: 0.5,
+                  transition: 'opacity 0.2s'
+                }
+              }}
+            />
 
             {/* Right Side - AI Mode Panel */}
-            <Grid item xs={12} md={6} sx={{ height: '100%' }}>
+            <Box 
+              sx={{ 
+                width: `${100 - pdfWidth}%`,
+                height: '100%',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
               <AIModePanel
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -458,8 +553,8 @@ function App() {
                 user={user}
                 pdfDocument={pdfDocument}
               />
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         )}
       </Box>
 
