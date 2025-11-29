@@ -1642,7 +1642,7 @@ Return ONLY this valid JSON:
         <Box sx={{ 
           px: { xs: 1.5, md: 2 }, 
           py: { xs: 0.75, md: 1 }, 
-          bgcolor: detectedLang.isEnglish ? '#e3f2fd' : '#fff3e0',
+          bgcolor: detectedLang.isEnglish ? 'info.lighter' : 'warning.lighter',
           borderBottom: '1px solid',
           borderColor: 'divider',
           display: 'flex',
@@ -2798,7 +2798,7 @@ Return ONLY this valid JSON:
                                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
                                   Step-by-Step Solution:
                                 </Typography>
-                                <Paper sx={{ p: 2, bgcolor: 'white' }}>
+                                <Paper sx={{ p: 2, bgcolor: 'background.paper' }}>
                                   {exercise.steps.map((step, stepIdx) => {
                                     // Handle both old format (string array) and new format (object array)
                                     const stepText = typeof step === 'string' ? step : (step?.text || '');
@@ -3878,7 +3878,7 @@ Return ONLY this valid JSON:
                         Question {index + 1}
                       </Typography>
                       
-                      <Paper sx={{ p: 2, mb: 2, bgcolor: '#e3f2fd' }}>
+                      <Paper sx={{ p: 2, mb: 2, bgcolor: 'info.lighter' }}>
                         <Typography variant="body2" fontWeight={600}>
                           Assertion (A): {assertionText}
                         </Typography>
@@ -3943,7 +3943,7 @@ Return ONLY this valid JSON:
                         <Paper sx={{ 
                           p: 2, 
                           mt: 2, 
-                          bgcolor: examAnswers[`mcq_result_${index}`] ? '#c8e6c9' : '#ffcdd2' 
+                          bgcolor: examAnswers[`mcq_result_${index}`] ? 'success.lighter' : 'error.lighter' 
                         }}>
                           <Typography variant="body2" fontWeight={600}>
                             {examAnswers[`mcq_result_${index}`] ? '✅ Correct!' : '❌ Incorrect'}
@@ -4016,7 +4016,7 @@ Return ONLY this valid JSON:
                         )}
                       </Paper>
                       
-                      <Paper sx={{ p: 2, bgcolor: '#f5f5f5' }}>
+                      <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
                         <Typography variant="body2" fontWeight={600} gutterBottom>
                           Answer:
                         </Typography>
@@ -4079,7 +4079,7 @@ Return ONLY this valid JSON:
                       </Paper>
                       
                       {q.hints && q.hints.length > 0 && (
-                        <Paper sx={{ p: 2, mb: 2, bgcolor: '#fff3e0' }}>
+                        <Paper sx={{ p: 2, mb: 2, bgcolor: 'warning.lighter' }}>
                           <Typography variant="body2" fontWeight={600} gutterBottom>
                             Hints:
                           </Typography>
@@ -4120,7 +4120,7 @@ Return ONLY this valid JSON:
                       </Button>
 
                       {examAnswers[`long_answer_${index}`] && (
-                        <Paper sx={{ p: 2, mt: 2, bgcolor: '#f5f5f5' }}>
+                        <Paper sx={{ p: 2, mt: 2, bgcolor: 'background.default' }}>
                           <Typography variant="body2" fontWeight={600} gutterBottom>
                             Model Answer:
                           </Typography>
