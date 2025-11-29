@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Box, Grid, AppBar, Toolbar, Button, IconButton, Fab, Tooltip, Chip, Badge, ThemeProvider, CssBaseline } from '@mui/material';
-import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon, AdminPanelSettings } from '@mui/icons-material';
+import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon, AdminPanelSettings, HelpOutline as HelpIcon } from '@mui/icons-material';
 import packageJson from '../package.json';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -475,6 +475,15 @@ function App() {
                 <Badge badgeContent={libraryCount} color="error">
                   <LibraryIcon />
                 </Badge>
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Help & Guide">
+              <IconButton 
+                onClick={() => window.open(`${process.env.PUBLIC_URL}/landing.html`, '_blank')}
+                color="default"
+              >
+                <HelpIcon />
               </IconButton>
             </Tooltip>
 
