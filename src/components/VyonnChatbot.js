@@ -123,15 +123,14 @@ RESPONSE STRUCTURE FOR MATH/SCIENCE QUESTIONS:
 "This is a section formula problem! When a point divides a line segment in a ratio, we use the formula ((mx₂+nx₁)/(m+n), (my₂+ny₁)/(m+n)). Here m=3, n=2, and our points are (a+b, a-b) and (a-b, a+b). Plugging these in: x = (3(a-b) + 2(a+b))/5 = (5a-b)/5, and y = (3(a+b) + 2(a-b))/5 = (5a+b)/5. So the point is ((5a-b)/5, (5a+b)/5)."
 
 APP FEATURES YOU CAN SUGGEST:
-- Teacher Mode: Comprehensive explanations of pages/chapters
-- Smart Explain: Deep dive into selected text
+- Smart Explain: Deep dive into concepts and questions (BEST for most queries!)
 - Activities: Practice questions
 - Multilingual: Word-by-word analysis for regional languages
 - Exam Prep: MCQs, short & long answer questions
 - Notes: Save content for revision
 
 End your response with action tags when relevant:
-- "[Use Teacher Mode]"
+- "[Use Smart Explain]" (for deeper explanations - RECOMMENDED)
 - "[Use Activities Tab]"
 - "[Use Exam Prep]"
 - "[Use Multilingual]"
@@ -200,29 +199,38 @@ YOUR RESPONSE:`;
       let actionButton = null;
 
       if (actionMatch) {
-        const actionText = actionMatch[1];
+        let actionText = actionMatch[1];
         finalResponse = response.replace(/\[Use .*?\]/, '').trim();
         
-        // Map to actual tabs
+        // Map to actual tabs - ALWAYS suggest Smart Explain for deeper understanding
         const tabMapping = {
-          'Teacher Mode': 0,
+          'Teacher Mode': 1,        // Redirect to Smart Explain (better for specific queries)
+          'Smart Explain': 1,       // Direct Smart Explain
           'Activities Tab': 2,
           'Activities': 2,
           'Exam Prep': 4,
           'Multilingual': 3
         };
 
+        // If it was Teacher Mode, change display text to Smart Explain
+        if (actionText === 'Teacher Mode') {
+          actionText = 'Smart Explain';
+        }
+
         const tabIndex = tabMapping[actionText];
         if (tabIndex !== undefined) {
           actionButton = {
             text: actionText,
-            tabIndex: tabIndex
+            tabIndex: tabIndex,
+            userQuery: userMessage  // Store user's original query
           };
         }
       }
 
       // Check if response contains 3D visualization JSON
       let visualAid = null;
+      
+      console.log('🔍 Checking for 3D JSON in response:', finalResponse.substring(0, 200));
       
       // Strategy 1: Look for JSON code blocks (```json ... ```)
       let jsonMatch = finalResponse.match(/```json\s*(\{[\s\S]*?\})\s*```/);
@@ -236,44 +244,46 @@ YOUR RESPONSE:`;
         }
       }
       
-      // Strategy 2: Look for inline JSON with "type" field (if Strategy 1 failed)
+      // Strategy 2: Look for inline JSON (if Strategy 1 failed)
       if (!visualAid) {
-        // More robust regex: Find JSON object with "type" field
-        // This handles multi-line JSON with whitespace
-        jsonMatch = finalResponse.match(/\{\s*"type"\s*:\s*["'](3d|chemistry|plotly)["'][\s\S]*?\}/);
+        // Try to find JSON object with curly braces - be very permissive
+        // Match { ... } that contains "type" field
+        const jsonRegexes = [
+          // Try 1: "type" as first field
+          /\{\s*"type"\s*:\s*"(3d|chemistry|plotly)"[^}]*\}/,
+          // Try 2: "type" anywhere in object
+          /\{[^}]*"type"\s*:\s*"(3d|chemistry|plotly)"[^}]*\}/,
+          // Try 3: Very permissive - any object starting with { on a new line
+          /\n\s*(\{.*?"type".*?\})\s*$/
+        ];
         
-        if (!jsonMatch) {
-          // Try alternative format: "type" might not be first
-          jsonMatch = finalResponse.match(/\{[\s\S]*?"type"\s*:\s*["'](3d|chemistry|plotly)["'][\s\S]*?\}/);
+        for (const regex of jsonRegexes) {
+          jsonMatch = finalResponse.match(regex);
+          if (jsonMatch) {
+            console.log('🔍 Found JSON match with regex:', regex.source);
+            break;
+          }
         }
         
         if (jsonMatch) {
           try {
-            // Clean up the JSON (remove extra whitespace between key-value pairs)
-            const cleanJson = jsonMatch[0].replace(/\n\s*/g, '');
-            visualAid = JSON.parse(cleanJson);
-            // Remove JSON and any leading text like "using the following JSON data:"
-            const jsonStartIndex = finalResponse.indexOf(jsonMatch[0]);
-            if (jsonStartIndex > 0) {
-              // Remove everything from "JSON" or "json" keyword onwards
-              const preText = finalResponse.substring(0, jsonStartIndex);
-              const lastJsonMention = Math.max(
-                preText.lastIndexOf('JSON'),
-                preText.lastIndexOf('json'),
-                preText.lastIndexOf('following data')
-              );
-              if (lastJsonMention > 0) {
-                finalResponse = finalResponse.substring(0, lastJsonMention).trim();
-              } else {
-                finalResponse = finalResponse.replace(jsonMatch[0], '').trim();
-              }
-            } else {
-              finalResponse = finalResponse.replace(jsonMatch[0], '').trim();
-            }
-            console.log('🎨 Vyonn: Generated 3D visualization (inline):', visualAid);
+            // Get the matched JSON (might be in capture group 0 or full match)
+            const jsonText = jsonMatch[1] || jsonMatch[0];
+            console.log('🔍 Extracted JSON text:', jsonText);
+            
+            visualAid = JSON.parse(jsonText);
+            
+            // Remove JSON from response
+            finalResponse = finalResponse.replace(jsonMatch[0], '').trim();
+            // Also remove trailing newlines and extra spaces
+            finalResponse = finalResponse.replace(/\n\n+$/, '\n').trim();
+            
+            console.log('✅ Vyonn: Generated 3D visualization (inline):', visualAid);
           } catch (e) {
-            console.warn('Failed to parse 3D visualization JSON:', e);
+            console.warn('❌ Failed to parse 3D visualization JSON:', e, 'JSON text:', jsonMatch[0]);
           }
+        } else {
+          console.log('❌ No JSON pattern matched in response');
         }
       }
 
