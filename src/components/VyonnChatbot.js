@@ -246,41 +246,50 @@ YOUR RESPONSE:`;
       
       // Strategy 2: Look for inline JSON (if Strategy 1 failed)
       if (!visualAid) {
-        // Try to find JSON object with curly braces - be very permissive
-        // Match { ... } that contains "type" field
-        const jsonRegexes = [
-          // Try 1: "type" as first field
-          /\{\s*"type"\s*:\s*"(3d|chemistry|plotly)"[^}]*\}/,
-          // Try 2: "type" anywhere in object
-          /\{[^}]*"type"\s*:\s*"(3d|chemistry|plotly)"[^}]*\}/,
-          // Try 3: Very permissive - any object starting with { on a new line
-          /\n\s*(\{.*?"type".*?\})\s*$/
-        ];
+        // Extract JSON with nested objects (like dimensions: {radius: 2})
+        // We need to match balanced braces, not just stop at first }
         
-        for (const regex of jsonRegexes) {
-          jsonMatch = finalResponse.match(regex);
-          if (jsonMatch) {
-            console.log('🔍 Found JSON match with regex:', regex.source);
-            break;
+        // Find the start of a JSON object that contains "type"
+        const startMatch = finalResponse.match(/\{\s*"type"\s*:\s*"(3d|chemistry|plotly)"/);
+        
+        if (startMatch) {
+          const startIndex = finalResponse.indexOf(startMatch[0]);
+          console.log('🔍 Found JSON start at position:', startIndex);
+          
+          // Find the matching closing brace by counting braces
+          let braceCount = 0;
+          let jsonEndIndex = -1;
+          
+          for (let i = startIndex; i < finalResponse.length; i++) {
+            if (finalResponse[i] === '{') braceCount++;
+            if (finalResponse[i] === '}') {
+              braceCount--;
+              if (braceCount === 0) {
+                jsonEndIndex = i + 1;
+                break;
+              }
+            }
           }
-        }
-        
-        if (jsonMatch) {
-          try {
-            // Get the matched JSON (might be in capture group 0 or full match)
-            const jsonText = jsonMatch[1] || jsonMatch[0];
-            console.log('🔍 Extracted JSON text:', jsonText);
+          
+          if (jsonEndIndex > startIndex) {
+            const jsonText = finalResponse.substring(startIndex, jsonEndIndex);
+            console.log('🔍 Extracted JSON text (full):', jsonText);
             
-            visualAid = JSON.parse(jsonText);
-            
-            // Remove JSON from response
-            finalResponse = finalResponse.replace(jsonMatch[0], '').trim();
-            // Also remove trailing newlines and extra spaces
-            finalResponse = finalResponse.replace(/\n\n+$/, '\n').trim();
-            
-            console.log('✅ Vyonn: Generated 3D visualization (inline):', visualAid);
-          } catch (e) {
-            console.warn('❌ Failed to parse 3D visualization JSON:', e, 'JSON text:', jsonMatch[0]);
+            try {
+              visualAid = JSON.parse(jsonText);
+              
+              // Remove JSON from response
+              finalResponse = finalResponse.substring(0, startIndex).trim() + 
+                             finalResponse.substring(jsonEndIndex).trim();
+              // Clean up extra whitespace
+              finalResponse = finalResponse.replace(/\s+$/, '').trim();
+              
+              console.log('✅ Vyonn: Generated 3D visualization (inline):', visualAid);
+            } catch (e) {
+              console.warn('❌ Failed to parse 3D visualization JSON:', e, 'JSON text:', jsonText);
+            }
+          } else {
+            console.warn('❌ Could not find matching closing brace for JSON');
           }
         } else {
           console.log('❌ No JSON pattern matched in response');
