@@ -13,7 +13,7 @@ import EnhancedSettingsDialog from './components/EnhancedSettingsDialog';
 import AdminDashboard from './components/AdminDashboard';
 import AdminOTPDialog from './components/AdminOTPDialog';
 import AuthButton from './components/AuthButton';
-import EkyomChatbot from './components/EkyomChatbot';
+import VyonnChatbot from './components/VyonnChatbot';
 import Test3DVisualization from './components/Test3DVisualization';
 import { lightTheme, darkTheme, getThemePreference } from './theme.js';
 import { 
@@ -51,6 +51,9 @@ function App() {
   const [libraryCount, setLibraryCount] = useState(0);
   const autoSaveIntervalRef = useRef(null);
   const lastSavedPageRef = useRef(null);
+
+  // AI Panel Tab Control (for Vyonn integration)
+  const [aiPanelTab, setAiPanelTab] = useState(0);
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -572,6 +575,8 @@ function App() {
                 pageText={pageText}
                 user={user}
                 pdfDocument={pdfDocument}
+                activeTab={aiPanelTab}
+                onTabChange={setAiPanelTab}
               />
             </Box>
           </Box>
@@ -604,12 +609,16 @@ function App() {
         />
       )}
 
-      {/* Ekyom Chatbot - Safe learning assistant */}
+      {/* Vyonn - The Pattern-Seeker */}
       {view === 'reader' && (
-        <EkyomChatbot
+        <VyonnChatbot
           pdfContext={pageText}
           currentPage={currentPage}
           pdfDocument={pdfDocument}
+          onSwitchTab={(tabIndex) => {
+            console.log('🔮 Vyonn: Switching to tab', tabIndex);
+            setAiPanelTab(tabIndex);
+          }}
         />
       )}
       </Box>

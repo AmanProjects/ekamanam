@@ -72,8 +72,21 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
-function AIModePanel({ currentPage, totalPages, pdfId, selectedText, pageText, user, pdfDocument }) {
-  const [activeTab, setActiveTab] = useState(0);
+function AIModePanel({ 
+  currentPage, 
+  totalPages, 
+  pdfId, 
+  selectedText, 
+  pageText, 
+  user, 
+  pdfDocument,
+  activeTab: externalActiveTab,
+  onTabChange
+}) {
+  // Use controlled state if provided, otherwise use internal state
+  const [internalTab, setInternalTab] = useState(0);
+  const activeTab = externalActiveTab !== undefined ? externalActiveTab : internalTab;
+  const setActiveTab = onTabChange || setInternalTab;
   const [editableSelectedText, setEditableSelectedText] = useState('');
 
   // Update editable text when selection changes
