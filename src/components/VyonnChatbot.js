@@ -265,7 +265,7 @@ YOUR RESPONSE:`;
         // We need to match balanced braces, not just stop at first }
         
         // Find the start of a JSON object that contains "type"
-        const startMatch = finalResponse.match(/\{\s*"type"\s*:\s*"(3d|chemistry|plotly)"/);
+        const startMatch = finalResponse.match(/\{\s*"type"\s*:\s*"(3d|chemistry|plotly|leaflet)"/);
         
         if (startMatch) {
           const startIndex = finalResponse.indexOf(startMatch[0]);
