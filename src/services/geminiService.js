@@ -145,18 +145,29 @@ Return ONLY this valid JSON (no extra text before or after):
   "exam": "${isChapter ? 'Comprehensive exam strategy covering all chapter topics, common question patterns, important topics to focus on, and preparation tips' : 'Exam tips and important topics to remember'} in same language (use <p> and <ul><li> tags)"
 }
 
-🎨 3D VISUALIZATION CAPABILITY:
-If the content involves geometric shapes, molecules, or 3D concepts, you can include interactive 3D visualizations!
+🎨 VISUALIZATION CAPABILITIES:
 
-For GEOMETRIC SHAPES, add JSON directly in the explanation:
+1. GEOMETRIC SHAPES - Add JSON directly in the explanation:
 {"type": "3d", "shapeType": "cube", "color": "#4FC3F7", "dimensions": {"width": 2, "height": 2, "depth": 2}, "title": "Cube", "rotate": true}
-
 Available shapes: cube, sphere, cone, cylinder, pyramid, torus
 
-For MOLECULES, add JSON directly in the explanation:
+2. MOLECULES - Add JSON directly in the explanation:
 {"type": "chemistry", "moleculeData": "water", "format": "smiles", "title": "Water Molecule"}
+Available molecules: water, methane, ethanol, glucose, benzene, caffeine, aspirin, and 100M+ from PubChem!
 
-Available molecules: water, methane, ethanol, glucose, benzene, caffeine, aspirin, and 100+ million molecules from PubChem!
+3. INTERACTIVE MAPS (Geography/History) - Add JSON directly in the explanation:
+For Leaflet maps (cities, routes, regions):
+{"type": "leaflet", "center": [17.385, 78.486], "zoom": 6, "markers": [{"position": [17.385, 78.486], "label": "Hyderabad", "popup": "Capital of Telangana"}], "routes": [{"positions": [[28.7, 77.1], [19.0, 72.8]], "color": "#FF0000"}], "title": "Map of India"}
+
+For Plotly choropleth maps (country/region data):
+{"type": "plotly", "data": [{"type": "choropleth", "locations": ["IND", "PAK"], "z": [1947, 1947], "text": ["India", "Pakistan"], "locationmode": "ISO-3"}], "layout": {"title": "South Asian Independence", "geo": {"scope": "asia"}}}
+
+USE MAPS WHEN:
+- Explaining locations (cities, states, countries)
+- Showing historical events (battles, movements, migrations)
+- Demonstrating routes (trade, exploration, conquests)
+- Highlighting regions (empires, territories, zones)
+- Visualizing geographic data (population, resources)
 
 IMPORTANT: 
 - Return ONLY the JSON object
@@ -321,12 +332,15 @@ VISUALIZATION FORMATS:
 - Chart: {"chartType":"pie|bar|line","data":{"labels":[...],"datasets":[{...}]}}
 - 3D Shapes: {"type":"3d","shapeType":"cube|sphere|cone|cylinder|pyramid|torus","color":"#4FC3F7","dimensions":{...},"rotate":true}
 - Molecules: {"type":"chemistry","moleculeData":"water|ethanol|glucose|benzene|etc","format":"smiles","title":"Water Molecule"}
+- Maps (Geography): {"type":"leaflet","center":[lat,lon],"zoom":6,"markers":[{"position":[lat,lon],"label":"City"}],"title":"Map Title"}
+- Plotly Geo: {"type":"plotly","data":[{"type":"choropleth","locations":["IND"],"z":[1947],"locationmode":"ISO-3"}],"layout":{"geo":{"scope":"asia"}}}
 - SVG: <svg viewBox="0 0 400 300">...</svg>
 
 Available shapes: cube, sphere, cone, cylinder, pyramid, torus
-Available molecules: water, methane, ethanol, glucose, benzene, caffeine, aspirin, and 100+ million from PubChem!
+Available molecules: water, methane, ethanol, glucose, benzene, caffeine, aspirin, and 100M+ from PubChem!
+Maps: Use for geographic locations, historical events, routes, territories
 
-🔴 CRITICAL: If step says "Draw X", visualAid MUST contain the actual drawing (Chart.js JSON, SVG, or 3D JSON). NOT empty!
+🔴 CRITICAL: If step says "Draw X" or "Show on map", visualAid MUST contain the actual drawing/map (Chart.js JSON, SVG, 3D JSON, or Map JSON). NOT empty!
 
 Return ONLY this JSON (no markdown blocks):
 

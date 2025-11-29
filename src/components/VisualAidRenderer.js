@@ -18,6 +18,7 @@ import {
 import ThreeDVisualization from './ThreeDVisualization';
 import ChemistryVisualization from './ChemistryVisualization';
 import PlotlyVisualization from './PlotlyVisualization';
+import LeafletMap from './LeafletMap';
 
 // Register Chart.js components AND controllers
 ChartJS.register(
@@ -78,8 +79,12 @@ function VisualAidRenderer({ visualAid }) {
         // Chemistry (molecular structures)
         setVisualType('chemistry');
         setParsedVisual(config);
+      } else if (config.type === 'leaflet' || config.markers || config.center) {
+        // Leaflet interactive maps (geography)
+        setVisualType('leaflet');
+        setParsedVisual(config);
       } else if (config.type === 'plotly' || (Array.isArray(config.data) && config.data[0]?.type)) {
-        // Plotly (3D surfaces, scatter, etc.)
+        // Plotly (3D surfaces, scatter, geo maps, etc.)
         setVisualType('plotly');
         setParsedVisual(config);
       } else {
@@ -190,7 +195,28 @@ function VisualAidRenderer({ visualAid }) {
     );
   }
 
-  // Plotly visualization (3D plots, surfaces, etc.)
+  // Leaflet interactive maps (geography, history)
+  if (visualType === 'leaflet' && parsedVisual) {
+    return (
+      <Paper 
+        elevation={0}
+        sx={{ 
+          mt: 1, 
+          p: 2, 
+          bgcolor: '#f8f9fa',
+          border: '2px dashed #2196F3',
+          borderRadius: 2
+        }}
+      >
+        <LeafletMap
+          mapData={parsedVisual}
+          title={parsedVisual.title}
+        />
+      </Paper>
+    );
+  }
+
+  // Plotly visualization (3D plots, surfaces, geo maps, etc.)
   if (visualType === 'plotly' && parsedVisual) {
     return (
       <PlotlyVisualization

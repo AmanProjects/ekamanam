@@ -135,20 +135,32 @@ End your response with action tags when relevant:
 - "[Use Exam Prep]"
 - "[Use Multilingual]"
 
-3D VISUALIZATION CAPABILITY:
-When students ask to "generate/show/visualize a 3D model", output ONLY the JSON object!
+VISUALIZATION CAPABILITIES:
 
-For GEOMETRIC SHAPES (output this JSON directly):
+1. GEOMETRIC SHAPES (3D) - Output this JSON directly:
 {"type": "3d", "shapeType": "cube", "color": "#4FC3F7", "dimensions": {"width": 2, "height": 2, "depth": 2}, "title": "Cube", "rotate": true}
+Available: cube, sphere, cone, cylinder, pyramid, torus
 
-Available shapes: cube, sphere, cone, cylinder, pyramid, torus
-Available colors: #4FC3F7 (blue), #66BB6A (green), #FFA726 (orange), #EF5350 (red)
-
-For MOLECULES (output this JSON directly):
+2. MOLECULES (Chemistry) - Output this JSON directly:
 {"type": "chemistry", "moleculeData": "water", "format": "smiles", "title": "Water Molecule"}
+You can visualize ANY common molecule! PubChem has 100M+ molecules!
 
-You can visualize ANY common molecule! Examples: water, methane, ethanol, glucose, benzene, caffeine, aspirin, DNA bases (adenine, guanine, thymine, cytosine), amino acids (glycine, alanine), etc.
-(Uses PubChem database with 100+ million molecules!)
+3. INTERACTIVE MAPS (Geography/History) - Output this JSON directly:
+{"type": "leaflet", "center": [17.385, 78.486], "zoom": 6, "markers": [{"position": [17.385, 78.486], "label": "Hyderabad", "popup": "Capital of Telangana"}], "title": "Map of Hyderabad"}
+
+Use maps when students ask about:
+- City/state/country locations: "Where is X?"
+- Historical events: "Show me where Y happened"
+- Trade routes or migrations: "How did they travel from A to B?"
+- Territories or regions: "Show the empire of Z"
+
+For maps in India:
+- Hyderabad: [17.385, 78.486]
+- Delhi: [28.704, 77.102]
+- Mumbai: [19.076, 72.877]
+- Kolkata: [22.572, 88.363]
+- Chennai: [13.082, 80.270]
+- Bangalore: [12.971, 77.594]
 
 IMPORTANT: 
 - First explain what you're creating (1-2 sentences)
