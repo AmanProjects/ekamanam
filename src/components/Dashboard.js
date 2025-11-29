@@ -72,7 +72,7 @@ function Dashboard({ onOpenLibrary }) {
             Learning Features
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={6} sm={2.4}>
               <Paper
                 elevation={0}
                 sx={{
@@ -95,7 +95,7 @@ function Dashboard({ onOpenLibrary }) {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={6} sm={2.4}>
               <Paper
                 elevation={0}
                 sx={{
@@ -118,7 +118,7 @@ function Dashboard({ onOpenLibrary }) {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={6} sm={2.4}>
               <Paper
                 elevation={0}
                 sx={{
@@ -141,7 +141,7 @@ function Dashboard({ onOpenLibrary }) {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={6} sm={2.4}>
               <Paper
                 elevation={0}
                 sx={{
@@ -161,6 +161,65 @@ function Dashboard({ onOpenLibrary }) {
                 <ExamIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
                 <Typography variant="body2" fontWeight={500}>
                   Exam Prep
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={6} sm={2.4}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  textAlign: 'center',
+                  transition: 'all 0.2s',
+                  position: 'relative',
+                  overflow: 'visible',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                  }
+                }}
+              >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    bgcolor: 'success.main',
+                    color: 'white',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    px: 0.75,
+                    py: 0.25,
+                    borderRadius: 1,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  }}
+                >
+                  NEW
+                </Box>
+                <Box
+                  component="img"
+                  src={`${process.env.PUBLIC_URL}/vyonn.png`}
+                  alt="Vyonn"
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    mb: 1,
+                    filter: 'brightness(1.2) drop-shadow(0 0 4px rgba(15, 95, 168, 0.4))'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML += '<div style="font-size: 48px; margin-bottom: 8px;">🔮</div>';
+                  }}
+                />
+                <Typography variant="body2" fontWeight={500}>
+                  Vyonn AI
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem', mt: 0.5 }}>
+                  Ask anything
                 </Typography>
               </Paper>
             </Grid>

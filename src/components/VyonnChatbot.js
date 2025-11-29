@@ -20,6 +20,7 @@ import {
   Delete as ClearIcon
 } from '@mui/icons-material';
 import llmService, { PROVIDERS } from '../services/llmService';
+import VisualAidRenderer from './VisualAidRenderer';
 
 /**
  * Vyonn - The Pattern-Seeker
@@ -97,7 +98,7 @@ function VyonnChatbot({ pdfContext, currentPage, pdfDocument, onSwitchTab }) {
       }
 
       // Vyonn's Core System Prompt (CONCISE VERSION)
-      const vyonnSystemPrompt = `You are Vyonn, a pattern-seeking AI with calm, analytical precision.
+      const vyonnSystemPrompt = `You are Vyonn, a pattern-seeking AI learning assistant in the Ekamanam app.
 
 CORE RULES:
 - Be CONCISE: 2-3 sentences maximum (not paragraphs!)
@@ -105,20 +106,46 @@ CORE RULES:
 - When users ask questions, ANSWER them directly
 - Avoid lengthy philosophical explanations
 - Use simple, clear language
-- Only mention patterns when truly relevant
 
-ACTION AWARENESS:
-You can direct users to app features. When appropriate, end your response with:
-- "[Use Teacher Mode]" - for detailed explanations
-- "[Use Activities Tab]" - for practice questions
-- "[Use Exam Prep]" - for MCQs and assessments
-- "[Use Multilingual]" - for word-by-word analysis
+APP FEATURES YOU CAN SUGGEST:
+- Teacher Mode: Comprehensive explanations of pages/chapters
+- Smart Explain: Deep dive into selected text
+- Activities: Practice questions
+- Multilingual: Word-by-word analysis for regional languages
+- Exam Prep: MCQs, short & long answer questions
+- Notes: Save content for revision
+
+End your response with action tags when relevant:
+- "[Use Teacher Mode]"
+- "[Use Activities Tab]"
+- "[Use Exam Prep]"
+- "[Use Multilingual]"
+
+3D VISUALIZATION CAPABILITY:
+You can generate 3D models for geometry, chemistry, and math! For visualization requests, output JSON:
+{
+  "type": "3d",
+  "shapeType": "cube|sphere|cone|cylinder|pyramid|torus",
+  "color": "#4FC3F7",
+  "dimensions": {"width": 2, "height": 2, "depth": 2},
+  "title": "Cube Visualization",
+  "rotate": true
+}
+
+For molecules: {"type": "chemistry", "moleculeData": "water", "format": "smiles", "title": "Water Molecule"}
+
+GETTING STARTED HELP:
+If user asks "help me get started" or "how to configure", guide them:
+1. Add API keys (Settings → API Keys): Gemini, Groq, Perplexity
+2. Set up profile (Settings → General): Name, Parent email
+3. Upload PDF (My Library → Add PDF)
+4. Choose voice (Settings → Voice & Speech)
 
 ${contextInfo ? `CONTEXT: User is on page ${currentPage} of study material.${contextInfo}` : ''}
 
 USER QUESTION: ${userMessage}
 
-INSTRUCTION: Answer directly and concisely. Be helpful, not philosophical. If an app feature would help, mention it briefly.
+INSTRUCTION: Answer directly and concisely. For 3D requests, output JSON. For app help, guide briefly.
 
 YOUR RESPONSE:`;
 
@@ -175,6 +202,20 @@ YOUR RESPONSE:`;
         }
       }
 
+      // Check if response contains 3D visualization JSON
+      let visualAid = null;
+      const jsonMatch = finalResponse.match(/\{[\s\S]*?"type":\s*["'](3d|chemistry|plotly)["'][\s\S]*?\}/);
+      if (jsonMatch) {
+        try {
+          visualAid = JSON.parse(jsonMatch[0]);
+          // Remove JSON from text response
+          finalResponse = finalResponse.replace(jsonMatch[0], '').trim();
+          console.log('🎨 Vyonn: Generated 3D visualization:', visualAid);
+        } catch (e) {
+          console.warn('Failed to parse 3D visualization JSON:', e);
+        }
+      }
+
       // Add Vyonn's response
       setMessages([
         ...newMessages,
@@ -183,7 +224,8 @@ YOUR RESPONSE:`;
           content: finalResponse,
           timestamp: new Date(),
           source: pdfContext ? 'pattern-analysis-with-context' : 'pattern-analysis',
-          action: actionButton
+          action: actionButton,
+          visualAid: visualAid
         }
       ]);
     } catch (error) {
@@ -437,6 +479,16 @@ YOUR RESPONSE:`;
                       }
                     }}
                   />
+                )}
+
+                {/* 3D Visualization */}
+                {message.visualAid && (
+                  <Box sx={{ mt: 1.5, width: '100%' }}>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 1, opacity: 0.7, fontStyle: 'italic' }}>
+                      🎨 Generated visualization:
+                    </Typography>
+                    <VisualAidRenderer visualAid={JSON.stringify(message.visualAid)} />
+                  </Box>
                 )}
               </Box>
             </ListItem>
