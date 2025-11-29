@@ -23,11 +23,12 @@ import {
   Search,
   LocalLibrary,
   ExpandMore,
-  CloudDownload
+  CloudDownload,
+  MenuBook as SampleIcon
 } from '@mui/icons-material';
 import libraryService from '../services/libraryService';
 
-function StudentLibrary({ onBack, onOpenPdf }) {
+function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
   const [pdfs, setPdfs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);

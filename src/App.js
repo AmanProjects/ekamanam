@@ -527,12 +527,12 @@ function App() {
         {view === 'dashboard' ? (
           <Dashboard 
             onOpenLibrary={() => setView('library')}
-            onOpenSamplePDF={handleOpenSamplePDF}
           />
         ) : view === 'library' ? (
           <StudentLibrary
             onBack={() => setView('dashboard')}
             onOpenPdf={handleOpenFromLibrary}
+            onOpenSamplePDF={handleOpenSamplePDF}
           />
         ) : (
           <Box 
