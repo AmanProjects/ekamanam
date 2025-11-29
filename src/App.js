@@ -54,6 +54,7 @@ function App() {
 
   // AI Panel Tab Control (for Vyonn integration)
   const [aiPanelTab, setAiPanelTab] = useState(0);
+  const [vyonnQuery, setVyonnQuery] = useState(null); // Query from Vyonn to pass to Smart Explain
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -617,6 +618,8 @@ function App() {
                 pdfDocument={pdfDocument}
                 activeTab={aiPanelTab}
                 onTabChange={setAiPanelTab}
+                vyonnQuery={vyonnQuery}
+                onVyonnQueryUsed={() => setVyonnQuery(null)}
               />
             </Box>
           </Box>
@@ -654,10 +657,13 @@ function App() {
         pdfContext={view === 'reader' ? pageText : null}
         currentPage={view === 'reader' ? currentPage : null}
         pdfDocument={view === 'reader' ? pdfDocument : null}
-        onSwitchTab={(tabIndex) => {
-          console.log('🔮 Vyonn: Switching to tab', tabIndex);
+        onSwitchTab={(tabIndex, userQuery) => {
+          console.log('🔮 Vyonn: Switching to tab', tabIndex, 'with query:', userQuery);
           if (view === 'reader') {
             setAiPanelTab(tabIndex);
+            if (userQuery) {
+              setVyonnQuery(userQuery);
+            }
           }
         }}
       />

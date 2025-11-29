@@ -205,14 +205,14 @@ YOUR RESPONSE:`;
         let actionText = actionMatch[1];
         finalResponse = response.replace(/\[Use .*?\]/, '').trim();
         
-        // Map to actual tabs - ALWAYS suggest Smart Explain for deeper understanding
+        // Map to actual tabs (with all tabs enabled - default config)
         const tabMapping = {
-          'Teacher Mode': 1,        // Redirect to Smart Explain (better for specific queries)
-          'Smart Explain': 1,       // Direct Smart Explain
-          'Activities Tab': 2,
-          'Activities': 2,
+          'Teacher Mode': 0,
+          'Smart Explain': 2,       // Correct index for Smart Explain
+          'Activities Tab': 3,
+          'Activities': 3,
           'Exam Prep': 4,
-          'Multilingual': 3
+          'Multilingual': 1
         };
 
         // If it was Teacher Mode, change display text to Smart Explain
@@ -549,7 +549,7 @@ YOUR RESPONSE:`;
                   <Chip
                     label={`Open ${message.action.text}`}
                     onClick={() => {
-                      onSwitchTab(message.action.tabIndex);
+                      onSwitchTab(message.action.tabIndex, message.action.userQuery);
                       setOpen(false);
                     }}
                     sx={{

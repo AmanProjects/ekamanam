@@ -82,7 +82,9 @@ function AIModePanel({
   user, 
   pdfDocument,
   activeTab: externalActiveTab,
-  onTabChange
+  onTabChange,
+  vyonnQuery,
+  onVyonnQueryUsed
 }) {
   // Use controlled state if provided, otherwise use internal state
   const [internalTab, setInternalTab] = useState(0);
@@ -94,6 +96,33 @@ function AIModePanel({
   useEffect(() => {
     setEditableSelectedText(selectedText || '');
   }, [selectedText]);
+
+  // Handle Vyonn query - auto-populate and trigger Smart Explain
+  // Smart Explain is typically tab index 2 (with all tabs enabled)
+  useEffect(() => {
+    if (vyonnQuery) {
+      console.log('🔮 Vyonn query received, current tab:', activeTab);
+      console.log('🔮 Setting query text:', vyonnQuery);
+      setEditableSelectedText(vyonnQuery);
+      
+      // Mark query as used
+      if (onVyonnQueryUsed) {
+        onVyonnQueryUsed();
+      }
+      
+      // Auto-trigger analysis after a short delay to ensure state is updated
+      // Only if we're on what appears to be the Smart Explain tab
+      setTimeout(() => {
+        const analyzeButton = document.querySelector('[data-vyonn-trigger="explain"]');
+        if (analyzeButton) {
+          console.log('🔮 Auto-clicking analyze button');
+          analyzeButton.click();
+        } else {
+          console.log('🔮 Analyze button not found - user can click manually');
+        }
+      }, 500);
+    }
+  }, [vyonnQuery, activeTab, onVyonnQueryUsed]);
 
   // Cleanup: Stop speech and clear data when page changes
   useEffect(() => {
