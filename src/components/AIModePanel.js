@@ -1994,11 +1994,11 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.summary }} />
                         </Paper>
                         {teacherEnglish.summary && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
                             <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
                               English Explanation:
                             </Typography>
@@ -2054,7 +2054,7 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
                           <ul style={{ margin: 0, paddingLeft: '20px' }}>
                             {teacherResponse.keyPoints.map((point, idx) => (
                               <li key={idx} style={{ marginBottom: '8px' }}>{point}</li>
@@ -2062,7 +2062,7 @@ Return ONLY this valid JSON:
                           </ul>
                         </Paper>
                         {teacherEnglish.keyPoints && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
                             <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
                               English Explanation:
                             </Typography>
@@ -2120,11 +2120,11 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.explanation }} />
                         </Paper>
                         {teacherEnglish.explanation && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
                             <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
                               English Explanation:
                             </Typography>
@@ -2182,11 +2182,11 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.examples }} />
                         </Paper>
                         {teacherEnglish.examples && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
                             <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
                               English Explanation:
                             </Typography>
@@ -2244,11 +2244,11 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
                           <Box dangerouslySetInnerHTML={{ __html: teacherResponse.exam }} />
                         </Paper>
                         {teacherEnglish.exam && (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'grey.100' }}>
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
                             <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
                               English Explanation:
                             </Typography>
@@ -2326,7 +2326,7 @@ Return ONLY this valid JSON:
                   <Box>
                     {/* Page Summary */}
                     {wordAnalysis[0].summary && (
-                      <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'grey.100' }}>
+                      <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'action.hover' }}>
                         <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
                           Page Summary:
                         </Typography>
@@ -2352,7 +2352,7 @@ Return ONLY this valid JSON:
                           variant="outlined" 
                           sx={{ 
                             p: 2,
-                            bgcolor: speakingWordIndex === idx ? 'primary.lighter' : 'grey.50',
+                            bgcolor: speakingWordIndex === idx ? 'primary.light' : 'background.default',
                             borderLeft: '4px solid',
                             borderColor: speakingWordIndex === idx ? 'secondary.main' : 'primary.main',
                             transition: 'all 0.3s ease'
@@ -2394,7 +2394,7 @@ Return ONLY this valid JSON:
                             </Box>
 
                             {/* English Meaning */}
-                            <Box sx={{ bgcolor: 'grey.100', p: 1.5, borderRadius: 1 }}>
+                            <Box sx={{ bgcolor: 'action.hover', p: 1.5, borderRadius: 1 }}>
                               <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
                                 English Meaning:
                               </Typography>
@@ -2715,7 +2715,7 @@ Return ONLY this valid JSON:
                           <Paper 
                             key={idx} 
                             elevation={2} 
-                            sx={{ p: 3, mb: 3, bgcolor: 'grey.50', border: '2px solid', borderColor: 'warning.light' }}
+                            sx={{ p: 3, mb: 3, bgcolor: 'background.default', border: '2px solid', borderColor: 'warning.light' }}
                           >
                             {/* Question - Bilingual */}
                             <Box sx={{ mb: 2 }}>
@@ -2727,7 +2727,7 @@ Return ONLY this valid JSON:
                                 dangerouslySetInnerHTML={{ __html: `Q${idx + 1}. ${formatBoldText(exercise.question)}` }}
                               />
                               {exercise.question_english && exercise.question_english.trim() !== "" && exercise.question_english !== exercise.question && (
-                                <Paper sx={{ p: 1.5, bgcolor: 'grey.100', mt: 1, borderLeft: '4px solid', borderColor: 'info.main' }}>
+                                <Paper sx={{ p: 1.5, bgcolor: 'action.hover', mt: 1, borderLeft: '4px solid', borderColor: 'info.main' }}>
                                   <Typography 
                                     variant="body2" 
                                     color="info.dark"
@@ -2770,7 +2770,7 @@ Return ONLY this valid JSON:
                                 </Paper>
                                 
                                 {exercise.answer_english && exercise.answer_english.trim() !== "" && exercise.answer_english !== exercise.answer && (
-                                  <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'grey.100', borderLeft: '4px solid', borderColor: 'info.main' }}>
+                                  <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'action.hover', borderLeft: '4px solid', borderColor: 'info.main' }}>
                                     <Typography variant="subtitle2" fontWeight={700} color="info.dark" gutterBottom>
                                       🌐 Answer in English:
                                     </Typography>
@@ -2871,7 +2871,7 @@ Return ONLY this valid JSON:
 
                             {/* Answer Location */}
                             {exercise.answerLocation && (
-                              <Paper sx={{ p: 1.5, bgcolor: 'grey.100' }}>
+                              <Paper sx={{ p: 1.5, bgcolor: 'action.hover' }}>
                                 <Typography variant="caption" fontWeight={700} color="info.dark">
                                   📍 {exercise.answerLocation}
                                 </Typography>
@@ -2959,7 +2959,7 @@ Return ONLY this valid JSON:
                         <Typography variant="h6" fontWeight={700} gutterBottom>
                           Detailed Explanation
                         </Typography>
-                        <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+                        <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
                           <Box dangerouslySetInnerHTML={{ __html: explainResponse.explanation }} />
                           <Button
                             size="small"
@@ -2972,7 +2972,7 @@ Return ONLY this valid JSON:
                         </Paper>
                         
                         {explainResponse.explanation_english && explainResponse.explanation_english !== explainResponse.explanation && (
-                          <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'grey.100', borderLeft: '4px solid', borderColor: 'info.main' }}>
+                          <Paper sx={{ p: 2, mt: 1.5, bgcolor: 'action.hover', borderLeft: '4px solid', borderColor: 'info.main' }}>
                             <Typography variant="subtitle2" fontWeight={700} color="info.dark" gutterBottom>
                               🌐 Explanation in English:
                             </Typography>
@@ -3046,7 +3046,7 @@ Return ONLY this valid JSON:
                           variant="outlined" 
                           sx={{ 
                             p: 3, 
-                            bgcolor: 'grey.50',
+                            bgcolor: 'background.default',
                             fontFamily: 'monospace',
                             whiteSpace: 'pre',
                             overflow: 'auto',
@@ -3068,7 +3068,7 @@ Return ONLY this valid JSON:
                         <Paper 
                           variant="outlined" 
                           sx={{ 
-                            bgcolor: 'grey.50',
+                            bgcolor: 'background.default',
                             minHeight: 200,
                             overflow: 'hidden',
                             borderRadius: 2
@@ -3322,9 +3322,9 @@ Return ONLY this valid JSON:
                           const explanationEnglish = isObject && mcq.explanation.english ? mcq.explanation.english : mcq.explanation;
                           
                           return (
-                            <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, bgcolor: quizResults ? (quizResults.questionFeedback[idx]?.correct ? 'success.lighter' : 'error.lighter') : 'grey.50' }}>
+                            <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, bgcolor: quizResults ? (quizResults.questionFeedback[idx]?.correct ? 'success.light' : 'error.light') : 'background.default' }}>
                               {/* Question - Bilingual in same box */}
-                              <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: 'white' }}>
+                              <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: 'background.paper' }}>
                                 <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                                   {idx + 1}. {questionOriginal || questionEnglish}
                                 </Typography>
@@ -3434,7 +3434,7 @@ Return ONLY this valid JSON:
                             {submittingQuiz ? 'Evaluating...' : 'Submit Quiz'}
                           </Button>
                         ) : (
-                          <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: 'grey.100' }}>
+                          <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: 'action.hover' }}>
                             <Typography variant="h6" fontWeight={600} gutterBottom>
                               Quiz Results: {quizResults.score} ({quizResults.percentage}%)
                             </Typography>
@@ -3469,13 +3469,13 @@ Return ONLY this valid JSON:
                             return (
                               <Box component="li" key={idx} sx={{ mb: 2 }}>
                                 {originalText && (
-                                  <Paper variant="outlined" sx={{ p: 1.5, mb: 1, bgcolor: 'grey.50' }}>
+                                  <Paper variant="outlined" sx={{ p: 1.5, mb: 1, bgcolor: 'background.default' }}>
                                     <Typography variant="body2" fontWeight={500}>
                                       {originalText}
                                     </Typography>
                                   </Paper>
                                 )}
-                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.100' }}>
+                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'action.hover' }}>
                                   {originalText && (
                                     <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
                                       English:
@@ -3507,13 +3507,13 @@ Return ONLY this valid JSON:
                             return (
                               <Box component="li" key={idx} sx={{ mb: 2 }}>
                                 {original && (
-                                  <Paper variant="outlined" sx={{ p: 1.5, mb: 1, bgcolor: 'grey.50' }}>
+                                  <Paper variant="outlined" sx={{ p: 1.5, mb: 1, bgcolor: 'background.default' }}>
                                     <Typography variant="body2" fontWeight={500}>
                                       {original}
                                     </Typography>
                                   </Paper>
                                 )}
-                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.100' }}>
+                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'action.hover' }}>
                                   {original && (
                                     <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
                                       English:
@@ -3545,13 +3545,13 @@ Return ONLY this valid JSON:
                             return (
                               <Box component="li" key={idx} sx={{ mb: 2 }}>
                                 {original && (
-                                  <Paper variant="outlined" sx={{ p: 1.5, mb: 1, bgcolor: 'grey.50' }}>
+                                  <Paper variant="outlined" sx={{ p: 1.5, mb: 1, bgcolor: 'background.default' }}>
                                     <Typography variant="body2" fontWeight={500}>
                                       {original}
                                     </Typography>
                                   </Paper>
                                 )}
-                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.100' }}>
+                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'action.hover' }}>
                                   {original && (
                                     <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
                                       English:
@@ -3583,13 +3583,13 @@ Return ONLY this valid JSON:
                             return (
                               <Box component="li" key={idx} sx={{ mb: 2 }}>
                                 {original && (
-                                  <Paper variant="outlined" sx={{ p: 1.5, mb: 1, bgcolor: 'grey.50' }}>
+                                  <Paper variant="outlined" sx={{ p: 1.5, mb: 1, bgcolor: 'background.default' }}>
                                     <Typography variant="body2" fontWeight={500}>
                                       {original}
                                     </Typography>
                                   </Paper>
                                 )}
-                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.100' }}>
+                                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'action.hover' }}>
                                   {original && (
                                     <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
                                       English:
