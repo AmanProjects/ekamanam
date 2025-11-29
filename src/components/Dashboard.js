@@ -174,8 +174,6 @@ function Dashboard({ onOpenLibrary }) {
                   borderRadius: 1,
                   textAlign: 'center',
                   transition: 'all 0.2s',
-                  position: 'relative',
-                  overflow: 'visible',
                   '&:hover': {
                     borderColor: 'primary.main',
                     transform: 'translateY(-2px)',
@@ -184,42 +182,21 @@ function Dashboard({ onOpenLibrary }) {
                 }}
               >
                 <Box
-                  sx={{
-                    position: 'absolute',
-                    top: -8,
-                    right: -8,
-                    bgcolor: 'success.main',
-                    color: 'white',
-                    fontSize: '0.65rem',
-                    fontWeight: 700,
-                    px: 0.75,
-                    py: 0.25,
-                    borderRadius: 1,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                  }}
-                >
-                  NEW
-                </Box>
-                <Box
                   component="img"
                   src={`${process.env.PUBLIC_URL}/vyonn.png`}
-                  alt="Vyonn"
+                  alt="Vyonn AI"
                   sx={{
                     width: 48,
                     height: 48,
                     mb: 1,
-                    filter: 'brightness(1.2) drop-shadow(0 0 4px rgba(15, 95, 168, 0.4))'
+                    opacity: 0.7
                   }}
                   onError={(e) => {
                     e.target.style.display = 'none';
-                    e.target.parentElement.innerHTML += '<div style="font-size: 48px; margin-bottom: 8px;">🔮</div>';
                   }}
                 />
                 <Typography variant="body2" fontWeight={500}>
                   Vyonn AI
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem', mt: 0.5 }}>
-                  Ask anything
                 </Typography>
               </Paper>
             </Grid>
