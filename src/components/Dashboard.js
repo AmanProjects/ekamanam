@@ -19,7 +19,7 @@ function Dashboard({ onOpenLibrary }) {
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      bgcolor: '#fafafa',
+      bgcolor: 'background.default',
       py: 6
     }}>
       <Container maxWidth="sm">
@@ -37,7 +37,7 @@ function Dashboard({ onOpenLibrary }) {
               display: 'block'
             }}
           />
-          <Typography variant="h3" fontWeight={600} gutterBottom sx={{ color: '#1a1a1a' }}>
+          <Typography variant="h3" fontWeight={600} gutterBottom color="text.primary">
             Ekamanam
           </Typography>
           <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
