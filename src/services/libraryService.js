@@ -202,7 +202,7 @@ export const getAllLibraryItems = async () => {
   try {
     let items = [];
 
-    // v7.1.3: Load from Google Drive if connected, otherwise from IndexedDB
+    // v7.1.4: Load from Google Drive if connected, show only samples if not signed in
     if (hasDrivePermissions()) {
       console.log('📁 Loading library from Google Drive...');
       try {
@@ -216,9 +216,9 @@ export const getAllLibraryItems = async () => {
         items = await db.getAll(STORES.LIBRARY_ITEMS);
       }
     } else {
-      console.log('💾 Loading library from IndexedDB (local only)');
-      const db = await initDB();
-      items = await db.getAll(STORES.LIBRARY_ITEMS);
+      console.log('🔒 Not signed in - showing only sample PDFs');
+      // When not signed in, don't show local IndexedDB PDFs
+      items = [];
     }
 
     // Add sample PDFs (always available)
