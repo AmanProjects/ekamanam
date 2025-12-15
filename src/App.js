@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Box, Grid, AppBar, Toolbar, Button, IconButton, Fab, Tooltip, Chip, Badge, ThemeProvider, CssBaseline } from '@mui/material';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Box, AppBar, Toolbar, IconButton, Fab, Tooltip, Chip, Badge, ThemeProvider, CssBaseline } from '@mui/material';
 import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon, AdminPanelSettings, HelpOutline as HelpIcon } from '@mui/icons-material';
 import packageJson from '../package.json';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -14,14 +14,34 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminOTPDialog from './components/AdminOTPDialog';
 import AuthButton from './components/AuthButton';
 import VyonnChatbot from './components/VyonnChatbot';
-import Test3DVisualization from './components/Test3DVisualization';
+import SubscriptionDialog from './components/SubscriptionDialog';
 import { lightTheme, darkTheme, getThemePreference } from './theme.js';
-import { 
-  addPDFToLibrary, 
+import {
+  addPDFToLibrary,
   loadPDFData,
   updateLastPage,
-  generateThumbnail 
+  generateThumbnail
 } from './services/libraryService';
+import { useSubscription } from './hooks/useSubscription';
+
+// ===== NEW FEATURES =====
+// Phase 1: Spaced Repetition
+import { getDueCards } from './services/spacedRepetitionService';
+import FlashcardReview from './components/FlashcardReview';
+
+// Phase 2: Cognitive Load
+import { CognitiveLoadTracker, shouldSuggestBreak } from './services/cognitiveLoadService';
+import CognitiveLoadGauge from './components/CognitiveLoadGauge';
+import BreakSuggestion from './components/BreakSuggestion';
+
+// Phase 3: Doubt Prediction
+import { predictDoubts } from './services/doubtPredictionService';
+import DoubtPredictionDialog from './components/DoubtPredictionDialog';
+import DoubtLibrary from './components/DoubtLibrary';
+
+// Phase 4: Session History
+import { SessionHistoryTracker } from './services/sessionHistoryService';
+import SessionTimeline from './components/SessionTimeline';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -55,11 +75,52 @@ function App() {
   // AI Panel Tab Control (for Vyonn integration)
   const [aiPanelTab, setAiPanelTab] = useState(0);
   const [vyonnQuery, setVyonnQuery] = useState(null); // Query from Vyonn to pass to Smart Explain
+  
+  // Subscription state
+  const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
+  const subscription = useSubscription(user?.uid);
+
+  // ===== NEW FEATURES STATE =====
+
+  // Phase 1: Spaced Repetition
+  const [showFlashcards, setShowFlashcards] = useState(false);
+  const [dueCardCount, setDueCardCount] = useState(0);
+
+  // Phase 2: Cognitive Load
+  const cognitiveTrackerRef = useRef(null);
+  const sessionTrackerRef = useRef(null);
+  const [cognitiveLoad, setCognitiveLoad] = useState(50);
+  const [showBreak, setShowBreak] = useState(false);
+  const [breakSuggestion, setBreakSuggestion] = useState(null);
+
+  // Phase 3: Doubt Prediction
+  const [showDoubtPrediction, setShowDoubtPrediction] = useState(false);
+  const [doubtHotspots, setDoubtHotspots] = useState([]);
+  const [showDoubtLibrary, setShowDoubtLibrary] = useState(false);
+
+  // Phase 4: Session History
+  const [showTimeline, setShowTimeline] = useState(false);
 
   // Initialize theme from localStorage
   useEffect(() => {
     const savedTheme = getThemePreference();
     setThemeMode(savedTheme);
+  }, []);
+
+  // Check for payment success/cancel in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    
+    if (paymentStatus === 'success') {
+      alert('🎉 Payment successful! Your subscription is now active.');
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (paymentStatus === 'cancelled') {
+      alert('Payment was cancelled. You can try again anytime!');
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   // Memoize theme object
@@ -81,20 +142,20 @@ function App() {
     setIsResizing(false);
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (!isResizing) return;
-    
+
     const container = document.getElementById('pdf-ai-container');
     if (!container) return;
-    
+
     const containerRect = container.getBoundingClientRect();
     const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-    
+
     // Constrain between 15% and 85%
     if (newWidth >= 15 && newWidth <= 85) {
       setPdfWidth(newWidth);
     }
-  };
+  }, [isResizing]);
 
   useEffect(() => {
     if (isResizing) {
@@ -105,7 +166,7 @@ function App() {
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isResizing]);
+  }, [isResizing, handleMouseMove, handleMouseUp]);
   
   // Load library count
   useEffect(() => {
@@ -130,6 +191,57 @@ function App() {
     
     return () => clearInterval(interval);
   }, [view]);
+
+  // ===== NEW FEATURES EFFECTS =====
+
+  // Phase 1: Check due flashcards
+  useEffect(() => {
+    const checkDueCards = async () => {
+      if (user?.uid) {
+        try {
+          const dueCards = await getDueCards(user.uid);
+          setDueCardCount(dueCards.length);
+        } catch (error) {
+          console.error('Error checking due flashcards:', error);
+        }
+      }
+    };
+
+    checkDueCards();
+    // Check every minute when user is active
+    const interval = setInterval(checkDueCards, 60000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Phase 2 & 4: Initialize cognitive load and session trackers
+  useEffect(() => {
+    if (user && selectedFile && view === 'reader') {
+      const sessionId = `session_${Date.now()}`;
+
+      // Initialize cognitive load tracker
+      cognitiveTrackerRef.current = new CognitiveLoadTracker(user.uid, sessionId);
+
+      // Initialize session history tracker
+      sessionTrackerRef.current = new SessionHistoryTracker(
+        user.uid,
+        sessionId,
+        selectedFile.name,
+        currentLibraryItem?.subject || 'Unknown'
+      );
+
+      console.log('🧠 Trackers initialized');
+    }
+
+    return () => {
+      // Save sessions on unmount
+      if (cognitiveTrackerRef.current) {
+        cognitiveTrackerRef.current.saveSession();
+      }
+      if (sessionTrackerRef.current) {
+        sessionTrackerRef.current.saveSession();
+      }
+    };
+  }, [user, selectedFile, view, currentLibraryItem]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -389,6 +501,45 @@ function App() {
     }
   }, [pdfDocument, currentLibraryItem]);
 
+  // Enhanced page change handler with tracking
+  const handlePageChangeWithTracking = useCallback(async (newPage) => {
+    setCurrentPage(newPage);
+
+    // Track with cognitive load
+    if (cognitiveTrackerRef.current && pageText) {
+      cognitiveTrackerRef.current.startPageReading(newPage, pageText);
+
+      // Update cognitive load display
+      const load = cognitiveTrackerRef.current.currentLoad;
+      setCognitiveLoad(load);
+
+      // Check for break suggestion
+      const breakCheck = shouldSuggestBreak(cognitiveTrackerRef.current);
+      if (breakCheck.shouldBreak) {
+        setBreakSuggestion(breakCheck);
+        setShowBreak(true);
+      }
+    }
+
+    // Track with session history
+    if (sessionTrackerRef.current) {
+      sessionTrackerRef.current.recordPageView(newPage, pageText);
+    }
+
+    // Phase 3: Predict doubts for new page
+    if (pageText && user?.uid) {
+      try {
+        const hotspots = await predictDoubts(pageText, user.uid);
+        if (hotspots.length > 0) {
+          setDoubtHotspots(hotspots);
+          setShowDoubtPrediction(true);
+        }
+      } catch (error) {
+        console.error('Error predicting doubts:', error);
+      }
+    }
+  }, [pageText, user]);
+
   const handleTextSelect = (text) => {
     if (text && text.trim()) {
       setSelectedText(text);
@@ -457,7 +608,66 @@ function App() {
             </Box>
           </Box>
           
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            {/* Subscription Badge */}
+            {subscription.tier && (
+              <Chip
+                label={subscription.tier}
+                size="small"
+                onClick={() => setShowSubscriptionDialog(true)}
+                sx={{ 
+                  fontWeight: 600, 
+                  cursor: 'pointer',
+                  display: { xs: 'none', sm: 'flex' },
+                  ...(subscription.isPaid ? {
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5568d3 0%, #6339a3 100%)',
+                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                    }
+                  } : {
+                    bgcolor: 'grey.200',
+                    color: 'grey.700',
+                    border: '1px solid',
+                    borderColor: 'grey.300',
+                    '&:hover': {
+                      bgcolor: 'grey.300',
+                      borderColor: 'grey.400'
+                    }
+                  }),
+                  transition: 'all 0.2s ease'
+                }}
+              />
+            )}
+
+            {/* Cognitive Load Gauge - Only show in reader view */}
+            {view === 'reader' && (
+              <CognitiveLoadGauge
+                cognitiveLoad={cognitiveLoad}
+                size="compact"
+                showDetails={false}
+              />
+            )}
+
+            {/* Flashcard Badge - Show due count */}
+            {dueCardCount > 0 && (
+              <Tooltip title={`${dueCardCount} flashcard${dueCardCount !== 1 ? 's' : ''} due for review`}>
+                <Chip
+                  label={`${dueCardCount} due`}
+                  size="small"
+                  color="warning"
+                  onClick={() => setShowFlashcards(true)}
+                  sx={{
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: { xs: 'none', md: 'flex' }
+                  }}
+                />
+              </Tooltip>
+            )}
+
             <Tooltip title="Home">
               <IconButton 
                 onClick={() => setView('dashboard')}
@@ -535,8 +745,14 @@ function App() {
       {/* Main Content */}
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
         {view === 'dashboard' ? (
-          <Dashboard 
+          <Dashboard
             onOpenLibrary={() => setView('library')}
+            subscription={subscription}
+            onUpgrade={() => setShowSubscriptionDialog(true)}
+            onOpenFlashcards={() => setShowFlashcards(true)}
+            onOpenTimeline={() => setShowTimeline(true)}
+            onOpenDoubtLibrary={() => setShowDoubtLibrary(true)}
+            dueCardCount={dueCardCount}
           />
         ) : view === 'library' ? (
           <StudentLibrary
@@ -629,6 +845,8 @@ function App() {
                 onTabChange={setAiPanelTab}
                 vyonnQuery={vyonnQuery}
                 onVyonnQueryUsed={() => setVyonnQuery(null)}
+                subscription={subscription}
+                onUpgrade={() => setShowSubscriptionDialog(true)}
               />
             </Box>
           </Box>
@@ -676,6 +894,67 @@ function App() {
           }
         }}
       />
+
+      {/* Subscription Dialog */}
+      <SubscriptionDialog
+        open={showSubscriptionDialog}
+        onClose={() => setShowSubscriptionDialog(false)}
+        user={user}
+        currentTier={subscription.tier}
+      />
+
+      {/* ===== NEW FEATURE DIALOGS ===== */}
+
+      {/* Phase 1: Flashcard Review */}
+      <FlashcardReview
+        open={showFlashcards}
+        onClose={() => {
+          setShowFlashcards(false);
+          // Refresh due card count
+          if (user?.uid) {
+            getDueCards(user.uid).then(cards => setDueCardCount(cards.length));
+          }
+        }}
+        userId={user?.uid}
+      />
+
+      {/* Phase 2: Break Suggestion */}
+      <BreakSuggestion
+        open={showBreak}
+        onClose={() => setShowBreak(false)}
+        onTakeBreak={() => {
+          if (cognitiveTrackerRef.current && sessionTrackerRef.current) {
+            const duration = (breakSuggestion?.suggestedDuration || 5) * 60000;
+            cognitiveTrackerRef.current.recordBreak(duration, breakSuggestion?.reason);
+            sessionTrackerRef.current.recordBreak(duration, breakSuggestion?.reason);
+          }
+        }}
+        suggestedDuration={breakSuggestion?.suggestedDuration || 5}
+        reason={breakSuggestion?.reason || 'Time for a break!'}
+      />
+
+      {/* Phase 3: Doubt Prediction & Library */}
+      <DoubtPredictionDialog
+        open={showDoubtPrediction}
+        onClose={() => setShowDoubtPrediction(false)}
+        hotspots={doubtHotspots}
+        pageNumber={currentPage}
+      />
+
+      <DoubtLibrary
+        open={showDoubtLibrary}
+        onClose={() => setShowDoubtLibrary(false)}
+        chapter={currentLibraryItem?.subject || 'General'}
+        userId={user?.uid}
+      />
+
+      {/* Phase 4: Session Timeline */}
+      <SessionTimeline
+        open={showTimeline}
+        onClose={() => setShowTimeline(false)}
+        userId={user?.uid}
+      />
+
       </Box>
     </ThemeProvider>
   );

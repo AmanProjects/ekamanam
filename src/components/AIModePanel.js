@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import VisualAidRenderer from './VisualAidRenderer';
+import UpgradePrompt from './UpgradePrompt';
 import { useAdminConfig, isTabEnabled } from '../hooks/useAdminConfig';
-import { extract3DVisualization, extractFromStructuredResponse } from '../utils/visualizationExtractor';
-import { 
-  Box, 
-  Paper, 
-  Tabs, 
-  Tab, 
-  Button, 
+import { extractFromStructuredResponse } from '../utils/visualizationExtractor';
+import { trackAIQueryUsage } from '../services/subscriptionService';
+import {
+  Box,
+  Paper,
+  Tabs,
+  Tab,
+  Button,
   Typography,
   CircularProgress,
   Alert,
@@ -20,14 +22,10 @@ import {
   FormControlLabel,
   Select,
   MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   ToggleButton,
   ToggleButtonGroup
 } from '@mui/material';
-import { 
+import {
   School as TeacherIcon,
   Lightbulb as ExplainIcon,
   Sports as ActivitiesIcon,
@@ -41,9 +39,7 @@ import {
   Quiz as ExamIcon,
   Description as DescriptionIcon,
   Translate as TranslateIcon,
-  Clear as ClearIcon,
-  AutoAwesome as GenerateIcon,
-  PlayArrow as PlayIcon
+  Clear as ClearIcon
 } from '@mui/icons-material';
 import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer, translateTeacherModeToEnglish } from '../services/geminiService';
@@ -52,10 +48,8 @@ import { getBestVoice } from '../services/voiceService';
 import {
   getCachedData,
   saveCachedData,
-  isPageCached,
   getPriorPagesContext,
-  getCacheStats,
-  clearPDFCache
+  getCacheStats
 } from '../services/cacheService';
 
 function TabPanel({ children, value, index, ...other }) {
@@ -84,7 +78,9 @@ function AIModePanel({
   activeTab: externalActiveTab,
   onTabChange,
   vyonnQuery,
-  onVyonnQueryUsed
+  onVyonnQueryUsed,
+  subscription,
+  onUpgrade
 }) {
   // Use controlled state if provided, otherwise use internal state
   const [internalTab, setInternalTab] = useState(0);
@@ -401,6 +397,19 @@ function AIModePanel({
     if (!pdfDocument && scope === 'chapter') {
       setError('PDF document not loaded. Please try again.');
       return;
+    }
+
+    // 🔒 Check subscription limits
+    if (user && subscription) {
+      const usageCheck = await trackAIQueryUsage(user.uid);
+      if (!usageCheck.allowed) {
+        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
+        return;
+      }
+      // Refresh usage counter
+      if (subscription.refreshUsage) {
+        subscription.refreshUsage();
+      }
     }
 
     // V3.0.3: Store scope selection and hide selector
@@ -958,6 +967,18 @@ function AIModePanel({
       return;
     }
 
+    // 🔒 Check subscription limits
+    if (user && subscription) {
+      const usageCheck = await trackAIQueryUsage(user.uid);
+      if (!usageCheck.allowed) {
+        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
+        return;
+      }
+      if (subscription.refreshUsage) {
+        subscription.refreshUsage();
+      }
+    }
+
     setGeneratingExam(true);
     setError(null);
     setExamChunkProgress(0);
@@ -1135,6 +1156,18 @@ function AIModePanel({
     if (!pdfDocument && scope === 'chapter') {
       setError('PDF document not loaded. Please try again.');
       return;
+    }
+
+    // 🔒 Check subscription limits
+    if (user && subscription) {
+      const usageCheck = await trackAIQueryUsage(user.uid);
+      if (!usageCheck.allowed) {
+        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
+        return;
+      }
+      if (subscription.refreshUsage) {
+        subscription.refreshUsage();
+      }
     }
 
     // Store scope selection and hide selector
@@ -1417,6 +1450,18 @@ function AIModePanel({
       return;
     }
 
+    // 🔒 Check subscription limits
+    if (user && subscription) {
+      const usageCheck = await trackAIQueryUsage(user.uid);
+      if (!usageCheck.allowed) {
+        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
+        return;
+      }
+      if (subscription.refreshUsage) {
+        subscription.refreshUsage();
+      }
+    }
+
     // Store scope selection and hide selector
     setActivitiesScope(scope);
     setShowActivitiesScopeSelector(false);
@@ -1488,25 +1533,39 @@ function AIModePanel({
       // 📡 GENERATE NEW WITH CONTEXT
       const response = await generateActivities(contextText);
       
-      // Try to parse JSON response
+      // Use robust JSON parsing with auto-repair
       try {
-        let cleanResponse = response.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          cleanResponse = jsonMatch[0];
-        }
-        const parsedResponse = JSON.parse(cleanResponse);
-        setActivitiesResponse(parsedResponse);
+        console.log('✅ [Activities] Parsing JSON response, first 200 chars:', response?.substring(0, 200));
+        
+        // Use the new robust extraction and repair
+        const { visualAids, cleanedResponse } = extractFromStructuredResponse(response);
+        
+        // Store visualizations separately
+        const finalParsedResponse = { ...cleanedResponse, _visualizations: visualAids };
+        
+        console.log('📦 [Activities] Final parsed response:', finalParsedResponse);
+        console.log('📦 [Activities] Has MCQs:', !!finalParsedResponse.mcqs);
+        console.log('📦 [Activities] Has practiceQuestions:', !!finalParsedResponse.practiceQuestions);
+        console.log('📦 [Activities] Has visualizations:', finalParsedResponse._visualizations?.length || 0);
+        
+        setActivitiesResponse(finalParsedResponse);
+        setActivitiesResponsePage(currentPage);
 
         // 💾 SAVE TO CACHE
         if (pdfId && currentPage) {
-          await saveCachedData(pdfId, currentPage, 'activities', parsedResponse);
-          console.log('💾 Saved to cache: Activities');
+          await saveCachedData(pdfId, currentPage, cacheKey, finalParsedResponse);
+          console.log(`💾 Saved to cache: Activities (${scope})`);
+          const stats = await getCacheStats(pdfId);
+          setCacheStats(stats);
+          console.log(`📊 Cache: ${stats.pagesCached} pages, ${stats.cacheSizeKB} KB`);
         }
       } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        // Fallback to plain text
-        setActivitiesResponse({ error: 'Could not parse activities', raw: response });
+        console.error('❌ [Activities] JSON parse error:', parseError);
+        console.error('❌ [Activities] Response that failed to parse:', response?.substring(0, 500));
+        // Fallback to displaying raw text if all parsing/repair fails
+        setActivitiesResponse({ error: 'Could not parse activities format. Displaying as plain text.', raw: response || 'No response received', _visualizations: [] });
+        setActivitiesResponsePage(currentPage);
+        console.log('⚠️ Stored as plain text due to parse error');
       }
     } catch (err) {
       setError(err.message);
@@ -1594,6 +1653,18 @@ Return ONLY this valid JSON:
     if (!contentToAnalyze) {
       setError('Please load a PDF page first');
       return;
+    }
+
+    // 🔒 Check subscription limits
+    if (user && subscription) {
+      const usageCheck = await trackAIQueryUsage(user.uid);
+      if (!usageCheck.allowed) {
+        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
+        return;
+      }
+      if (subscription.refreshUsage) {
+        subscription.refreshUsage();
+      }
     }
 
     // V3.0: Removed hardcoded API key check - multi-provider system handles this
@@ -1993,6 +2064,16 @@ Return ONLY this valid JSON:
                 </Box>
               )}
             </Box>
+
+            {/* Upgrade Prompt for Free Users */}
+            {subscription && subscription.isFree && !subscription.loading && (
+              <UpgradePrompt
+                type="limit"
+                onUpgrade={onUpgrade}
+                remainingQueries={subscription.remainingQueries}
+                totalQueries={subscription.usage.limit}
+              />
+            )}
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             
@@ -3762,6 +3843,48 @@ Return ONLY this valid JSON:
                         </Box>
                       </Box>
                     )}
+
+                    {/* 3D Visualizations & Maps */}
+                    {activitiesResponse._visualizations && activitiesResponse._visualizations.length > 0 && (
+                      <Box sx={{ mt: 2, mb: 3 }}>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                          🎨 Visualizations:
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                          {activitiesResponse._visualizations.map((visualAid, idx) => (
+                            <Box key={idx} sx={{ flexBasis: { xs: '100%', sm: '48%', md: '32%' } }}>
+                              <VisualAidRenderer visualAid={JSON.stringify(visualAid.visualAid)} />
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Fallback message when no activities are present */}
+                    {!activitiesResponse.mcqs && 
+                     !activitiesResponse.practiceQuestions && 
+                     !activitiesResponse.handsOnActivities && 
+                     !activitiesResponse.discussionPrompts && 
+                     !activitiesResponse.realWorldApplications && 
+                     (!activitiesResponse._visualizations || activitiesResponse._visualizations.length === 0) && (
+                      <Alert severity="info">
+                        <Typography variant="body2">
+                          No activities were generated for this content. The AI response may not have contained structured activity data.
+                        </Typography>
+                        {activitiesResponse.raw && (
+                          <Box sx={{ mt: 2 }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                              Raw Response:
+                            </Typography>
+                            <Box sx={{ mt: 1, p: 1, bgcolor: 'background.default', borderRadius: 1, maxHeight: 300, overflow: 'auto' }}>
+                              <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                                {JSON.stringify(activitiesResponse, null, 2)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        )}
+                      </Alert>
+                    )}
                   </Box>
                 )}
               </Paper>
@@ -3774,7 +3897,7 @@ Return ONLY this valid JSON:
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2 }}>
               {selectedText && !isRegionalLanguageOrGarbled(selectedText) && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.100' }}>
+                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'action.hover' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600}>
                     Selected Text:
                   </Typography>
@@ -3794,7 +3917,7 @@ Return ONLY this valid JSON:
                 </Paper>
               )}
               {!selectedText && pageText && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'info.lighter' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
                     📄 Using Current Page Content
                   </Typography>
@@ -3815,7 +3938,7 @@ Return ONLY this valid JSON:
               >
                 {loading ? 'Generating...' : selectedText ? 'Find Resources for Selection' : 'Find Resources for Current Page'}
               </Button>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
                 {selectedText 
                   ? 'Discover resources related to your selected text'
                   : 'Discover web resources and related topics for this page'
@@ -3832,11 +3955,47 @@ Return ONLY this valid JSON:
             )}
 
             {resourcesResponse && !loading && (
-              <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
+              <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto', bgcolor: 'background.paper' }}>
                 {resourcesResponse.error ? (
                   <Typography color="error">{resourcesResponse.error}</Typography>
                 ) : (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {/* Header with Actions */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="h6" fontWeight={700}>
+                        📚 Resources & Topics
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title="Listen to Resources">
+                          <IconButton 
+                            size="small" 
+                            color="primary"
+                            onClick={() => {
+                              const textToRead = [
+                                resourcesResponse.webResources?.map(r => `${r.title}. ${r.description}`).join('. '),
+                                'Related topics: ' + resourcesResponse.relatedTopics?.join(', ')
+                              ].filter(Boolean).join('. ');
+                              handleSpeakSection('Resources', `<p>${textToRead}</p>`);
+                            }}
+                          >
+                            {isSpeaking ? <Stop /> : <VolumeUp />}
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Clear Resources">
+                          <IconButton 
+                            size="small" 
+                            color="error"
+                            onClick={() => {
+                              setResourcesResponse(null);
+                              setError(null);
+                            }}
+                          >
+                            <ClearIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </Box>
+
                     {/* Web Resources */}
                     {resourcesResponse.webResources && resourcesResponse.webResources.length > 0 && (
                       <Box>
@@ -3844,7 +4003,7 @@ Return ONLY this valid JSON:
                           <LinkIcon /> Recommended Resources
                         </Typography>
                         {resourcesResponse.webResources.map((resource, idx) => (
-                          <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 1, '&:hover': { bgcolor: 'action.hover' } }}>
+                          <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 1, bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }}>
                             <Typography 
                               variant="subtitle2" 
                               fontWeight={600} 
@@ -3878,14 +4037,20 @@ Return ONLY this valid JSON:
                     {/* Related Topics */}
                     {resourcesResponse.relatedTopics && resourcesResponse.relatedTopics.length > 0 && (
                       <Box>
-                        <Typography variant="h6" fontWeight={600}>
-                          Related Topics
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          🔗 Related Topics
                         </Typography>
                         <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                           {resourcesResponse.relatedTopics.map((topic, idx) => (
-                            <Typography key={idx} variant="body2" sx={{ px: 2, py: 1, bgcolor: 'secondary.lighter', borderRadius: 1 }}>
-                              {topic}
-                            </Typography>
+                            <Chip 
+                              key={idx} 
+                              label={topic} 
+                              size="small" 
+                              sx={{ 
+                                bgcolor: 'info.lighter',
+                                '&:hover': { bgcolor: 'info.light' }
+                              }} 
+                            />
                           ))}
                         </Box>
                       </Box>

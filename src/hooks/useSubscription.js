@@ -1,0 +1,117 @@
+import { useState, useEffect } from 'react';
+import { 
+  subscribeToUserSubscription, 
+  canUseFeature, 
+  getTodayUsage,
+  SUBSCRIPTION_TIERS 
+} from '../services/subscriptionService';
+
+/**
+ * React hook for managing user subscription state
+ * @param {string} userId - The user's Firebase UID
+ * @returns {Object} Subscription state and helper functions
+ */
+export function useSubscription(userId) {
+  const [subscription, setSubscription] = useState({
+    tier: 'FREE',
+    status: 'active',
+    features: SUBSCRIPTION_TIERS.FREE.limits,
+    loading: true
+  });
+  const [usage, setUsage] = useState({ count: 0, limit: 5, unlimited: false });
+
+  // Subscribe to real-time subscription updates
+  useEffect(() => {
+    if (!userId) {
+      setSubscription({
+        tier: 'FREE',
+        status: 'active',
+        features: SUBSCRIPTION_TIERS.FREE.limits,
+        loading: false
+      });
+      return;
+    }
+
+    const unsubscribe = subscribeToUserSubscription(userId, (subscriptionData) => {
+      setSubscription({
+        ...subscriptionData,
+        loading: false
+      });
+    });
+
+    return () => unsubscribe();
+  }, [userId]);
+
+  // Load today's usage
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadUsage = async () => {
+      const usageData = await getTodayUsage(userId);
+      setUsage(usageData);
+    };
+
+    loadUsage();
+
+    // Refresh usage every minute
+    const interval = setInterval(loadUsage, 60000);
+    return () => clearInterval(interval);
+  }, [userId, subscription.tier]);
+
+  // Helper: Check if user can use a specific feature
+  const hasFeature = (feature) => {
+    return canUseFeature(subscription, feature);
+  };
+
+  // Helper: Check if user is on FREE tier
+  const isFree = subscription.tier === 'FREE';
+
+  // Helper: Check if user is on paid tier
+  const isPaid = subscription.tier === 'STUDENT' || subscription.tier === 'EDUCATOR';
+
+  // Helper: Check if user has active subscription
+  const isActive = subscription.status === 'active';
+
+  // Helper: Get tier details
+  const tierDetails = SUBSCRIPTION_TIERS[subscription.tier] || SUBSCRIPTION_TIERS.FREE;
+
+  // Helper: Check if limit reached
+  const isLimitReached = isFree && usage.count >= usage.limit;
+
+  // Helper: Get remaining queries
+  const remainingQueries = isFree ? Math.max(0, usage.limit - usage.count) : -1;
+
+  // Refresh usage counter (call after AI query)
+  const refreshUsage = async () => {
+    if (!userId) return;
+    const usageData = await getTodayUsage(userId);
+    setUsage(usageData);
+  };
+
+  return {
+    // Subscription data
+    subscription,
+    tier: subscription.tier,
+    status: subscription.status,
+    features: subscription.features,
+    loading: subscription.loading,
+
+    // Usage data
+    usage,
+    isLimitReached,
+    remainingQueries,
+
+    // Tier checks
+    isFree,
+    isPaid,
+    isActive,
+    tierDetails,
+
+    // Feature checks
+    hasFeature,
+
+    // Actions
+    refreshUsage
+  };
+}
+

@@ -1,0 +1,201 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check authentication
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is accessing their own data
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Helper function to check subscription tier
+    function hasActivePaidSubscription(userId) {
+      let subscription = get(/databases/$(database)/documents/users/$(userId)).data.subscription;
+      return subscription != null 
+        && subscription.status == 'active' 
+        && subscription.tier in ['STUDENT', 'EDUCATOR'];
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data
+      allow read: if isOwner(userId);
+      
+      // Users can write their own data (except subscription, which is managed by Cloud Functions)
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) 
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['subscription']));
+      
+      // Subscription can only be updated by Cloud Functions (no user ID in request)
+      allow update: if !isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subscription']);
+    }
+    
+    // User library (PDFs)
+    match /libraries/{libraryId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+    
+    // User notes
+    match /notes/{noteId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+    
+    // AI usage tracking (for rate limiting free tier)
+    match /usage/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+    
+    // Admin access (for future admin features)
+    match /admin/{document=**} {
+      allow read, write: if false; // Only accessible via Cloud Functions
+    }
+
+    // ===== NEW FEATURES - Phase 1: Spaced Repetition =====
+
+    // Flashcards
+    match /flashcards/{cardId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ===== Phase 2: Cognitive Load Tracker =====
+
+    // Cognitive load session metrics
+    match /sessionMetrics/{sessionId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /cognitiveLoadHistory/{historyId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ===== Phase 3: AI Doubt Prediction =====
+
+    // Doubt hotspots (crowdsourced data - public read)
+    match /doubtHotspots/{hotspotId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // User doubts
+    match /userDoubts/{doubtId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn(); // Allow upvotes from anyone
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /doubtSubmissions/{submissionId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // ===== Phase 4: Session History =====
+
+    // Session history
+    match /sessionHistory/{sessionId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /sessionEvents/{eventId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /learningMilestones/{milestoneId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ===== Phase 5: Peer Learning Network =====
+
+    // User knowledge profiles (public read for matching)
+    match /userProfiles/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && userId == request.auth.uid;
+      allow update: if isSignedIn() && userId == request.auth.uid;
+      allow delete: if isSignedIn() && userId == request.auth.uid;
+    }
+
+    match /knowledgeGraphs/{graphId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Peer requests
+    match /peerRequests/{requestId} {
+      allow read: if isSignedIn() &&
+        (resource.data.fromUserId == request.auth.uid || resource.data.toUserId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.fromUserId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.toUserId == request.auth.uid;
+      allow delete: if isSignedIn() &&
+        (resource.data.fromUserId == request.auth.uid || resource.data.toUserId == request.auth.uid);
+    }
+
+    match /peerMatches/{matchId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Learning circles
+    match /learningCircles/{circleId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.creatorId == request.auth.uid;
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && resource.data.creatorId == request.auth.uid;
+    }
+
+    // Peer messages
+    match /peerMessages/{messageId} {
+      allow read: if isSignedIn() &&
+        (resource.data.fromUserId == request.auth.uid || resource.data.toUserId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.fromUserId == request.auth.uid;
+    }
+
+    // ===== Phase 6: Multi-Student Sync Study =====
+
+    // Study rooms (public for discovery, but can be private)
+    match /studyRooms/{roomId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.hostUserId == request.auth.uid;
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && resource.data.hostUserId == request.auth.uid;
+    }
+
+    match /roomMembers/{memberId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /roomEvents/{eventId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /roomChat/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /roomAnnotations/{annotationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}
+
