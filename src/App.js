@@ -43,8 +43,8 @@ import DoubtLibrary from './components/DoubtLibrary';
 import { SessionHistoryTracker } from './services/sessionHistoryService';
 import SessionTimeline from './components/SessionTimeline';
 
-// Textbook Library Browser
-import TextbookBrowser from './components/TextbookBrowser';
+// Textbook Library Browser (Temporarily disabled - v6.1.3)
+// import TextbookBrowser from './components/TextbookBrowser';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -104,8 +104,8 @@ function App() {
   // Phase 4: Session History
   const [showTimeline, setShowTimeline] = useState(false);
 
-  // Textbook Library Browser
-  const [showTextbookBrowser, setShowTextbookBrowser] = useState(false);
+  // Textbook Library Browser (Temporarily disabled - v6.1.3)
+  // const [showTextbookBrowser, setShowTextbookBrowser] = useState(false);
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -763,7 +763,6 @@ function App() {
             onOpenFlashcards={() => setShowFlashcards(true)}
             onOpenTimeline={() => setShowTimeline(true)}
             onOpenDoubtLibrary={() => setShowDoubtLibrary(true)}
-            onOpenTextbookBrowser={() => setShowTextbookBrowser(true)}
             dueCardCount={dueCardCount}
           />
         ) : view === 'library' ? (
@@ -967,8 +966,8 @@ function App() {
         userId={user?.uid}
       />
 
-      {/* Textbook Library Browser */}
-      <TextbookBrowser
+      {/* Textbook Library Browser (Temporarily disabled - v6.1.3) */}
+      {/* <TextbookBrowser
         open={showTextbookBrowser}
         onClose={() => setShowTextbookBrowser(false)}
         onSelectPdf={async (file, metadata) => {
@@ -984,7 +983,7 @@ function App() {
             console.error('Error opening textbook:', error);
           }
         }}
-      />
+      /> */}
 
       </Box>
     </ThemeProvider>

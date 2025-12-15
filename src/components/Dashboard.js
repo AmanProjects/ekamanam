@@ -19,8 +19,7 @@ import {
   Style as FlashcardIcon,
   Timeline as TimelineIcon,
   QuestionAnswer as DoubtIcon,
-  People as PeerIcon,
-  MenuBook as TextbookIcon
+  People as PeerIcon
 } from '@mui/icons-material';
 
 function Dashboard({
@@ -30,7 +29,6 @@ function Dashboard({
   onOpenFlashcards,
   onOpenTimeline,
   onOpenDoubtLibrary,
-  onOpenTextbookBrowser,
   dueCardCount = 0
 }) {
   return (
@@ -229,25 +227,6 @@ function Dashboard({
               }}
             >
               My Library
-            </Button>
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<TextbookIcon />}
-              onClick={onOpenTextbookBrowser}
-              sx={{
-                py: 1.75,
-                px: 4,
-                fontSize: '1rem',
-                fontWeight: 600,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5568d3 0%, #6339a3 100%)',
-                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
-                }
-              }}
-            >
-              Browse Textbooks
             </Button>
           </Box>
         </Paper>
