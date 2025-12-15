@@ -49,9 +49,9 @@ service cloud.firestore {
     }
     
     // AI usage tracking (for rate limiting free tier)
-    match /usage/{userId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+    match /usage/{usageId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
     }
     
     // Admin access (for future admin features)

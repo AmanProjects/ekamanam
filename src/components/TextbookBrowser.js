@@ -24,7 +24,6 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Download as DownloadIcon,
   MenuBook as BookIcon,
   School as SchoolIcon,
   Close as CloseIcon,
@@ -38,7 +37,6 @@ import {
   getTextbooks,
   getTextbooksBySubject,
   getTextbookPdfUrl,
-  downloadTextbookPdf,
   getBoardInfo,
   searchTextbooks
 } from '../services/textbookBoardsService';
@@ -60,7 +58,6 @@ export default function TextbookBrowser({ open, onClose, onSelectPdf }) {
   const [textbooks, setTextbooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [downloading, setDownloading] = useState(null);
 
   const boards = getAllBoards();
   const [availableClasses, setAvailableClasses] = useState([]);
@@ -135,44 +132,22 @@ export default function TextbookBrowser({ open, onClose, onSelectPdf }) {
     }
   };
 
-  const handleDownloadAndOpen = async (book) => {
-    setDownloading(book.code);
-    setError(null);
+  const handleDownloadAndOpen = (book) => {
+    const pdfUrl = getTextbookPdfUrl(selectedBoard, book);
 
-    try {
-      const pdfUrl = getTextbookPdfUrl(selectedBoard, book);
-
-      if (!pdfUrl) {
-        throw new Error('PDF URL not available for this textbook');
-      }
-
-      console.log('📥 Downloading textbook:', book.title);
-      console.log('📍 URL:', pdfUrl);
-
-      const pdfBlob = await downloadTextbookPdf(pdfUrl);
-
-      // Create a File object from the blob
-      const pdfFile = new File([pdfBlob], `${book.title}.pdf`, { type: 'application/pdf' });
-
-      // Call parent handler to open PDF in the viewer
-      if (onSelectPdf) {
-        onSelectPdf(pdfFile, {
-          title: book.title,
-          board: getBoardInfo(selectedBoard)?.name,
-          class: book.class,
-          subject: book.subject,
-          language: book.language,
-          source: 'textbook_browser'
-        });
-      }
-
-      onClose();
-    } catch (err) {
-      console.error('Error downloading textbook:', err);
-      setError(`Failed to download ${book.title}. ${err.message || 'Please try again.'}`);
-    } finally {
-      setDownloading(null);
+    if (!pdfUrl) {
+      setError('PDF URL not available for this textbook');
+      return;
     }
+
+    console.log('📖 Opening textbook:', book.title);
+    console.log('📍 URL:', pdfUrl);
+
+    // Open in new tab - CORS restrictions prevent direct download
+    window.open(pdfUrl, '_blank');
+
+    // Close the dialog after opening
+    setTimeout(() => onClose(), 500);
   };
 
   const handleOpenInNewTab = (book) => {
@@ -398,29 +373,16 @@ export default function TextbookBrowser({ open, onClose, onSelectPdf }) {
                       )}
                     </CardContent>
 
-                    <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-                      <Tooltip title="Download and open in Ekamanam">
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={downloading === book.code ? <CircularProgress size={16} /> : <DownloadIcon />}
-                          onClick={() => handleDownloadAndOpen(book)}
-                          disabled={downloading === book.code}
-                          sx={{ flexGrow: 1, mr: 1 }}
-                        >
-                          {downloading === book.code ? 'Loading...' : 'Open'}
-                        </Button>
-                      </Tooltip>
-
-                      <Tooltip title="Open PDF in new tab">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenInNewTab(book)}
-                          color="primary"
-                        >
-                          <OpenIcon />
-                        </IconButton>
-                      </Tooltip>
+                    <CardActions sx={{ justifyContent: 'center', px: 2, pb: 2 }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<OpenIcon />}
+                        onClick={() => handleDownloadAndOpen(book)}
+                        fullWidth
+                      >
+                        View Textbook
+                      </Button>
                     </CardActions>
                   </Card>
                 </Grid>
