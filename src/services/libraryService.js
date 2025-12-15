@@ -200,9 +200,55 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
  */
 export const getAllLibraryItems = async () => {
   try {
-    const db = await initDB();
-    const items = await db.getAll(STORES.LIBRARY_ITEMS);
-    return items.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
+    let items = [];
+
+    // v7.1.3: Load from Google Drive if connected, otherwise from IndexedDB
+    if (hasDrivePermissions()) {
+      console.log('📁 Loading library from Google Drive...');
+      try {
+        const driveIndex = await getLibraryIndex();
+        items = driveIndex.data.pdfs || [];
+        console.log(`✅ Loaded ${items.length} PDFs from Drive`);
+      } catch (driveError) {
+        console.error('❌ Error loading from Drive, falling back to IndexedDB:', driveError);
+        // Fallback to IndexedDB if Drive fails
+        const db = await initDB();
+        items = await db.getAll(STORES.LIBRARY_ITEMS);
+      }
+    } else {
+      console.log('💾 Loading library from IndexedDB (local only)');
+      const db = await initDB();
+      items = await db.getAll(STORES.LIBRARY_ITEMS);
+    }
+
+    // Add sample PDFs (always available)
+    const samplePDFs = [
+      {
+        id: 'sample-coordinate-geometry',
+        name: 'Coordinate Geometry',
+        type: 'sample',
+        category: 'Mathematics',
+        addedAt: new Date('2024-01-01').toISOString(),
+        lastOpened: new Date('2024-01-01').toISOString(),
+        size: 10720323,
+        pageCount: 32
+      },
+      {
+        id: 'sample-freedom-movement',
+        name: 'Freedom Movement in Hyderabad State',
+        type: 'sample',
+        category: 'Social Studies',
+        addedAt: new Date('2024-01-01').toISOString(),
+        lastOpened: new Date('2024-01-01').toISOString(),
+        size: 8500000,
+        pageCount: 28
+      }
+    ];
+
+    // Combine user PDFs with sample PDFs
+    const allItems = [...items, ...samplePDFs];
+
+    return allItems.sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened));
   } catch (error) {
     console.error('❌ Error getting library items:', error);
     return [];
