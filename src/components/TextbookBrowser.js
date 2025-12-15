@@ -133,21 +133,35 @@ export default function TextbookBrowser({ open, onClose, onSelectPdf }) {
   };
 
   const handleDownloadAndOpen = (book) => {
-    const pdfUrl = getTextbookPdfUrl(selectedBoard, book);
+    try {
+      const pdfUrl = getTextbookPdfUrl(selectedBoard, book);
 
-    if (!pdfUrl) {
-      setError('PDF URL not available for this textbook');
-      return;
+      if (!pdfUrl) {
+        setError('PDF URL not available for this textbook');
+        console.error('❌ No URL for book:', book);
+        return;
+      }
+
+      console.log('📖 Opening textbook:', book.title);
+      console.log('📍 Board:', selectedBoard);
+      console.log('📍 Book code:', book.code);
+      console.log('📍 URL:', pdfUrl);
+
+      // Open in new tab - CORS restrictions prevent direct download
+      const opened = window.open(pdfUrl, '_blank');
+
+      if (!opened) {
+        setError('Unable to open textbook. Please check your popup blocker settings.');
+        console.error('❌ window.open returned null - popup blocked?');
+        return;
+      }
+
+      // Close the dialog after opening
+      setTimeout(() => onClose(), 500);
+    } catch (error) {
+      console.error('❌ Error opening textbook:', error);
+      setError(`Failed to open textbook: ${error.message}`);
     }
-
-    console.log('📖 Opening textbook:', book.title);
-    console.log('📍 URL:', pdfUrl);
-
-    // Open in new tab - CORS restrictions prevent direct download
-    window.open(pdfUrl, '_blank');
-
-    // Close the dialog after opening
-    setTimeout(() => onClose(), 500);
   };
 
   const handleOpenInNewTab = (book) => {

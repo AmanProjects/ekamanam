@@ -244,7 +244,8 @@ export function getTextbookPdfUrl(boardId, book, chapter = null) {
     if (chapter) {
       return NCERTService.getChapterPdfUrl(book.code, chapter);
     }
-    return NCERTService.getCompleteBookUrl(book.code);
+    // Return prelims PDF which is viewable in browser (not ZIP file)
+    return NCERTService.getPrelimsPdfUrl(book.code);
   }
 
   if (boardId === 'telangana') {

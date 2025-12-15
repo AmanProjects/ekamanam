@@ -252,6 +252,15 @@ export function getCompleteBookUrl(bookCode) {
 }
 
 /**
+ * Get preliminary pages PDF URL (best for viewing full textbook)
+ * @param {string} bookCode - NCERT book code
+ * @returns {string} Preliminary pages PDF URL
+ */
+export function getPrelimsPdfUrl(bookCode) {
+  return `${NCERT_PDF_BASE}/${bookCode}ps.pdf`;
+}
+
+/**
  * Get viewer URL for textbook
  * @param {string} bookCode - NCERT book code
  * @param {number} totalChapters - Total chapters in book
@@ -341,6 +350,7 @@ export default {
   getTextbooksBySubject,
   getChapterPdfUrl,
   getCompleteBookUrl,
+  getPrelimsPdfUrl,
   getViewerUrl,
   downloadPdf,
   getAllClasses,
