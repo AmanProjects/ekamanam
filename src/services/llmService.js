@@ -1,12 +1,24 @@
 /**
  * 🤖 Multi-LLM Provider Manager for Ekamanam
- * 
+ *
  * Supports multiple LLM providers with automatic fallback:
  * - Google Gemini (primary)
  * - Groq (fast, generous free tier)
  * - Perplexity (web-connected research)
  * - Mistral (open-source option)
+ *
+ * v7.1.0: Intelligent AI caching via Google Drive
+ * - Caches responses per PDF page to avoid redundant API calls
+ * - Similarity matching finds related cached queries
+ * - Significant cost savings and faster responses
  */
+
+import {
+  hasDrivePermissions,
+  getPageCache,
+  saveToCache,
+  findSimilarQuery
+} from './aiCacheService';
 
 // ===== PROVIDER DEFINITIONS =====
 export const PROVIDERS = {
@@ -66,21 +78,61 @@ export async function callLLM(prompt, config = {}) {
     temperature = 0.7,
     maxTokens = 4096,
     systemPrompt = null,
-    preferredProvider = null // Allow manual override
+    preferredProvider = null, // Allow manual override
+    // v7.1.0: Cache parameters
+    pdfId = null,
+    pdfName = null,
+    page = null,
+    pageContent = null,
+    context = null, // Selected text
+    skipCache = false // Force fresh API call
   } = config;
 
+  // v7.1.0: Check cache first (if Drive connected and cache params provided)
+  if (!skipCache && pdfId && page && hasDrivePermissions()) {
+    try {
+      console.log(`💾 [${feature}] Checking cache for PDF ${pdfId}, page ${page}...`);
+      const cachedData = await getPageCache(pdfId, page);
+
+      if (cachedData && cachedData.queries.length > 0) {
+        // Look for similar query in cache
+        const similarQuery = findSimilarQuery(
+          cachedData.queries,
+          prompt,
+          context || '',
+          0.7 // 70% similarity threshold
+        );
+
+        if (similarQuery) {
+          console.log(`✅ [${feature}] Cache HIT! Using cached response (${Math.round(similarQuery.similarity * 100)}% match)`);
+          return {
+            response: similarQuery.response,
+            fromCache: true,
+            cacheMatch: similarQuery.similarity,
+            tokensUsed: 0 // No API call
+          };
+        } else {
+          console.log(`ℹ️ [${feature}] Cache MISS - no similar query found`);
+        }
+      }
+    } catch (cacheError) {
+      console.warn('⚠️ Cache check failed (continuing with API call):', cacheError);
+      // Continue to API call
+    }
+  }
+
   // Get provider list for this feature
-  let providers = preferredProvider 
+  let providers = preferredProvider
     ? [preferredProvider, ...(FEATURE_PROVIDERS[feature] || [PROVIDERS.GEMINI])]
     : (FEATURE_PROVIDERS[feature] || [PROVIDERS.GEMINI]);
-  
+
   // V3.0.3: AUTO-DETECT REGIONAL LANGUAGES → PRIORITIZE GEMINI
   // Check if prompt contains Telugu/Hindi/Tamil/etc Unicode characters
   if (!preferredProvider && hasRegionalLanguage(prompt)) {
     // Swap provider order: Gemini first for regional languages
     const hasGroq = providers.includes(PROVIDERS.GROQ);
     const hasGemini = providers.includes(PROVIDERS.GEMINI);
-    
+
     if (hasGroq && hasGemini) {
       // Swap: put Gemini before Groq
       providers = providers.filter(p => p !== PROVIDERS.GROQ && p !== PROVIDERS.GEMINI);
@@ -88,18 +140,18 @@ export async function callLLM(prompt, config = {}) {
       console.log(`🌐 [${feature}] Regional language detected → Using Gemini first`);
     }
   }
-  
+
   // Remove duplicates
   providers = [...new Set(providers)];
-  
+
   // Try each provider in order (with fallback)
   let lastError = null;
-  
+
   for (let i = 0; i < providers.length; i++) {
     try {
       const provider = providers[i];
       console.log(`🤖 [${feature}] Trying ${provider}...`);
-      
+
       const startTime = Date.now();
       const response = await callProvider(provider, prompt, {
         temperature,
@@ -107,28 +159,51 @@ export async function callLLM(prompt, config = {}) {
         systemPrompt
       });
       const duration = Date.now() - startTime;
-      
+
       console.log(`✅ [${feature}] ${provider} succeeded in ${duration}ms`);
-      
+
       // Track usage
       trackUsage(provider, feature, maxTokens, duration);
-      
+
+      // v7.1.0: Save to cache (if Drive connected and cache params provided)
+      if (pdfId && page && pageContent && hasDrivePermissions()) {
+        try {
+          await saveToCache(
+            pdfId,
+            pdfName || 'Unknown PDF',
+            page,
+            pageContent,
+            {
+              question: prompt,
+              mode: feature,
+              context: context || '',
+              response: typeof response === 'string' ? response : response.response,
+              tokensUsed: maxTokens
+            }
+          );
+          console.log(`💾 [${feature}] Response cached for future use`);
+        } catch (cacheError) {
+          console.warn('⚠️ Failed to save to cache:', cacheError);
+          // Don't throw - API call succeeded
+        }
+      }
+
       return response;
-      
+
     } catch (error) {
       lastError = error;
       console.error(`❌ [${feature}] ${providers[i]} failed:`, error.message);
-      
+
       // If last provider, throw error
       if (i === providers.length - 1) {
         throw new Error(`All providers failed for ${feature}: ${error.message}`);
       }
-      
+
       // Otherwise, continue to next provider
       console.log(`🔄 [${feature}] Falling back to ${providers[i + 1]}...`);
     }
   }
-  
+
   throw lastError || new Error(`No providers available for ${feature}`);
 }
 
