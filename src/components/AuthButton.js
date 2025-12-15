@@ -13,7 +13,7 @@ import {
   Logout, 
   Person 
 } from '@mui/icons-material';
-import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '../firebase/config';
 
 function AuthButton({ user }) {
@@ -44,38 +44,67 @@ function AuthButton({ user }) {
       );
       return;
     }
-    
+
     if (!auth || !googleProvider) {
       alert("Firebase initialization failed. Please check your Firebase configuration.");
       return;
     }
-    
+
     try {
+      // v7.2.0: Use Google Identity Services for proper OAuth with Drive scopes
+      // Firebase Auth alone doesn't provide OAuth tokens with custom scopes
+
+      // Step 1: Sign in with Firebase (for user authentication)
       googleProvider.setCustomParameters({
         prompt: 'select_account'
       });
       const result = await signInWithPopup(auth, googleProvider);
+      console.log('✅ Firebase authentication successful');
 
-      // v7.1.2: Extract and store Google OAuth credential for Drive API
-      // Must use GoogleAuthProvider.credentialFromResult() to get the OAuth token
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential && credential.accessToken) {
-        localStorage.setItem('google_access_token', credential.accessToken);
-        console.log('✅ Google OAuth access token stored for Drive API');
-        console.log('🔑 Token preview:', credential.accessToken.substring(0, 20) + '...');
-      } else {
-        console.warn('⚠️ OAuth credential not found in sign-in result. Drive features may not work.');
-        console.log('📋 Result structure:', {
-          hasCredential: !!result.credential,
-          hasUser: !!result.user,
-          providerData: result.user?.providerData
+      // Step 2: Request Drive permissions via Google Identity Services
+      // Load Google Identity Services library if not already loaded
+      if (!window.google?.accounts?.oauth2) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://accounts.google.com/gsi/client';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
         });
+        console.log('✅ Google Identity Services loaded');
       }
+
+      // Get the Web Client ID from Firebase config
+      // This is automatically generated when Google Sign-In is enabled in Firebase
+      const clientId = '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
+
+      // Request OAuth token with Drive scopes
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
+        callback: (tokenResponse) => {
+          if (tokenResponse.access_token) {
+            localStorage.setItem('google_access_token', tokenResponse.access_token);
+            console.log('✅ Google OAuth access token with Drive scopes stored');
+            console.log('🔑 Token preview:', tokenResponse.access_token.substring(0, 20) + '...');
+            console.log('📋 Token scopes:', tokenResponse.scope);
+          } else {
+            console.error('❌ No access token in response');
+          }
+        },
+        error_callback: (error) => {
+          console.error('❌ OAuth error:', error);
+          alert('Failed to get Drive permissions: ' + (error.message || JSON.stringify(error)));
+        }
+      });
+
+      // Trigger the OAuth flow
+      client.requestAccessToken({ prompt: 'consent' });
 
       handleClose();
     } catch (error) {
       console.error('Sign-in error:', error);
-      
+
       if (error.code === 'auth/popup-closed-by-user') {
         console.log("User closed the sign-in popup");
       } else if (error.code === 'auth/popup-blocked') {
