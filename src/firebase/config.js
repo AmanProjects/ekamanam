@@ -21,8 +21,15 @@ if (isFirebaseConfigured) {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     googleProvider = new GoogleAuthProvider();
+
+    // Add Google Drive API scopes for seamless Drive integration
+    // Users will be prompted once to grant these permissions during sign-in
+    googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
+    googleProvider.addScope('https://www.googleapis.com/auth/drive.appdata');
+
     db = getFirestore(app);
     console.log("✅ Firebase initialized successfully");
+    console.log("✅ Google Drive scopes added");
   } catch (error) {
     console.error("Firebase initialization error:", error);
     console.warn("Firebase features disabled. Check your configuration.");
