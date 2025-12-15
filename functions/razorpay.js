@@ -27,10 +27,15 @@ exports.createRazorpayOrder = functions.https.onCall(async (data, context) => {
     console.log(`📝 Creating Razorpay order for user: ${userId}, tier: ${tier}, yearly: ${isYearly}`);
 
     // Create Razorpay order
+    // Receipt must be max 40 chars - use short user ID + timestamp
+    const shortUserId = userId.substring(0, 8);
+    const timestamp = Date.now().toString().slice(-8); // Last 8 digits
+    const receipt = `ord_${shortUserId}_${timestamp}`; // Max 40 chars
+
     const order = await razorpay.orders.create({
       amount: amount, // Amount in paise
       currency: currency || 'INR',
-      receipt: `order_${userId}_${Date.now()}`,
+      receipt: receipt,
       notes: {
         userId: userId,
         tier: tier,

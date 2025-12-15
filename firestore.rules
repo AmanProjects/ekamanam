@@ -59,6 +59,26 @@ service cloud.firestore {
       allow read, write: if false; // Only accessible via Cloud Functions
     }
 
+    // ===== PAYMENT SYSTEM =====
+
+    // Razorpay orders (created by Cloud Functions)
+    match /razorpayOrders/{orderId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Only Cloud Functions can write
+    }
+
+    // Payment records (created by Cloud Functions)
+    match /payments/{paymentId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Only Cloud Functions can write
+    }
+
+    // Stripe checkout sessions (legacy - for reference)
+    match /checkoutSessions/{sessionId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Only Cloud Functions can write
+    }
+
     // ===== NEW FEATURES - Phase 1: Spaced Repetition =====
 
     // Flashcards
