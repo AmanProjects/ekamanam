@@ -14,12 +14,13 @@
  */
 
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import app from '../firebase/config';
 
 // Get Razorpay key from environment
 const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;
 
 // Get Firebase Functions instance
-const functions = getFunctions();
+const functions = getFunctions(app);
 
 // Log warning if Razorpay is not configured
 if (!RAZORPAY_KEY_ID) {
