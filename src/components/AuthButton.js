@@ -54,7 +54,18 @@ function AuthButton({ user }) {
       googleProvider.setCustomParameters({
         prompt: 'select_account'
       });
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+
+      // v7.1.0: Store Google OAuth credential for Drive API
+      if (result.credential) {
+        const credential = result.credential;
+        // Store access token in localStorage for Drive API
+        if (credential.accessToken) {
+          localStorage.setItem('google_access_token', credential.accessToken);
+          console.log('✅ Google OAuth access token stored for Drive API');
+        }
+      }
+
       handleClose();
     } catch (error) {
       console.error('Sign-in error:', error);

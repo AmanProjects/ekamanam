@@ -87,17 +87,23 @@ export async function initializeGoogleDrive() {
 
     console.log('📁 Initializing Drive client...');
     await gapi.client.init({
+      apiKey: process.env.REACT_APP_GOOGLE_API_KEY || 'AIzaSyCCIww51kzyr3eN2oJn24D7SmFptfdK_2o',
       discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
     });
 
     // Check if user is already signed in via Firebase
     const user = auth.currentUser;
     if (user) {
-      // Get Google OAuth token from Firebase
-      const token = await user.getIdToken();
-      gapi.client.setToken({ access_token: token });
-      isSignedIn = true;
-      console.log('✅ Using Firebase Auth token for Drive access');
+      // Get Google OAuth access token from localStorage (stored during sign-in)
+      const accessToken = localStorage.getItem('google_access_token');
+      if (accessToken) {
+        gapi.client.setToken({ access_token: accessToken });
+        isSignedIn = true;
+        console.log('✅ Using Google OAuth access token for Drive access');
+      } else {
+        console.warn('⚠️ No Google OAuth access token found. Drive permissions may not be granted.');
+        isSignedIn = false;
+      }
     }
 
     isInitialized = true;
