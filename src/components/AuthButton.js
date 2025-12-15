@@ -51,14 +51,14 @@ function AuthButton({ user }) {
     }
 
     try {
-      // v7.2.0: Use Google Identity Services for proper OAuth with Drive scopes
+      // v7.2.1: Use Google Identity Services for proper OAuth with Drive scopes
       // Firebase Auth alone doesn't provide OAuth tokens with custom scopes
 
       // Step 1: Sign in with Firebase (for user authentication)
       googleProvider.setCustomParameters({
         prompt: 'select_account'
       });
-      const result = await signInWithPopup(auth, googleProvider);
+      await signInWithPopup(auth, googleProvider);
       console.log('✅ Firebase authentication successful');
 
       // Step 2: Request Drive permissions via Google Identity Services
@@ -75,31 +75,47 @@ function AuthButton({ user }) {
       }
 
       // Get the Web Client ID from Firebase config
-      // This is automatically generated when Google Sign-In is enabled in Firebase
       const clientId = '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
 
-      // Request OAuth token with Drive scopes
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
-        callback: (tokenResponse) => {
-          if (tokenResponse.access_token) {
-            localStorage.setItem('google_access_token', tokenResponse.access_token);
-            console.log('✅ Google OAuth access token with Drive scopes stored');
-            console.log('🔑 Token preview:', tokenResponse.access_token.substring(0, 20) + '...');
-            console.log('📋 Token scopes:', tokenResponse.scope);
-          } else {
-            console.error('❌ No access token in response');
+      // Create promise to wait for OAuth callback
+      const tokenPromise = new Promise((resolve, reject) => {
+        // Request OAuth token with Drive scopes
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
+          callback: (tokenResponse) => {
+            if (tokenResponse.access_token) {
+              localStorage.setItem('google_access_token', tokenResponse.access_token);
+              console.log('✅ Google OAuth access token with Drive scopes stored');
+              console.log('🔑 Token preview:', tokenResponse.access_token.substring(0, 20) + '...');
+              console.log('📋 Token scopes:', tokenResponse.scope);
+              resolve(tokenResponse);
+            } else if (tokenResponse.error) {
+              console.error('❌ OAuth error:', tokenResponse.error);
+              reject(new Error(tokenResponse.error));
+            } else {
+              console.error('❌ No access token in response');
+              reject(new Error('No access token received'));
+            }
+          },
+          error_callback: (error) => {
+            console.error('❌ OAuth error:', error);
+            reject(error);
           }
-        },
-        error_callback: (error) => {
-          console.error('❌ OAuth error:', error);
-          alert('Failed to get Drive permissions: ' + (error.message || JSON.stringify(error)));
+        });
+
+        // CRITICAL: Trigger immediately in same call stack as user click
+        // This prevents popup blockers
+        try {
+          client.requestAccessToken({ prompt: 'consent' });
+        } catch (e) {
+          reject(e);
         }
       });
 
-      // Trigger the OAuth flow
-      client.requestAccessToken({ prompt: 'consent' });
+      // Wait for Drive permissions
+      await tokenPromise;
+      console.log('✅ Drive permissions granted successfully');
 
       handleClose();
     } catch (error) {
