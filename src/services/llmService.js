@@ -13,8 +13,8 @@
  * - Significant cost savings and faster responses
  */
 
+import { hasDrivePermissions } from './googleDriveService';
 import {
-  hasDrivePermissions,
   getPageCache,
   saveToCache,
   findSimilarQuery
