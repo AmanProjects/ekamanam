@@ -274,11 +274,11 @@ export async function trackAIQueryUsage(userId) {
 
 // Get today's usage count
 export async function getTodayUsage(userId) {
-  if (!userId || !db) return { count: 0, limit: 5 };
+  if (!userId || !db) return { count: 0, limit: 3 };
 
   try {
     const subscription = await getUserSubscription(userId);
-    
+
     // Unlimited for paid tiers
     if (subscription.tier !== 'FREE') {
       return { count: 0, limit: -1, unlimited: true };

@@ -198,6 +198,11 @@ function AIModePanel({
     }
   }, [pdfId]);
 
+  // Helper function: Check if AI features should be disabled for FREE tier
+  const isAIFeatureDisabled = () => {
+    return subscription?.isFree && subscription?.remainingQueries === 0;
+  };
+
   // Save language preference when changed
   const handleLanguageChange = (event) => {
     const selectedLang = event.target.value;
@@ -2037,10 +2042,12 @@ Return ONLY this valid JSON:
                     size="large"
                     startIcon={<TeacherIcon />}
                     onClick={() => handleTeacherMode(teacherScope)}
-                    disabled={loading || !pageText}
+                    disabled={loading || !pageText || isAIFeatureDisabled()}
                     sx={{ mb: 1 }}
                   >
-                    {loading ? 'Generating...' : 'Generate Explanation'}
+                    {loading ? 'Generating...' :
+                     isAIFeatureDisabled() ? 'Upgrade to Continue' :
+                     'Generate Explanation'}
                   </Button>
                   <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
                     AI-powered teacher-style explanation
@@ -2065,8 +2072,11 @@ Return ONLY this valid JSON:
               )}
             </Box>
 
-            {/* Upgrade Prompt for Free Users */}
-            {subscription && subscription.isFree && !subscription.loading && (
+            {/* Upgrade Prompt for Free Users - Only show when running low or exhausted */}
+            {subscription && subscription.isFree && !subscription.loading &&
+             subscription.remainingQueries !== undefined &&
+             (subscription.remainingQueries === 0 ||
+              (subscription.remainingQueries / subscription.usage.limit) <= 0.4) && (
               <UpgradePrompt
                 type="limit"
                 onUpgrade={onUpgrade}
@@ -2705,11 +2715,13 @@ Return ONLY this valid JSON:
                       size="large"
                       startIcon={<ExplainIcon />}
                       onClick={() => handleExplainText(editableSelectedText ? 'page' : explainScope)}
-                      disabled={loading || (!editableSelectedText && !pageText)}
+                      disabled={loading || (!editableSelectedText && !pageText) || isAIFeatureDisabled()}
                       sx={{ mb: 1 }}
                       data-vyonn-trigger="explain"
                     >
-                      {loading ? 'Analyzing...' : editableSelectedText ? 'Explain Selection' : 'Analyze & Explain'}
+                      {loading ? 'Analyzing...' :
+                       isAIFeatureDisabled() ? 'Upgrade to Continue' :
+                       editableSelectedText ? 'Explain Selection' : 'Analyze & Explain'}
                     </Button>
                     <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
                       {editableSelectedText 
@@ -3401,10 +3413,12 @@ Return ONLY this valid JSON:
                     size="large"
                     startIcon={<ActivitiesIcon />}
                     onClick={() => handleGenerateActivities(activitiesScope)}
-                    disabled={loading || !pageText}
+                    disabled={loading || !pageText || isAIFeatureDisabled()}
                     sx={{ mb: 1 }}
                   >
-                    {loading ? 'Generating...' : 'Generate Activities'}
+                    {loading ? 'Generating...' :
+                     isAIFeatureDisabled() ? 'Upgrade to Continue' :
+                     'Generate Activities'}
                   </Button>
                   <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
                     Interactive activities and practice questions
@@ -3934,9 +3948,11 @@ Return ONLY this valid JSON:
                 size="large"
                 startIcon={<ResourcesIcon />}
                 onClick={handleGenerateResources}
-                disabled={loading || (!selectedText && !pageText)}
+                disabled={loading || (!selectedText && !pageText) || isAIFeatureDisabled()}
               >
-                {loading ? 'Generating...' : selectedText ? 'Find Resources for Selection' : 'Find Resources for Current Page'}
+                {loading ? 'Generating...' :
+                 isAIFeatureDisabled() ? 'Upgrade to Continue' :
+                 selectedText ? 'Find Resources for Selection' : 'Find Resources for Current Page'}
               </Button>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
                 {selectedText 
@@ -4070,11 +4086,13 @@ Return ONLY this valid JSON:
               variant="contained"
               size="large"
               onClick={handleGenerateExamPrep}
-              disabled={generatingExam || !pdfDocument}
+              disabled={generatingExam || !pdfDocument || isAIFeatureDisabled()}
               startIcon={generatingExam ? null : <ExamIcon />}
               sx={{ mb: 1 }}
             >
-              {generatingExam ? 'Processing...' : 'Generate Exam Questions'}
+              {generatingExam ? 'Processing...' :
+               isAIFeatureDisabled() ? 'Upgrade to Continue' :
+               'Generate Exam Questions'}
             </Button>
             <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 2 }}>
               AI-generated MCQs, short answers, and long answer questions
@@ -4435,10 +4453,12 @@ Return ONLY this valid JSON:
                         variant="outlined"
                         size="small"
                         onClick={() => handleGenerateLongAnswer(index)}
-                        disabled={generatingAnswer === index}
+                        disabled={generatingAnswer === index || isAIFeatureDisabled()}
                         startIcon={generatingAnswer === index ? <CircularProgress size={16} /> : null}
                       >
-                        {generatingAnswer === index ? 'Generating...' : 'Generate Answer'}
+                        {generatingAnswer === index ? 'Generating...' :
+                         isAIFeatureDisabled() ? 'Upgrade to Continue' :
+                         'Generate Answer'}
                       </Button>
 
                       {examAnswers[`long_answer_${index}`] && (
