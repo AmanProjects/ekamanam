@@ -43,6 +43,10 @@ import DoubtLibrary from './components/DoubtLibrary';
 import { SessionHistoryTracker } from './services/sessionHistoryService';
 import SessionTimeline from './components/SessionTimeline';
 
+// v7.0.0: Google Drive Integration
+import { initializeGoogleDrive, hasDrivePermissions } from './services/googleDriveService';
+import DrivePermissionDialog from './components/DrivePermissionDialog';
+
 // Textbook Library Browser (Temporarily disabled - v6.1.3)
 // import TextbookBrowser from './components/TextbookBrowser';
 
@@ -103,6 +107,11 @@ function App() {
 
   // Phase 4: Session History
   const [showTimeline, setShowTimeline] = useState(false);
+
+  // v7.0.0: Google Drive Integration
+  const [showDrivePermissionDialog, setShowDrivePermissionDialog] = useState(false);
+  const [driveConnected, setDriveConnected] = useState(false);
+  const [driveInitialized, setDriveInitialized] = useState(false);
 
   // Textbook Library Browser (Temporarily disabled - v6.1.3)
   // const [showTextbookBrowser, setShowTextbookBrowser] = useState(false);
@@ -312,11 +321,37 @@ function App() {
         } catch (error) {
           console.error("Error loading user data:", error);
         }
+
+        // v7.0.0: Initialize Google Drive after successful sign-in
+        try {
+          console.log('📁 Initializing Google Drive...');
+          await initializeGoogleDrive();
+          setDriveInitialized(true);
+
+          // Check if user has granted Drive permissions
+          const hasPermissions = hasDrivePermissions();
+          setDriveConnected(hasPermissions);
+
+          if (!hasPermissions) {
+            // First-time user - show permission dialog
+            console.log('ℹ️ Drive permissions not granted. Showing dialog...');
+            setShowDrivePermissionDialog(true);
+          } else {
+            console.log('✅ Drive connected and ready');
+          }
+        } catch (error) {
+          console.error('❌ Error initializing Google Drive:', error);
+          // Don't block app if Drive fails - it's an optional feature
+          console.warn('Drive features will be unavailable. App will continue in local-only mode.');
+        }
       } else if (!currentUser) {
         console.log('Signed out');
+        // Reset Drive state on sign-out
+        setDriveConnected(false);
+        setDriveInitialized(false);
       }
     });
-    
+
     return () => unsubscribe();
   }, []);
 
@@ -440,19 +475,26 @@ function App() {
       const response = await fetch(`${process.env.PUBLIC_URL}/samples/${sample.filename}`);
       const blob = await response.blob();
       const file = new File([blob], sample.displayName + '.pdf', { type: 'application/pdf' });
-      
+
       // Open it without saving to library
       setPdfId(sample.id);
       setSelectedFile(file);
       setCurrentLibraryItem(null);
       setCurrentPage(1);
       setView('reader');
-      
+
       console.log(`✅ Opened sample PDF: ${sample.displayName}`);
     } catch (error) {
       console.error('❌ Error loading sample PDF:', error);
       alert('Failed to load sample PDF. Please try again.');
     }
+  };
+
+  // v7.0.0: Handle Drive permission dialog success
+  const handleDrivePermissionSuccess = () => {
+    setShowDrivePermissionDialog(false);
+    setDriveConnected(true);
+    console.log('✅ Drive permissions granted and folders created');
   };
   
   // Auto-save current page to library (debounced)
@@ -964,6 +1006,13 @@ function App() {
         open={showTimeline}
         onClose={() => setShowTimeline(false)}
         userId={user?.uid}
+      />
+
+      {/* v7.0.0: Google Drive Permission Dialog */}
+      <DrivePermissionDialog
+        open={showDrivePermissionDialog}
+        onClose={() => setShowDrivePermissionDialog(false)}
+        onSuccess={handleDrivePermissionSuccess}
       />
 
       {/* Textbook Library Browser (Temporarily disabled - v6.1.3) */}

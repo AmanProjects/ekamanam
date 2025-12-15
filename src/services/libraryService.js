@@ -1,20 +1,37 @@
 /**
- * Library Service - Manages PDF library storage using IndexedDB
- * 
+ * Library Service - Manages PDF library storage using IndexedDB + Google Drive
+ *
  * Features:
- * - Store PDFs and metadata in browser database
+ * - Store PDFs and metadata in browser database (IndexedDB)
+ * - Sync PDFs to user's Google Drive for cross-device access
  * - Add, remove, update library items
  * - Query and search library
  * - Generate thumbnails
  * - Track reading progress
- * 
+ *
  * Storage Structure:
- * - library_items: PDF metadata
- * - pdf_data: Actual PDF binary data
- * - thumbnails: Preview images
+ * - IndexedDB (local): Fast access, offline capability
+ *   - library_items: PDF metadata
+ *   - pdf_data: Actual PDF binary data
+ *   - thumbnails: Preview images
+ * - Google Drive (cloud): Cross-device sync
+ *   - Ekamanam/PDFs/: PDF files
+ *   - ekamanam_library.json: Library index
+ *
+ * @version 7.1.0 - Added Google Drive sync
  */
 
 import { openDB } from 'idb';
+import {
+  hasDrivePermissions,
+  initializeFolderStructure,
+  uploadFile,
+  downloadFile,
+  getLibraryIndex,
+  updateLibraryIndex,
+  deleteFile,
+  FOLDER_STRUCTURE
+} from './googleDriveService';
 
 const DB_NAME = 'ekamanam_library';
 const DB_VERSION = 2;  // V3.0: Upgraded for exam prep cache
@@ -73,7 +90,7 @@ const generateId = () => {
 };
 
 /**
- * Add PDF to library
+ * Add PDF to library (IndexedDB + Google Drive sync)
  * @param {File} file - PDF file object
  * @param {Object} metadata - Additional metadata
  * @returns {Promise<Object>} Library item
@@ -110,24 +127,66 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
       bookmarks: [],
       notes: 0,
       timeSpent: 0,
-      storageType: 'indexeddb',
+      storageType: 'hybrid', // IndexedDB + Drive
+      driveFileId: null, // Will be set after upload
       thumbnailUrl: null,
       pdfDataKey: id,
       userId: metadata.userId || null
     };
-    
+
     console.log('📚 Created library item with collection:', libraryItem.collection, 'pages:', libraryItem.totalPages);
 
-    // Store PDF data
+    // Store in IndexedDB first (fast, always works)
     await db.put(STORES.PDF_DATA, {
       id,
       data: arrayBuffer
     });
 
-    // Store library item
     await db.put(STORES.LIBRARY_ITEMS, libraryItem);
+    console.log('✅ PDF saved to IndexedDB:', libraryItem.name);
 
-    console.log('✅ PDF added to library:', libraryItem.name);
+    // v7.1.0: Sync to Google Drive (if connected)
+    if (hasDrivePermissions()) {
+      try {
+        console.log('☁️ Syncing to Google Drive...');
+
+        const folders = await initializeFolderStructure();
+
+        // Upload PDF to Drive
+        const driveFile = await uploadFile(
+          file,
+          folders.pdfs,
+          `${id}.pdf`,
+          'application/pdf'
+        );
+
+        // Update library item with Drive file ID
+        libraryItem.driveFileId = driveFile.id;
+        await db.put(STORES.LIBRARY_ITEMS, libraryItem);
+
+        // Update library index in Drive
+        const { fileId: indexFileId, data: indexData } = await getLibraryIndex();
+        indexData.pdfs.push({
+          id: libraryItem.id,
+          driveFileId: driveFile.id,
+          name: libraryItem.name,
+          originalFileName: libraryItem.originalFileName,
+          size: libraryItem.size,
+          dateAdded: libraryItem.dateAdded,
+          subject: libraryItem.subject,
+          workspace: libraryItem.workspace
+        });
+        await updateLibraryIndex(indexFileId, indexData);
+
+        console.log('✅ PDF synced to Drive:', driveFile.id);
+      } catch (driveError) {
+        console.warn('⚠️ Drive sync failed (will retry later):', driveError);
+        // Don't throw - IndexedDB save succeeded, Drive is optional
+      }
+    } else {
+      console.log('ℹ️ Drive not connected - PDF saved locally only');
+    }
+
     return libraryItem;
   } catch (error) {
     console.error('❌ Error adding PDF to library:', error);
@@ -182,20 +241,40 @@ export const loadPDFData = async (id) => {
 };
 
 /**
- * Remove PDF from library
+ * Remove PDF from library (IndexedDB + Google Drive)
  * @param {string} id - Library item ID
  * @returns {Promise<void>}
  */
 export const removePDFFromLibrary = async (id) => {
   try {
     const db = await initDB();
-    
-    // Remove from all stores
+
+    // Get library item to find Drive file ID
+    const libraryItem = await db.get(STORES.LIBRARY_ITEMS, id);
+
+    // Remove from all IndexedDB stores
     await db.delete(STORES.LIBRARY_ITEMS, id);
     await db.delete(STORES.PDF_DATA, id);
     await db.delete(STORES.THUMBNAILS, id);
 
-    console.log('✅ PDF removed from library:', id);
+    console.log('✅ PDF removed from IndexedDB:', id);
+
+    // v7.1.0: Remove from Google Drive (if synced)
+    if (libraryItem?.driveFileId && hasDrivePermissions()) {
+      try {
+        await deleteFile(libraryItem.driveFileId);
+
+        // Update library index in Drive
+        const { fileId: indexFileId, data: indexData } = await getLibraryIndex();
+        indexData.pdfs = indexData.pdfs.filter(pdf => pdf.id !== id);
+        await updateLibraryIndex(indexFileId, indexData);
+
+        console.log('✅ PDF removed from Drive:', libraryItem.driveFileId);
+      } catch (driveError) {
+        console.warn('⚠️ Drive deletion failed:', driveError);
+        // Don't throw - local deletion succeeded
+      }
+    }
   } catch (error) {
     console.error('❌ Error removing PDF from library:', error);
     throw error;

@@ -39,6 +39,74 @@ const LIBRARY_INDEX_FILE = 'ekamanam_library.json';
 
 // State
 let folderIds = null; // Cache folder IDs
+let isInitialized = false;
+let isSignedIn = false;
+let gapi = null; // Will be loaded dynamically
+
+/**
+ * Load gapi script dynamically
+ * @returns {Promise<void>}
+ */
+async function loadGapiScript() {
+  return new Promise((resolve, reject) => {
+    if (window.gapi) {
+      gapi = window.gapi;
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = () => {
+      gapi = window.gapi;
+      resolve();
+    };
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+}
+
+/**
+ * Initialize Google Drive API
+ * @returns {Promise<void>}
+ */
+export async function initializeGoogleDrive() {
+  if (isInitialized) {
+    console.log('✅ Google Drive already initialized');
+    return;
+  }
+
+  try {
+    console.log('📁 Loading Google API script...');
+    await loadGapiScript();
+
+    console.log('📁 Initializing gapi client...');
+    await new Promise((resolve, reject) => {
+      gapi.load('client:auth2', { callback: resolve, onerror: reject });
+    });
+
+    console.log('📁 Initializing Drive client...');
+    await gapi.client.init({
+      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+    });
+
+    // Check if user is already signed in via Firebase
+    const user = auth.currentUser;
+    if (user) {
+      // Get Google OAuth token from Firebase
+      const token = await user.getIdToken();
+      gapi.client.setToken({ access_token: token });
+      isSignedIn = true;
+      console.log('✅ Using Firebase Auth token for Drive access');
+    }
+
+    isInitialized = true;
+    console.log('✅ Google Drive initialized successfully');
+  } catch (error) {
+    console.error('❌ Error initializing Google Drive:', error);
+    throw error;
+  }
+}
 
 /**
  * Get Firebase Auth access token
