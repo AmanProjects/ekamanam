@@ -19,7 +19,8 @@ import {
   Style as FlashcardIcon,
   Timeline as TimelineIcon,
   QuestionAnswer as DoubtIcon,
-  People as PeerIcon
+  People as PeerIcon,
+  MenuBook as TextbookIcon
 } from '@mui/icons-material';
 
 function Dashboard({
@@ -29,6 +30,7 @@ function Dashboard({
   onOpenFlashcards,
   onOpenTimeline,
   onOpenDoubtLibrary,
+  onOpenTextbookBrowser,
   dueCardCount = 0
 }) {
   return (
@@ -213,20 +215,41 @@ function Dashboard({
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, maxWidth: 500, mx: 'auto' }}>
             Access your PDFs, track progress, and continue learning from where you left off
           </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<LibraryIcon />}
-            onClick={onOpenLibrary}
-            sx={{ 
-              py: 1.75,
-              px: 4,
-              fontSize: '1rem',
-              fontWeight: 600
-            }}
-          >
-            Open My Library
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<LibraryIcon />}
+              onClick={onOpenLibrary}
+              sx={{
+                py: 1.75,
+                px: 4,
+                fontSize: '1rem',
+                fontWeight: 600
+              }}
+            >
+              My Library
+            </Button>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<TextbookIcon />}
+              onClick={onOpenTextbookBrowser}
+              sx={{
+                py: 1.75,
+                px: 4,
+                fontSize: '1rem',
+                fontWeight: 600,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #5568d3 0%, #6339a3 100%)',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
+                }
+              }}
+            >
+              Browse Textbooks
+            </Button>
+          </Box>
         </Paper>
 
         {/* Learning Features */}

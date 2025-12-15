@@ -43,6 +43,9 @@ import DoubtLibrary from './components/DoubtLibrary';
 import { SessionHistoryTracker } from './services/sessionHistoryService';
 import SessionTimeline from './components/SessionTimeline';
 
+// Textbook Library Browser
+import TextbookBrowser from './components/TextbookBrowser';
+
 function App() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('dashboard'); // 'dashboard', 'library', or 'reader'
@@ -100,6 +103,9 @@ function App() {
 
   // Phase 4: Session History
   const [showTimeline, setShowTimeline] = useState(false);
+
+  // Textbook Library Browser
+  const [showTextbookBrowser, setShowTextbookBrowser] = useState(false);
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -757,6 +763,7 @@ function App() {
             onOpenFlashcards={() => setShowFlashcards(true)}
             onOpenTimeline={() => setShowTimeline(true)}
             onOpenDoubtLibrary={() => setShowDoubtLibrary(true)}
+            onOpenTextbookBrowser={() => setShowTextbookBrowser(true)}
             dueCardCount={dueCardCount}
           />
         ) : view === 'library' ? (
@@ -958,6 +965,25 @@ function App() {
         open={showTimeline}
         onClose={() => setShowTimeline(false)}
         userId={user?.uid}
+      />
+
+      {/* Textbook Library Browser */}
+      <TextbookBrowser
+        open={showTextbookBrowser}
+        onClose={() => setShowTextbookBrowser(false)}
+        onSelectPdf={async (file, metadata) => {
+          try {
+            // Open the PDF directly in the viewer
+            await handleFileSelect({ target: { files: [file] } });
+
+            // Optionally save metadata for later
+            if (metadata) {
+              console.log('📚 Opened textbook:', metadata);
+            }
+          } catch (error) {
+            console.error('Error opening textbook:', error);
+          }
+        }}
       />
 
       </Box>
