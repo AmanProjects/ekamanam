@@ -90,7 +90,7 @@ const UpgradePrompt = ({
           variant="contained"
           startIcon={<UpgradeIcon />}
           onClick={onUpgrade}
-          sx={{ 
+          sx={{
             fontWeight: 600,
             py: 1.2,
             borderRadius: 1.5,
@@ -103,7 +103,7 @@ const UpgradePrompt = ({
             }
           }}
         >
-          Upgrade to Student Plan (₹99/month)
+          Upgrade
         </Button>
       </Paper>
     );
