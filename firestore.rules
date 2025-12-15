@@ -24,14 +24,23 @@ service cloud.firestore {
     match /users/{userId} {
       // Users can read their own data
       allow read: if isOwner(userId);
-      
-      // Users can write their own data (except subscription, which is managed by Cloud Functions)
+
+      // Users can create their own document (including initial FREE subscription)
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) 
+
+      // Users can update their own data EXCEPT subscription field
+      // (subscription updates only via Cloud Functions for payment processing)
+      allow update: if isOwner(userId)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['subscription']));
-      
-      // Subscription can only be updated by Cloud Functions (no user ID in request)
+
+      // Allow Cloud Functions to update subscription field
       allow update: if !isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subscription']);
+
+      // SPECIAL: Allow user to initialize FREE subscription on first sign-in
+      // (when document doesn't exist yet, setDoc with merge acts as update)
+      allow update: if isOwner(userId)
+        && !resource.data.keys().hasAny(['subscription'])
+        && request.resource.data.subscription.tier == 'FREE';
     }
     
     // User library (PDFs)
