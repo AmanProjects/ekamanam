@@ -13,7 +13,7 @@ import {
   Logout, 
   Person 
 } from '@mui/icons-material';
-import { signInWithPopup, signOut } from 'firebase/auth';
+import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '../firebase/config';
 
 function AuthButton({ user }) {
@@ -56,14 +56,20 @@ function AuthButton({ user }) {
       });
       const result = await signInWithPopup(auth, googleProvider);
 
-      // v7.1.0: Store Google OAuth credential for Drive API
-      if (result.credential) {
-        const credential = result.credential;
-        // Store access token in localStorage for Drive API
-        if (credential.accessToken) {
-          localStorage.setItem('google_access_token', credential.accessToken);
-          console.log('✅ Google OAuth access token stored for Drive API');
-        }
+      // v7.1.2: Extract and store Google OAuth credential for Drive API
+      // Must use GoogleAuthProvider.credentialFromResult() to get the OAuth token
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential && credential.accessToken) {
+        localStorage.setItem('google_access_token', credential.accessToken);
+        console.log('✅ Google OAuth access token stored for Drive API');
+        console.log('🔑 Token preview:', credential.accessToken.substring(0, 20) + '...');
+      } else {
+        console.warn('⚠️ OAuth credential not found in sign-in result. Drive features may not work.');
+        console.log('📋 Result structure:', {
+          hasCredential: !!result.credential,
+          hasUser: !!result.user,
+          providerData: result.user?.providerData
+        });
       }
 
       handleClose();
