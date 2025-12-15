@@ -614,10 +614,22 @@ function AIModePanel({
   };
 
   const handleTranslateSection = async (sectionName, sectionContent) => {
+    // 🔒 Check subscription limits
+    if (user && subscription) {
+      const usageCheck = await trackAIQueryUsage(user.uid);
+      if (!usageCheck.allowed) {
+        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
+        return;
+      }
+      if (subscription.refreshUsage) {
+        subscription.refreshUsage();
+      }
+    }
+
     // V3.0.3: Use multi-provider system for translation
     setTranslatingSection(sectionName);
     setError(null);
-    
+
     try {
       // Use the translation service from geminiService
       const translation = await translateTeacherModeToEnglish(sectionContent);
@@ -729,11 +741,23 @@ function AIModePanel({
   const handleWordByWordAnalysis = async (isLoadMore = false) => {
     // V3.0.3: Removed API key check - multi-provider handles this
     console.log('🔍 [Multilingual] Button clicked:', { isLoadMore, hasPageText: !!pageText, pageTextLength: pageText?.length });
-    
+
     if (!pageText) {
       setError('Please load a PDF page first');
       console.error('❌ [Multilingual] No pageText available');
       return;
+    }
+
+    // 🔒 Check subscription limits (only for new analysis, not for "Load More")
+    if (!isLoadMore && user && subscription) {
+      const usageCheck = await trackAIQueryUsage(user.uid);
+      if (!usageCheck.allowed) {
+        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
+        return;
+      }
+      if (subscription.refreshUsage) {
+        subscription.refreshUsage();
+      }
     }
 
     setAnalyzingWords(true);
@@ -1064,8 +1088,20 @@ function AIModePanel({
   const handleGenerateLongAnswer = async (questionIndex) => {
     if (!pdfDocument || !examPrepResponse) return;
 
+    // 🔒 Check subscription limits
+    if (user && subscription) {
+      const usageCheck = await trackAIQueryUsage(user.uid);
+      if (!usageCheck.allowed) {
+        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
+        return;
+      }
+      if (subscription.refreshUsage) {
+        subscription.refreshUsage();
+      }
+    }
+
     setGeneratingAnswer(questionIndex);
-    
+
     try {
       const question = examPrepResponse.longAnswer[questionIndex];
       const fullText = await extractFullPdfText(pdfDocument);
@@ -1589,8 +1625,20 @@ function AIModePanel({
   const handleSubmitQuiz = async () => {
     if (!activitiesResponse?.mcqs) return;
 
+    // 🔒 Check subscription limits
+    if (user && subscription) {
+      const usageCheck = await trackAIQueryUsage(user.uid);
+      if (!usageCheck.allowed) {
+        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
+        return;
+      }
+      if (subscription.refreshUsage) {
+        subscription.refreshUsage();
+      }
+    }
+
     // V3.0.3: Removed API key check - multi-provider handles this
-    
+
     setSubmittingQuiz(true);
     setError(null);
 

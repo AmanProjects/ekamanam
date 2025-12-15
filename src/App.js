@@ -612,11 +612,15 @@ function App() {
             {/* Subscription Badge */}
             {subscription.tier && (
               <Chip
-                label={subscription.tier}
+                label={
+                  subscription.isFree && subscription.remainingQueries !== undefined
+                    ? `FREE (${subscription.remainingQueries}/${subscription.usage?.limit || 3} left)`
+                    : subscription.tier
+                }
                 size="small"
                 onClick={() => setShowSubscriptionDialog(true)}
-                sx={{ 
-                  fontWeight: 600, 
+                sx={{
+                  fontWeight: 600,
                   cursor: 'pointer',
                   display: { xs: 'none', sm: 'flex' },
                   ...(subscription.isPaid ? {
@@ -628,13 +632,14 @@ function App() {
                       boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
                     }
                   } : {
-                    bgcolor: 'grey.200',
-                    color: 'grey.700',
+                    bgcolor: subscription.remainingQueries === 0 ? 'error.light' : 'grey.200',
+                    color: subscription.remainingQueries === 0 ? 'error.dark' : 'grey.700',
                     border: '1px solid',
-                    borderColor: 'grey.300',
+                    borderColor: subscription.remainingQueries === 0 ? 'error.main' : 'grey.300',
                     '&:hover': {
-                      bgcolor: 'grey.300',
-                      borderColor: 'grey.400'
+                      bgcolor: subscription.remainingQueries === 0 ? 'error.main' : 'grey.300',
+                      borderColor: subscription.remainingQueries === 0 ? 'error.dark' : 'grey.400',
+                      color: subscription.remainingQueries === 0 ? 'white' : 'grey.700'
                     }
                   }),
                   transition: 'all 0.2s ease'

@@ -18,7 +18,7 @@ export function useSubscription(userId) {
     features: SUBSCRIPTION_TIERS.FREE.limits,
     loading: true
   });
-  const [usage, setUsage] = useState({ count: 0, limit: 5, unlimited: false });
+  const [usage, setUsage] = useState({ count: 0, limit: 3, unlimited: false });
 
   // Subscribe to real-time subscription updates
   useEffect(() => {
