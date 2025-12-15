@@ -2,7 +2,6 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const cors = require('cors')({ origin: true });
 
 const db = admin.firestore();
 
@@ -17,164 +16,152 @@ const razorpay = new Razorpay({
 // ==========================================
 // 🎟️ CREATE RAZORPAY ORDER
 // ==========================================
-exports.createRazorpayOrder = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    try {
-      if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-      }
+exports.createRazorpayOrder = functions.https.onCall(async (data, context) => {
+  try {
+    const { amount, currency, userId, tier, isYearly, planId } = data;
 
-      const { amount, currency, userId, tier, isYearly, planId } = req.body;
+    if (!amount || !userId || !tier) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields');
+    }
 
-      if (!amount || !userId || !tier) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
+    console.log(`📝 Creating Razorpay order for user: ${userId}, tier: ${tier}, yearly: ${isYearly}`);
 
-      console.log(`📝 Creating Razorpay order for user: ${userId}, tier: ${tier}, yearly: ${isYearly}`);
-
-      // Create Razorpay order
-      const order = await razorpay.orders.create({
-        amount: amount, // Amount in paise
-        currency: currency || 'INR',
-        receipt: `order_${userId}_${Date.now()}`,
-        notes: {
-          userId: userId,
-          tier: tier,
-          isYearly: isYearly ? 'true' : 'false',
-          planId: planId
-        }
-      });
-
-      console.log(`✅ Razorpay order created: ${order.id}`);
-
-      // Store order details in Firestore for verification
-      await db.collection('razorpayOrders').doc(order.id).set({
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency,
+    // Create Razorpay order
+    const order = await razorpay.orders.create({
+      amount: amount, // Amount in paise
+      currency: currency || 'INR',
+      receipt: `order_${userId}_${Date.now()}`,
+      notes: {
         userId: userId,
         tier: tier,
-        isYearly: isYearly,
-        planId: planId,
-        status: 'created',
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+        isYearly: isYearly ? 'true' : 'false',
+        planId: planId
+      }
+    });
 
-      return res.status(200).json({
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency
-      });
+    console.log(`✅ Razorpay order created: ${order.id}`);
 
-    } catch (error) {
-      console.error('❌ Error creating Razorpay order:', error);
-      return res.status(500).json({ error: error.message });
-    }
-  });
+    // Store order details in Firestore for verification
+    await db.collection('razorpayOrders').doc(order.id).set({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      userId: userId,
+      tier: tier,
+      isYearly: isYearly,
+      planId: planId,
+      status: 'created',
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return {
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency
+    };
+
+  } catch (error) {
+    console.error('❌ Error creating Razorpay order:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
 });
 
 // ==========================================
 // ✅ VERIFY RAZORPAY PAYMENT
 // ==========================================
-exports.verifyRazorpayPayment = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    try {
-      if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-      }
+exports.verifyRazorpayPayment = functions.https.onCall(async (data) => {
+  try {
+    const { orderId, paymentId, signature, userId, tier, isYearly } = data;
 
-      const { orderId, paymentId, signature, userId, tier, isYearly } = req.body;
-
-      if (!orderId || !paymentId || !signature || !userId) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
-
-      console.log(`🔍 Verifying Razorpay payment: ${paymentId}`);
-
-      // Verify signature
-      const keySecret = functions.config().razorpay?.key_secret || process.env.RAZORPAY_KEY_SECRET;
-      const generatedSignature = crypto
-        .createHmac('sha256', keySecret)
-        .update(`${orderId}|${paymentId}`)
-        .digest('hex');
-
-      if (generatedSignature !== signature) {
-        console.error('❌ Signature verification failed');
-        return res.status(400).json({ error: 'Invalid signature' });
-      }
-
-      console.log('✅ Signature verified successfully');
-
-      // Get order details
-      const orderDoc = await db.collection('razorpayOrders').doc(orderId).get();
-      if (!orderDoc.exists) {
-        return res.status(404).json({ error: 'Order not found' });
-      }
-
-      const orderData = orderDoc.data();
-
-      // Get payment details from Razorpay
-      const payment = await razorpay.payments.fetch(paymentId);
-
-      // Calculate subscription period
-      const isYearlySubscription = orderData.isYearly || isYearly;
-      const durationMonths = isYearlySubscription ? 12 : 1;
-      const currentPeriodStart = new Date();
-      const currentPeriodEnd = new Date();
-      currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + durationMonths);
-
-      // Update user's subscription in Firestore
-      await db.collection('users').doc(userId).set({
-        subscription: {
-          tier: orderData.tier || tier,
-          status: 'active',
-          razorpayOrderId: orderId,
-          razorpayPaymentId: paymentId,
-          currentPeriodStart: admin.firestore.Timestamp.fromDate(currentPeriodStart),
-          currentPeriodEnd: admin.firestore.Timestamp.fromDate(currentPeriodEnd),
-          cancelAtPeriodEnd: false,
-          amount: payment.amount / 100, // Convert paise to rupees
-          currency: payment.currency,
-          isYearly: isYearlySubscription,
-          features: getTierFeatures(orderData.tier || tier),
-          paymentMethod: payment.method,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        }
-      }, { merge: true });
-
-      // Update order status
-      await db.collection('razorpayOrders').doc(orderId).update({
-        status: 'paid',
-        paymentId: paymentId,
-        paidAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      // Store payment record
-      await db.collection('payments').add({
-        userId: userId,
-        orderId: orderId,
-        paymentId: paymentId,
-        amount: payment.amount / 100,
-        currency: payment.currency,
-        status: payment.status,
-        method: payment.method,
-        tier: orderData.tier || tier,
-        isYearly: isYearlySubscription,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      console.log(`✅ User ${userId} upgraded to ${orderData.tier || tier}`);
-
-      return res.status(200).json({
-        success: true,
-        message: 'Payment verified and subscription activated'
-      });
-
-    } catch (error) {
-      console.error('❌ Error verifying payment:', error);
-      return res.status(500).json({ error: error.message });
+    if (!orderId || !paymentId || !signature || !userId) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields');
     }
-  });
+
+    console.log(`🔍 Verifying Razorpay payment: ${paymentId}`);
+
+    // Verify signature
+    const keySecret = functions.config().razorpay?.key_secret || process.env.RAZORPAY_KEY_SECRET;
+    const generatedSignature = crypto
+      .createHmac('sha256', keySecret)
+      .update(`${orderId}|${paymentId}`)
+      .digest('hex');
+
+    if (generatedSignature !== signature) {
+      console.error('❌ Signature verification failed');
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid signature');
+    }
+
+    console.log('✅ Signature verified successfully');
+
+    // Get order details
+    const orderDoc = await db.collection('razorpayOrders').doc(orderId).get();
+    if (!orderDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'Order not found');
+    }
+
+    const orderData = orderDoc.data();
+
+    // Get payment details from Razorpay
+    const payment = await razorpay.payments.fetch(paymentId);
+
+    // Calculate subscription period
+    const isYearlySubscription = orderData.isYearly || isYearly;
+    const durationMonths = isYearlySubscription ? 12 : 1;
+    const currentPeriodStart = new Date();
+    const currentPeriodEnd = new Date();
+    currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + durationMonths);
+
+    // Update user's subscription in Firestore
+    await db.collection('users').doc(userId).set({
+      subscription: {
+        tier: orderData.tier || tier,
+        status: 'active',
+        razorpayOrderId: orderId,
+        razorpayPaymentId: paymentId,
+        currentPeriodStart: admin.firestore.Timestamp.fromDate(currentPeriodStart),
+        currentPeriodEnd: admin.firestore.Timestamp.fromDate(currentPeriodEnd),
+        cancelAtPeriodEnd: false,
+        amount: payment.amount / 100, // Convert paise to rupees
+        currency: payment.currency,
+        isYearly: isYearlySubscription,
+        features: getTierFeatures(orderData.tier || tier),
+        paymentMethod: payment.method,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }
+    }, { merge: true });
+
+    // Update order status
+    await db.collection('razorpayOrders').doc(orderId).update({
+      status: 'paid',
+      paymentId: paymentId,
+      paidAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Store payment record
+    await db.collection('payments').add({
+      userId: userId,
+      orderId: orderId,
+      paymentId: paymentId,
+      amount: payment.amount / 100,
+      currency: payment.currency,
+      status: payment.status,
+      method: payment.method,
+      tier: orderData.tier || tier,
+      isYearly: isYearlySubscription,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log(`✅ User ${userId} upgraded to ${orderData.tier || tier}`);
+
+    return {
+      success: true,
+      message: 'Payment verified and subscription activated'
+    };
+
+  } catch (error) {
+    console.error('❌ Error verifying payment:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
 });
 
 // ==========================================
@@ -232,40 +219,34 @@ exports.razorpayWebhook = functions.https.onRequest(async (req, res) => {
 // ==========================================
 // 🗑️ CANCEL SUBSCRIPTION
 // ==========================================
-exports.cancelRazorpaySubscription = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    try {
-      if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-      }
+exports.cancelRazorpaySubscription = functions.https.onCall(async (data) => {
+  try {
+    const { userId } = data;
 
-      const { userId } = req.body;
-
-      if (!userId) {
-        return res.status(400).json({ error: 'User ID required' });
-      }
-
-      console.log(`🗑️ Cancelling subscription for user: ${userId}`);
-
-      // Update user's subscription status
-      await db.collection('users').doc(userId).update({
-        'subscription.cancelAtPeriodEnd': true,
-        'subscription.status': 'cancelled',
-        'subscription.cancelledAt': admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      console.log(`✅ Subscription cancelled for user: ${userId}`);
-
-      return res.status(200).json({
-        success: true,
-        message: 'Subscription cancelled successfully'
-      });
-
-    } catch (error) {
-      console.error('❌ Error cancelling subscription:', error);
-      return res.status(500).json({ error: error.message });
+    if (!userId) {
+      throw new functions.https.HttpsError('invalid-argument', 'User ID required');
     }
-  });
+
+    console.log(`🗑️ Cancelling subscription for user: ${userId}`);
+
+    // Update user's subscription status
+    await db.collection('users').doc(userId).update({
+      'subscription.cancelAtPeriodEnd': true,
+      'subscription.status': 'cancelled',
+      'subscription.cancelledAt': admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log(`✅ Subscription cancelled for user: ${userId}`);
+
+    return {
+      success: true,
+      message: 'Subscription cancelled successfully'
+    };
+
+  } catch (error) {
+    console.error('❌ Error cancelling subscription:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
 });
 
 // ==========================================
