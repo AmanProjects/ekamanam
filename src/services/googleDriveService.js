@@ -88,7 +88,9 @@ export async function initializeGoogleDrive() {
     console.log('📁 Initializing Drive client...');
     await gapi.client.init({
       apiKey: process.env.REACT_APP_GOOGLE_API_KEY || 'AIzaSyCCIww51kzyr3eN2oJn24D7SmFptfdK_2o',
+      clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || '662515641730-98vgp3s7ueahfevqi0stgq4d97v6iuh9.apps.googleusercontent.com',
       discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+      scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata'
     });
 
     // Check if user is already signed in via Firebase
