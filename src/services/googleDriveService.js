@@ -82,32 +82,23 @@ export async function initializeGoogleDrive() {
 
     console.log('📁 Initializing gapi client...');
     await new Promise((resolve, reject) => {
-      gapi.load('client:auth2', { callback: resolve, onerror: reject });
+      gapi.load('client', { callback: resolve, onerror: reject });
     });
 
-    console.log('📁 Initializing Drive client...');
-    await gapi.client.init({
-      apiKey: process.env.REACT_APP_GOOGLE_API_KEY || 'AIzaSyCCIww51kzyr3eN2oJn24D7SmFptfdK_2o',
-      clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || '662515641730-98vgp3s7ueahfevqi0stgq4d97v6iuh9.apps.googleusercontent.com',
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-      scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata'
-    });
-
-    // Check if user is already signed in via Firebase
-    const user = auth.currentUser;
-    if (user) {
-      // Get Google OAuth access token from localStorage (stored during sign-in)
-      const accessToken = localStorage.getItem('google_access_token');
-      if (accessToken) {
-        gapi.client.setToken({ access_token: accessToken });
-        isSignedIn = true;
-        console.log('✅ Using Google OAuth access token for Drive access');
-      } else {
-        console.warn('⚠️ No Google OAuth access token found. Drive permissions may not be granted.');
-        isSignedIn = false;
-      }
+    // Get OAuth access token from localStorage (stored during Firebase sign-in)
+    const accessToken = localStorage.getItem('google_access_token');
+    if (!accessToken) {
+      console.warn('⚠️ No Google OAuth access token found. User needs to sign in first.');
+      return;
     }
 
+    console.log('📁 Setting access token...');
+    gapi.client.setToken({ access_token: accessToken });
+
+    console.log('📁 Loading Drive API...');
+    await gapi.client.load('drive', 'v3');
+
+    isSignedIn = true;
     isInitialized = true;
     console.log('✅ Google Drive initialized successfully');
   } catch (error) {
