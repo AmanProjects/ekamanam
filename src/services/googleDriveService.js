@@ -156,25 +156,28 @@ export function hasDrivePermissions() {
 
 /**
  * Request Drive permissions from user
+ * Since we use Firebase Auth with Google Sign-In, permissions are granted during sign-in.
+ * This function just ensures Drive is initialized with the existing token.
  */
 export async function requestDrivePermissions() {
-  if (!isInitialized) {
-    await initializeGoogleDrive();
-  }
-
   try {
-    const authInstance = gapi.auth2.getAuthInstance();
-    await authInstance.signIn({
-      prompt: 'consent' // Force consent screen to show permissions
-    });
+    // Check if access token exists
+    const accessToken = localStorage.getItem('google_access_token');
+    if (!accessToken) {
+      throw new Error('No Google OAuth access token found. Please sign in again.');
+    }
 
-    console.log('✅ Drive permissions granted');
+    // Reset initialization state to force re-init
+    isInitialized = false;
+    isSignedIn = false;
+
+    // Initialize Drive with the token
+    await initializeGoogleDrive();
+
+    console.log('✅ Drive permissions confirmed and initialized');
     return true;
   } catch (error) {
-    console.error('❌ Error requesting Drive permissions:', error);
-    if (error.error === 'popup_closed_by_user') {
-      throw new Error('Please allow popup to grant Google Drive access');
-    }
+    console.error('❌ Error confirming Drive permissions:', error);
     throw error;
   }
 }
