@@ -39,7 +39,7 @@ service cloud.firestore {
       // SPECIAL: Allow user to initialize FREE subscription on first sign-in
       // (when document doesn't exist yet, setDoc with merge acts as update)
       allow update: if isOwner(userId)
-        && !resource.data.keys().hasAny(['subscription'])
+        && (!exists(/databases/$(database)/documents/users/$(userId)) || !resource.data.keys().hasAny(['subscription']))
         && request.resource.data.subscription.tier == 'FREE';
     }
     
@@ -95,6 +95,19 @@ service cloud.firestore {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Review history (for spaced repetition)
+    match /reviewHistory/{historyId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Streaks (for flashcard review tracking)
+    match /streaks/{userId} {
+      allow read: if isSignedIn() && userId == request.auth.uid;
+      allow write: if isSignedIn() && userId == request.auth.uid;
     }
 
     // ===== Phase 2: Cognitive Load Tracker =====
