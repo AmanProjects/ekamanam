@@ -53,13 +53,20 @@ const EVENT_TYPES = {
 
 /**
  * Main session history tracker class
+ * v7.2.12: Enhanced with book title and pdfId for navigation
  */
 export class SessionHistoryTracker {
-  constructor(userId, sessionId, pdfName, chapter) {
+  constructor(userId, sessionId, bookTitle, chapterTitle, pdfId = null, subject = 'Unknown') {
     this.userId = userId;
     this.sessionId = sessionId;
-    this.pdfName = pdfName;
-    this.chapter = chapter;
+    this.bookTitle = bookTitle;      // v7.2.12: Proper book/collection title
+    this.chapterTitle = chapterTitle; // v7.2.12: Chapter title
+    this.pdfId = pdfId;              // v7.2.12: For click-to-open
+    this.subject = subject;          // v7.2.12: Subject for categorization
+    
+    // Legacy fields for compatibility
+    this.pdfName = bookTitle;
+    this.chapter = chapterTitle;
 
     // Session metadata
     this.startTime = Date.now();
@@ -363,6 +370,12 @@ export class SessionHistoryTracker {
       const sessionData = {
         userId: this.userId,
         sessionId: this.sessionId,
+        // v7.2.12: Enhanced metadata
+        bookTitle: this.bookTitle,
+        chapterTitle: this.chapterTitle,
+        pdfId: this.pdfId,
+        subject: this.subject,
+        // Legacy fields for compatibility
         pdfName: this.pdfName,
         chapter: this.chapter,
         startTime: Timestamp.fromMillis(this.startTime),

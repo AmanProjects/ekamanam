@@ -245,11 +245,16 @@ function App() {
       // Initialize cognitive load tracker
       cognitiveTrackerRef.current = new CognitiveLoadTracker(user.uid, sessionId);
 
-      // Initialize session history tracker
+      // Initialize session history tracker - v7.2.12: Pass book title and pdfId
+      const bookTitle = currentLibraryItem?.collection || currentLibraryItem?.name || selectedFile.name.replace('.pdf', '');
+      const chapterTitle = currentLibraryItem?.chapterTitle || currentLibraryItem?.name || '';
+      
       sessionTrackerRef.current = new SessionHistoryTracker(
         user.uid,
         sessionId,
-        selectedFile.name,
+        bookTitle,  // Use collection/book title instead of file name
+        chapterTitle,
+        pdfId,      // Pass pdfId for click-to-open functionality
         currentLibraryItem?.subject || 'Unknown'
       );
 
@@ -499,6 +504,35 @@ function App() {
     } catch (error) {
       console.error('❌ Error opening from library:', error);
       alert(`Failed to open PDF from library:\n${error.message}\n\nPlease try re-uploading the file.`);
+    }
+  };
+  
+  // v7.2.12: Open a PDF at a specific page (for Learning Journey click-to-open)
+  const handleOpenPdfAtPage = async (pdfId, pageNumber) => {
+    try {
+      console.log(`📖 Opening PDF ${pdfId} at page ${pageNumber}`);
+      
+      // Load library items to find the one with this pdfId
+      const libraryItems = await import('./services/libraryService').then(m => m.getAllLibraryItems());
+      const libraryItem = libraryItems.find(item => item.id === pdfId);
+      
+      if (!libraryItem) {
+        console.warn('⚠️ PDF not found in library:', pdfId);
+        alert('This PDF is no longer in your library.');
+        return;
+      }
+      
+      // Use existing handleOpenFromLibrary but override the page
+      await handleOpenFromLibrary({ ...libraryItem, lastPage: pageNumber });
+      
+      // Ensure we navigate to the correct page after opening
+      setTimeout(() => {
+        setCurrentPage(pageNumber);
+      }, 500);
+      
+    } catch (error) {
+      console.error('❌ Error opening PDF at page:', error);
+      alert(`Failed to open PDF: ${error.message}`);
     }
   };
   
@@ -1252,11 +1286,12 @@ function App() {
         userId={user?.uid}
       />
 
-      {/* Phase 4: Session Timeline */}
+      {/* Phase 4: Session Timeline - v7.2.12: Added click-to-open */}
       <SessionTimeline
         open={showTimeline}
         onClose={() => setShowTimeline(false)}
         userId={user?.uid}
+        onOpenPdfAtPage={handleOpenPdfAtPage}
       />
 
       {/* v7.0.0: Google Drive Permission Dialog */}

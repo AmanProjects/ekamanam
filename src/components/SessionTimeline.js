@@ -49,14 +49,15 @@ import {
 import { getSessionHistory, getSessionDetails } from '../services/sessionHistoryService';
 
 /**
- * Session Timeline Component - v7.2.11
+ * Session Timeline Component - v7.2.12
  * 
  * Redesigned with:
  * - Compact row-based layout instead of cards
- * - Sessions grouped by book/PDF name
+ * - Sessions grouped by book title (not file name)
+ * - Click on event to open PDF at that page
  * - More information visible at a glance
  */
-function SessionTimeline({ open, onClose, userId }) {
+function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage }) {
   const [sessions, setSessions] = useState([]);
   const [groupedSessions, setGroupedSessions] = useState({});
   const [expandedBooks, setExpandedBooks] = useState({});
@@ -73,11 +74,12 @@ function SessionTimeline({ open, onClose, userId }) {
     }
   }, [open, userId]);
 
-  // Group sessions by book when sessions change
+  // Group sessions by book when sessions change - v7.2.12: Use bookTitle
   useEffect(() => {
     if (sessions.length > 0) {
       const grouped = sessions.reduce((acc, session) => {
-        const bookName = session.pdfName || 'Unknown Book';
+        // v7.2.12: Prefer bookTitle over pdfName (file name)
+        const bookName = session.bookTitle || session.pdfName || 'Unknown Book';
         if (!acc[bookName]) {
           acc[bookName] = [];
         }
@@ -95,6 +97,14 @@ function SessionTimeline({ open, onClose, userId }) {
       setExpandedBooks(expanded);
     }
   }, [sessions]);
+  
+  // v7.2.12: Handle click to open PDF at specific page
+  const handleOpenAtPage = (session, pageNumber) => {
+    if (onOpenPdfAtPage && session.pdfId) {
+      onOpenPdfAtPage(session.pdfId, pageNumber);
+      onClose(); // Close the dialog
+    }
+  };
 
   const loadSessions = async () => {
     setLoading(true);
@@ -398,13 +408,33 @@ function SessionTimeline({ open, onClose, userId }) {
                                   </TableCell>
                                   <TableCell>
                                     <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 150 }}>
-                                      {session.chapter || '-'}
+                                      {session.chapterTitle || session.chapter || '-'}
                                     </Typography>
                                   </TableCell>
                                   <TableCell>
-                                    <IconButton size="small" color="primary">
-                                      <PlayIcon fontSize="small" />
-                                    </IconButton>
+                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                      <IconButton 
+                                        size="small" 
+                                        color="primary"
+                                        title="View Timeline"
+                                      >
+                                        <PlayIcon fontSize="small" />
+                                      </IconButton>
+                                      {session.pdfId && onOpenPdfAtPage && (
+                                        <IconButton 
+                                          size="small" 
+                                          color="success"
+                                          title="Continue Reading"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const lastPage = session.stats?.pagesViewed?.slice(-1)[0] || 1;
+                                            handleOpenAtPage(session, lastPage);
+                                          }}
+                                        >
+                                          <BookIcon fontSize="small" />
+                                        </IconButton>
+                                      )}
+                                    </Box>
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -431,17 +461,33 @@ function SessionTimeline({ open, onClose, userId }) {
 
             {!detailsLoading && selectedSession && (
               <>
-                {/* Session Summary */}
+                {/* Session Summary - v7.2.12: Show book title and continue reading button */}
                 <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Box>
                       <Typography variant="h6">
-                        {selectedSession.pdfName}
+                        {selectedSession.bookTitle || selectedSession.pdfName}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {selectedSession.chapter || 'No chapter'} • {formatDate(selectedSession.startTime)}
+                        {selectedSession.chapterTitle || selectedSession.chapter || 'No chapter'} • {formatDate(selectedSession.startTime)}
                       </Typography>
+                      {selectedSession.subject && (
+                        <Chip label={selectedSession.subject} size="small" sx={{ mt: 0.5 }} />
+                      )}
                     </Box>
+                    {selectedSession.pdfId && onOpenPdfAtPage && (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<PlayIcon />}
+                        onClick={() => {
+                          const lastPage = selectedSession.stats?.pagesViewed?.slice(-1)[0] || 1;
+                          handleOpenAtPage(selectedSession, lastPage);
+                        }}
+                      >
+                        Continue Reading
+                      </Button>
+                    )}
                   </Box>
 
                   <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
@@ -489,33 +535,53 @@ function SessionTimeline({ open, onClose, userId }) {
 
                 {selectedSession.events && selectedSession.events.length > 0 ? (
                   <Timeline position="right" sx={{ p: 0 }}>
-                    {selectedSession.events.slice(0, 50).map((event, index) => (
-                      <TimelineItem key={index} sx={{ minHeight: 50 }}>
-                        <TimelineOppositeContent color="text.secondary" sx={{ flex: 0.15, py: 0.5 }}>
-                          <Typography variant="caption">
-                            {Math.floor((event.relativeTime || 0) / 1000)}s
-                          </Typography>
-                        </TimelineOppositeContent>
-                        <TimelineSeparator>
-                          <TimelineDot 
-                            sx={{ 
-                              bgcolor: event.type === 'cognitive_load_spike' ? 'error.main' : 'primary.main',
-                              my: 0.5
-                            }}
-                          >
-                            {getEventIcon(event.type)}
-                          </TimelineDot>
-                          {index < Math.min(selectedSession.events.length, 50) - 1 && (
-                            <TimelineConnector />
-                          )}
-                        </TimelineSeparator>
-                        <TimelineContent sx={{ py: 0.5 }}>
-                          <Typography variant="body2">
-                            {getEventDescription(event)}
-                          </Typography>
-                        </TimelineContent>
-                      </TimelineItem>
-                    ))}
+                    {selectedSession.events.slice(0, 50).map((event, index) => {
+                      const isClickable = event.type === 'page_view' && event.data?.pageNumber && selectedSession.pdfId;
+                      return (
+                        <TimelineItem 
+                          key={index} 
+                          sx={{ 
+                            minHeight: 50,
+                            cursor: isClickable ? 'pointer' : 'default',
+                            '&:hover': isClickable ? { bgcolor: 'action.hover' } : {}
+                          }}
+                          onClick={() => isClickable && handleOpenAtPage(selectedSession, event.data.pageNumber)}
+                        >
+                          <TimelineOppositeContent color="text.secondary" sx={{ flex: 0.15, py: 0.5 }}>
+                            <Typography variant="caption">
+                              {Math.floor((event.relativeTime || 0) / 1000)}s
+                            </Typography>
+                          </TimelineOppositeContent>
+                          <TimelineSeparator>
+                            <TimelineDot 
+                              sx={{ 
+                                bgcolor: event.type === 'cognitive_load_spike' ? 'error.main' : 'primary.main',
+                                my: 0.5
+                              }}
+                            >
+                              {getEventIcon(event.type)}
+                            </TimelineDot>
+                            {index < Math.min(selectedSession.events.length, 50) - 1 && (
+                              <TimelineConnector />
+                            )}
+                          </TimelineSeparator>
+                          <TimelineContent sx={{ py: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2">
+                              {getEventDescription(event)}
+                            </Typography>
+                            {isClickable && (
+                              <Chip 
+                                label="Open" 
+                                size="small" 
+                                color="primary" 
+                                variant="outlined"
+                                sx={{ height: 20, fontSize: '0.65rem' }}
+                              />
+                            )}
+                          </TimelineContent>
+                        </TimelineItem>
+                      );
+                    })}
                   </Timeline>
                 ) : (
                   <Alert severity="info">
