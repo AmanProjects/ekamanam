@@ -113,12 +113,51 @@ export async function generateTeacherMode(content, apiKey = null, languageHint =
   const maxLength = isChapter ? 30000 : 5000;
   const truncatedContent = content.substring(0, maxLength);
   
-  const prompt = `You are an experienced teacher helping students understand textbook content.
+  const prompt = `You are an EXCEPTIONAL teacher who brings learning to life! Your explanations should be engaging, memorable, and perfectly suited to the content type.
 
 ${contentType} Content:
 ${truncatedContent}
 
 ${languageInstruction}
+
+🎯 CRITICAL: CONTENT TYPE DETECTION & ADAPTATION
+
+FIRST, analyze the content and determine its type:
+- 📜 **RHYME/NURSERY RHYME**: Short, rhythmic verses for young children (look for: simple words, repetition, AABB/ABAB patterns, playful themes)
+- 📝 **POEM**: Artistic expression with deeper meaning (look for: literary devices, metaphors, emotions, structured stanzas)
+- 📖 **STORY/NARRATIVE**: A tale with characters, plot, beginning-middle-end
+- 🔬 **ACADEMIC/SCIENCE**: Facts, concepts, formulas, explanations
+- 📊 **HISTORICAL/SOCIAL**: Events, dates, places, social concepts
+- 🎨 **CREATIVE/ACTIVITY**: Art, craft, or activity instructions
+
+THEN adapt your explanation style accordingly:
+
+🎵 FOR RHYMES/NURSERY RHYMES:
+- Explain that this is meant to be SUNG with a melody (suggest the tune if popular)
+- Describe the rhythm pattern (clap-clap-clap rhythm, bouncy beat, etc.)
+- Use words like "Let's sing together!" "This rhyme goes like this..."
+- Explain actions/gestures that go with the rhyme
+- Make it FUN and PLAYFUL - use emojis, enthusiasm!
+- Example: "🎶 This is a delightful rhyme that should be sung with a bouncy rhythm! Clap your hands as you say each line..."
+
+📝 FOR POEMS:
+- Describe how it should be RECITED with expression and emotion
+- Explain the rhythm and meter (iambic, free verse, etc.)
+- Highlight where to pause, emphasize, whisper, or raise voice
+- Discuss the imagery and deeper meaning
+- Example: "📖 This beautiful poem should be read slowly, letting each word paint a picture in your mind. Pause at the commas..."
+
+📖 FOR STORIES:
+- Describe this as a tale to be TOLD with animation and expression
+- Suggest character voices and dramatic moments
+- Build suspense and excitement in your explanation
+- Use storytelling language: "Once upon a time...", "And then, something magical happened..."
+- Example: "📚 This is a wonderful story that comes alive when you tell it with different voices for each character..."
+
+🔬 FOR ACADEMIC CONTENT:
+- Be clear, structured, and informative
+- Use analogies and real-world examples
+- Break complex topics into digestible parts
 
 ${isChapter ? `
 NOTE: This is a FULL CHAPTER. Provide:
@@ -135,14 +174,23 @@ NOTE: This is a SINGLE PAGE. Provide:
 
 Return ONLY this valid JSON (no extra text before or after):
 {
-  "summary": "${isChapter ? 'Comprehensive chapter summary' : 'Brief page summary'} in the SAME LANGUAGE (${isChapter ? '5-7' : '2-3'} sentences with <p> tags)",
-  "keyPoints": ["${isChapter ? '5-8 major themes/concepts' : '3-5 key points'} in same language"],
+  "contentType": "rhyme|poem|story|academic|historical|creative",
+  "performanceStyle": "How this content should be performed/delivered - be specific! For rhymes: describe the tune, rhythm, actions. For poems: describe recitation style. For stories: describe how to tell it engagingly.",
+  "summary": "${isChapter ? 'Comprehensive chapter summary' : 'Brief summary that captures the essence'} in the SAME LANGUAGE (${isChapter ? '5-7' : '2-3'} sentences with <p> tags). For rhymes/poems, include the mood and feeling.",
+  "keyPoints": ["${isChapter ? '5-8 major themes/concepts' : '3-5 key points'} in same language - for creative content, include performance tips"],
   "explanation": "${isChapter ? 
-    'COMPREHENSIVE chapter overview (500-800 words). Include: main concepts, how topics connect, progression through the chapter, important formulas/definitions, conceptual understanding, practical applications. Use multiple paragraphs with clear section breaks.' : 
-    'Detailed page explanation (200-300 words)'
-  } in the SAME LANGUAGE (use <p>, <b>, <ul>, <li>, <h4> tags for rich formatting)",
-  "examples": "${isChapter ? 'Multiple real-world examples from different sections with applications' : 'Real-world examples and applications'} in same language (use <p> tags)",
-  "exam": "${isChapter ? 'Comprehensive exam strategy covering all chapter topics, common question patterns, important topics to focus on, and preparation tips' : 'Exam tips and important topics to remember'} in same language (use <p> and <ul><li> tags)"
+    'COMPREHENSIVE chapter overview (500-800 words).' : 
+    'Detailed, ENGAGING explanation (200-400 words) that brings the content to life.'
+  } in the SAME LANGUAGE. 
+  
+  FOR RHYMES: Include rhythm markings (/ for stress), suggest melody if known, describe hand actions, make it sound FUN!
+  FOR POEMS: Include recitation guidance, emotional beats, pauses, and interpretation.
+  FOR STORIES: Retell with drama, suggest character voices, build excitement!
+  FOR ACADEMIC: Clear explanations with examples.
+  
+  Use <p>, <b>, <ul>, <li>, <h4> tags for rich formatting",
+  "examples": "${isChapter ? 'Multiple real-world examples from different sections' : 'Engaging examples and connections to child\'s world'} in same language (use <p> tags). For rhymes/poems: include similar rhymes they might know. For stories: connect to familiar tales.",
+  "exam": "${isChapter ? 'Comprehensive exam strategy' : 'What to remember and how to recite/perform if applicable'} in same language (use <p> and <ul><li> tags). For creative content, include performance tips for recitation competitions."
 }
 
 🎨 VISUALIZATION CAPABILITIES:
@@ -159,22 +207,13 @@ Available molecules: water, methane, ethanol, glucose, benzene, caffeine, aspiri
 For Leaflet maps (cities, routes, regions):
 {"type": "leaflet", "center": [17.385, 78.486], "zoom": 6, "markers": [{"position": [17.385, 78.486], "label": "Hyderabad", "popup": "Capital of Telangana"}], "routes": [{"positions": [[28.7, 77.1], [19.0, 72.8]], "color": "#FF0000"}], "title": "Map of India"}
 
-For Plotly choropleth maps (country/region data):
-{"type": "plotly", "data": [{"type": "choropleth", "locations": ["IND", "PAK"], "z": [1947, 1947], "text": ["India", "Pakistan"], "locationmode": "ISO-3"}], "layout": {"title": "South Asian Independence", "geo": {"scope": "asia"}}}
-
-USE MAPS WHEN:
-- Explaining locations (cities, states, countries)
-- Showing historical events (battles, movements, migrations)
-- Demonstrating routes (trade, exploration, conquests)
-- Highlighting regions (empires, territories, zones)
-- Visualizing geographic data (population, resources)
-
 IMPORTANT: 
 - Return ONLY the JSON object
 - No explanations, no markdown code blocks, just valid JSON
 - Use HTML tags (<p>, <b>, <ul>, <li>, <strong>, <h4>) for formatting
 - Include 3D visualizations when discussing geometric shapes, molecules, or 3D concepts
-${isChapter ? '- CHAPTER MODE: Be VERY comprehensive - cover all major topics, show connections between concepts, explain progression, use multiple detailed paragraphs' : '- PAGE MODE: Be clear, focused, and engaging'}!`;
+- 🎯 MOST IMPORTANT: Make content COME ALIVE! A rhyme should make them want to SING, a poem should move them, a story should captivate them!
+${isChapter ? '- CHAPTER MODE: Be VERY comprehensive' : '- PAGE MODE: Be engaging and memorable'}!`;
 
   // V3.1: Use helper to force Gemini for regional languages
   const config = createLLMConfig('teacherMode', {

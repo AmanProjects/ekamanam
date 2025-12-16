@@ -1576,17 +1576,48 @@ function AIModePanel({
       
       // Use robust JSON parsing with auto-repair
       try {
-        console.log('✅ [Activities] Parsing JSON response, first 200 chars:', response?.substring(0, 200));
+        console.log('✅ [Activities] Raw response, first 500 chars:', response?.substring(0, 500));
         
-        // Use the new robust extraction and repair
-        const { visualAids, cleanedResponse } = extractFromStructuredResponse(response);
+        // Step 1: Parse the raw JSON string from AI
+        let parsedResponse;
+        
+        // Try to extract JSON from the response (it might have markdown or extra text)
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            parsedResponse = JSON.parse(jsonMatch[0]);
+            console.log('✅ [Activities] Successfully parsed JSON from response');
+          } catch (e) {
+            // Try to fix common JSON issues
+            let fixedJson = jsonMatch[0]
+              .replace(/,\s*}/g, '}')  // Remove trailing commas before }
+              .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
+              .replace(/'/g, '"')       // Replace single quotes with double quotes
+              .replace(/\n/g, ' ')      // Remove newlines inside strings
+              .replace(/\t/g, ' ');     // Remove tabs
+            
+            try {
+              parsedResponse = JSON.parse(fixedJson);
+              console.log('✅ [Activities] Parsed JSON after cleanup');
+            } catch (e2) {
+              console.error('❌ [Activities] Could not parse JSON even after cleanup');
+              throw e2;
+            }
+          }
+        } else {
+          throw new Error('No JSON object found in response');
+        }
+        
+        // Step 2: Extract visualizations from the parsed object
+        const { response: cleanedResponse, visualizations } = extractFromStructuredResponse(parsedResponse);
         
         // Store visualizations separately
-        const finalParsedResponse = { ...cleanedResponse, _visualizations: visualAids };
+        const finalParsedResponse = { ...cleanedResponse, _visualizations: visualizations };
         
         console.log('📦 [Activities] Final parsed response:', finalParsedResponse);
-        console.log('📦 [Activities] Has MCQs:', !!finalParsedResponse.mcqs);
-        console.log('📦 [Activities] Has practiceQuestions:', !!finalParsedResponse.practiceQuestions);
+        console.log('📦 [Activities] Has MCQs:', !!finalParsedResponse.mcqs, 'Count:', finalParsedResponse.mcqs?.length || 0);
+        console.log('📦 [Activities] Has practiceQuestions:', !!finalParsedResponse.practiceQuestions, 'Count:', finalParsedResponse.practiceQuestions?.length || 0);
+        console.log('📦 [Activities] Has handsOnActivities:', !!finalParsedResponse.handsOnActivities, 'Count:', finalParsedResponse.handsOnActivities?.length || 0);
         console.log('📦 [Activities] Has visualizations:', finalParsedResponse._visualizations?.length || 0);
         
         setActivitiesResponse(finalParsedResponse);
@@ -1602,7 +1633,7 @@ function AIModePanel({
         }
       } catch (parseError) {
         console.error('❌ [Activities] JSON parse error:', parseError);
-        console.error('❌ [Activities] Response that failed to parse:', response?.substring(0, 500));
+        console.error('❌ [Activities] Response that failed to parse:', response?.substring(0, 1000));
         // Fallback to displaying raw text if all parsing/repair fails
         setActivitiesResponse({ error: 'Could not parse activities format. Displaying as plain text.', raw: response || 'No response received', _visualizations: [] });
         setActivitiesResponsePage(currentPage);
@@ -2236,6 +2267,85 @@ Return ONLY this valid JSON:
                 {/* Render structured content with optional English translation */}
                 {typeof teacherResponse === 'object' && (teacherResponse.summary || teacherResponse.explanation) ? (
                   <Box>
+                    {/* Content Type Badge - v7.2.5: Shows detected content type */}
+                    {teacherResponse.contentType && (
+                      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip 
+                          label={
+                            teacherResponse.contentType === 'rhyme' ? '🎵 Nursery Rhyme' :
+                            teacherResponse.contentType === 'poem' ? '📝 Poem' :
+                            teacherResponse.contentType === 'story' ? '📖 Story' :
+                            teacherResponse.contentType === 'academic' ? '🔬 Academic' :
+                            teacherResponse.contentType === 'historical' ? '📊 Historical' :
+                            teacherResponse.contentType === 'creative' ? '🎨 Creative' :
+                            `📚 ${teacherResponse.contentType}`
+                          }
+                          color={
+                            teacherResponse.contentType === 'rhyme' ? 'secondary' :
+                            teacherResponse.contentType === 'poem' ? 'primary' :
+                            teacherResponse.contentType === 'story' ? 'success' :
+                            'default'
+                          }
+                          sx={{ fontWeight: 600 }}
+                        />
+                      </Box>
+                    )}
+
+                    {/* Performance Style - v7.2.5: How to deliver this content */}
+                    {teacherResponse.performanceStyle && (
+                      <Box sx={{ mb: 3 }}>
+                        <Paper 
+                          elevation={0} 
+                          sx={{ 
+                            p: 2, 
+                            bgcolor: teacherResponse.contentType === 'rhyme' ? 'secondary.50' :
+                                     teacherResponse.contentType === 'poem' ? 'primary.50' :
+                                     teacherResponse.contentType === 'story' ? 'success.50' :
+                                     'action.hover',
+                            border: '2px dashed',
+                            borderColor: teacherResponse.contentType === 'rhyme' ? 'secondary.main' :
+                                         teacherResponse.contentType === 'poem' ? 'primary.main' :
+                                         teacherResponse.contentType === 'story' ? 'success.main' :
+                                         'divider',
+                            borderRadius: 2
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Typography variant="subtitle1" fontWeight={700} color={
+                              teacherResponse.contentType === 'rhyme' ? 'secondary.main' :
+                              teacherResponse.contentType === 'poem' ? 'primary.main' :
+                              teacherResponse.contentType === 'story' ? 'success.main' :
+                              'text.primary'
+                            }>
+                              {teacherResponse.contentType === 'rhyme' ? '🎤 How to Sing This Rhyme' :
+                               teacherResponse.contentType === 'poem' ? '🎭 How to Recite This Poem' :
+                               teacherResponse.contentType === 'story' ? '📢 How to Tell This Story' :
+                               '💡 Performance Tips'}
+                            </Typography>
+                            {/* Listen button for performance style */}
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color={
+                                teacherResponse.contentType === 'rhyme' ? 'secondary' :
+                                teacherResponse.contentType === 'poem' ? 'primary' :
+                                teacherResponse.contentType === 'story' ? 'success' :
+                                'inherit'
+                              }
+                              onClick={() => handleSpeakSection('performanceStyle', teacherResponse.performanceStyle)}
+                              startIcon={speakingSection === 'performanceStyle' ? <Stop /> : <VolumeUp />}
+                              sx={{ ml: 'auto' }}
+                            >
+                              {speakingSection === 'performanceStyle' ? 'Stop' : 'Listen'}
+                            </Button>
+                          </Box>
+                          <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+                            {teacherResponse.performanceStyle}
+                          </Typography>
+                        </Paper>
+                      </Box>
+                    )}
+
                     {/* Summary */}
                     {teacherResponse.summary && (
                       <Box sx={{ mb: 3 }}>
