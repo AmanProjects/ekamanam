@@ -74,7 +74,7 @@ const PricingPlans = ({ user, currentTier, onClose, showCloseButton = true }) =>
     }
   };
 
-  // Define pricing tiers for display
+  // Define pricing tiers for display (Free + Student only)
   const tiers = [
     {
       key: 'FREE',
@@ -82,10 +82,10 @@ const PricingPlans = ({ user, currentTier, onClose, showCloseButton = true }) =>
       description: 'Perfect for trying out Ekamanam',
       price: 0,
       features: [
-        '5 AI queries per day',
-        '100 MB PDF storage',
+        '3 AI queries per day',
         'Basic learning features',
-        'Single device access'
+        'Single device access',
+        'Sample PDFs included'
       ],
       popular: false
     },
@@ -97,15 +97,6 @@ const PricingPlans = ({ user, currentTier, onClose, showCloseButton = true }) =>
       yearlyPrice: PRICING_PLANS.STUDENT.yearly.price,
       features: PRICING_PLANS.STUDENT.features,
       popular: true
-    },
-    {
-      key: 'EDUCATOR',
-      name: 'Educator',
-      description: 'Best for teachers and tutors',
-      monthlyPrice: PRICING_PLANS.EDUCATOR.monthly.price,
-      yearlyPrice: PRICING_PLANS.EDUCATOR.yearly.price,
-      features: PRICING_PLANS.EDUCATOR.features,
-      popular: false
     }
   ];
 

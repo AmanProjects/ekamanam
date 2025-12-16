@@ -14,11 +14,10 @@ export const SUBSCRIPTION_TIERS = {
       '3 AI queries per day',
       'Basic PDF viewing',
       'Text selection & highlights',
-      'Local notes'
+      'Sample PDFs included'
     ],
     limits: {
       aiQueriesPerDay: 3,
-      pdfStorageGB: 0.1,
       advancedFeatures: false,
       cloudSync: false,
       prioritySupport: false
@@ -42,12 +41,11 @@ export const SUBSCRIPTION_TIERS = {
       '🗺️ Interactive maps',
       '🔊 Text-to-speech (multilingual)',
       '📱 Multi-device sync',
-      '⚡ Priority AI processing',
-      '📚 Unlimited PDFs'
+      '📚 Auto-generated flashcards',
+      '📊 Learning analytics'
     ],
     limits: {
       aiQueriesPerDay: -1, // unlimited
-      pdfStorageGB: 1,
       advancedFeatures: true,
       cloudSync: true,
       prioritySupport: false

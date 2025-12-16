@@ -45,13 +45,13 @@ export const PRICING_PLANS = {
     },
     features: [
       'Unlimited AI queries',
-      '1 GB PDF storage',
       'Advanced learning features',
-      'Cloud synchronization',
-      'Spaced repetition system',
+      'Google Drive sync',
+      'Spaced repetition flashcards',
       'Cognitive load tracking',
       'Session history & analytics',
-      'Doubt prediction & library'
+      'Doubt prediction & library',
+      'Multi-device access'
     ]
   },
   EDUCATOR: {
