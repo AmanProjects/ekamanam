@@ -2,17 +2,25 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
+// v7.2.15: All Firebase config from environment variables
+// SECURITY NOTE: Firebase API keys are designed to be public.
+// Security is enforced through Firebase Security Rules, not API key secrecy.
+// Configure these in your .env file (see .env.example)
 const firebaseConfig = {
-  apiKey: "AIzaSyCCIww51kzyr3eN2oJn24D7SmFptfdK_2o",
-  authDomain: "ekamanam.firebaseapp.com",
-  projectId: "ekamanam",
-  storageBucket: "ekamanam.firebasestorage.app",
-  messagingSenderId: "662515641730",
-  appId: "1:662515641730:web:a1534c00347df3cc0cb39b"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
-// Check if Firebase is actually configured
-const isFirebaseConfigured = firebaseConfig.apiKey !== "AIzaSyDEMOKEY-REPLACE-WITH-YOUR-ACTUAL-KEY";
+// Check if Firebase is actually configured (requires all env vars)
+const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey && 
+  firebaseConfig.authDomain && 
+  firebaseConfig.projectId
+);
 
 let app, auth, db, googleProvider;
 

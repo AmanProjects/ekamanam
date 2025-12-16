@@ -119,7 +119,8 @@ function AuthButton({ user }) {
       console.log('✅ Google Identity Services loaded');
     }
 
-    const clientId = '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
+    // v7.2.14: Use environment variable for OAuth Client ID
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
 
     return new Promise((resolve, reject) => {
       const client = window.google.accounts.oauth2.initTokenClient({

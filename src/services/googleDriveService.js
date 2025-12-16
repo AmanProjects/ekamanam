@@ -23,7 +23,8 @@ const SCOPES = [
 ];
 
 // OAuth Client ID - must match the one in AuthButton.js
-const CLIENT_ID = '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
+// v7.2.14: Use environment variable for OAuth Client ID
+const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
 
 // Discovery doc for Drive API
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';

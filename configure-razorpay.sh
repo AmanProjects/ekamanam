@@ -38,7 +38,7 @@ echo ""
 echo "   Steps to get it:"
 echo "   - Login to Razorpay Dashboard"
 echo "   - Go to Settings → API Keys"
-echo "   - Find key: rzp_live_RrwnUfrlnM6Hbq"
+echo "   - Find key: rzp_live_YOUR_KEY_ID"
 echo "   - Click 'Regenerate/View' to see the secret"
 echo "   - Copy the Key Secret (looks like: rzp_live_xxxxx...)"
 echo ""
@@ -61,7 +61,7 @@ echo ""
 
 # Set Key ID
 echo "Setting Razorpay Key ID..."
-firebase functions:config:set razorpay.key_id="rzp_live_RrwnUfrlnM6Hbq"
+firebase functions:config:set razorpay.key_id="rzp_live_YOUR_KEY_ID"
 echo -e "${GREEN}✅ Key ID set${NC}"
 echo ""
 

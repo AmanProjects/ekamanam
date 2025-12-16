@@ -31,12 +31,12 @@ firebase use YOUR_PROJECT_ID
 #### 3. Get Razorpay Secret (2 min) ⏳
 - [ ] Visited https://dashboard.razorpay.com
 - [ ] Settings → API Keys
-- [ ] Found key: `rzp_live_RrwnUfrlnM6Hbq`
+- [ ] Found key: `rzp_live_YOUR_KEY_ID`
 - [ ] Copied Key Secret
 
 #### 4. Configure Functions (3 min) ⏳
 ```bash
-firebase functions:config:set razorpay.key_id="rzp_live_RrwnUfrlnM6Hbq"
+firebase functions:config:set razorpay.key_id="rzp_live_YOUR_KEY_ID"
 firebase functions:config:set razorpay.key_secret="YOUR_SECRET"
 firebase functions:config:set razorpay.webhook_secret="RANDOM_STRING"
 firebase functions:config:get  # Verify

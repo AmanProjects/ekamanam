@@ -124,15 +124,17 @@
         const { useState, useEffect, useRef, useMemo } = React;
 
         // --- FIREBASE INIT ---
-        // NOTE: Replace this with your actual Firebase configuration
-    // Your web app's Firebase configuration
+        // NOTE: Configure your Firebase project settings below
+        // SECURITY NOTE: Firebase API keys are designed to be public.
+        // Security is enforced through Firebase Security Rules, not API key secrecy.
+        // See: https://firebase.google.com/docs/projects/api-keys
 const firebaseConfig = {
-  apiKey: "AIzaSyCCIww51kzyr3eN2oJn24D7SmFptfdK_2o",
-  authDomain: "ekamanam.firebaseapp.com",
-  projectId: "ekamanam",
-  storageBucket: "ekamanam.firebasestorage.app",
-  messagingSenderId: "662515641730",
-  appId: "1:662515641730:web:a1534c00347df3cc0cb39b"
+  apiKey: "YOUR_FIREBASE_API_KEY",  // Get from Firebase Console
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
         
         // Check if Firebase is actually configured

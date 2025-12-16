@@ -11,7 +11,7 @@
 ✅ **Rebuilt the app** with Razorpay key from `.env`
 ✅ **Redeployed to GitHub Pages** with updated build
 
-The app now includes the Razorpay key: `rzp_live_RrwnUfrlnM6Hbq`
+The app now includes the Razorpay key: `rzp_live_YOUR_KEY_ID`
 
 ---
 
@@ -103,7 +103,7 @@ Should return an order ID (if Razorpay keys are configured in Firebase).
 
 1. **Environment Variable**: `.env` file contains:
    ```
-   REACT_APP_RAZORPAY_KEY_ID=rzp_live_RrwnUfrlnM6Hbq
+   REACT_APP_RAZORPAY_KEY_ID=rzp_live_YOUR_KEY_ID
    ```
 
 2. **Build Process**:

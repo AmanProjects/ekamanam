@@ -41,7 +41,7 @@ In the left sidebar:
 
 ### 1.3 Find Your Key
 
-Look for the key pair with Key ID: **`rzp_live_RrwnUfrlnM6Hbq`**
+Look for the key pair with Key ID: **`rzp_live_YOUR_KEY_ID`**
 
 ### 1.4 Reveal the Secret
 
@@ -66,7 +66,7 @@ cd /Users/amantalwar/Documents/GitHub/ekamanam
 ### 2.2 Set Razorpay Key ID
 
 ```bash
-firebase functions:config:set razorpay.key_id="rzp_live_RrwnUfrlnM6Hbq"
+firebase functions:config:set razorpay.key_id="rzp_live_YOUR_KEY_ID"
 ```
 
 You should see: ✔ Functions config updated.
@@ -111,7 +111,7 @@ You should see:
 ```json
 {
   "razorpay": {
-    "key_id": "rzp_live_RrwnUfrlnM6Hbq",
+    "key_id": "rzp_live_YOUR_KEY_ID",
     "key_secret": "rzp_live_xxxxx...",
     "webhook_secret": "d7b324af53c4e0c889ea767e48aa7fdfd743d6ea288c6c64b5108d7cd6af625a"
   }
@@ -230,8 +230,8 @@ Your payment system is now fully configured and ready to accept real payments!
 
 | Item | Value | Status |
 |------|-------|--------|
-| **Key ID** (Frontend) | `rzp_live_RrwnUfrlnM6Hbq` | ✅ In `.env` |
-| **Key ID** (Backend) | `rzp_live_RrwnUfrlnM6Hbq` | ⏳ Set in Step 2.2 |
+| **Key ID** (Frontend) | `rzp_live_YOUR_KEY_ID` | ✅ In `.env` |
+| **Key ID** (Backend) | `rzp_live_YOUR_KEY_ID` | ⏳ Set in Step 2.2 |
 | **Key Secret** (Backend) | Your secret from dashboard | ⏳ Set in Step 2.3 |
 | **Webhook Secret** | Auto-generated | ⏳ Set in Step 2.4 |
 | **Functions Deployed** | All 4 Razorpay functions | ✅ Already done |

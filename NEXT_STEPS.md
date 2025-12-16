@@ -2,7 +2,7 @@
 
 ## ✅ What's Done:
 - ✅ Firebase CLI installed (version 15.0.0)
-- ✅ Razorpay live key in `.env`: `rzp_live_RrwnUfrlnM6Hbq`
+- ✅ Razorpay live key in `.env`: `rzp_live_YOUR_KEY_ID`
 - ✅ Functions code updated and ready
 - ✅ All dependencies installed
 
@@ -48,7 +48,7 @@ firebase use YOUR_PROJECT_ID
 1. Visit: https://dashboard.razorpay.com
 2. Login to your account
 3. Go to: **Settings** → **API Keys**
-4. Find the key pair with Key ID: `rzp_live_RrwnUfrlnM6Hbq`
+4. Find the key pair with Key ID: `rzp_live_YOUR_KEY_ID`
 5. Click **"Regenerate/View"** to reveal the Key Secret
 6. Copy the Key Secret (it will look like: `rzp_live_xxxxxxxxxxxxxxxx`)
 
@@ -62,7 +62,7 @@ Run these commands one by one:
 
 ```bash
 # Set Razorpay Key ID
-firebase functions:config:set razorpay.key_id="rzp_live_RrwnUfrlnM6Hbq"
+firebase functions:config:set razorpay.key_id="rzp_live_YOUR_KEY_ID"
 
 # Set Razorpay Key Secret (replace with YOUR actual secret from Step 3)
 firebase functions:config:set razorpay.key_secret="YOUR_RAZORPAY_KEY_SECRET_HERE"
@@ -82,7 +82,7 @@ You should see:
 ```json
 {
   "razorpay": {
-    "key_id": "rzp_live_RrwnUfrlnM6Hbq",
+    "key_id": "rzp_live_YOUR_KEY_ID",
     "key_secret": "rzp_live_xxxxx...",
     "webhook_secret": "some_long_hex_string..."
   }

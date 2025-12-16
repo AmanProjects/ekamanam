@@ -4,7 +4,7 @@
 
 1. ✅ **Firebase CLI Installed** (v15.0.0)
 2. ✅ **Logged in to Firebase** (project: `ekamanam`)
-3. ✅ **Razorpay Live Key** configured in `.env`: `rzp_live_RrwnUfrlnM6Hbq`
+3. ✅ **Razorpay Live Key** configured in `.env`: `rzp_live_YOUR_KEY_ID`
 4. ✅ **Functions Code Ready** - All 4 Razorpay functions implemented
 5. ✅ **Dependencies Installed** - All packages ready
 6. ✅ **Lint Script Added** - Deployment preparation complete
@@ -108,7 +108,7 @@ Once functions are deployed:
 ### 1. Configure Razorpay Keys
 
 ```bash
-firebase functions:config:set razorpay.key_id="rzp_live_RrwnUfrlnM6Hbq"
+firebase functions:config:set razorpay.key_id="rzp_live_YOUR_KEY_ID"
 firebase functions:config:set razorpay.key_secret="YOUR_SECRET_KEY"
 firebase functions:config:set razorpay.webhook_secret="RANDOM_STRING"
 ```

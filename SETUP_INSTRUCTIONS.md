@@ -16,7 +16,7 @@ Your Firebase Functions are located in:
 
 ## What's Already Done ✅
 
-1. ✅ Razorpay live key configured in `.env`: `rzp_live_RrwnUfrlnM6Hbq`
+1. ✅ Razorpay live key configured in `.env`: `rzp_live_YOUR_KEY_ID`
 2. ✅ Frontend Razorpay integration complete
 3. ✅ Backend Firebase Functions created
 4. ✅ Functions updated to read from Firebase config
@@ -59,7 +59,7 @@ firebase login
 # https://dashboard.razorpay.com/app/keys
 
 # 4. Configure Firebase Functions
-firebase functions:config:set razorpay.key_id="rzp_live_RrwnUfrlnM6Hbq"
+firebase functions:config:set razorpay.key_id="rzp_live_YOUR_KEY_ID"
 firebase functions:config:set razorpay.key_secret="YOUR_RAZORPAY_SECRET_KEY"
 firebase functions:config:set razorpay.webhook_secret="$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")"
 
@@ -76,7 +76,7 @@ firebase deploy --only functions
 
 ### 1. Key ID (Already in .env) ✅
 ```
-rzp_live_RrwnUfrlnM6Hbq
+rzp_live_YOUR_KEY_ID
 ```
 
 ### 2. Key Secret (You need this) ⚠️

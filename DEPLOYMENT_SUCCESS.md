@@ -41,7 +41,7 @@ You need to set your Razorpay API keys in Firebase Functions configuration.
 
 1. Visit: https://dashboard.razorpay.com
 2. Go to: **Settings** → **API Keys**
-3. Find the key pair with Key ID: `rzp_live_RrwnUfrlnM6Hbq`
+3. Find the key pair with Key ID: `rzp_live_YOUR_KEY_ID`
 4. Click **"Regenerate/View"** to reveal the Key Secret
 5. Copy it (looks like: `rzp_live_xxxxxxxxxxxxxxxx`)
 
@@ -49,7 +49,7 @@ You need to set your Razorpay API keys in Firebase Functions configuration.
 
 ```bash
 # Set Razorpay Key ID (already in your .env)
-firebase functions:config:set razorpay.key_id="rzp_live_RrwnUfrlnM6Hbq"
+firebase functions:config:set razorpay.key_id="rzp_live_YOUR_KEY_ID"
 
 # Set Razorpay Key Secret (replace with YOUR actual secret)
 firebase functions:config:set razorpay.key_secret="YOUR_RAZORPAY_KEY_SECRET_HERE"
@@ -68,7 +68,7 @@ You should see:
 ```json
 {
   "razorpay": {
-    "key_id": "rzp_live_RrwnUfrlnM6Hbq",
+    "key_id": "rzp_live_YOUR_KEY_ID",
     "key_secret": "rzp_live_xxxxx...",
     "webhook_secret": "d7b324af53c4e0c889ea767e48aa7fdfd743d6ea288c6c64b5108d7cd6af625a"
   }
@@ -207,7 +207,7 @@ Before testing payments:
 
 ```bash
 # Configure Razorpay (replace YOUR_SECRET with actual secret)
-firebase functions:config:set razorpay.key_id="rzp_live_RrwnUfrlnM6Hbq"
+firebase functions:config:set razorpay.key_id="rzp_live_YOUR_KEY_ID"
 firebase functions:config:set razorpay.key_secret="YOUR_SECRET"
 firebase functions:config:set razorpay.webhook_secret="d7b324af53c4e0c889ea767e48aa7fdfd743d6ea288c6c64b5108d7cd6af625a"
 
@@ -247,7 +247,7 @@ You'll know everything is working when:
 
 ### Issue: "Razorpay is not configured" error in app
 **Solution:**
-1. Check `.env` has `REACT_APP_RAZORPAY_KEY_ID=rzp_live_RrwnUfrlnM6Hbq`
+1. Check `.env` has `REACT_APP_RAZORPAY_KEY_ID=rzp_live_YOUR_KEY_ID`
 2. Restart dev server: `npm start`
 
 ### Issue: Payment succeeds but subscription not activated
