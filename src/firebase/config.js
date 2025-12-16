@@ -30,10 +30,6 @@ if (isFirebaseConfigured) {
     // Users will be prompted once to grant these permissions during sign-in
     googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
     googleProvider.addScope('https://www.googleapis.com/auth/drive.appdata');
-    
-    // v7.2.19: Add Gemini API scope for OAuth-based access
-    // This allows students to use their own FREE Google AI quota without API keys
-    googleProvider.addScope('https://www.googleapis.com/auth/generative-language.retriever');
 
     db = getFirestore(app);
     console.log("✅ Firebase initialized successfully");

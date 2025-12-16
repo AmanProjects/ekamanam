@@ -190,8 +190,24 @@ Return ONLY this valid JSON (no extra text before or after):
   
   Use <p>, <b>, <ul>, <li>, <h4> tags for rich formatting",
   "examples": "${isChapter ? 'Multiple real-world examples from different sections' : 'Engaging examples and connections to child\'s world'} in same language (use <p> tags). For rhymes/poems: include similar rhymes they might know. For stories: connect to familiar tales.",
-  "exam": "${isChapter ? 'Comprehensive exam strategy' : 'What to remember and how to recite/perform if applicable'} in same language (use <p> and <ul><li> tags). For creative content, include performance tips for recitation competitions."
+  "exam": "${isChapter ? 'Comprehensive exam strategy' : 'What to remember and how to recite/perform if applicable'} in same language (use <p> and <ul><li> tags). For creative content, include performance tips for recitation competitions.",
+  "flashcards": [
+    {
+      "front": "Question or concept to remember (in same language as content)",
+      "back": "Answer or explanation (concise, memorable)",
+      "tags": ["relevant", "topic", "tags"]
+    }
+  ]
 }
+
+📚 FLASHCARD GENERATION RULES:
+- Generate ${isChapter ? '8-12' : '3-5'} flashcards from the key concepts
+- For RHYMES/POEMS: Create cards like "What is the first line of [rhyme name]?" → "[first line]"
+- For STORIES: Create cards about characters, plot points, moral lessons
+- For ACADEMIC: Create cards for definitions, formulas, key facts
+- Front should be a clear question or prompt
+- Back should be a concise, memorable answer
+- Use the SAME LANGUAGE as the content
 
 🎨 VISUALIZATION CAPABILITIES:
 

@@ -23,8 +23,13 @@ import {
   Select,
   MenuItem,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  Snackbar,
+  Badge
 } from '@mui/material';
+import {
+  Style as FlashcardIcon
+} from '@mui/icons-material';
 import {
   School as TeacherIcon,
   Lightbulb as ExplainIcon,
@@ -51,6 +56,7 @@ import {
   getPriorPagesContext,
   getCacheStats
 } from '../services/cacheService';
+import { createFlashcard } from '../services/spacedRepetitionService';
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -149,6 +155,9 @@ function AIModePanel({
   const [showScopeSelector, setShowScopeSelector] = useState(true);
   const [cacheStats, setCacheStats] = useState(null);
   const [explainResponse, setExplainResponse] = useState('');
+  
+  // Flashcard notification state
+  const [flashcardNotification, setFlashcardNotification] = useState({ open: false, count: 0 });
   const [explainResponsePage, setExplainResponsePage] = useState(null);
   const [explainEnglish, setExplainEnglish] = useState(null);
   const [translatingExplain, setTranslatingExplain] = useState(false);
@@ -633,6 +642,35 @@ function AIModePanel({
         
         setTeacherResponse(cleanedResponse);
         setTeacherResponsePage(currentPage); // Track which page this data is for
+
+        // 📚 AUTO-GENERATE FLASHCARDS from AI response
+        if (cleanedResponse.flashcards && Array.isArray(cleanedResponse.flashcards) && cleanedResponse.flashcards.length > 0 && user?.uid) {
+          console.log(`📚 Auto-generating ${cleanedResponse.flashcards.length} flashcards...`);
+          let savedCount = 0;
+          
+          for (const card of cleanedResponse.flashcards) {
+            try {
+              if (card.front && card.back) {
+                await createFlashcard(user.uid, {
+                  front: card.front,
+                  back: card.back,
+                  chapter: cleanedResponse.contentType || 'General',
+                  subject: pdfId ? `PDF Page ${currentPage}` : 'Unknown',
+                  tags: card.tags || [],
+                  source: 'ai_generated'
+                });
+                savedCount++;
+              }
+            } catch (cardError) {
+              console.warn('⚠️ Failed to save flashcard:', cardError);
+            }
+          }
+          
+          if (savedCount > 0) {
+            console.log(`✅ Created ${savedCount} flashcards from Teacher Mode`);
+            setFlashcardNotification({ open: true, count: savedCount });
+          }
+        }
 
         // 💾 SAVE TO CACHE
         if (pdfId && currentPage) {
@@ -5046,6 +5084,32 @@ Return ONLY this valid JSON:
           <NotesEditor pdfId={pdfId} />
         </TabPanel>}
       </Box>
+      
+      {/* Flashcard Notification Snackbar */}
+      <Snackbar
+        open={flashcardNotification.open}
+        autoHideDuration={5000}
+        onClose={() => setFlashcardNotification({ open: false, count: 0 })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setFlashcardNotification({ open: false, count: 0 })}
+          severity="success"
+          icon={<FlashcardIcon />}
+          sx={{ 
+            width: '100%',
+            backgroundColor: 'success.light',
+            '& .MuiAlert-icon': { color: 'success.dark' }
+          }}
+        >
+          <Typography variant="body2" fontWeight={600}>
+            📚 {flashcardNotification.count} Flashcard{flashcardNotification.count !== 1 ? 's' : ''} Created!
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Review them in your Dashboard → Flashcard Review
+          </Typography>
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

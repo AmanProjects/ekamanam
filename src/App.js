@@ -328,13 +328,15 @@ function App() {
               console.log('✅ API key already up to date');
             }
           } else {
-            // v7.2.19: With OAuth-based Gemini, API keys are optional
-            // Students use their Google account's free AI quota automatically
+            // User doesn't have API key in cloud
             const localApiKey = localStorage.getItem('gemini_pat');
             if (!localApiKey) {
-              // No API key needed - OAuth will be used for Gemini
-              console.log('✅ No API key needed - using Google OAuth for AI features');
-              console.log('💡 Students get free Gemini quota via their Google account');
+              console.log('⚠️ No API key found');
+              setTimeout(() => {
+                if (window.confirm('⚠️ No API Key Found. Would you like to add one now?')) {
+                  setShowSettings(true);
+                }
+              }, 1000);
             } else {
               // User has local key but not in cloud, offer to sync
               console.log('📤 Syncing local API key to your Google account...');

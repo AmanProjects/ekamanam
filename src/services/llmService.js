@@ -267,64 +267,11 @@ export function getAvailableProviders() {
 // ===== PROVIDER IMPLEMENTATIONS =====
 
 /**
- * Google Gemini API - OAuth-based (v7.2.19)
- * Uses the user's Google OAuth token for FREE quota access
- * Falls back to API key if OAuth fails
+ * Google Gemini API
  */
-async function callGeminiWithOAuth(prompt, config) {
-  const model = 'gemini-1.5-flash'; // Use stable model for OAuth
-  const accessToken = localStorage.getItem('google_access_token');
-  
-  if (!accessToken) {
-    throw new Error('NO_OAUTH_TOKEN');
-  }
-  
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-  
-  console.log('🔐 [Gemini OAuth] Using user\'s Google account quota...');
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
-    },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: config.temperature,
-        maxOutputTokens: config.maxTokens
-      }
-    })
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const errorMsg = errorData.error?.message || response.statusText;
-    
-    // If 401/403, the OAuth token might be invalid or missing scope
-    if (response.status === 401 || response.status === 403) {
-      console.warn('⚠️ [Gemini OAuth] Token invalid or missing scope, will try API key...');
-      throw new Error('OAUTH_FAILED');
-    }
-    
-    throw new Error(errorMsg || 'Gemini OAuth API failed');
-  }
-  
-  const data = await response.json();
-  console.log('✅ [Gemini OAuth] Success! Using student\'s free quota');
-  
-  return parseGeminiResponse(data);
-}
-
-/**
- * Google Gemini API - API Key based (fallback)
- */
-async function callGeminiWithApiKey(prompt, apiKey, config) {
-  const model = 'gemini-1.5-flash';
+async function callGemini(prompt, apiKey, config) {
+  const model = 'gemini-2.5-flash';
   const url = `${PROVIDER_ENDPOINTS[PROVIDERS.GEMINI]}${model}:generateContent?key=${apiKey}`;
-  
-  console.log('🔑 [Gemini API Key] Using configured API key...');
   
   const response = await fetch(url, {
     method: 'POST',
@@ -344,13 +291,7 @@ async function callGeminiWithApiKey(prompt, apiKey, config) {
   }
   
   const data = await response.json();
-  return parseGeminiResponse(data);
-}
-
-/**
- * Parse Gemini API response (shared by OAuth and API key methods)
- */
-function parseGeminiResponse(data) {
+  
   // Validate response
   if (!data.candidates || !data.candidates[0]) {
     throw new Error('Invalid response from Gemini');
@@ -369,7 +310,7 @@ function parseGeminiResponse(data) {
   }
   
   // Extract text from parts (handle single or multiple parts)
-  const parts = candidate.content?.parts;
+  const parts = candidate.content.parts;
   if (!parts || parts.length === 0) {
     throw new Error('No text in Gemini response');
   }
@@ -380,28 +321,6 @@ function parseGeminiResponse(data) {
   }
   
   return parts[0].text || '';
-}
-
-/**
- * Google Gemini API - Smart caller (v7.2.19)
- * Tries OAuth first (free for students), falls back to API key
- */
-async function callGemini(prompt, apiKey, config) {
-  // v7.2.19: Try OAuth first (uses student's FREE Google quota)
-  try {
-    return await callGeminiWithOAuth(prompt, config);
-  } catch (oauthError) {
-    // If OAuth failed, try API key
-    if (oauthError.message === 'NO_OAUTH_TOKEN' || oauthError.message === 'OAUTH_FAILED') {
-      if (apiKey) {
-        console.log('🔄 [Gemini] OAuth unavailable, falling back to API key...');
-        return await callGeminiWithApiKey(prompt, apiKey, config);
-      } else {
-        throw new Error('No Gemini access available. Please sign in with Google or configure an API key.');
-      }
-    }
-    throw oauthError;
-  }
 }
 
 /**
