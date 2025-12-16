@@ -406,15 +406,36 @@ function App() {
         id: libraryItem.id,
         name: libraryItem.name,
         originalFileName: libraryItem.originalFileName,
-        size: libraryItem.size
+        size: libraryItem.size,
+        driveFileId: libraryItem.driveFileId
       });
       
-      // Load PDF data from IndexedDB
-      const pdfData = await loadPDFData(libraryItem.id);
-      console.log('📦 PDF data loaded:', pdfData ? `${pdfData.byteLength} bytes` : 'null');
+      // Load PDF data from IndexedDB first
+      let pdfData = await loadPDFData(libraryItem.id);
+      console.log('📦 PDF data from IndexedDB:', pdfData ? `${pdfData.byteLength} bytes` : 'null');
+      
+      // If not in IndexedDB, try to download from Google Drive
+      if (!pdfData && libraryItem.driveFileId) {
+        console.log('☁️ PDF not in IndexedDB, downloading from Google Drive...');
+        try {
+          const { downloadFile } = await import('./services/googleDriveService');
+          const driveBlob = await downloadFile(libraryItem.driveFileId);
+          pdfData = await driveBlob.arrayBuffer();
+          console.log('✅ Downloaded from Drive:', pdfData.byteLength, 'bytes');
+          
+          // Cache in IndexedDB for future use
+          const { openDB } = await import('idb');
+          const db = await openDB('ekamanam_library', 2);
+          await db.put('pdf_data', { id: libraryItem.id, data: pdfData });
+          console.log('💾 Cached PDF in IndexedDB for faster access next time');
+        } catch (driveError) {
+          console.error('❌ Failed to download from Drive:', driveError);
+          throw new Error(`PDF not found locally and failed to download from Google Drive: ${driveError.message}`);
+        }
+      }
       
       if (!pdfData) {
-        throw new Error('PDF data not found in IndexedDB');
+        throw new Error('PDF data not found. Please re-upload the file.');
       }
       
       // Convert ArrayBuffer to File object

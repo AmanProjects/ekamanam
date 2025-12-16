@@ -407,14 +407,26 @@ export async function downloadFile(fileId) {
   }
 
   try {
-    const response = await gapi.client.drive.files.get({
-      fileId: fileId,
-      alt: 'media'
-    });
+    console.log(`📥 Downloading file ${fileId} from Google Drive...`);
+    
+    // Use fetch with access token for binary file download
+    // gapi.client doesn't handle binary data well
+    const accessToken = gapi.client.getToken().access_token;
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      }
+    );
 
-    // Convert response to blob
-    const blob = new Blob([response.body], { type: 'application/pdf' });
-    console.log(`✅ Downloaded file ${fileId}`);
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    console.log(`✅ Downloaded file ${fileId}: ${blob.size} bytes`);
     return blob;
   } catch (error) {
     console.error('❌ Error downloading file:', error);
