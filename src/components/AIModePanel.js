@@ -80,7 +80,8 @@ function AIModePanel({
   vyonnQuery,
   onVyonnQueryUsed,
   subscription,
-  onUpgrade
+  onUpgrade,
+  isMobile = false  // v7.2.10: Mobile responsiveness
 }) {
   // Use controlled state if provided, otherwise use internal state
   const [internalTab, setInternalTab] = useState(0);

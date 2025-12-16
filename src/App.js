@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Box, AppBar, Toolbar, IconButton, Fab, Tooltip, Chip, Badge, ThemeProvider, CssBaseline } from '@mui/material';
-import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon, AdminPanelSettings, HelpOutline as HelpIcon } from '@mui/icons-material';
+import { Box, AppBar, Toolbar, IconButton, Fab, Tooltip, Chip, Badge, ThemeProvider, CssBaseline, useMediaQuery, BottomNavigation, BottomNavigationAction, List, ListItem, ListItemIcon, ListItemText, Divider, SwipeableDrawer } from '@mui/material';
+import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon, AdminPanelSettings, HelpOutline as HelpIcon, Menu as MenuIcon, PictureAsPdf as PdfIcon, Psychology as AiIcon, Close as CloseIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import packageJson from '../package.json';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -68,6 +68,12 @@ function App() {
   
   // Theme state
   const [themeMode, setThemeMode] = useState('light');
+  
+  // v7.2.10: Mobile responsiveness - use direct media query strings (no theme dependency)
+  const isMobile = useMediaQuery('(max-width:899px)'); // < 900px (md breakpoint)
+  const isSmallMobile = useMediaQuery('(max-width:599px)'); // < 600px (sm breakpoint)
+  const [mobileView, setMobileView] = useState('pdf'); // 'pdf' or 'ai' - which panel to show on mobile
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Layout state - resizable divider (percentage for PDF viewer, rest for AI panel)
   const [pdfWidth, setPdfWidth] = useState(50); // 50% by default
@@ -639,20 +645,45 @@ function App() {
     }
   };
 
+  // Get the current theme object for the provider
+  const currentTheme = useMemo(() => themeMode === 'dark' ? darkTheme : lightTheme, [themeMode]);
+
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={currentTheme}>
       <CssBaseline />
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      {/* Header */}
+      {/* Header - v7.2.10: Mobile responsive */}
       <AppBar position="static" color="default" elevation={1}>
-        <Toolbar sx={{ py: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', flexGrow: 1, gap: 2 }}>
+        <Toolbar sx={{ py: isMobile ? 0.5 : 1, minHeight: isMobile ? 56 : 64 }}>
+          {/* Mobile: Back button in reader view */}
+          {isMobile && view === 'reader' && (
+            <IconButton 
+              edge="start" 
+              onClick={() => setView('library')}
+              sx={{ mr: 1 }}
+            >
+              <BackIcon />
+            </IconButton>
+          )}
+          
+          {/* Mobile: Menu button */}
+          {isMobile && view !== 'reader' && (
+            <IconButton 
+              edge="start" 
+              onClick={() => setMobileMenuOpen(true)}
+              sx={{ mr: 1 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', flexGrow: 1, gap: isMobile ? 1 : 2 }}>
             <Box
               component="img"
               src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
               alt="Ekamanam"
               sx={{
-                height: 56,
+                height: isMobile ? 40 : 56,
                 width: 'auto',
                 objectFit: 'contain',
                 flexShrink: 0
@@ -661,7 +692,7 @@ function App() {
                 e.target.style.display = 'none';
               }}
             />
-            <Box sx={{ flex: 1, pt: '18px', display: { xs: 'none', sm: 'block' } }}>
+            <Box sx={{ flex: 1, pt: isMobile ? '10px' : '18px', display: { xs: 'none', sm: 'block' } }}>
               <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 0.3 }}>
                 <Box component="span" sx={{ fontSize: '1.5rem', fontWeight: 600, lineHeight: 1, letterSpacing: '-0.02em' }}>
                   Ekamanam
@@ -688,7 +719,8 @@ function App() {
             </Box>
           </Box>
           
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          {/* Desktop Navigation */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, alignItems: 'center' }}>
             {/* Subscription Badge */}
             {subscription.tier && (
               <Chip
@@ -702,7 +734,6 @@ function App() {
                 sx={{
                   fontWeight: 600,
                   cursor: 'pointer',
-                  display: { xs: 'none', sm: 'flex' },
                   ...(subscription.isPaid ? {
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     color: 'white',
@@ -744,11 +775,7 @@ function App() {
                   size="small"
                   color="warning"
                   onClick={() => setShowFlashcards(true)}
-                  sx={{
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: { xs: 'none', md: 'flex' }
-                  }}
+                  sx={{ fontWeight: 600, cursor: 'pointer' }}
                 />
               </Tooltip>
             )}
@@ -796,8 +823,105 @@ function App() {
 
             <AuthButton user={user} />
           </Box>
+
+          {/* Mobile: Minimal icons */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 0.5, alignItems: 'center' }}>
+            {view === 'reader' && (
+              <Chip
+                label={`${currentPage}/${totalPages || '?'}`}
+                size="small"
+                sx={{ fontSize: '0.7rem', height: 24 }}
+              />
+            )}
+            <AuthButton user={user} compact={isMobile} />
+          </Box>
         </Toolbar>
       </AppBar>
+
+      {/* v7.2.10: Mobile Navigation Drawer */}
+      <SwipeableDrawer
+        anchor="left"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        onOpen={() => setMobileMenuOpen(true)}
+        sx={{ display: { md: 'none' } }}
+      >
+        <Box sx={{ width: 280, pt: 2 }}>
+          <Box sx={{ px: 2, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                component="img"
+                src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
+                alt="Ekamanam"
+                sx={{ height: 32 }}
+              />
+              <Box sx={{ fontWeight: 600 }}>Ekamanam</Box>
+            </Box>
+            <IconButton onClick={() => setMobileMenuOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <Divider />
+          
+          <List>
+            <ListItem button onClick={() => { setView('dashboard'); setMobileMenuOpen(false); }}>
+              <ListItemIcon><DashboardIcon color={view === 'dashboard' ? 'primary' : 'inherit'} /></ListItemIcon>
+              <ListItemText primary="Home" />
+            </ListItem>
+            
+            <ListItem button onClick={() => { setView('library'); setMobileMenuOpen(false); }}>
+              <ListItemIcon>
+                <Badge badgeContent={libraryCount} color="error">
+                  <LibraryIcon color={view === 'library' ? 'primary' : 'inherit'} />
+                </Badge>
+              </ListItemIcon>
+              <ListItemText primary="My Library" secondary={libraryCount > 0 ? `${libraryCount} PDFs` : null} />
+            </ListItem>
+
+            {dueCardCount > 0 && (
+              <ListItem button onClick={() => { setShowFlashcards(true); setMobileMenuOpen(false); }}>
+                <ListItemIcon><Badge badgeContent={dueCardCount} color="warning"><AutoAwesome /></Badge></ListItemIcon>
+                <ListItemText primary="Flashcards Due" />
+              </ListItem>
+            )}
+          </List>
+          
+          <Divider />
+          
+          <List>
+            <ListItem button onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}>
+              <ListItemIcon><SettingsIcon /></ListItemIcon>
+              <ListItemText primary="Settings" />
+            </ListItem>
+            
+            <ListItem button onClick={() => { window.open(`${process.env.PUBLIC_URL}/landing.html`, '_blank'); setMobileMenuOpen(false); }}>
+              <ListItemIcon><HelpIcon /></ListItemIcon>
+              <ListItemText primary="Help & Guide" />
+            </ListItem>
+            
+            <ListItem button onClick={() => { setShowOTPDialog(true); setMobileMenuOpen(false); }}>
+              <ListItemIcon><AdminPanelSettings /></ListItemIcon>
+              <ListItemText primary="Admin Dashboard" />
+            </ListItem>
+          </List>
+
+          <Divider />
+          
+          {/* Subscription info */}
+          <Box sx={{ p: 2 }}>
+            <Chip
+              label={
+                subscription.isFree && subscription.remainingQueries !== undefined
+                  ? `FREE (${subscription.remainingQueries}/${subscription.usage?.limit || 3} left)`
+                  : subscription.tier || 'Free'
+              }
+              size="small"
+              onClick={() => { setShowSubscriptionDialog(true); setMobileMenuOpen(false); }}
+              sx={{ width: '100%', justifyContent: 'center' }}
+            />
+          </Box>
+        </Box>
+      </SwipeableDrawer>
 
       {/* AI Analyze Popup */}
       {showAIPopup && selectedText && view === 'reader' && (
@@ -846,94 +970,154 @@ function App() {
             onOpenSamplePDF={handleOpenSamplePDF}
           />
         ) : (
+          /* v7.2.10: Reader View - Desktop: side-by-side, Mobile: toggle with bottom nav */
           <Box 
             id="pdf-ai-container"
             sx={{ 
               display: 'flex', 
+              flexDirection: 'column',
               height: '100%',
               position: 'relative',
               userSelect: isResizing ? 'none' : 'auto'
             }}
           >
-            {/* Left Side - PDF Viewer */}
-            <Box 
-              sx={{ 
-                width: `${pdfWidth}%`,
-                height: '100%',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-            >
-              <PDFViewer
-                selectedFile={selectedFile}
-                pdfDocument={pdfDocument}
-                setPdfDocument={setPdfDocument}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-                onTextSelect={handleTextSelect}
-                onPageTextExtract={setPageText}
-              />
+            {/* Main content area */}
+            <Box sx={{ 
+              display: 'flex', 
+              flexGrow: 1, 
+              overflow: 'hidden',
+              // On mobile, show only the active panel
+              height: isMobile ? 'calc(100% - 56px)' : '100%' // Account for bottom nav on mobile
+            }}>
+              {/* PDF Viewer - Desktop: left side, Mobile: full width when active */}
+              <Box 
+                sx={{ 
+                  width: isMobile ? '100%' : `${pdfWidth}%`,
+                  height: '100%',
+                  overflow: 'hidden',
+                  display: isMobile && mobileView !== 'pdf' ? 'none' : 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                <PDFViewer
+                  selectedFile={selectedFile}
+                  pdfDocument={pdfDocument}
+                  setPdfDocument={setPdfDocument}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  onTextSelect={handleTextSelect}
+                  onPageTextExtract={setPageText}
+                />
+              </Box>
+
+              {/* Resizable Divider - Desktop only */}
+              {!isMobile && (
+                <Box
+                  onMouseDown={handleMouseDown}
+                  sx={{
+                    width: '8px',
+                    height: '100%',
+                    backgroundColor: 'divider',
+                    cursor: 'col-resize',
+                    position: 'relative',
+                    transition: isResizing ? 'none' : 'background-color 0.2s',
+                    '&:hover': {
+                      backgroundColor: 'primary.main',
+                      '&::before': {
+                        opacity: 1
+                      }
+                    },
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: '50%',
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '2px',
+                      height: '40px',
+                      backgroundColor: 'background.paper',
+                      borderRadius: '2px',
+                      opacity: 0.5,
+                      transition: 'opacity 0.2s'
+                    }
+                  }}
+                />
+              )}
+
+              {/* AI Mode Panel - Desktop: right side, Mobile: full width when active */}
+              <Box 
+                sx={{ 
+                  width: isMobile ? '100%' : `${100 - pdfWidth}%`,
+                  height: '100%',
+                  overflow: 'hidden',
+                  display: isMobile && mobileView !== 'ai' ? 'none' : 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                <AIModePanel
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pdfId={pdfId}
+                  selectedText={selectedText}
+                  pageText={pageText}
+                  user={user}
+                  pdfDocument={pdfDocument}
+                  activeTab={aiPanelTab}
+                  onTabChange={setAiPanelTab}
+                  vyonnQuery={vyonnQuery}
+                  onVyonnQueryUsed={() => setVyonnQuery(null)}
+                  subscription={subscription}
+                  onUpgrade={() => setShowSubscriptionDialog(true)}
+                  isMobile={isMobile}
+                />
+              </Box>
             </Box>
 
-            {/* Resizable Divider */}
-            <Box
-              onMouseDown={handleMouseDown}
-              sx={{
-                width: '8px',
-                height: '100%',
-                backgroundColor: 'divider',
-                cursor: 'col-resize',
-                position: 'relative',
-                transition: isResizing ? 'none' : 'background-color 0.2s',
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  '&::before': {
-                    opacity: 1
+            {/* v7.2.10: Mobile Bottom Navigation */}
+            {isMobile && (
+              <BottomNavigation
+                value={mobileView}
+                onChange={(event, newValue) => setMobileView(newValue)}
+                showLabels
+                sx={{
+                  position: 'fixed',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  zIndex: 1200,
+                  borderTop: 1,
+                  borderColor: 'divider',
+                  height: 56,
+                  '& .MuiBottomNavigationAction-root': {
+                    minWidth: 80,
+                    py: 1
                   }
-                },
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  left: '50%',
-                  top: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '2px',
-                  height: '40px',
-                  backgroundColor: 'background.paper',
-                  borderRadius: '2px',
-                  opacity: 0.5,
-                  transition: 'opacity 0.2s'
-                }
-              }}
-            />
-
-            {/* Right Side - AI Mode Panel */}
-            <Box 
-              sx={{ 
-                width: `${100 - pdfWidth}%`,
-                height: '100%',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-            >
-              <AIModePanel
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pdfId={pdfId}
-                selectedText={selectedText}
-                pageText={pageText}
-                user={user}
-                pdfDocument={pdfDocument}
-                activeTab={aiPanelTab}
-                onTabChange={setAiPanelTab}
-                vyonnQuery={vyonnQuery}
-                onVyonnQueryUsed={() => setVyonnQuery(null)}
-                subscription={subscription}
-                onUpgrade={() => setShowSubscriptionDialog(true)}
-              />
-            </Box>
+                }}
+              >
+                <BottomNavigationAction 
+                  label="PDF" 
+                  value="pdf" 
+                  icon={<PdfIcon />}
+                  sx={{ 
+                    '&.Mui-selected': { 
+                      color: 'primary.main',
+                      '& .MuiBottomNavigationAction-label': { fontWeight: 600 }
+                    }
+                  }}
+                />
+                <BottomNavigationAction 
+                  label="AI Tutor" 
+                  value="ai" 
+                  icon={<AiIcon />}
+                  sx={{ 
+                    '&.Mui-selected': { 
+                      color: 'secondary.main',
+                      '& .MuiBottomNavigationAction-label': { fontWeight: 600 }
+                    }
+                  }}
+                />
+              </BottomNavigation>
+            )}
           </Box>
         )}
       </Box>
