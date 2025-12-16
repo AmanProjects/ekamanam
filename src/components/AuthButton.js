@@ -119,7 +119,7 @@ function AuthButton({ user }) {
       console.log('✅ Google Identity Services loaded');
     }
 
-    // v7.2.14: Use environment variable for OAuth Client ID
+    // v7.2.15: OAuth Client ID (env var with fallback)
     const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
 
     return new Promise((resolve, reject) => {

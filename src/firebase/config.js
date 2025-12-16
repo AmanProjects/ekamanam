@@ -2,25 +2,21 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// v7.2.15: All Firebase config from environment variables
+// v7.2.15: Firebase config with environment variable support
 // SECURITY NOTE: Firebase API keys are designed to be public.
 // Security is enforced through Firebase Security Rules, not API key secrecy.
-// Configure these in your .env file (see .env.example)
+// Override these via .env file if needed (see .env.example)
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyCCIww51kzyr3eN2oJn24D7SmFptfdK_2o",
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "ekamanam.firebaseapp.com",
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "ekamanam",
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "ekamanam.firebasestorage.app",
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "662515641730",
+  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:662515641730:web:a1534c00347df3cc0cb39b"
 };
 
-// Check if Firebase is actually configured (requires all env vars)
-const isFirebaseConfigured = Boolean(
-  firebaseConfig.apiKey && 
-  firebaseConfig.authDomain && 
-  firebaseConfig.projectId
-);
+// Check if Firebase is actually configured
+const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
 
 let app, auth, db, googleProvider;
 
