@@ -555,8 +555,24 @@ function AIModePanel({
         } catch (firstParseError) {
           console.warn('⚠️ First parse failed, attempting JSON repair...');
           
-          // Attempt to repair common JSON issues
-          let repairedJson = cleanResponse
+          // v7.2.13: Escape literal newlines and control chars inside string values
+          // This is the main cause of "Bad control character in string literal" errors
+          let repairedJson = cleanResponse;
+          
+          // Step 1: Escape newlines, tabs, and other control characters inside strings
+          // We need to find strings and escape control chars within them
+          repairedJson = repairedJson.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, content) => {
+            // Escape unescaped control characters
+            const escaped = content
+              .replace(/\n/g, '\\n')
+              .replace(/\r/g, '\\r')
+              .replace(/\t/g, '\\t')
+              .replace(/[\x00-\x1F]/g, (char) => '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4));
+            return `"${escaped}"`;
+          });
+          
+          // Step 2: Fix other common JSON issues
+          repairedJson = repairedJson
             // Fix truncated strings in arrays (missing quotes)
             .replace(/"([^"]*?)$/gm, '"$1"')
             // Fix missing commas before object/array elements
@@ -567,8 +583,39 @@ function AIModePanel({
             .replace(/,\s*([}\]])/g, '$1');
           
           console.log('🔧 Attempting to parse repaired JSON...');
-          parsedResponse = JSON.parse(repairedJson);
-          console.log('✅ JSON repair successful!');
+          try {
+            parsedResponse = JSON.parse(repairedJson);
+            console.log('✅ JSON repair successful!');
+          } catch (secondParseError) {
+            // Step 3: More aggressive repair - try to build a valid partial JSON
+            console.warn('⚠️ Second parse failed, attempting aggressive repair...');
+            
+            // Try to extract and parse just the parts we can salvage
+            const partialResponse = {};
+            const fields = ['contentType', 'performanceStyle', 'summary', 'keyPoints', 'explanation', 'examples', 'exam'];
+            
+            for (const field of fields) {
+              const regex = new RegExp(`"${field}"\\s*:\\s*("(?:[^"\\\\]|\\\\.)*"|\\[[^\\]]*\\])`, 's');
+              const match = repairedJson.match(regex);
+              if (match) {
+                try {
+                  partialResponse[field] = JSON.parse(match[1]);
+                } catch {
+                  // For arrays or complex values that failed, try simple string extraction
+                  if (match[1].startsWith('"')) {
+                    partialResponse[field] = match[1].slice(1, -1).replace(/\\n/g, '\n').replace(/\\"/g, '"');
+                  }
+                }
+              }
+            }
+            
+            if (Object.keys(partialResponse).length > 0) {
+              console.log('✅ Partial JSON recovery successful, fields:', Object.keys(partialResponse));
+              parsedResponse = partialResponse;
+            } else {
+              throw secondParseError;
+            }
+          }
         }
         
         console.log(`✅ Successfully parsed Teacher Mode (${scope}) response`);
@@ -1558,20 +1605,59 @@ function AIModePanel({
         } catch (firstParseError) {
           console.warn('⚠️ First parse failed, attempting JSON repair...');
           
-          // Attempt to repair common JSON issues
-          let repairedJson = cleanResponse
-            // Fix truncated strings in arrays (missing quotes)
+          // v7.2.13: Escape literal newlines and control chars inside string values
+          let repairedJson = cleanResponse;
+          
+          // Step 1: Escape newlines, tabs, and other control characters inside strings
+          repairedJson = repairedJson.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, content) => {
+            const escaped = content
+              .replace(/\n/g, '\\n')
+              .replace(/\r/g, '\\r')
+              .replace(/\t/g, '\\t')
+              .replace(/[\x00-\x1F]/g, (char) => '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4));
+            return `"${escaped}"`;
+          });
+          
+          // Step 2: Fix other common JSON issues
+          repairedJson = repairedJson
             .replace(/"([^"]*?)$/gm, '"$1"')
-            // Fix missing commas before object/array elements
             .replace(/"\s*\n\s*"/g, '",\n"')
             .replace(/"\s*\n\s*\{/g, '",\n{')
             .replace(/\}\s*\n\s*\{/g, '},\n{')
-            // Remove trailing commas
             .replace(/,\s*([}\]])/g, '$1');
           
           console.log('🔧 Attempting to parse repaired JSON...');
-          parsedResponse = JSON.parse(repairedJson);
-          console.log('✅ JSON repair successful!');
+          try {
+            parsedResponse = JSON.parse(repairedJson);
+            console.log('✅ JSON repair successful!');
+          } catch (secondParseError) {
+            // Step 3: More aggressive repair - try to salvage partial response
+            console.warn('⚠️ Second parse failed, attempting partial recovery...');
+            
+            const partialResponse = {};
+            const fields = ['explanation', 'exercises', 'importantNotes', 'summary', 'realWorldExamples'];
+            
+            for (const field of fields) {
+              const regex = new RegExp(`"${field}"\\s*:\\s*("(?:[^"\\\\]|\\\\.)*"|\\[[^\\]]*\\])`, 's');
+              const match = repairedJson.match(regex);
+              if (match) {
+                try {
+                  partialResponse[field] = JSON.parse(match[1]);
+                } catch {
+                  if (match[1].startsWith('"')) {
+                    partialResponse[field] = match[1].slice(1, -1).replace(/\\n/g, '\n').replace(/\\"/g, '"');
+                  }
+                }
+              }
+            }
+            
+            if (Object.keys(partialResponse).length > 0) {
+              console.log('✅ Partial JSON recovery successful, fields:', Object.keys(partialResponse));
+              parsedResponse = partialResponse;
+            } else {
+              throw secondParseError;
+            }
+          }
         }
         
         console.log('✅ [Smart Explain] Successfully parsed JSON:', {
@@ -1730,20 +1816,52 @@ function AIModePanel({
             parsedResponse = JSON.parse(jsonMatch[0]);
             console.log('✅ [Activities] Successfully parsed JSON from response');
           } catch (e) {
-            // Try to fix common JSON issues
-            let fixedJson = jsonMatch[0]
-              .replace(/,\s*}/g, '}')  // Remove trailing commas before }
-              .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
-              .replace(/'/g, '"')       // Replace single quotes with double quotes
-              .replace(/\n/g, ' ')      // Remove newlines inside strings
-              .replace(/\t/g, ' ');     // Remove tabs
+            // v7.2.13: More robust JSON repair with control character escaping
+            console.warn('⚠️ [Activities] First parse failed, attempting repair...');
+            let fixedJson = jsonMatch[0];
+            
+            // Step 1: Escape control characters inside string values
+            fixedJson = fixedJson.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, content) => {
+              const escaped = content
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r')
+                .replace(/\t/g, '\\t')
+                .replace(/[\x00-\x1F]/g, (char) => '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4));
+              return `"${escaped}"`;
+            });
+            
+            // Step 2: Fix other common issues
+            fixedJson = fixedJson
+              .replace(/,\s*}/g, '}')
+              .replace(/,\s*]/g, ']')
+              .replace(/'/g, '"');
             
             try {
               parsedResponse = JSON.parse(fixedJson);
-              console.log('✅ [Activities] Parsed JSON after cleanup');
+              console.log('✅ [Activities] Parsed JSON after repair');
             } catch (e2) {
-              console.error('❌ [Activities] Could not parse JSON even after cleanup');
-              throw e2;
+              console.error('❌ [Activities] Repair failed, trying partial recovery...');
+              
+              // Step 3: Try to extract individual fields
+              const partialResponse = { mcqs: [], practiceQuestions: [], handsOnActivities: [] };
+              const arrayFields = ['mcqs', 'practiceQuestions', 'handsOnActivities', 'discussionPrompts', 'realWorldApplications'];
+              
+              for (const field of arrayFields) {
+                const regex = new RegExp(`"${field}"\\s*:\\s*(\\[(?:[^\\[\\]]|\\[(?:[^\\[\\]]|\\[[^\\[\\]]*\\])*\\])*\\])`, 's');
+                const fmatch = fixedJson.match(regex);
+                if (fmatch) {
+                  try {
+                    partialResponse[field] = JSON.parse(fmatch[1]);
+                  } catch { /* skip */ }
+                }
+              }
+              
+              if (partialResponse.mcqs?.length > 0 || partialResponse.practiceQuestions?.length > 0) {
+                console.log('✅ [Activities] Partial recovery successful');
+                parsedResponse = partialResponse;
+              } else {
+                throw e2;
+              }
             }
           }
         } else {
