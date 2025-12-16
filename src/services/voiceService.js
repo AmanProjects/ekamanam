@@ -64,6 +64,22 @@ export const saveVoicePreference = (voiceOption) => {
   console.log(`🔊 Voice preference saved: ${VOICE_LABELS[voiceOption]}`);
 };
 
+// v7.2.8: Enhanced voice quality indicators
+// These keywords indicate higher-quality, more natural-sounding voices
+const PREMIUM_VOICE_INDICATORS = [
+  'Enhanced', 'Premium', 'Neural', 'Natural', 'Wavenet', 
+  'Google', 'Microsoft', 'Samantha', 'Karen', 'Moira', 
+  'Fiona', 'Daniel', 'Alex', 'Siri'
+];
+
+// Check if a voice is likely high-quality/natural sounding
+const isHighQualityVoice = (voice) => {
+  const name = voice.name.toLowerCase();
+  return PREMIUM_VOICE_INDICATORS.some(indicator => 
+    name.includes(indicator.toLowerCase())
+  ) || voice.localService === false; // Cloud voices are often higher quality
+};
+
 // Get the best matching voice from browser
 export const getBestVoice = (languageCode = 'en-IN', voicePreference = null) => {
   const voices = window.speechSynthesis.getVoices();
@@ -76,7 +92,26 @@ export const getBestVoice = (languageCode = 'en-IN', voicePreference = null) => 
   const patterns = VOICE_PATTERNS[pref] || [];
 
   console.log(`🔍 Looking for voice preference: ${VOICE_LABELS[pref]}`);
-  console.log(`📋 Available voices:`, voices.map(v => `${v.name} (${v.lang})`));
+  console.log(`📋 Available voices:`, voices.map(v => `${v.name} (${v.lang}) [${isHighQualityVoice(v) ? 'HQ' : 'std'}]`));
+
+  // v7.2.8: Priority 1 - Find premium/enhanced voices matching language
+  const langCode = languageCode.split('-')[0]; // 'en' from 'en-IN'
+  const premiumVoices = voices.filter(v => 
+    v.lang.startsWith(langCode) && isHighQualityVoice(v)
+  );
+  
+  if (premiumVoices.length > 0) {
+    // Prefer female voices for children's content (more soothing)
+    const femaleVoice = premiumVoices.find(v => 
+      v.name.toLowerCase().includes('female') || 
+      ['samantha', 'karen', 'moira', 'fiona', 'veena', 'neerja', 'zira', 'hazel'].some(n => 
+        v.name.toLowerCase().includes(n)
+      )
+    );
+    const selected = femaleVoice || premiumVoices[0];
+    console.log(`✅ Found premium voice: ${selected.name} (${selected.lang})`);
+    return selected;
+  }
 
   // Try to find best match using patterns
   for (const pattern of patterns) {
@@ -90,16 +125,25 @@ export const getBestVoice = (languageCode = 'en-IN', voicePreference = null) => 
     }
   }
 
-  // Fallback 1: Try language code matching
+  // Fallback 1: Try language code matching, prefer high quality
   let fallback;
-  if (pref.includes('english')) {
-    fallback = voices.find(v => v.lang.startsWith('en-IN')) || voices.find(v => v.lang.startsWith('en'));
-  } else if (pref.includes('hindi')) {
-    fallback = voices.find(v => v.lang.startsWith('hi-IN') || v.lang.startsWith('hi'));
-  } else if (pref.includes('telugu')) {
-    fallback = voices.find(v => v.lang.startsWith('te-IN') || v.lang.startsWith('te'));
-  } else if (pref.includes('tamil')) {
-    fallback = voices.find(v => v.lang.startsWith('ta-IN') || v.lang.startsWith('ta'));
+  const langVoices = voices.filter(v => v.lang.startsWith(langCode));
+  if (langVoices.length > 0) {
+    // Sort by quality (high quality first)
+    langVoices.sort((a, b) => isHighQualityVoice(b) - isHighQualityVoice(a));
+    fallback = langVoices[0];
+  }
+  
+  if (!fallback) {
+    if (pref.includes('english')) {
+      fallback = voices.find(v => v.lang.startsWith('en-IN')) || voices.find(v => v.lang.startsWith('en'));
+    } else if (pref.includes('hindi')) {
+      fallback = voices.find(v => v.lang.startsWith('hi-IN') || v.lang.startsWith('hi'));
+    } else if (pref.includes('telugu')) {
+      fallback = voices.find(v => v.lang.startsWith('te-IN') || v.lang.startsWith('te'));
+    } else if (pref.includes('tamil')) {
+      fallback = voices.find(v => v.lang.startsWith('ta-IN') || v.lang.startsWith('ta'));
+    }
   }
 
   if (fallback) {
@@ -114,9 +158,50 @@ export const getBestVoice = (languageCode = 'en-IN', voicePreference = null) => 
     return fallback;
   }
 
-  // Fallback 3: First available voice
+  // Fallback 3: First available high-quality voice, or just the first voice
+  const anyPremium = voices.find(v => isHighQualityVoice(v));
+  if (anyPremium) {
+    console.log(`⚠️ Using any premium voice: ${anyPremium.name}`);
+    return anyPremium;
+  }
+  
   console.warn(`⚠️ No suitable voice found, using first available: ${voices[0].name}`);
   return voices[0];
+};
+
+// v7.2.8: Get the most natural-sounding voice for singing/reciting
+export const getNaturalVoice = (languageCode = 'en-US') => {
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length === 0) return null;
+  
+  const langCode = languageCode.split('-')[0];
+  
+  // For singing/reciting, prefer these specific natural-sounding voices
+  const preferredNames = [
+    // macOS/iOS premium voices
+    'Samantha (Enhanced)', 'Samantha', 'Karen (Enhanced)', 'Karen',
+    'Moira (Enhanced)', 'Moira', 'Fiona (Enhanced)', 'Fiona',
+    // Windows premium voices
+    'Microsoft Zira', 'Microsoft Hazel', 'Microsoft Susan',
+    // Google voices
+    'Google US English', 'Google UK English Female',
+    // Indian voices
+    'Veena', 'Lekha', 'Neerja'
+  ];
+  
+  // Find preferred voice matching language
+  for (const prefName of preferredNames) {
+    const voice = voices.find(v => 
+      v.name.includes(prefName) && v.lang.startsWith(langCode)
+    );
+    if (voice) {
+      console.log(`🎵 Found natural voice for singing: ${voice.name}`);
+      return voice;
+    }
+  }
+  
+  // Fall back to any premium voice
+  return getBestVoice(languageCode);
 };
 
 // Get available voices for testing
@@ -157,6 +242,7 @@ export default {
   getVoicePreference,
   saveVoicePreference,
   getBestVoice,
+  getNaturalVoice,
   getAvailableVoices,
   testVoice
 };
