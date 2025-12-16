@@ -105,13 +105,15 @@ export class SessionHistoryTracker {
 
   /**
    * Record page view event
+   * v7.2.10: Enhanced to track cognitive load with page views
    */
-  recordPageView(pageNumber, pageText) {
+  recordPageView(pageNumber, pageText, cognitiveLoad = null) {
     this.stats.pagesViewed.add(pageNumber);
 
     this.recordEvent(EVENT_TYPES.PAGE_VIEW, {
       pageNumber: pageNumber,
-      textLength: pageText?.length || 0
+      textLength: pageText?.length || 0,
+      cognitiveLoad: cognitiveLoad
     });
   }
 
@@ -335,48 +337,78 @@ export class SessionHistoryTracker {
 
   /**
    * Save session to Firestore
+   * v7.2.10: Enhanced with better error handling and logging
    */
   async saveSession() {
-    if (!this.userId || !db) return;
+    if (!this.userId) {
+      console.warn('⚠️ Cannot save session: No user ID');
+      return;
+    }
+    
+    if (!db) {
+      console.warn('⚠️ Cannot save session: Firestore not initialized');
+      return;
+    }
 
-    this.endTime = Date.now();
+    try {
+      this.endTime = Date.now();
+      const duration = this.endTime - this.startTime;
+      
+      // Only save if session has meaningful activity (at least 5 seconds)
+      if (duration < 5000) {
+        console.log('ℹ️ Session too short to save:', Math.round(duration/1000), 'seconds');
+        return;
+      }
 
-    const sessionData = {
-      userId: this.userId,
-      sessionId: this.sessionId,
-      pdfName: this.pdfName,
-      chapter: this.chapter,
-      startTime: Timestamp.fromMillis(this.startTime),
-      endTime: Timestamp.fromMillis(this.endTime),
-      duration: this.endTime - this.startTime,
-      stats: {
-        pagesViewed: Array.from(this.stats.pagesViewed),
-        totalAIQueries: this.stats.totalAIQueries,
-        flashcardsReviewed: this.stats.flashcardsReviewed,
-        doubtsSubmitted: this.stats.doubtsSubmitted,
-        breaksTaken: this.stats.breaksTaken,
-        avgCognitiveLoad: Math.round(this.stats.avgCognitiveLoad),
-        peakCognitiveLoad: Math.round(this.stats.peakCognitiveLoad),
-        conceptsMastered: this.stats.conceptsMastered,
-        totalFocusTime: this.stats.totalFocusTime
-      },
-      eventCount: this.events.length,
-      createdAt: Timestamp.now()
-    };
+      const sessionData = {
+        userId: this.userId,
+        sessionId: this.sessionId,
+        pdfName: this.pdfName,
+        chapter: this.chapter,
+        startTime: Timestamp.fromMillis(this.startTime),
+        endTime: Timestamp.fromMillis(this.endTime),
+        duration: duration,
+        stats: {
+          pagesViewed: Array.from(this.stats.pagesViewed),
+          totalAIQueries: this.stats.totalAIQueries,
+          flashcardsReviewed: this.stats.flashcardsReviewed,
+          doubtsSubmitted: this.stats.doubtsSubmitted,
+          breaksTaken: this.stats.breaksTaken,
+          avgCognitiveLoad: Math.round(this.stats.avgCognitiveLoad),
+          peakCognitiveLoad: Math.round(this.stats.peakCognitiveLoad),
+          conceptsMastered: this.stats.conceptsMastered,
+          totalFocusTime: this.stats.totalFocusTime
+        },
+        eventCount: this.events.length,
+        createdAt: Timestamp.now()
+      };
 
-    await setDoc(doc(db, COLLECTIONS.SESSION_HISTORY, this.sessionId), sessionData);
+      console.log('📊 Saving session:', {
+        sessionId: this.sessionId,
+        duration: Math.round(duration/1000) + 's',
+        pagesViewed: sessionData.stats.pagesViewed.length,
+        events: this.events.length,
+        aiQueries: sessionData.stats.totalAIQueries
+      });
 
-    // Save events separately (for detailed timeline)
-    const eventsData = {
-      sessionId: this.sessionId,
-      userId: this.userId,
-      events: this.events.slice(0, 100), // Limit to first 100 events
-      createdAt: Timestamp.now()
-    };
+      await setDoc(doc(db, COLLECTIONS.SESSION_HISTORY, this.sessionId), sessionData);
 
-    await setDoc(doc(db, COLLECTIONS.SESSION_EVENTS, this.sessionId), eventsData);
+      // Save events separately (for detailed timeline)
+      if (this.events.length > 0) {
+        const eventsData = {
+          sessionId: this.sessionId,
+          userId: this.userId,
+          events: this.events.slice(0, 100), // Limit to first 100 events
+          createdAt: Timestamp.now()
+        };
+        await setDoc(doc(db, COLLECTIONS.SESSION_EVENTS, this.sessionId), eventsData);
+      }
 
-    console.log('✅ Session history saved');
+      console.log('✅ Session history saved successfully');
+    } catch (error) {
+      console.error('❌ Error saving session history:', error);
+      throw error; // Re-throw so callers can handle
+    }
   }
 }
 

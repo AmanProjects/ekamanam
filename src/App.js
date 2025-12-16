@@ -237,6 +237,8 @@ function App() {
 
   // Phase 2 & 4: Initialize cognitive load and session trackers
   useEffect(() => {
+    let saveInterval = null;
+    
     if (user && selectedFile && view === 'reader') {
       const sessionId = `session_${Date.now()}`;
 
@@ -252,18 +254,44 @@ function App() {
       );
 
       console.log('🧠 Trackers initialized');
+      
+      // v7.2.10: Auto-save session every 30 seconds while reading
+      saveInterval = setInterval(() => {
+        if (sessionTrackerRef.current) {
+          sessionTrackerRef.current.saveSession().catch(err => 
+            console.warn('⚠️ Auto-save session failed:', err)
+          );
+          console.log('💾 Session auto-saved');
+        }
+      }, 30000); // Save every 30 seconds
     }
 
     return () => {
+      // Clear the auto-save interval
+      if (saveInterval) {
+        clearInterval(saveInterval);
+      }
+      
       // Save sessions on unmount
       if (cognitiveTrackerRef.current) {
         cognitiveTrackerRef.current.saveSession();
       }
       if (sessionTrackerRef.current) {
         sessionTrackerRef.current.saveSession();
+        console.log('💾 Session saved on exit');
       }
     };
   }, [user, selectedFile, view, currentLibraryItem]);
+  
+  // v7.2.10: Save session when leaving reader view
+  useEffect(() => {
+    if (view !== 'reader' && sessionTrackerRef.current) {
+      sessionTrackerRef.current.saveSession().catch(err => 
+        console.warn('⚠️ Save session on view change failed:', err)
+      );
+      console.log('💾 Session saved - left reader view');
+    }
+  }, [view]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -591,13 +619,15 @@ function App() {
   const handlePageChangeWithTracking = useCallback(async (newPage) => {
     setCurrentPage(newPage);
 
+    let currentCognitiveLoad = 50; // Default
+
     // Track with cognitive load
     if (cognitiveTrackerRef.current && pageText) {
       cognitiveTrackerRef.current.startPageReading(newPage, pageText);
 
       // Update cognitive load display
-      const load = cognitiveTrackerRef.current.currentLoad;
-      setCognitiveLoad(load);
+      currentCognitiveLoad = cognitiveTrackerRef.current.currentLoad;
+      setCognitiveLoad(currentCognitiveLoad);
 
       // Check for break suggestion
       const breakCheck = shouldSuggestBreak(cognitiveTrackerRef.current);
@@ -607,9 +637,14 @@ function App() {
       }
     }
 
-    // Track with session history
+    // Track with session history - v7.2.10: Include cognitive load
     if (sessionTrackerRef.current) {
-      sessionTrackerRef.current.recordPageView(newPage, pageText);
+      sessionTrackerRef.current.recordPageView(newPage, pageText, currentCognitiveLoad);
+      
+      // Record cognitive load spike if high
+      if (currentCognitiveLoad > 70) {
+        sessionTrackerRef.current.recordCognitiveLoadSpike(currentCognitiveLoad, newPage, 'High cognitive load detected');
+      }
     }
 
     // Phase 3: Predict doubts for new page
