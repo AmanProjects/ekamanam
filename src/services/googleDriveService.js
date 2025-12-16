@@ -165,25 +165,81 @@ export function hasDrivePermissions() {
 }
 
 /**
+ * Request a fresh OAuth token via Google Identity Services
+ * v7.2.16: Added to handle expired/invalid tokens
+ */
+async function requestFreshToken() {
+  return new Promise((resolve, reject) => {
+    // Load GIS library if needed
+    if (!window.google?.accounts?.oauth2) {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.onload = () => initTokenClient();
+      script.onerror = () => reject(new Error('Failed to load Google Identity Services'));
+      document.head.appendChild(script);
+    } else {
+      initTokenClient();
+    }
+
+    function initTokenClient() {
+      const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
+      
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
+        callback: (tokenResponse) => {
+          if (tokenResponse.access_token) {
+            localStorage.setItem('google_access_token', tokenResponse.access_token);
+            console.log('✅ Fresh OAuth token obtained via GIS');
+            resolve(tokenResponse.access_token);
+          } else {
+            reject(new Error(tokenResponse.error || 'Failed to get access token'));
+          }
+        },
+        error_callback: (error) => {
+          console.error('❌ GIS error:', error);
+          reject(new Error(error.message || 'OAuth error'));
+        }
+      });
+
+      // Request the token
+      client.requestAccessToken({ prompt: '' }); // Empty prompt to use existing consent if available
+    }
+  });
+}
+
+/**
  * Request Drive permissions from user
- * Since we use Firebase Auth with Google Sign-In, permissions are granted during sign-in.
- * This function just ensures Drive is initialized with the existing token.
+ * v7.2.17: Always request fresh token when existing one fails
  */
 export async function requestDrivePermissions() {
   try {
-    // Check if access token exists
-    const accessToken = localStorage.getItem('google_access_token');
-    if (!accessToken) {
-      throw new Error('No Google OAuth access token found. Please sign in again.');
+    // Always request a fresh token to avoid 401 errors
+    // This ensures we have a valid token with Drive scopes
+    console.log('📡 Requesting fresh OAuth token for Drive access...');
+    
+    try {
+      await requestFreshToken();
+    } catch (tokenError) {
+      console.error('❌ Failed to get fresh token:', tokenError);
+      throw new Error('Please sign in again to grant Drive access.');
     }
 
-    // Reset initialization state to force re-init
+    // Reset initialization state to force re-init with new token
     isInitialized = false;
     isSignedIn = false;
 
-    // Initialize Drive with the token
+    // Initialize Drive with the fresh token
     await initializeGoogleDrive();
-
+    
+    // Test if the token actually works
+    const testResult = await testDriveConnection();
+    if (testResult.apiCallResult !== 'SUCCESS') {
+      console.error('❌ Token test failed even with fresh token:', testResult);
+      throw new Error('Drive access denied. Please check your Google Cloud Console settings.');
+    }
+    
     console.log('✅ Drive permissions confirmed and initialized');
     return true;
   } catch (error) {
