@@ -323,7 +323,10 @@ function App() {
           console.error("Error loading user data:", error);
         }
 
-        // v7.0.0: Initialize Google Drive after successful sign-in
+        // v7.2.2: Initialize Google Drive after successful sign-in
+        // Small delay to ensure access token is stored from Firebase credential
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         try {
           console.log('📁 Initializing Google Drive...');
           await initializeGoogleDrive();
@@ -334,16 +337,18 @@ function App() {
           const diagnostics = await testDriveConnection();
           console.log('📊 Drive API diagnostics:', diagnostics);
 
-          // Check if user has granted Drive permissions
-          const hasPermissions = hasDrivePermissions();
-          setDriveConnected(hasPermissions && diagnostics.apiCallResult === 'SUCCESS');
-
-          if (!hasPermissions || diagnostics.apiCallResult !== 'SUCCESS') {
-            // First-time user or API not working - show permission dialog
-            console.log('ℹ️ Drive permissions not granted or API error. Showing dialog...');
-            setShowDrivePermissionDialog(true);
-          } else {
+          // Check if Drive API test was successful
+          if (diagnostics.apiCallResult === 'SUCCESS') {
             console.log('✅ Drive connected and ready');
+            setDriveConnected(true);
+            // Auto-initialize folder structure in background
+            const { initializeFolderStructure } = await import('./services/googleDriveService');
+            initializeFolderStructure().catch(err => console.warn('Folder init:', err));
+          } else {
+            // API test failed - show diagnostic dialog
+            console.log('⚠️ Drive API test failed. Showing permission dialog...');
+            setDriveConnected(false);
+            setShowDrivePermissionDialog(true);
           }
         } catch (error) {
           console.error('❌ Error initializing Google Drive:', error);

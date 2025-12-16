@@ -13,7 +13,7 @@ import {
   Logout, 
   Person 
 } from '@mui/icons-material';
-import { signInWithPopup, signOut } from 'firebase/auth';
+import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '../firebase/config';
 
 function AuthButton({ user }) {
@@ -51,71 +51,30 @@ function AuthButton({ user }) {
     }
 
     try {
-      // v7.2.1: Use Google Identity Services for proper OAuth with Drive scopes
-      // Firebase Auth alone doesn't provide OAuth tokens with custom scopes
+      // v7.2.2: Streamlined OAuth - Single popup for both auth + Drive scopes
+      // Firebase Auth with Google provider already requests Drive scopes (set in config.js)
+      // We extract the access token from the credential result
 
-      // Step 1: Sign in with Firebase (for user authentication)
+      // Sign in with Firebase - includes Drive scopes from config.js
       googleProvider.setCustomParameters({
         prompt: 'select_account'
       });
-      await signInWithPopup(auth, googleProvider);
+      
+      const result = await signInWithPopup(auth, googleProvider);
       console.log('✅ Firebase authentication successful');
 
-      // Step 2: Request Drive permissions via Google Identity Services
-      // Load Google Identity Services library if not already loaded
-      if (!window.google?.accounts?.oauth2) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://accounts.google.com/gsi/client';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-        console.log('✅ Google Identity Services loaded');
+      // Extract OAuth access token from credential
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        localStorage.setItem('google_access_token', credential.accessToken);
+        console.log('✅ OAuth access token stored from Firebase credential');
+        console.log('🔑 Token preview:', credential.accessToken.substring(0, 20) + '...');
+        console.log('✅ Drive permissions included via Firebase scopes');
+      } else {
+        console.warn('⚠️ No access token in Firebase credential, requesting via GIS...');
+        // Fallback: Request token via Google Identity Services
+        await requestDriveTokenViaGIS();
       }
-
-      // Get the Web Client ID from Firebase config
-      const clientId = '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
-
-      // Create promise to wait for OAuth callback
-      const tokenPromise = new Promise((resolve, reject) => {
-        // Request OAuth token with Drive scopes
-        const client = window.google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
-          callback: (tokenResponse) => {
-            if (tokenResponse.access_token) {
-              localStorage.setItem('google_access_token', tokenResponse.access_token);
-              console.log('✅ Google OAuth access token with Drive scopes stored');
-              console.log('🔑 Token preview:', tokenResponse.access_token.substring(0, 20) + '...');
-              console.log('📋 Token scopes:', tokenResponse.scope);
-              resolve(tokenResponse);
-            } else if (tokenResponse.error) {
-              console.error('❌ OAuth error:', tokenResponse.error);
-              reject(new Error(tokenResponse.error));
-            } else {
-              console.error('❌ No access token in response');
-              reject(new Error('No access token received'));
-            }
-          },
-          error_callback: (error) => {
-            console.error('❌ OAuth error:', error);
-            reject(error);
-          }
-        });
-
-        // CRITICAL: Trigger immediately in same call stack as user click
-        // This prevents popup blockers
-        try {
-          client.requestAccessToken({ prompt: 'consent' });
-        } catch (e) {
-          reject(e);
-        }
-      });
-
-      // Wait for Drive permissions
-      await tokenPromise;
-      console.log('✅ Drive permissions granted successfully');
 
       handleClose();
     } catch (error) {
@@ -135,12 +94,54 @@ function AuthButton({ user }) {
 
   const handleSignOut = async () => {
     try {
+      // Clear stored tokens
+      localStorage.removeItem('google_access_token');
       await signOut(auth);
       handleClose();
     } catch (error) {
       console.error('Sign-out error:', error);
       alert('Failed to sign out: ' + error.message);
     }
+  };
+
+  // Fallback: Request Drive token via Google Identity Services
+  // Only used if Firebase credential doesn't include access token
+  const requestDriveTokenViaGIS = async () => {
+    // Load Google Identity Services library if not already loaded
+    if (!window.google?.accounts?.oauth2) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      console.log('✅ Google Identity Services loaded');
+    }
+
+    const clientId = '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
+
+    return new Promise((resolve, reject) => {
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
+        hint: auth.currentUser?.email, // Pre-select the signed-in account
+        callback: (tokenResponse) => {
+          if (tokenResponse.access_token) {
+            localStorage.setItem('google_access_token', tokenResponse.access_token);
+            console.log('✅ OAuth access token stored via GIS fallback');
+            resolve(tokenResponse);
+          } else {
+            reject(new Error(tokenResponse.error || 'No access token received'));
+          }
+        },
+        error_callback: reject
+      });
+      
+      // Use 'none' prompt to avoid showing account picker again
+      // User already selected account in Firebase popup
+      client.requestAccessToken({ prompt: '' });
+    });
   };
 
   if (!user) {
