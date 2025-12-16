@@ -443,21 +443,33 @@ KEEP IT CONCISE. Use visuals for complex concepts. NO BILINGUAL for step-by-step
 }
 
 export async function generateActivities(pageText, apiKey = null) {
-  const prompt = `IMPORTANT LANGUAGE INSTRUCTION (V3.0.3 - Simplified):
-- First, detect the language of the Page Content below
-- If the content is in a regional language (Telugu, Hindi, Tamil, etc.), provide content in ORIGINAL LANGUAGE ONLY
-- If the content is already in English, only provide English content
+  const prompt = `🎯 CRITICAL: FIRST DETECT CONTENT TYPE!
 
-⚠️ STUDENTS READING REGIONAL LANGUAGE PDFs UNDERSTAND THAT LANGUAGE
-⚠️ NO NEED FOR BILINGUAL ACTIVITIES - USE ORIGINAL LANGUAGE ONLY
+Analyze the content and determine its type:
+- 🎵 **rhyme**: Nursery rhymes, children's songs, rhythmic verses (AABB patterns, repetition, playful)
+- 📝 **poem**: Poetry, artistic expression (metaphors, imagery, emotions, stanzas)
+- 📖 **story**: Narratives, tales (characters, plot, beginning-middle-end)
+- 🔬 **academic**: Facts, concepts, science, math (formulas, definitions)
+- 📊 **historical**: Events, dates, social studies (timelines, places)
+
+LANGUAGE INSTRUCTION:
+- Detect the language of the content below
+- If regional language (Telugu, Hindi, Tamil, etc.), provide content in ORIGINAL LANGUAGE ONLY
+- If English, provide English content
 
 Page Content:
 ${pageText}
 
-Generate engaging learning activities based on this content. Use the SAME LANGUAGE as the content.
+Generate engaging learning activities ADAPTED to the content type. Use the SAME LANGUAGE as the content.
 
 Return ONLY this valid JSON (no extra text before or after):
 {
+  "contentType": "rhyme|poem|story|academic|historical",
+  
+  "singAlongText": "ONLY FOR RHYMES/POEMS/STORIES: The FULL text formatted for reading aloud/singing. Include the complete rhyme/poem/story text here. For rhymes, include rhythm markers (clap, clap) or melody hints. For poems, include pause markers (...). For stories, include character voice hints [excited], [whisper], etc. EMPTY for academic content.",
+  
+  "performanceInstructions": "ONLY FOR RHYMES/POEMS/STORIES: Brief instructions on HOW to perform - melody description for rhymes, emotion guidance for poems, voice modulation tips for stories. EMPTY for academic content.",
+  
   "mcqs": [
     {
       "question": {
@@ -504,8 +516,34 @@ Return ONLY this valid JSON (no extra text before or after):
   ]
 }
 
-Generate 5 MCQs, 5 practice questions, 3 hands-on activities, 3 discussion prompts, and 3 real-world applications.
-For regional language content, use the ORIGINAL LANGUAGE ONLY (students reading Telugu PDFs understand Telugu).
+🎵 FOR RHYMES - Generate:
+- singAlongText: Full rhyme with rhythm hints like "(clap-clap)" or "🎵 (sing higher)" 
+- performanceInstructions: "Sing with a bouncy tune! Clap on every 'twinkle'..."
+- MCQs about rhyme, rhythm, vocabulary
+- Activities: action songs, fill-in-the-rhyme, draw the scene
+- Discussion: What does the rhyme teach us?
+
+📝 FOR POEMS - Generate:
+- singAlongText: Full poem with emotion markers like "[pause]" "[whisper]" "[emphasize]"
+- performanceInstructions: "Read slowly with feeling. Pause at commas..."
+- MCQs about meaning, literary devices, vocabulary
+- Activities: illustrate stanzas, write similar poems
+- Discussion: What emotions does this evoke?
+
+📖 FOR STORIES - Generate:
+- singAlongText: Story text with voice hints like "[excited]" "[scary voice]" "[gentle]"
+- performanceInstructions: "Use different voices for each character..."
+- MCQs about plot, characters, moral
+- Activities: role play, alternate endings, character sketches
+- Discussion: What would you do if...?
+
+🔬 FOR ACADEMIC - Generate:
+- Leave singAlongText and performanceInstructions EMPTY
+- MCQs testing concepts and understanding
+- Activities: experiments, calculations, diagrams
+- Discussion: Real-world applications
+
+Generate 5 MCQs, 3 practice questions, 3 hands-on activities, 3 discussion prompts, 2 real-world applications.
 Return ONLY the JSON.`;
 
   // V3.1: Force Gemini for regional languages

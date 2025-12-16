@@ -3714,6 +3714,131 @@ Return ONLY this valid JSON:
                   </Box>
                 ) : (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    
+                    {/* 🎵 Sing Along / Listen Section - v7.2.6: For rhymes, poems, stories */}
+                    {activitiesResponse.singAlongText && activitiesResponse.contentType && 
+                     ['rhyme', 'poem', 'story'].includes(activitiesResponse.contentType) && (
+                      <Paper 
+                        elevation={3}
+                        sx={{ 
+                          p: 3, 
+                          background: activitiesResponse.contentType === 'rhyme' 
+                            ? 'linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%)'
+                            : activitiesResponse.contentType === 'poem'
+                            ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                            : 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                          borderRadius: 3,
+                          border: '2px solid',
+                          borderColor: activitiesResponse.contentType === 'rhyme' 
+                            ? 'secondary.main'
+                            : activitiesResponse.contentType === 'poem'
+                            ? 'primary.main'
+                            : 'success.main'
+                        }}
+                      >
+                        {/* Header with Content Type Badge */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                          <Chip 
+                            label={
+                              activitiesResponse.contentType === 'rhyme' ? '🎵 Nursery Rhyme' :
+                              activitiesResponse.contentType === 'poem' ? '📝 Poem' :
+                              '📖 Story'
+                            }
+                            color={
+                              activitiesResponse.contentType === 'rhyme' ? 'secondary' :
+                              activitiesResponse.contentType === 'poem' ? 'primary' :
+                              'success'
+                            }
+                            sx={{ fontWeight: 700, fontSize: '1rem', py: 2.5, px: 1 }}
+                          />
+                          <Typography variant="h5" fontWeight={700} sx={{ 
+                            color: activitiesResponse.contentType === 'rhyme' ? 'secondary.dark' :
+                                   activitiesResponse.contentType === 'poem' ? 'primary.dark' :
+                                   'success.dark'
+                          }}>
+                            {activitiesResponse.contentType === 'rhyme' ? '🎤 Sing Along!' :
+                             activitiesResponse.contentType === 'poem' ? '🎭 Recite with Me!' :
+                             '📢 Listen to the Story!'}
+                          </Typography>
+                        </Box>
+
+                        {/* Performance Instructions */}
+                        {activitiesResponse.performanceInstructions && (
+                          <Alert 
+                            severity="info" 
+                            icon={activitiesResponse.contentType === 'rhyme' ? '🎵' : 
+                                  activitiesResponse.contentType === 'poem' ? '💫' : '🎬'}
+                            sx={{ mb: 2, bgcolor: 'rgba(255,255,255,0.7)' }}
+                          >
+                            <Typography variant="body2" fontWeight={500}>
+                              {activitiesResponse.performanceInstructions}
+                            </Typography>
+                          </Alert>
+                        )}
+
+                        {/* Main Listen/Sing Button */}
+                        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                          <Button
+                            variant="contained"
+                            size="large"
+                            color={
+                              activitiesResponse.contentType === 'rhyme' ? 'secondary' :
+                              activitiesResponse.contentType === 'poem' ? 'primary' :
+                              'success'
+                            }
+                            startIcon={speakingSection === 'singAlong' ? <Stop /> : <VolumeUp />}
+                            onClick={() => {
+                              if (speakingSection === 'singAlong') {
+                                handleStopSpeaking();
+                              } else {
+                                handleSpeakSection('singAlong', activitiesResponse.singAlongText);
+                              }
+                            }}
+                            sx={{ 
+                              py: 1.5, 
+                              px: 4, 
+                              fontSize: '1.1rem',
+                              fontWeight: 700,
+                              borderRadius: 3,
+                              boxShadow: 4
+                            }}
+                          >
+                            {speakingSection === 'singAlong' 
+                              ? '⏹️ Stop' 
+                              : activitiesResponse.contentType === 'rhyme' 
+                                ? '🎵 Sing Along' 
+                                : activitiesResponse.contentType === 'poem'
+                                  ? '🎭 Listen & Recite'
+                                  : '📖 Listen to Story'}
+                          </Button>
+                        </Box>
+
+                        {/* The Sing Along / Story Text */}
+                        <Paper 
+                          variant="outlined" 
+                          sx={{ 
+                            p: 3, 
+                            bgcolor: 'rgba(255,255,255,0.9)',
+                            borderRadius: 2,
+                            maxHeight: 300,
+                            overflow: 'auto'
+                          }}
+                        >
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              whiteSpace: 'pre-line',
+                              lineHeight: 2,
+                              fontSize: activitiesResponse.contentType === 'rhyme' ? '1.2rem' : '1.1rem',
+                              fontFamily: activitiesResponse.contentType === 'poem' ? '"Georgia", serif' : 'inherit'
+                            }}
+                          >
+                            {activitiesResponse.singAlongText}
+                          </Typography>
+                        </Paper>
+                      </Paper>
+                    )}
+
                     {/* MCQ Quiz Section */}
                     {activitiesResponse.mcqs && activitiesResponse.mcqs.length > 0 && (
                       <Box>
