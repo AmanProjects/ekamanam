@@ -37,7 +37,7 @@ import VisualAidRenderer from './VisualAidRenderer';
  * - Fascinated by novelty or anomalies
  * - No fixed self - always changing
  */
-function VyonnChatbot({ pdfContext, currentPage, pdfDocument, onSwitchTab }) {
+function VyonnChatbot({ pdfContext, currentPage, pdfDocument, onSwitchTab, onAIQuery }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -207,6 +207,11 @@ YOUR RESPONSE:`;
         preview: response.substring(0, 100),
         detectedAction
       });
+
+      // v7.2.24: Track Vyonn query for analytics
+      if (onAIQuery) {
+        onAIQuery('vyonn_chat', userMessage);
+      }
 
       // Parse action commands from response
       const actionMatch = response.match(/\[Use (.*?)\]/);

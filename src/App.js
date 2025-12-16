@@ -26,7 +26,7 @@ import { useSubscription } from './hooks/useSubscription';
 
 // ===== NEW FEATURES =====
 // Phase 1: Spaced Repetition
-import { getDueCards } from './services/spacedRepetitionService';
+import { getDueCards, getStreakInfo } from './services/spacedRepetitionService';
 import FlashcardReview from './components/FlashcardReview';
 
 // Phase 2: Cognitive Load
@@ -98,6 +98,7 @@ function App() {
   // Phase 1: Spaced Repetition
   const [showFlashcards, setShowFlashcards] = useState(false);
   const [dueCardCount, setDueCardCount] = useState(0);
+  const [streakInfo, setStreakInfo] = useState({ currentStreak: 0, longestStreak: 0 });
 
   // Phase 2: Cognitive Load
   const cognitiveTrackerRef = useRef(null);
@@ -216,13 +217,17 @@ function App() {
 
   // ===== NEW FEATURES EFFECTS =====
 
-  // Phase 1: Check due flashcards
+  // Phase 1: Check due flashcards and streak
   useEffect(() => {
     const checkDueCards = async () => {
       if (user?.uid) {
         try {
           const dueCards = await getDueCards(user.uid);
           setDueCardCount(dueCards.length);
+          
+          // Also load streak info
+          const streak = await getStreakInfo(user.uid);
+          setStreakInfo(streak);
         } catch (error) {
           console.error('Error checking due flashcards:', error);
         }
@@ -1031,6 +1036,9 @@ function App() {
             onOpenTimeline={() => setShowTimeline(true)}
             onOpenDoubtLibrary={() => setShowDoubtLibrary(true)}
             dueCardCount={dueCardCount}
+            user={user}
+            pdfCount={libraryCount}
+            currentStreak={streakInfo.currentStreak}
           />
         ) : view === 'library' ? (
           <StudentLibrary
@@ -1138,6 +1146,12 @@ function App() {
                   subscription={subscription}
                   onUpgrade={() => setShowSubscriptionDialog(true)}
                   isMobile={isMobile}
+                  onAIQuery={(queryType, queryText) => {
+                    // v7.2.24: Track AI queries for analytics
+                    if (sessionTrackerRef.current) {
+                      sessionTrackerRef.current.recordAIQuery(queryType, queryText, currentPage, cognitiveLoad);
+                    }
+                  }}
                 />
               </Box>
             </Box>
@@ -1229,6 +1243,12 @@ function App() {
             if (userQuery) {
               setVyonnQuery(userQuery);
             }
+          }
+        }}
+        onAIQuery={(queryType, queryText) => {
+          // v7.2.24: Track Vyonn queries for analytics
+          if (sessionTrackerRef.current) {
+            sessionTrackerRef.current.recordAIQuery(queryType, queryText, currentPage, cognitiveLoad);
           }
         }}
       />

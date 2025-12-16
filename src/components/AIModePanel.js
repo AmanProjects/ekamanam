@@ -87,7 +87,8 @@ function AIModePanel({
   onVyonnQueryUsed,
   subscription,
   onUpgrade,
-  isMobile = false  // v7.2.10: Mobile responsiveness
+  isMobile = false,  // v7.2.10: Mobile responsiveness
+  onAIQuery          // v7.2.24: Track AI queries for analytics
 }) {
   // Use controlled state if provided, otherwise use internal state
   const [internalTab, setInternalTab] = useState(0);
@@ -642,6 +643,11 @@ function AIModePanel({
         
         setTeacherResponse(cleanedResponse);
         setTeacherResponsePage(currentPage); // Track which page this data is for
+
+        // v7.2.24: Track AI query for analytics
+        if (onAIQuery) {
+          onAIQuery('teacher_mode', scope === 'chapter' ? 'Full chapter analysis' : 'Page analysis');
+        }
 
         // 📚 AUTO-GENERATE FLASHCARDS from AI response
         if (cleanedResponse.flashcards && Array.isArray(cleanedResponse.flashcards) && cleanedResponse.flashcards.length > 0 && user?.uid) {
@@ -1298,6 +1304,11 @@ function AIModePanel({
       setExamPrepPage(currentPage);
       setUsedCache(false);
       
+      // v7.2.24: Track AI query for analytics
+      if (onAIQuery) {
+        onAIQuery('exam_prep', 'Exam preparation');
+      }
+      
       // Cache the result
       await saveCachedData(pdfId, currentPage, cacheKey, mergedResponse);
       console.log('✅ Exam prep generated and cached');
@@ -1584,6 +1595,11 @@ function AIModePanel({
         setExplainResponse(mergedResponse);
         setExplainResponsePage(currentPage); // Track page
         console.log(`✅ Smart chunking complete: ${chunkResults.length} chunks merged`);
+        
+        // v7.2.24: Track AI query for analytics
+        if (onAIQuery) {
+          onAIQuery('smart_explain_chunked', 'Chapter chunked explain');
+        }
 
         // 💾 SAVE TO CACHE
         if (pdfId && currentPage) {
@@ -1719,6 +1735,11 @@ function AIModePanel({
         
         setExplainResponse(cleanedResponse);
         setExplainResponsePage(currentPage); // ✅ Track which page this explanation is for
+
+        // v7.2.24: Track AI query for analytics
+        if (onAIQuery) {
+          onAIQuery('smart_explain', editableSelectedText ? 'Selection explain' : 'Page explain');
+        }
 
         // 💾 SAVE TO CACHE (only for full page, not selections)
         if (pdfId && currentPage && !editableSelectedText) {
@@ -1919,6 +1940,11 @@ function AIModePanel({
         console.log('📦 [Activities] Has visualizations:', finalParsedResponse._visualizations?.length || 0);
         
         setActivitiesResponse(finalParsedResponse);
+        
+        // v7.2.24: Track AI query for analytics
+        if (onAIQuery) {
+          onAIQuery('activities', scope === 'chapter' ? 'Chapter activities' : 'Page activities');
+        }
         setActivitiesResponsePage(currentPage);
 
         // 💾 SAVE TO CACHE

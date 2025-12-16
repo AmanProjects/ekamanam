@@ -81,6 +81,23 @@ export function useSubscription(userId) {
   // Helper: Get remaining queries
   const remainingQueries = isFree ? Math.max(0, usage.limit - usage.count) : -1;
 
+  // Helper: Calculate days remaining for paid subscriptions
+  const getDaysRemaining = () => {
+    if (!isPaid || !subscription.currentPeriodEnd) return null;
+    
+    const endDate = subscription.currentPeriodEnd?.toDate 
+      ? subscription.currentPeriodEnd.toDate() 
+      : new Date(subscription.currentPeriodEnd);
+    
+    const now = new Date();
+    const diffTime = endDate - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, diffDays);
+  };
+
+  const daysRemaining = getDaysRemaining();
+
   // Refresh usage counter (call after AI query)
   const refreshUsage = async () => {
     if (!userId) return;
@@ -95,6 +112,7 @@ export function useSubscription(userId) {
     status: subscription.status,
     features: subscription.features,
     loading: subscription.loading,
+    daysRemaining,
 
     // Usage data
     usage,
