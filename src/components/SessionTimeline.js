@@ -9,14 +9,19 @@ import {
   Box,
   Paper,
   Chip,
-  Grid,
-  Card,
-  CardContent,
   IconButton,
   Divider,
   CircularProgress,
   Tabs,
-  Tab
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Collapse,
+  Alert
 } from '@mui/material';
 import {
   Timeline,
@@ -36,22 +41,30 @@ import {
   LocalCafe as BreakIcon,
   EmojiEvents as TrophyIcon,
   AccessTime as TimeIcon,
-  MenuBook as BookIcon
+  MenuBook as BookIcon,
+  ExpandMore as ExpandIcon,
+  ExpandLess as CollapseIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { getSessionHistory, getSessionDetails } from '../services/sessionHistoryService';
 
 /**
- * Session Timeline Component
- *
- * Visualizes learning sessions as interactive timelines.
- * Shows all events, statistics, and progress for any past session.
+ * Session Timeline Component - v7.2.11
+ * 
+ * Redesigned with:
+ * - Compact row-based layout instead of cards
+ * - Sessions grouped by book/PDF name
+ * - More information visible at a glance
  */
 function SessionTimeline({ open, onClose, userId }) {
   const [sessions, setSessions] = useState([]);
+  const [groupedSessions, setGroupedSessions] = useState({});
+  const [expandedBooks, setExpandedBooks] = useState({});
   const [selectedSession, setSelectedSession] = useState(null);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState(0); // 0 = List, 1 = Timeline
+  const [activeTab, setActiveTab] = useState(0);
+  const [error, setError] = useState(null);
 
   // Load sessions on mount
   useEffect(() => {
@@ -60,88 +73,148 @@ function SessionTimeline({ open, onClose, userId }) {
     }
   }, [open, userId]);
 
+  // Group sessions by book when sessions change
+  useEffect(() => {
+    if (sessions.length > 0) {
+      const grouped = sessions.reduce((acc, session) => {
+        const bookName = session.pdfName || 'Unknown Book';
+        if (!acc[bookName]) {
+          acc[bookName] = [];
+        }
+        acc[bookName].push(session);
+        return acc;
+      }, {});
+      
+      setGroupedSessions(grouped);
+      
+      // Auto-expand all books initially
+      const expanded = {};
+      Object.keys(grouped).forEach(book => {
+        expanded[book] = true;
+      });
+      setExpandedBooks(expanded);
+    }
+  }, [sessions]);
+
   const loadSessions = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const fetchedSessions = await getSessionHistory(userId, 20);
+      console.log('📚 Loading sessions for user:', userId);
+      const fetchedSessions = await getSessionHistory(userId, 50);
+      console.log('📚 Loaded sessions:', fetchedSessions.length);
       setSessions(fetchedSessions);
-    } catch (error) {
-      console.error('Error loading sessions:', error);
+      
+      if (fetchedSessions.length === 0) {
+        setError('No sessions found. Open a PDF and read for at least 30 seconds to create a session.');
+      }
+    } catch (err) {
+      console.error('Error loading sessions:', err);
+      setError(`Failed to load sessions: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Load session details
   const handleSelectSession = async (session) => {
     setDetailsLoading(true);
     try {
       const details = await getSessionDetails(session.id);
-      setSelectedSession(details);
-      setActiveTab(1); // Switch to timeline view
-    } catch (error) {
-      console.error('Error loading session details:', error);
+      setSelectedSession(details || session);
+      setActiveTab(1);
+    } catch (err) {
+      console.error('Error loading session details:', err);
+      setSelectedSession(session); // Use basic session data
+      setActiveTab(1);
     } finally {
       setDetailsLoading(false);
     }
   };
 
-  // Format timestamp
-  const formatTimestamp = (timestamp) => {
-    if (!timestamp) return '';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleString();
+  const toggleBook = (bookName) => {
+    setExpandedBooks(prev => ({
+      ...prev,
+      [bookName]: !prev[bookName]
+    }));
   };
 
-  // Format duration
+  // Format timestamp - more compact
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '-';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const now = new Date();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return date.toLocaleDateString([], { weekday: 'short' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
   const formatDuration = (ms) => {
-    const minutes = Math.floor(ms / 60000);
+    if (!ms || ms < 1000) return '-';
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
+    
     if (hours > 0) {
       return `${hours}h ${minutes % 60}m`;
     }
-    return `${minutes}m`;
+    if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`;
+    }
+    return `${seconds}s`;
   };
 
-  // Get event description
   const getEventDescription = (event) => {
     const { type, data } = event;
-
     switch (type) {
       case 'page_view':
-        return `Viewed page ${data.pageNumber}`;
+        return `Viewed page ${data?.pageNumber || '?'}`;
       case 'ai_query':
-        return `Asked AI: ${data.queryType}`;
+        return `AI: ${data?.queryType || 'query'}`;
       case 'flashcard_review':
-        return `Reviewed flashcard: ${data.concept} (${data.wasCorrect ? 'Correct' : 'Incorrect'})`;
-      case 'doubt_submitted':
-        return `Submitted doubt: ${data.concept}`;
+        return `Flashcard: ${data?.concept || ''}`;
       case 'break_taken':
-        return `Took ${formatDuration(data.duration)} break`;
+        return `Break: ${formatDuration(data?.duration)}`;
       case 'cognitive_load_spike':
-        return `Cognitive load spike: ${Math.round(data.cognitiveLoad)}%`;
+        return `Load spike: ${Math.round(data?.cognitiveLoad || 0)}%`;
       case 'concept_mastered':
-        return `Mastered: ${data.concept}`;
+        return `Mastered: ${data?.concept || ''}`;
       case 'chapter_completed':
-        return `Completed chapter!`;
+        return 'Chapter completed!';
       default:
         return type;
     }
   };
 
-  // Get icon for event type
   const getEventIcon = (type) => {
     const icons = {
-      page_view: <BookIcon />,
-      ai_query: <QuestionIcon />,
-      flashcard_review: <SpeedIcon />,
-      doubt_submitted: <QuestionIcon />,
-      break_taken: <BreakIcon />,
-      cognitive_load_spike: <BrainIcon />,
-      concept_mastered: <TrophyIcon />,
-      chapter_completed: <TrophyIcon />
+      page_view: <BookIcon fontSize="small" />,
+      ai_query: <QuestionIcon fontSize="small" />,
+      flashcard_review: <SpeedIcon fontSize="small" />,
+      break_taken: <BreakIcon fontSize="small" />,
+      cognitive_load_spike: <BrainIcon fontSize="small" />,
+      concept_mastered: <TrophyIcon fontSize="small" />,
+      chapter_completed: <TrophyIcon fontSize="small" />
     };
-    return icons[type] || <TimeIcon />;
+    return icons[type] || <TimeIcon fontSize="small" />;
+  };
+
+  // Calculate totals for a book
+  const getBookTotals = (bookSessions) => {
+    return {
+      totalTime: bookSessions.reduce((sum, s) => sum + (s.duration || 0), 0),
+      totalPages: new Set(bookSessions.flatMap(s => s.stats?.pagesViewed || [])).size,
+      totalSessions: bookSessions.length,
+      avgLoad: Math.round(
+        bookSessions.reduce((sum, s) => sum + (s.stats?.avgCognitiveLoad || 0), 0) / bookSessions.length
+      ) || 0
+    };
   };
 
   return (
@@ -150,36 +223,35 @@ function SessionTimeline({ open, onClose, userId }) {
       onClose={onClose}
       maxWidth="lg"
       fullWidth
-      PaperProps={{
-        sx: { height: '90vh', maxHeight: '90vh' }
-      }}
+      PaperProps={{ sx: { height: '90vh', maxHeight: '90vh' } }}
     >
-      <DialogTitle sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        pb: 1
-      }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <TimeIcon color="primary" />
-          <Typography variant="h6" component="span">
-            Learning Journey
-          </Typography>
+          <Typography variant="h6">Learning Journey</Typography>
+          {sessions.length > 0 && (
+            <Chip label={`${sessions.length} sessions`} size="small" />
+          )}
         </Box>
-        <IconButton onClick={onClose} size="small">
-          <CloseIcon />
-        </IconButton>
+        <Box>
+          <IconButton onClick={loadSessions} size="small" title="Refresh">
+            <RefreshIcon />
+          </IconButton>
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
         <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)}>
           <Tab label="All Sessions" />
-          <Tab label="Timeline" disabled={!selectedSession} />
+          <Tab label="Session Details" disabled={!selectedSession} />
         </Tabs>
       </Box>
 
-      <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', p: 3 }}>
-        {/* Tab 0: Sessions List */}
+      <DialogContent dividers sx={{ p: 2 }}>
+        {/* Tab 0: Sessions List - Grouped by Book */}
         {activeTab === 0 && (
           <>
             {loading && (
@@ -188,97 +260,167 @@ function SessionTimeline({ open, onClose, userId }) {
               </Box>
             )}
 
-            {!loading && sessions.length === 0 && (
+            {error && !loading && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
+            {!loading && sessions.length === 0 && !error && (
               <Box sx={{ textAlign: 'center', py: 4 }}>
                 <TimeIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="body1" color="text.secondary">
                   No sessions yet. Start studying to track your journey!
                 </Typography>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                  Sessions are saved every 30 seconds while reading.
+                </Typography>
               </Box>
             )}
 
-            {!loading && sessions.length > 0 && (
-              <Grid container spacing={2}>
-                {sessions.map((session) => (
-                  <Grid item xs={12} sm={6} md={4} key={session.id}>
-                    <Card
-                      sx={{
-                        cursor: 'pointer',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: 4
-                        }
-                      }}
-                      onClick={() => handleSelectSession(session)}
-                    >
-                      <CardContent>
-                        <Typography variant="subtitle1" fontWeight={600} gutterBottom noWrap>
-                          {session.chapter || session.pdfName}
-                        </Typography>
-
-                        <Typography variant="caption" color="text.secondary" gutterBottom>
-                          {formatTimestamp(session.startTime)}
-                        </Typography>
-
-                        <Divider sx={{ my: 1 }} />
-
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-                          <Chip
+            {!loading && Object.keys(groupedSessions).length > 0 && (
+              <Box>
+                {Object.entries(groupedSessions).map(([bookName, bookSessions]) => {
+                  const totals = getBookTotals(bookSessions);
+                  const isExpanded = expandedBooks[bookName];
+                  
+                  return (
+                    <Paper key={bookName} elevation={1} sx={{ mb: 2, overflow: 'hidden' }}>
+                      {/* Book Header - Clickable to expand/collapse */}
+                      <Box
+                        onClick={() => toggleBook(bookName)}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          p: 1.5,
+                          bgcolor: 'action.hover',
+                          cursor: 'pointer',
+                          '&:hover': { bgcolor: 'action.selected' }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          {isExpanded ? <CollapseIcon /> : <ExpandIcon />}
+                          <BookIcon color="primary" />
+                          <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ maxWidth: 300 }}>
+                            {bookName}
+                          </Typography>
+                        </Box>
+                        
+                        {/* Book Summary Stats */}
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                          <Chip 
+                            size="small" 
+                            label={`${totals.totalSessions} sessions`}
+                            variant="outlined"
+                          />
+                          <Chip 
+                            size="small" 
                             icon={<TimeIcon />}
-                            label={formatDuration(session.duration)}
-                            size="small"
-                            variant="outlined"
+                            label={formatDuration(totals.totalTime)}
                           />
-                          <Chip
+                          <Chip 
+                            size="small" 
                             icon={<BookIcon />}
-                            label={`${session.stats.pagesViewed?.length || 0} pages`}
-                            size="small"
-                            variant="outlined"
+                            label={`${totals.totalPages} pages`}
                           />
-                          <Chip
+                          <Chip 
+                            size="small"
                             icon={<BrainIcon />}
-                            label={`${session.stats.avgCognitiveLoad || 0}% load`}
-                            size="small"
-                            variant="outlined"
-                            color={
-                              session.stats.avgCognitiveLoad > 70
-                                ? 'error'
-                                : session.stats.avgCognitiveLoad > 40
-                                ? 'primary'
-                                : 'success'
-                            }
+                            label={`${totals.avgLoad}%`}
+                            color={totals.avgLoad > 70 ? 'error' : totals.avgLoad > 40 ? 'primary' : 'success'}
                           />
                         </Box>
-
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {session.stats.totalAIQueries || 0} AI queries
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {session.stats.conceptsMastered?.length || 0} concepts
-                          </Typography>
-                        </Box>
-
-                        <Button
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          startIcon={<PlayIcon />}
-                          sx={{ mt: 2 }}
-                        >
-                          View Timeline
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
+                      </Box>
+                      
+                      {/* Sessions Table */}
+                      <Collapse in={isExpanded}>
+                        <TableContainer>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ bgcolor: 'background.default' }}>
+                                <TableCell sx={{ fontWeight: 600, width: 100 }}>Date</TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: 80 }}>Duration</TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: 70 }}>Pages</TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: 70 }}>Load</TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: 70 }}>AI Qs</TableCell>
+                                <TableCell sx={{ fontWeight: 600, width: 70 }}>Events</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Chapter/Subject</TableCell>
+                                <TableCell sx={{ width: 80 }}></TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {bookSessions.map((session) => (
+                                <TableRow 
+                                  key={session.id}
+                                  hover
+                                  sx={{ 
+                                    cursor: 'pointer',
+                                    '&:hover': { bgcolor: 'action.hover' }
+                                  }}
+                                  onClick={() => handleSelectSession(session)}
+                                >
+                                  <TableCell>
+                                    <Typography variant="body2">
+                                      {formatDate(session.startTime)}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography variant="body2" fontWeight={500}>
+                                      {formatDuration(session.duration)}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography variant="body2">
+                                      {session.stats?.pagesViewed?.length || 0}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      size="small"
+                                      label={`${session.stats?.avgCognitiveLoad || 0}%`}
+                                      color={
+                                        (session.stats?.avgCognitiveLoad || 0) > 70 ? 'error' :
+                                        (session.stats?.avgCognitiveLoad || 0) > 40 ? 'primary' : 'success'
+                                      }
+                                      sx={{ height: 20, fontSize: '0.7rem' }}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography variant="body2">
+                                      {session.stats?.totalAIQueries || 0}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography variant="body2">
+                                      {session.eventCount || 0}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 150 }}>
+                                      {session.chapter || '-'}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <IconButton size="small" color="primary">
+                                      <PlayIcon fontSize="small" />
+                                    </IconButton>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Collapse>
+                    </Paper>
+                  );
+                })}
+              </Box>
             )}
           </>
         )}
 
-        {/* Tab 1: Timeline View */}
+        {/* Tab 1: Session Details */}
         {activeTab === 1 && (
           <>
             {detailsLoading && (
@@ -289,57 +431,55 @@ function SessionTimeline({ open, onClose, userId }) {
 
             {!detailsLoading && selectedSession && (
               <>
-                {/* Session summary */}
-                <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    {selectedSession.chapter || selectedSession.pdfName}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" gutterBottom>
-                    {formatTimestamp(selectedSession.startTime)}
-                  </Typography>
+                {/* Session Summary */}
+                <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box>
+                      <Typography variant="h6">
+                        {selectedSession.pdfName}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedSession.chapter || 'No chapter'} • {formatDate(selectedSession.startTime)}
+                      </Typography>
+                    </Box>
+                  </Box>
 
-                  <Grid container spacing={2} sx={{ mt: 2 }}>
-                    <Grid item xs={6} sm={3}>
-                      <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h5" color="primary.main" fontWeight={600}>
-                          {formatDuration(selectedSession.duration)}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Duration
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h5" color="primary.main" fontWeight={600}>
-                          {selectedSession.stats.pagesViewed?.length || 0}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Pages Viewed
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h5" color="primary.main" fontWeight={600}>
-                          {selectedSession.stats.avgCognitiveLoad || 0}%
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Avg Load
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h5" color="primary.main" fontWeight={600}>
-                          {selectedSession.eventCount || 0}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Events
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
+                  <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                    <Box sx={{ textAlign: 'center', minWidth: 80 }}>
+                      <Typography variant="h5" color="primary.main" fontWeight={600}>
+                        {formatDuration(selectedSession.duration)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">Duration</Typography>
+                    </Box>
+                    <Divider orientation="vertical" flexItem />
+                    <Box sx={{ textAlign: 'center', minWidth: 60 }}>
+                      <Typography variant="h5" color="primary.main" fontWeight={600}>
+                        {selectedSession.stats?.pagesViewed?.length || 0}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">Pages</Typography>
+                    </Box>
+                    <Divider orientation="vertical" flexItem />
+                    <Box sx={{ textAlign: 'center', minWidth: 60 }}>
+                      <Typography variant="h5" color="primary.main" fontWeight={600}>
+                        {selectedSession.stats?.avgCognitiveLoad || 0}%
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">Avg Load</Typography>
+                    </Box>
+                    <Divider orientation="vertical" flexItem />
+                    <Box sx={{ textAlign: 'center', minWidth: 60 }}>
+                      <Typography variant="h5" color="primary.main" fontWeight={600}>
+                        {selectedSession.eventCount || selectedSession.events?.length || 0}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">Events</Typography>
+                    </Box>
+                    <Divider orientation="vertical" flexItem />
+                    <Box sx={{ textAlign: 'center', minWidth: 60 }}>
+                      <Typography variant="h5" color="primary.main" fontWeight={600}>
+                        {selectedSession.stats?.totalAIQueries || 0}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">AI Queries</Typography>
+                    </Box>
+                  </Box>
                 </Paper>
 
                 {/* Timeline */}
@@ -348,48 +488,39 @@ function SessionTimeline({ open, onClose, userId }) {
                 </Typography>
 
                 {selectedSession.events && selectedSession.events.length > 0 ? (
-                  <Timeline position="right">
-                    {selectedSession.events.map((event, index) => (
-                      <TimelineItem key={index}>
-                        <TimelineOppositeContent color="text.secondary" sx={{ flex: 0.2 }}>
+                  <Timeline position="right" sx={{ p: 0 }}>
+                    {selectedSession.events.slice(0, 50).map((event, index) => (
+                      <TimelineItem key={index} sx={{ minHeight: 50 }}>
+                        <TimelineOppositeContent color="text.secondary" sx={{ flex: 0.15, py: 0.5 }}>
                           <Typography variant="caption">
-                            {Math.floor(event.relativeTime / 1000)}s
+                            {Math.floor((event.relativeTime || 0) / 1000)}s
                           </Typography>
                         </TimelineOppositeContent>
                         <TimelineSeparator>
-                          <TimelineDot sx={{ bgcolor: event.color || '#2196F3' }}>
+                          <TimelineDot 
+                            sx={{ 
+                              bgcolor: event.type === 'cognitive_load_spike' ? 'error.main' : 'primary.main',
+                              my: 0.5
+                            }}
+                          >
                             {getEventIcon(event.type)}
                           </TimelineDot>
-                          {index < selectedSession.events.length - 1 && <TimelineConnector />}
+                          {index < Math.min(selectedSession.events.length, 50) - 1 && (
+                            <TimelineConnector />
+                          )}
                         </TimelineSeparator>
-                        <TimelineContent>
-                          <Paper elevation={1} sx={{ p: 2 }}>
-                            <Typography variant="body2" fontWeight={500}>
-                              {getEventDescription(event)}
-                            </Typography>
-                            {event.data?.cognitiveLoad && (
-                              <Chip
-                                label={`Load: ${Math.round(event.data.cognitiveLoad)}%`}
-                                size="small"
-                                sx={{ mt: 1 }}
-                                color={
-                                  event.data.cognitiveLoad > 70
-                                    ? 'error'
-                                    : event.data.cognitiveLoad > 40
-                                    ? 'primary'
-                                    : 'success'
-                                }
-                              />
-                            )}
-                          </Paper>
+                        <TimelineContent sx={{ py: 0.5 }}>
+                          <Typography variant="body2">
+                            {getEventDescription(event)}
+                          </Typography>
                         </TimelineContent>
                       </TimelineItem>
                     ))}
                   </Timeline>
                 ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                    No events recorded for this session.
-                  </Typography>
+                  <Alert severity="info">
+                    No detailed events recorded for this session. Events are recorded when you navigate pages, use AI features, or take breaks.
+                  </Alert>
                 )}
               </>
             )}
@@ -397,13 +528,13 @@ function SessionTimeline({ open, onClose, userId }) {
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
+      <DialogActions sx={{ px: 2, py: 1.5 }}>
         {activeTab === 1 && (
-          <Button onClick={() => setActiveTab(0)} variant="outlined">
-            Back to Sessions
+          <Button onClick={() => setActiveTab(0)} variant="outlined" size="small">
+            ← Back to Sessions
           </Button>
         )}
-        <Button onClick={onClose} variant="contained">
+        <Button onClick={onClose} variant="contained" size="small">
           Close
         </Button>
       </DialogActions>
