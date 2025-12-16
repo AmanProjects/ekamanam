@@ -164,7 +164,7 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
         libraryItem.driveFileId = driveFile.id;
         await db.put(STORES.LIBRARY_ITEMS, libraryItem);
 
-        // Update library index in Drive
+        // Update library index in Drive - v7.2.8: Include ALL metadata fields
         const { fileId: indexFileId, data: indexData } = await getLibraryIndex();
         indexData.pdfs.push({
           id: libraryItem.id,
@@ -173,8 +173,17 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
           originalFileName: libraryItem.originalFileName,
           size: libraryItem.size,
           dateAdded: libraryItem.dateAdded,
+          lastOpened: libraryItem.lastOpened,
           subject: libraryItem.subject,
-          workspace: libraryItem.workspace
+          class: libraryItem.class,           // v7.2.8: For Classes count
+          collection: libraryItem.collection, // v7.2.8: For grouping (not Uncategorized)
+          chapter: libraryItem.chapter,       // v7.2.8: For chapter ordering
+          chapterTitle: libraryItem.chapterTitle,
+          totalPages: libraryItem.totalPages, // v7.2.8: For Pages count
+          lastPage: libraryItem.lastPage,
+          progress: libraryItem.progress,
+          workspace: libraryItem.workspace,
+          tags: libraryItem.tags
         });
         await updateLibraryIndex(indexFileId, indexData);
 
@@ -209,6 +218,22 @@ export const getAllLibraryItems = async () => {
         const driveIndex = await getLibraryIndex();
         items = driveIndex.data.pdfs || [];
         console.log(`✅ Loaded ${items.length} PDFs from Drive`);
+        
+        // v7.2.8: Auto-repair if we detect missing metadata
+        // Check if any items are missing collection/class/totalPages
+        const needsRepair = items.some(item => 
+          item.collection === undefined || item.class === undefined || item.totalPages === undefined
+        );
+        
+        if (needsRepair && items.length > 0) {
+          console.log('🔧 Detected missing metadata, attempting auto-repair...');
+          // Don't await - run in background to not block loading
+          repairDriveLibraryMetadata().then(result => {
+            if (result.success && result.synced > 0) {
+              console.log(`🎉 Auto-repaired ${result.synced} PDFs. Refresh to see updates.`);
+            }
+          }).catch(err => console.warn('⚠️ Auto-repair failed:', err));
+        }
       } catch (driveError) {
         console.error('❌ Error loading from Drive, falling back to IndexedDB:', driveError);
         // Fallback to IndexedDB if Drive fails
@@ -654,6 +679,75 @@ export const deleteExamPrepCache = async (pdfId) => {
   }
 };
 
+/**
+ * v7.2.8: Repair/sync library metadata from IndexedDB to Google Drive
+ * This fixes PDFs that were uploaded before full metadata sync was implemented
+ * @returns {Promise<Object>} Repair results
+ */
+export const repairDriveLibraryMetadata = async () => {
+  if (!hasDrivePermissions()) {
+    console.log('⚠️ Drive not connected - cannot repair');
+    return { success: false, error: 'Drive not connected' };
+  }
+
+  try {
+    console.log('🔧 Repairing Drive library metadata...');
+    
+    const db = await initDB();
+    const localItems = await db.getAll(STORES.LIBRARY_ITEMS);
+    
+    if (localItems.length === 0) {
+      console.log('ℹ️ No local items to sync');
+      return { success: true, synced: 0 };
+    }
+
+    // Get current Drive index
+    const { fileId: indexFileId, data: indexData } = await getLibraryIndex();
+    
+    let updatedCount = 0;
+    
+    // For each local item, update the Drive index with full metadata
+    for (const localItem of localItems) {
+      const driveItemIndex = indexData.pdfs.findIndex(p => p.id === localItem.id);
+      
+      if (driveItemIndex >= 0) {
+        // Update existing entry with full metadata
+        indexData.pdfs[driveItemIndex] = {
+          ...indexData.pdfs[driveItemIndex],
+          name: localItem.name,
+          originalFileName: localItem.originalFileName,
+          size: localItem.size,
+          dateAdded: localItem.dateAdded,
+          lastOpened: localItem.lastOpened,
+          subject: localItem.subject,
+          class: localItem.class,
+          collection: localItem.collection,
+          chapter: localItem.chapter,
+          chapterTitle: localItem.chapterTitle,
+          totalPages: localItem.totalPages,
+          lastPage: localItem.lastPage,
+          progress: localItem.progress,
+          workspace: localItem.workspace,
+          tags: localItem.tags
+        };
+        updatedCount++;
+        console.log(`✅ Updated metadata for: ${localItem.name}`);
+      }
+    }
+
+    // Save updated index
+    if (updatedCount > 0) {
+      await updateLibraryIndex(indexFileId, indexData);
+      console.log(`🎉 Repaired ${updatedCount} PDFs in Drive`);
+    }
+
+    return { success: true, synced: updatedCount };
+  } catch (error) {
+    console.error('❌ Error repairing library metadata:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   addPDFToLibrary,
   getAllLibraryItems,
@@ -674,6 +768,8 @@ export default {
   saveExamPrepCache,
   loadExamPrepCache,
   hasExamPrepCache,
-  deleteExamPrepCache
+  deleteExamPrepCache,
+  // v7.2.8: Repair function
+  repairDriveLibraryMetadata
 };
 
