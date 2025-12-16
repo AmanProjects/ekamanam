@@ -22,6 +22,12 @@ const SCOPES = [
   'https://www.googleapis.com/auth/drive.appdata' // Access app-specific folder
 ];
 
+// OAuth Client ID - must match the one in AuthButton.js
+const CLIENT_ID = '662515641730-ke7iqkpepqlpehgvt8k4nv5qhv573c56.apps.googleusercontent.com';
+
+// Discovery doc for Drive API
+const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
 // Folder structure
 export const FOLDER_STRUCTURE = {
   ROOT: 'Ekamanam',
@@ -92,11 +98,14 @@ export async function initializeGoogleDrive() {
       return;
     }
 
+    console.log('📁 Initializing gapi client with Drive API...');
+    // Initialize the client with discovery doc - this properly configures the project
+    await gapi.client.init({
+      discoveryDocs: [DISCOVERY_DOC],
+    });
+
     console.log('📁 Setting access token...');
     gapi.client.setToken({ access_token: accessToken });
-
-    console.log('📁 Loading Drive API...');
-    await gapi.client.load('drive', 'v3');
 
     isSignedIn = true;
     isInitialized = true;
@@ -255,7 +264,25 @@ async function findFolder(name, parentId = null) {
 
     return null;
   } catch (error) {
-    console.error(`❌ Error finding folder ${name}:`, error);
+    // Parse detailed error information
+    let errorMessage = `Error finding folder ${name}`;
+    if (error.result && error.result.error) {
+      const apiError = error.result.error;
+      errorMessage = `${apiError.message} (Code: ${apiError.code})`;
+      
+      // Check for common issues
+      if (apiError.code === 403) {
+        if (apiError.message.includes('not been used') || apiError.message.includes('disabled')) {
+          console.error('🔴 GOOGLE DRIVE API NOT ENABLED!');
+          console.error('👉 Please enable it at: https://console.cloud.google.com/apis/library/drive.googleapis.com?project=662515641730');
+        } else if (apiError.message.includes('insufficientPermissions')) {
+          console.error('🔴 INSUFFICIENT PERMISSIONS!');
+          console.error('👉 The OAuth token does not have the required Drive scopes.');
+          console.error('👉 Please sign out and sign back in to grant permissions.');
+        }
+      }
+    }
+    console.error(`❌ ${errorMessage}`, error);
     throw error;
   }
 }
@@ -428,10 +455,12 @@ export async function getLibraryIndex() {
       };
     } else {
       // Create new index file
+      // Get user email from Firebase Auth (not gapi.auth2 which we don't use)
+      const userEmail = auth.currentUser?.email || 'unknown';
       const initialData = {
         version: '1.0',
         lastSync: new Date().toISOString(),
-        userId: gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile().getEmail(),
+        userId: userEmail,
         pdfs: []
       };
 
@@ -520,6 +549,86 @@ export async function deleteFile(fileId) {
   }
 }
 
+/**
+ * Test Google Drive API connection
+ * This function helps diagnose 403 errors
+ * @returns {Promise<Object>} Diagnostic information
+ */
+export async function testDriveConnection() {
+  console.log('🔍 Testing Google Drive API connection...');
+  
+  const diagnostics = {
+    gapiLoaded: !!gapi,
+    driveApiLoaded: !!(gapi && gapi.client && gapi.client.drive),
+    hasAccessToken: !!localStorage.getItem('google_access_token'),
+    tokenPreview: localStorage.getItem('google_access_token')?.substring(0, 20) + '...',
+    apiCallResult: null,
+    error: null,
+    errorDetails: null
+  };
+
+  if (!diagnostics.gapiLoaded) {
+    diagnostics.error = 'GAPI not loaded';
+    return diagnostics;
+  }
+
+  if (!diagnostics.hasAccessToken) {
+    diagnostics.error = 'No access token in localStorage';
+    return diagnostics;
+  }
+
+  try {
+    // Try a simple "about" call - this checks if API is enabled
+    console.log('📡 Making test API call to Drive...');
+    const response = await gapi.client.drive.about.get({
+      fields: 'user,storageQuota'
+    });
+    
+    diagnostics.apiCallResult = 'SUCCESS';
+    diagnostics.user = response.result.user;
+    console.log('✅ Drive API test successful!', response.result);
+  } catch (error) {
+    diagnostics.apiCallResult = 'FAILED';
+    diagnostics.error = error.status || 'Unknown error';
+    
+    if (error.result && error.result.error) {
+      const apiError = error.result.error;
+      diagnostics.errorDetails = {
+        code: apiError.code,
+        message: apiError.message,
+        status: apiError.status
+      };
+      
+      console.error('🔴 Drive API test failed!');
+      console.error('Error code:', apiError.code);
+      console.error('Error message:', apiError.message);
+      
+      if (apiError.code === 403) {
+        if (apiError.message.includes('API has not been used') || 
+            apiError.message.includes('it is disabled') ||
+            apiError.message.includes('Access Not Configured')) {
+          console.error('');
+          console.error('═══════════════════════════════════════════════════════════════');
+          console.error('🔴 GOOGLE DRIVE API IS NOT ENABLED FOR YOUR PROJECT!');
+          console.error('═══════════════════════════════════════════════════════════════');
+          console.error('');
+          console.error('To fix this:');
+          console.error('1. Go to: https://console.cloud.google.com/apis/library/drive.googleapis.com?project=662515641730');
+          console.error('2. Click the blue "ENABLE" button');
+          console.error('3. Wait 1-2 minutes for the API to activate');
+          console.error('4. Refresh this page and sign in again');
+          console.error('');
+          console.error('═══════════════════════════════════════════════════════════════');
+        }
+      }
+    } else {
+      console.error('❌ Drive API test error:', error);
+    }
+  }
+
+  return diagnostics;
+}
+
 export default {
   initializeGoogleDrive,
   hasDrivePermissions,
@@ -531,5 +640,6 @@ export default {
   getLibraryIndex,
   updateLibraryIndex,
   deleteFile,
+  testDriveConnection,
   FOLDER_STRUCTURE
 };

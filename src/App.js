@@ -197,12 +197,13 @@ function App() {
     
     loadLibraryCount();
     
-    // Reload when view changes to dashboard or library
+    // Reload periodically when on dashboard or library views
+    // Using 30 seconds instead of 2 seconds to reduce API calls and log noise
     const interval = setInterval(() => {
       if (view === 'dashboard' || view === 'library') {
         loadLibraryCount();
       }
-    }, 2000); // Check every 2 seconds when on relevant views
+    }, 30000); // Check every 30 seconds when on relevant views
     
     return () => clearInterval(interval);
   }, [view]);
@@ -328,13 +329,18 @@ function App() {
           await initializeGoogleDrive();
           setDriveInitialized(true);
 
+          // v7.2.1: Test Drive API connection to diagnose 403 errors
+          const { testDriveConnection } = await import('./services/googleDriveService');
+          const diagnostics = await testDriveConnection();
+          console.log('📊 Drive API diagnostics:', diagnostics);
+
           // Check if user has granted Drive permissions
           const hasPermissions = hasDrivePermissions();
-          setDriveConnected(hasPermissions);
+          setDriveConnected(hasPermissions && diagnostics.apiCallResult === 'SUCCESS');
 
-          if (!hasPermissions) {
-            // First-time user - show permission dialog
-            console.log('ℹ️ Drive permissions not granted. Showing dialog...');
+          if (!hasPermissions || diagnostics.apiCallResult !== 'SUCCESS') {
+            // First-time user or API not working - show permission dialog
+            console.log('ℹ️ Drive permissions not granted or API error. Showing dialog...');
             setShowDrivePermissionDialog(true);
           } else {
             console.log('✅ Drive connected and ready');
