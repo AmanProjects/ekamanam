@@ -727,6 +727,139 @@ function AIModePanel({
     window.speechSynthesis.speak(utterance);
   };
 
+  // v7.2.7: Enhanced musical singing for rhymes with pitch/rate variations
+  const handleSingSection = (sectionName, text, contentType = 'rhyme') => {
+    // Stop any current speech
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+
+    // Extract plain text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = text;
+    let plainText = tempDiv.textContent || tempDiv.innerText || '';
+
+    if (!plainText.trim()) {
+      console.log('⚠️ No text to sing');
+      return;
+    }
+
+    console.log(`🎵 Starting musical ${contentType} mode...`);
+
+    // Split text into lines for musical variation
+    const lines = plainText.split(/[\n.!?]+/).filter(line => line.trim());
+    
+    // Get language settings
+    const isEnglish = detectedLang?.isEnglish || manualLanguage === 'English';
+    const language = manualLanguage || detectedLang?.language || 'English';
+    const langCodes = {
+      'English': 'en-US', 'Telugu': 'te-IN', 'Hindi': 'hi-IN',
+      'Tamil': 'ta-IN', 'Kannada': 'kn-IN', 'Malayalam': 'ml-IN',
+      'Bengali': 'bn-IN', 'Marathi': 'mr-IN', 'Gujarati': 'gu-IN'
+    };
+    const languageCode = isEnglish ? 'en-US' : (langCodes[language] || 'hi-IN');
+    const selectedVoice = getBestVoice(languageCode);
+
+    // Musical parameters based on content type
+    const musicalParams = {
+      rhyme: {
+        baseRate: 0.85,      // Slower for singing
+        basePitch: 1.1,      // Slightly higher pitch
+        rateVariation: 0.15, // Vary rate ±15%
+        pitchVariation: 0.3, // Vary pitch ±30%
+        pattern: 'bouncy'    // High-low-high-low pattern
+      },
+      poem: {
+        baseRate: 0.8,       // Even slower for dramatic effect
+        basePitch: 1.0,      // Normal pitch
+        rateVariation: 0.2,  // More rate variation
+        pitchVariation: 0.2, // Less pitch variation
+        pattern: 'emotional' // Gradual rise and fall
+      },
+      story: {
+        baseRate: 0.9,       // Moderate pace
+        basePitch: 1.0,      // Normal pitch
+        rateVariation: 0.25, // Lots of rate variation for drama
+        pitchVariation: 0.4, // Lots of pitch variation for characters
+        pattern: 'dramatic'  // Dramatic rises and falls
+      }
+    };
+
+    const params = musicalParams[contentType] || musicalParams.rhyme;
+    let lineIndex = 0;
+
+    // Function to speak each line with musical variation
+    const speakNextLine = () => {
+      if (lineIndex >= lines.length) {
+        setSpeakingSection(null);
+        setIsSpeaking(false);
+        console.log('🎵 Musical performance ended');
+        return;
+      }
+
+      const line = lines[lineIndex].trim();
+      if (!line) {
+        lineIndex++;
+        speakNextLine();
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(line);
+      
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
+      } else {
+        utterance.lang = languageCode;
+      }
+
+      // Calculate musical variation based on line position and pattern
+      let pitchMultiplier = 1;
+      let rateMultiplier = 1;
+      
+      if (params.pattern === 'bouncy') {
+        // Bouncy: alternating high-low pattern (great for rhymes)
+        pitchMultiplier = lineIndex % 2 === 0 ? 1.15 : 0.95;
+        rateMultiplier = lineIndex % 2 === 0 ? 1.1 : 0.9;
+      } else if (params.pattern === 'emotional') {
+        // Emotional: build up then come down (great for poems)
+        const progress = lineIndex / lines.length;
+        pitchMultiplier = progress < 0.6 ? 1 + (progress * 0.4) : 1.24 - ((progress - 0.6) * 0.6);
+        rateMultiplier = progress < 0.5 ? 0.85 + (progress * 0.3) : 1 - ((progress - 0.5) * 0.2);
+      } else if (params.pattern === 'dramatic') {
+        // Dramatic: random variations for storytelling
+        pitchMultiplier = 0.9 + (Math.random() * 0.4);
+        rateMultiplier = 0.8 + (Math.random() * 0.4);
+      }
+
+      // Apply parameters with variation
+      utterance.pitch = Math.max(0.5, Math.min(2, params.basePitch * pitchMultiplier));
+      utterance.rate = Math.max(0.5, Math.min(1.5, params.baseRate * rateMultiplier));
+      utterance.volume = 1.0;
+
+      console.log(`🎵 Line ${lineIndex + 1}: pitch=${utterance.pitch.toFixed(2)}, rate=${utterance.rate.toFixed(2)}`);
+
+      utterance.onend = () => {
+        lineIndex++;
+        // Small pause between lines for rhythm
+        setTimeout(speakNextLine, contentType === 'rhyme' ? 300 : 200);
+      };
+
+      utterance.onerror = (event) => {
+        console.error('❌ Singing error:', event.error);
+        setSpeakingSection(null);
+        setIsSpeaking(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    };
+
+    // Start the musical performance
+    setSpeakingSection(sectionName);
+    setIsSpeaking(true);
+    speakNextLine();
+  };
+
   const handleStopSpeaking = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -3776,8 +3909,9 @@ Return ONLY this valid JSON:
                           </Alert>
                         )}
 
-                        {/* Main Listen/Sing Button */}
-                        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                        {/* Main Listen/Sing Buttons - v7.2.7 Enhanced */}
+                        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                          {/* Musical Sing Along Button */}
                           <Button
                             variant="contained"
                             size="large"
@@ -3791,7 +3925,8 @@ Return ONLY this valid JSON:
                               if (speakingSection === 'singAlong') {
                                 handleStopSpeaking();
                               } else {
-                                handleSpeakSection('singAlong', activitiesResponse.singAlongText);
+                                // Use enhanced musical singing
+                                handleSingSection('singAlong', activitiesResponse.singAlongText, activitiesResponse.contentType);
                               }
                             }}
                             sx={{ 
@@ -3800,7 +3935,13 @@ Return ONLY this valid JSON:
                               fontSize: '1.1rem',
                               fontWeight: 700,
                               borderRadius: 3,
-                              boxShadow: 4
+                              boxShadow: 4,
+                              animation: speakingSection === 'singAlong' ? 'pulse 1s infinite' : 'none',
+                              '@keyframes pulse': {
+                                '0%': { transform: 'scale(1)' },
+                                '50%': { transform: 'scale(1.05)' },
+                                '100%': { transform: 'scale(1)' }
+                              }
                             }}
                           >
                             {speakingSection === 'singAlong' 
@@ -3808,9 +3949,53 @@ Return ONLY this valid JSON:
                               : activitiesResponse.contentType === 'rhyme' 
                                 ? '🎵 Sing Along' 
                                 : activitiesResponse.contentType === 'poem'
-                                  ? '🎭 Listen & Recite'
-                                  : '📖 Listen to Story'}
+                                  ? '🎭 Recite with Expression'
+                                  : '📖 Listen with Voices'}
                           </Button>
+
+                          {/* YouTube Search Button for Real Audio */}
+                          <Button
+                            variant="outlined"
+                            size="large"
+                            color="error"
+                            startIcon={<LinkIcon />}
+                            onClick={() => {
+                              // Use AI-suggested search query if available, otherwise extract from text
+                              let searchQuery;
+                              if (activitiesResponse.youtubeSearchQuery && activitiesResponse.youtubeSearchQuery.trim()) {
+                                searchQuery = encodeURIComponent(activitiesResponse.youtubeSearchQuery);
+                              } else {
+                                const searchText = activitiesResponse.singAlongText
+                                  .split('\n')[0]
+                                  .replace(/[^\w\s]/g, '')
+                                  .trim()
+                                  .substring(0, 50);
+                                searchQuery = encodeURIComponent(
+                                  activitiesResponse.contentType === 'rhyme' 
+                                    ? `${searchText} nursery rhyme song kids`
+                                    : activitiesResponse.contentType === 'poem'
+                                    ? `${searchText} poem recitation`
+                                    : `${searchText} story for kids`
+                                );
+                              }
+                              window.open(`https://www.youtube.com/results?search_query=${searchQuery}`, '_blank');
+                            }}
+                            sx={{ 
+                              py: 1.5, 
+                              px: 3,
+                              borderRadius: 3,
+                              fontWeight: 600
+                            }}
+                          >
+                            🎬 Find on YouTube
+                          </Button>
+                        </Box>
+
+                        {/* Mode Toggle - Normal vs Musical */}
+                        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            💡 Tip: "Sing Along" uses musical voice variations. "Find on YouTube" opens real song videos!
+                          </Typography>
                         </Box>
 
                         {/* The Sing Along / Story Text */}

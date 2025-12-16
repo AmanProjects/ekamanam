@@ -469,6 +469,8 @@ Return ONLY this valid JSON (no extra text before or after):
   "singAlongText": "ONLY FOR RHYMES/POEMS/STORIES: The FULL text formatted for reading aloud/singing. Include the complete rhyme/poem/story text here. For rhymes, include rhythm markers (clap, clap) or melody hints. For poems, include pause markers (...). For stories, include character voice hints [excited], [whisper], etc. EMPTY for academic content.",
   
   "performanceInstructions": "ONLY FOR RHYMES/POEMS/STORIES: Brief instructions on HOW to perform - melody description for rhymes, emotion guidance for poems, voice modulation tips for stories. EMPTY for academic content.",
+
+  "youtubeSearchQuery": "ONLY FOR KNOWN RHYMES/POEMS/STORIES: If this is a well-known rhyme like 'Twinkle Twinkle Little Star', 'Humpty Dumpty', 'Johny Johny Yes Papa', etc., provide the exact title for YouTube search. For example: 'Twinkle Twinkle Little Star nursery rhyme'. EMPTY if not a well-known piece or for academic content.",
   
   "mcqs": [
     {
