@@ -1,0 +1,80 @@
+/**
+ * Educational Tools - Index
+ * Central export for all educational tool components
+ */
+
+export { default as MathTools } from './MathTools';
+export { default as ChemistryTools } from './ChemistryTools';
+export { default as PhysicsSimulator } from './PhysicsSimulator';
+export { default as CodeEditor } from './CodeEditor';
+export { default as Whiteboard } from './Whiteboard';
+export { default as GlobeViewer } from './GlobeViewer';
+
+// Tool metadata for UI
+export const toolsList = [
+  {
+    id: 'math',
+    name: 'Math Tools',
+    description: 'LaTeX · Graphing · Calculator',
+    icon: '📐',
+    color: '#1976d2',
+    component: 'MathTools'
+  },
+  {
+    id: 'chemistry',
+    name: 'Chemistry',
+    description: '3D Molecules · Periodic Table',
+    icon: '🧪',
+    color: '#4caf50',
+    component: 'ChemistryTools'
+  },
+  {
+    id: 'physics',
+    name: 'Physics Lab',
+    description: 'Gravity · Collisions · Forces',
+    icon: '⚡',
+    color: '#6c5ce7',
+    component: 'PhysicsSimulator'
+  },
+  {
+    id: 'code',
+    name: 'Code Editor',
+    description: 'JS · Python · Java · HTML',
+    icon: '💻',
+    color: '#2d3436',
+    component: 'CodeEditor'
+  },
+  {
+    id: 'whiteboard',
+    name: 'Whiteboard',
+    description: 'Draw · Sketch · Explain',
+    icon: '✏️',
+    color: '#e17055',
+    component: 'Whiteboard'
+  },
+  {
+    id: 'globe',
+    name: 'Globe Explorer',
+    description: '3D Earth · Geography',
+    icon: '🌍',
+    color: '#0984e3',
+    component: 'GlobeViewer'
+  },
+  {
+    id: 'circuit',
+    name: 'Circuit Builder',
+    description: 'Logic Gates · Digital',
+    icon: '🔌',
+    color: '#00b894',
+    component: 'CircuitBuilder'
+  },
+  {
+    id: 'simulator',
+    name: 'Circuit Simulator',
+    description: 'Falstad · Interactive',
+    icon: '⚡',
+    color: '#fdcb6e',
+    component: 'CircuitSimulator'
+  }
+];
+

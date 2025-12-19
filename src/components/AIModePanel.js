@@ -9,6 +9,8 @@ import CircuitVisualizer, { LogicGate, GateGallery, InteractiveTruthTable, ROMVi
 import CircuitBuilder from './CircuitBuilder';
 import CircuitSimulator from './CircuitSimulator';
 import llmService, { PROVIDERS } from '../services/llmService';
+// v7.2.32: Educational tools
+import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, Whiteboard, GlobeViewer } from './tools';
 import {
   Box,
   Paper,
@@ -496,6 +498,14 @@ function AIModePanel({
   const [showCircuitBuilder, setShowCircuitBuilder] = useState(false);
   const [showCircuitSimulator, setShowCircuitSimulator] = useState(false);
   const [circuitData, setCircuitData] = useState(null);
+  
+  // v7.2.32: Educational tools states
+  const [showMathTools, setShowMathTools] = useState(false);
+  const [showChemistryTools, setShowChemistryTools] = useState(false);
+  const [showPhysicsSimulator, setShowPhysicsSimulator] = useState(false);
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [showWhiteboard, setShowWhiteboard] = useState(false);
+  const [showGlobeViewer, setShowGlobeViewer] = useState(false);
   const [notes, setNotes] = useState('');
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizResults, setQuizResults] = useState(null);
@@ -5975,78 +5985,207 @@ Return ONLY this valid JSON:
           </Box>
         </TabPanel>}
 
-        {/* v7.2.29: Tools Tab - Compact Design */}
+        {/* v7.2.32: Tools Tab - Full Educational Toolkit */}
         {showProTools && <TabPanel value={activeTab} index={tabIndices.proTools}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {/* Circuit Tools */}
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* Tool Grid */}
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
+              gap: 1.5
+            }}>
+              {/* Math Tools */}
+              <Paper 
+                elevation={0}
+                onClick={() => setShowMathTools(true)}
+                sx={{ 
+                  p: 2,
+                  border: '2px solid',
+                  borderColor: '#1976d2',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  bgcolor: 'rgba(25, 118, 210, 0.04)',
+                  '&:hover': { 
+                    bgcolor: 'rgba(25, 118, 210, 0.1)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2
+                  }
+                }}
+              >
+                <Typography fontSize="1.5rem" mb={0.5}>📐</Typography>
+                <Typography variant="body2" fontWeight={700}>Math Tools</Typography>
+                <Typography variant="caption" color="text.secondary">LaTeX · Graphing</Typography>
+              </Paper>
+
+              {/* Chemistry */}
+              <Paper 
+                elevation={0}
+                onClick={() => setShowChemistryTools(true)}
+                sx={{ 
+                  p: 2,
+                  border: '2px solid',
+                  borderColor: '#4caf50',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  bgcolor: 'rgba(76, 175, 80, 0.04)',
+                  '&:hover': { 
+                    bgcolor: 'rgba(76, 175, 80, 0.1)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2
+                  }
+                }}
+              >
+                <Typography fontSize="1.5rem" mb={0.5}>🧪</Typography>
+                <Typography variant="body2" fontWeight={700}>Chemistry</Typography>
+                <Typography variant="caption" color="text.secondary">3D Molecules</Typography>
+              </Paper>
+
+              {/* Physics */}
+              <Paper 
+                elevation={0}
+                onClick={() => setShowPhysicsSimulator(true)}
+                sx={{ 
+                  p: 2,
+                  border: '2px solid',
+                  borderColor: '#6c5ce7',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  bgcolor: 'rgba(108, 92, 231, 0.04)',
+                  '&:hover': { 
+                    bgcolor: 'rgba(108, 92, 231, 0.1)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2
+                  }
+                }}
+              >
+                <Typography fontSize="1.5rem" mb={0.5}>⚡</Typography>
+                <Typography variant="body2" fontWeight={700}>Physics Lab</Typography>
+                <Typography variant="caption" color="text.secondary">Simulations</Typography>
+              </Paper>
+
+              {/* Code Editor */}
+              <Paper 
+                elevation={0}
+                onClick={() => setShowCodeEditor(true)}
+                sx={{ 
+                  p: 2,
+                  border: '2px solid',
+                  borderColor: '#2d3436',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  bgcolor: 'rgba(45, 52, 54, 0.04)',
+                  '&:hover': { 
+                    bgcolor: 'rgba(45, 52, 54, 0.1)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2
+                  }
+                }}
+              >
+                <Typography fontSize="1.5rem" mb={0.5}>💻</Typography>
+                <Typography variant="body2" fontWeight={700}>Code Editor</Typography>
+                <Typography variant="caption" color="text.secondary">JS · Python · Java</Typography>
+              </Paper>
+
+              {/* Whiteboard */}
+              <Paper 
+                elevation={0}
+                onClick={() => setShowWhiteboard(true)}
+                sx={{ 
+                  p: 2,
+                  border: '2px solid',
+                  borderColor: '#e17055',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  bgcolor: 'rgba(225, 112, 85, 0.04)',
+                  '&:hover': { 
+                    bgcolor: 'rgba(225, 112, 85, 0.1)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2
+                  }
+                }}
+              >
+                <Typography fontSize="1.5rem" mb={0.5}>✏️</Typography>
+                <Typography variant="body2" fontWeight={700}>Whiteboard</Typography>
+                <Typography variant="caption" color="text.secondary">Draw · Sketch</Typography>
+              </Paper>
+
+              {/* Globe */}
+              <Paper 
+                elevation={0}
+                onClick={() => setShowGlobeViewer(true)}
+                sx={{ 
+                  p: 2,
+                  border: '2px solid',
+                  borderColor: '#0984e3',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  bgcolor: 'rgba(9, 132, 227, 0.04)',
+                  '&:hover': { 
+                    bgcolor: 'rgba(9, 132, 227, 0.1)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2
+                  }
+                }}
+              >
+                <Typography fontSize="1.5rem" mb={0.5}>🌍</Typography>
+                <Typography variant="body2" fontWeight={700}>Globe Explorer</Typography>
+                <Typography variant="caption" color="text.secondary">3D Geography</Typography>
+              </Paper>
+
               {/* Circuit Builder */}
               <Paper 
                 elevation={0}
                 onClick={() => setShowCircuitBuilder(true)}
                 sx={{ 
-                  flex: 1,
-                  minWidth: 140,
                   p: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
+                  border: '2px solid',
+                  borderColor: '#00b894',
                   borderRadius: 2,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
+                  bgcolor: 'rgba(0, 184, 148, 0.04)',
                   '&:hover': { 
-                    borderColor: 'primary.main',
-                    bgcolor: 'action.hover',
-                    transform: 'translateY(-2px)'
+                    bgcolor: 'rgba(0, 184, 148, 0.1)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2
                   }
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36 }}>
-                    <BuildIcon sx={{ fontSize: 20 }} />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" fontWeight={700}>Circuit Builder</Typography>
-                    <Typography variant="caption" color="text.secondary">Logic gates</Typography>
-                  </Box>
-                </Box>
+                <Typography fontSize="1.5rem" mb={0.5}>🔌</Typography>
+                <Typography variant="body2" fontWeight={700}>Circuit Builder</Typography>
+                <Typography variant="caption" color="text.secondary">Logic Gates</Typography>
               </Paper>
-              
+
               {/* Circuit Simulator */}
               <Paper 
                 elevation={0}
                 onClick={() => setShowCircuitSimulator(true)}
                 sx={{ 
-                  flex: 1,
-                  minWidth: 140,
                   p: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
+                  border: '2px solid',
+                  borderColor: '#fdcb6e',
                   borderRadius: 2,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
+                  bgcolor: 'rgba(253, 203, 110, 0.04)',
                   '&:hover': { 
-                    borderColor: 'secondary.main',
-                    bgcolor: 'action.hover',
-                    transform: 'translateY(-2px)'
+                    bgcolor: 'rgba(253, 203, 110, 0.1)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2
                   }
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Avatar sx={{ bgcolor: 'secondary.main', width: 36, height: 36 }}>
-                    <SimulateIcon sx={{ fontSize: 20 }} />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" fontWeight={700}>Simulator</Typography>
-                    <Typography variant="caption" color="text.secondary">CircuitJS</Typography>
-                  </Box>
-                </Box>
+                <Typography fontSize="1.5rem" mb={0.5}>⚙️</Typography>
+                <Typography variant="body2" fontWeight={700}>Simulator</Typography>
+                <Typography variant="caption" color="text.secondary">CircuitJS</Typography>
               </Paper>
             </Box>
-            
-            {/* Coming Soon - More compact */}
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              More coming: Molecules · Maps · Math · 3D Models
-            </Typography>
           </Box>
         </TabPanel>}
 
@@ -6294,6 +6433,32 @@ Return ONLY this valid JSON:
         open={showCircuitSimulator}
         onClose={() => setShowCircuitSimulator(false)}
         title="Circuit Simulator (Falstad)"
+      />
+
+      {/* v7.2.32: Educational Tools Dialogs */}
+      <MathTools
+        open={showMathTools}
+        onClose={() => setShowMathTools(false)}
+      />
+      <ChemistryTools
+        open={showChemistryTools}
+        onClose={() => setShowChemistryTools(false)}
+      />
+      <PhysicsSimulator
+        open={showPhysicsSimulator}
+        onClose={() => setShowPhysicsSimulator(false)}
+      />
+      <CodeEditor
+        open={showCodeEditor}
+        onClose={() => setShowCodeEditor(false)}
+      />
+      <Whiteboard
+        open={showWhiteboard}
+        onClose={() => setShowWhiteboard(false)}
+      />
+      <GlobeViewer
+        open={showGlobeViewer}
+        onClose={() => setShowGlobeViewer(false)}
       />
     </Box>
   );
