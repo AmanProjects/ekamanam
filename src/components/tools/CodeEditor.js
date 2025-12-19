@@ -189,8 +189,19 @@ function CodeEditor({ open, onClose }) {
                 </Alert>
               )}
               {output.startsWith('HTML_PREVIEW:') ? (
-                <Paper sx={{ p: 2, bgcolor: 'white' }}>
-                  <div dangerouslySetInnerHTML={{ __html: output.replace('HTML_PREVIEW:', '') }} />
+                <Paper sx={{ p: 2, bgcolor: 'white', overflow: 'auto' }}>
+                  <iframe
+                    key={output.length}
+                    srcDoc={output.replace('HTML_PREVIEW:', '')}
+                    title="HTML Preview"
+                    style={{
+                      width: '100%',
+                      minHeight: 300,
+                      border: 'none',
+                      background: 'white'
+                    }}
+                    sandbox="allow-scripts"
+                  />
                 </Paper>
               ) : (
                 <Typography 

@@ -10,7 +10,7 @@ import CircuitBuilder from './CircuitBuilder';
 import CircuitSimulator from './CircuitSimulator';
 import llmService, { PROVIDERS } from '../services/llmService';
 // v7.2.32: Educational tools
-import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, Whiteboard, GlobeViewer } from './tools';
+import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer } from './tools';
 import {
   Box,
   Paper,
@@ -504,7 +504,6 @@ function AIModePanel({
   const [showChemistryTools, setShowChemistryTools] = useState(false);
   const [showPhysicsSimulator, setShowPhysicsSimulator] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
-  const [showWhiteboard, setShowWhiteboard] = useState(false);
   const [showGlobeViewer, setShowGlobeViewer] = useState(false);
   const [notes, setNotes] = useState('');
   const [quizAnswers, setQuizAnswers] = useState({});
@@ -533,7 +532,7 @@ function AIModePanel({
   const [vyonnMessages, setVyonnMessages] = useState([
     {
       role: 'assistant',
-      content: 'Hi there! I\'m Vyonn, your AI learning companion. How can I help you today?',
+      content: 'Hi there! I\'m Vyonn, your AI learning companion. 🎨 I can create 3D shapes, show molecules, display maps, and draw charts! Try asking me to "show a water molecule" or "draw a cube". How can I help you today?',
       timestamp: new Date()
     }
   ]);
@@ -837,47 +836,65 @@ function AIModePanel({
         contextInfo = `\n\n[Context: Currently analyzing study material from page ${currentPage}. Available content: ${pageText.substring(0, 1500)}...]`;
       }
 
-      // Vyonn's System Prompt
-      const vyonnSystemPrompt = `You are Vyonn, a friendly AI learning assistant for students in the Ekamanam app.
+      // Vyonn's System Prompt with visualization capabilities
+      const vyonnSystemPrompt = `You are Vyonn, a friendly AI learning assistant in the Ekamanam app.
 
-TEACHING STYLE (MANDATORY):
-✅ ALWAYS explain the concept first before showing calculations
-✅ Use simple, conversational language (like talking to a friend)
-✅ Break down solutions step-by-step with reasoning
-✅ Be encouraging and supportive
-✅ Keep responses concise but helpful (4-6 sentences unless more detail needed)
+IMPORTANT: You CAN display visualizations! When users ask to show something, output the JSON and the app will render it. Never say you cannot display things.
 
-RESPONSE STRUCTURE FOR MATH/SCIENCE QUESTIONS:
-1. **Identify the concept**: "This is a [concept name] problem."
-2. **Explain the approach**: "To solve this, we use [method/formula] because..."
-3. **Show steps**: "Let's work through it: First, ... Next, ... Finally, ..."
-4. **Give the answer**: "So the final answer is..."
+TEACHING STYLE:
+- Explain concepts simply before calculations
+- Use conversational language  
+- Break down solutions step-by-step
+- Be encouraging and supportive
 
-APP FEATURES YOU CAN SUGGEST:
-- Learn Tab: Deep dive into concepts (click the Learn tab)
-- Explain Tab: Get explanations for selected text
-- Activities Tab: Practice questions and exercises
-- Exam Prep: MCQs, short & long answer questions
-- Tools Tab: Circuit builders, simulators, and more
+VISUALIZATION COMMANDS (output JSON on one line, no code blocks):
 
-${contextInfo ? `CONTEXT: User is on page ${currentPage} of study material.${contextInfo}` : ''}
+3D SHAPES: {"type": "3d", "shapeType": "cube", "color": "#4FC3F7", "dimensions": {"width": 2, "height": 2, "depth": 2}, "title": "Cube", "rotate": true}
+Options: cube, sphere, cone, cylinder, pyramid, torus
 
-USER QUESTION: ${userMessage}
+MOLECULES: {"type": "chemistry", "moleculeData": "water", "format": "name", "title": "Water"}
+Options: water, caffeine, aspirin, glucose, benzene, methane, ammonia, ethanol
 
-INSTRUCTION: Be a helpful teacher. Explain concepts clearly. Make learning easy and enjoyable.`;
+MAPS: {"type": "leaflet", "center": [28.704, 77.102], "zoom": 10, "markers": [{"position": [28.704, 77.102], "label": "Delhi", "popup": "Capital of India"}], "title": "Delhi"}
+Cities: Delhi [28.704, 77.102], Mumbai [19.076, 72.877], Bangalore [12.971, 77.594], Panipat [29.387, 76.968], Agra [27.176, 78.008], Hyderabad [17.385, 78.486], Kolkata [22.572, 88.363], Chennai [13.082, 80.270]
+
+For historical battles (Panipat, Plassey, etc.), ALWAYS show a map with the battle location.
+
+CHARTS: {"type": "plotly", "data": [{"x": [1, 2, 3], "y": [10, 20, 15], "type": "bar"}], "layout": {"title": "Chart"}}
+
+When showing visuals: First explain briefly, then output JSON on its own line.
+
+${contextInfo ? `Context: Page ${currentPage}. ${contextInfo.substring(0, 500)}` : ''}
+
+Question: ${userMessage}`;
 
       console.log('🔮 Vyonn: Processing query:', userMessage.substring(0, 50));
 
+      // Check if API key is available
+      const hasGeminiKey = llmService.hasApiKey(PROVIDERS.GEMINI);
+      const hasGroqKey = llmService.hasApiKey(PROVIDERS.GROQ);
+      
+      if (!hasGeminiKey && !hasGroqKey) {
+        throw new Error('No API key configured. Please go to Settings and add your Gemini or Groq API key.');
+      }
+
       // Call LLM service
-      const response = await llmService.callLLM(
+      const llmResponse = await llmService.callLLM(
         vyonnSystemPrompt,
         {
-          providers: [PROVIDERS.GEMINI, PROVIDERS.GROQ],
+          feature: 'general',
+          preferredProvider: hasGeminiKey ? PROVIDERS.GEMINI : PROVIDERS.GROQ,
           temperature: 0.8,
-          maxTokens: 2000,
-          topP: 0.95
+          maxTokens: 2000
         }
       );
+      
+      // Handle response (could be string or object with response property)
+      const response = typeof llmResponse === 'string' ? llmResponse : (llmResponse?.response || String(llmResponse || ''));
+
+      if (!response) {
+        throw new Error('Empty response from AI');
+      }
 
       // Track query for analytics
       if (onAIQuery) {
@@ -886,7 +903,7 @@ INSTRUCTION: Be a helpful teacher. Explain concepts clearly. Make learning easy 
 
       // Check for visualization JSON in response
       let visualAid = null;
-      let finalResponse = response;
+      let finalResponse = String(response);
       
       const startMatch = finalResponse.match(/\{\s*"type"\s*:\s*"(3d|chemistry|plotly|leaflet)"/);
       if (startMatch) {
@@ -929,11 +946,24 @@ INSTRUCTION: Be a helpful teacher. Explain concepts clearly. Make learning easy 
       ]);
     } catch (error) {
       console.error('⚠️ Vyonn: Error:', error);
+      console.error('⚠️ Vyonn: Error message:', error.message);
+      
+      let errorMessage = 'I ran into a hiccup! Please try again.';
+      if (error.message?.includes('API key') || error.message?.includes('No API key')) {
+        errorMessage = '🔑 No API key found! Please go to Settings (gear icon) and add your Gemini API key.';
+      } else if (error.message?.includes('401') || error.message?.includes('invalid')) {
+        errorMessage = '🔑 Your API key seems invalid. Please check it in Settings.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = '📡 Network error. Please check your internet connection.';
+      } else if (error.message?.includes('blocked') || error.message?.includes('safety')) {
+        errorMessage = '⚠️ That content was blocked. Try rephrasing your question.';
+      }
+      
       setVyonnMessages([
         ...newMessages,
         {
           role: 'assistant',
-          content: 'I ran into a small hiccup! Please try asking again, or check your API key settings.',
+          content: errorMessage,
           timestamp: new Date(),
           error: true
         }
@@ -954,7 +984,7 @@ INSTRUCTION: Be a helpful teacher. Explain concepts clearly. Make learning easy 
     setVyonnMessages([
       {
         role: 'assistant',
-        content: 'Chat cleared! How can I help you with your studies?',
+        content: 'Chat cleared! 🎨 Remember, I can show 3D shapes, molecules, maps, and charts! Ask me anything about your studies.',
         timestamp: new Date()
       }
     ]);
@@ -6090,30 +6120,6 @@ Return ONLY this valid JSON:
                 <Typography variant="caption" color="text.secondary">JS · Python · Java</Typography>
               </Paper>
 
-              {/* Whiteboard */}
-              <Paper 
-                elevation={0}
-                onClick={() => setShowWhiteboard(true)}
-                sx={{ 
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: '#e17055',
-                  borderRadius: 2,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  bgcolor: 'rgba(225, 112, 85, 0.04)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(225, 112, 85, 0.1)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 2
-                  }
-                }}
-              >
-                <Typography fontSize="1.5rem" mb={0.5}>✏️</Typography>
-                <Typography variant="body2" fontWeight={700}>Whiteboard</Typography>
-                <Typography variant="caption" color="text.secondary">Draw · Sketch</Typography>
-              </Paper>
-
               {/* Globe */}
               <Paper 
                 elevation={0}
@@ -6447,14 +6453,11 @@ Return ONLY this valid JSON:
       <PhysicsSimulator
         open={showPhysicsSimulator}
         onClose={() => setShowPhysicsSimulator(false)}
+        user={user}
       />
       <CodeEditor
         open={showCodeEditor}
         onClose={() => setShowCodeEditor(false)}
-      />
-      <Whiteboard
-        open={showWhiteboard}
-        onClose={() => setShowWhiteboard(false)}
       />
       <GlobeViewer
         open={showGlobeViewer}

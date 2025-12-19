@@ -9,11 +9,7 @@ import {
   Chip,
   Avatar,
   LinearProgress,
-  IconButton,
-  Switch,
-  FormControlLabel,
-  Collapse,
-  Alert
+  IconButton
 } from '@mui/material';
 import {
   LocalLibrary as LibraryIcon,
@@ -25,9 +21,7 @@ import {
   MenuBook as BookIcon,
   LocalFireDepartment as StreakIcon,
   ArrowForward as ArrowIcon,
-  Construction as ToolIcon,  // v7.2.28: Updated to Construction icon
-  Lock as LockIcon,
-  Settings as SettingsIcon
+  Construction as ToolIcon
 } from '@mui/icons-material';
 import AdminOTPDialog from './AdminOTPDialog';
 import { isAuthorizedAdmin } from '../services/otpService';
@@ -142,24 +136,15 @@ function Dashboard({
       subtitle: 'Track progress'
     },
     {
-      key: 'vyonn',
-      onClick: () => {
-        const vyonnButton = document.querySelector('[aria-label="chat with Vyonn"]');
-        if (vyonnButton) vyonnButton.click();
-      },
-      icon: (
-        <Box
-          component="img"
-          src={`${process.env.PUBLIC_URL}/vyonn.png`}
-          alt="Vyonn AI"
-          sx={{ width: 24, height: 24, filter: 'brightness(0) contrast(2)' }}
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
-      ),
-      iconColor: '#1a1a2e',
-      iconBg: 'rgba(26, 26, 46, 0.1)',
-      title: 'Vyonn AI',
-      subtitle: 'AI tutor'
+      key: 'tools',
+      onClick: handleProToolsToggle,
+      icon: <ToolIcon />,
+      iconColor: proToolsEnabled ? '#10b981' : '#64748b',
+      iconBg: proToolsEnabled ? 'rgba(16, 185, 129, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+      title: 'Tools',
+      subtitle: proToolsEnabled ? 'Enabled' : 'Disabled',
+      badge: proToolsEnabled ? '✓' : null,
+      isToggle: true
     }
   ];
 
@@ -410,68 +395,6 @@ function Dashboard({
             </Box>
           </Paper>
         )}
-
-        {/* v7.2.28: Tool Control - OTP Protected */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            mb: 2,
-            borderRadius: 2,
-            bgcolor: proToolsEnabled ? 'success.lighter' : 'background.paper',
-            border: '2px solid',
-            borderColor: proToolsEnabled ? 'success.light' : 'divider',
-            transition: 'all 0.3s ease'
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Avatar 
-                sx={{ 
-                  bgcolor: proToolsEnabled ? 'success.main' : 'grey.400',
-                  width: 36,
-                  height: 36 
-                }}
-              >
-                <ToolIcon sx={{ fontSize: 20 }} />
-              </Avatar>
-              <Box>
-                <Typography variant="body2" fontWeight={700} color="text.primary">
-                  Tools
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Circuits · Molecules · Maps · More
-                </Typography>
-              </Box>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Chip
-                icon={<LockIcon sx={{ fontSize: '0.75rem !important' }} />}
-                label="OTP"
-                size="small"
-                variant="outlined"
-                sx={{ height: 20, fontSize: '0.65rem', '& .MuiChip-icon': { ml: 0.5 } }}
-              />
-              <Switch
-                checked={proToolsEnabled}
-                onChange={handleProToolsToggle}
-                color="success"
-                size="small"
-              />
-            </Box>
-          </Box>
-          <Collapse in={proToolsEnabled}>
-            <Alert 
-              severity="success" 
-              icon={<CheckIcon fontSize="small" />}
-              sx={{ mt: 1.5, py: 0.5, '& .MuiAlert-message': { py: 0.5 } }}
-            >
-              <Typography variant="caption">
-                Tools tab is now visible in the PDF reader.
-              </Typography>
-            </Alert>
-          </Collapse>
-        </Paper>
 
         {/* OTP Dialog */}
         <AdminOTPDialog

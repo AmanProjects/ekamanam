@@ -7,7 +7,6 @@ export { default as MathTools } from './MathTools';
 export { default as ChemistryTools } from './ChemistryTools';
 export { default as PhysicsSimulator } from './PhysicsSimulator';
 export { default as CodeEditor } from './CodeEditor';
-export { default as Whiteboard } from './Whiteboard';
 export { default as GlobeViewer } from './GlobeViewer';
 
 // Tool metadata for UI
@@ -43,14 +42,6 @@ export const toolsList = [
     icon: '💻',
     color: '#2d3436',
     component: 'CodeEditor'
-  },
-  {
-    id: 'whiteboard',
-    name: 'Whiteboard',
-    description: 'Draw · Sketch · Explain',
-    icon: '✏️',
-    color: '#e17055',
-    component: 'Whiteboard'
   },
   {
     id: 'globe',
