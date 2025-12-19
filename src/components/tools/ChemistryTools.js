@@ -29,7 +29,9 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  LinearProgress
+  LinearProgress,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -2260,6 +2262,7 @@ function ChemistryTools({ open, onClose, user }) {
   const [viewerKey, setViewerKey] = useState(0);
   const [currentCID, setCurrentCID] = useState(null);
   const [selectedElement, setSelectedElement] = useState(null);
+  const [showLabels, setShowLabels] = useState(true); // v10.1.2: Toggle for atom labels
   
   // AI Chat State
   const [question, setQuestion] = useState('');
@@ -2386,7 +2389,8 @@ Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
     }
   };
 
-  const get3DmolHTML = (cid) => `
+  // v10.1.2: Added showLabels parameter to toggle atom labels
+  const get3DmolHTML = (cid, labelsEnabled) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -2413,26 +2417,29 @@ Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
     <span class="legend-item"><span class="legend-dot" style="background:#B31FBA"></span>F</span>
   </div>
   <script>
+    const showLabels = ${labelsEnabled};
     fetch('https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type=3d')
       .then(r=>r.text())
       .then(data=>{
         let v=$3Dmol.createViewer('viewer',{backgroundColor:'white'});
         let m=v.addModel(data,'sdf');
         v.setStyle({},{stick:{radius:0.15},sphere:{scale:0.3,colorscheme:'Jmol'}});
-        // Add atom labels for non-hydrogen atoms
-        let atoms=m.selectedAtoms({});
-        atoms.forEach(function(atom){
-          if(atom.elem!=='H'){
-            v.addLabel(atom.elem,{
-              position:{x:atom.x,y:atom.y,z:atom.z},
-              fontSize:10,
-              fontColor:'#333',
-              backgroundColor:'rgba(255,255,255,0.7)',
-              borderRadius:3,
-              padding:1
-            });
-          }
-        });
+        // Add atom labels for non-hydrogen atoms if enabled
+        if(showLabels){
+          let atoms=m.selectedAtoms({});
+          atoms.forEach(function(atom){
+            if(atom.elem!=='H'){
+              v.addLabel(atom.elem,{
+                position:{x:atom.x,y:atom.y,z:atom.z},
+                fontSize:10,
+                fontColor:'#333',
+                backgroundColor:'rgba(255,255,255,0.7)',
+                borderRadius:3,
+                padding:1
+              });
+            }
+          });
+        }
         v.zoomTo();v.render();v.spin(true);
       })
       .catch(()=>{document.getElementById('viewer').innerHTML='<div style="padding:20px;color:#666;">3D structure not available</div>';});
@@ -2767,23 +2774,38 @@ Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
                 View
               </Button>
             </Box>
-            <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {commonMolecules.map((m) => (
-                <Chip 
-                  key={m.cid} 
-                  label={m.name} 
-                  size="small" 
-                  onClick={() => { setMoleculeName(m.name); setCurrentCID(m.cid); setViewerKey(prev => prev + 1); }} 
-                  sx={{ cursor: 'pointer' }} 
-                />
-              ))}
+            <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {commonMolecules.map((m) => (
+                  <Chip 
+                    key={m.cid} 
+                    label={m.name} 
+                    size="small" 
+                    onClick={() => { setMoleculeName(m.name); setCurrentCID(m.cid); setViewerKey(prev => prev + 1); }} 
+                    sx={{ cursor: 'pointer' }} 
+                  />
+                ))}
+              </Box>
+              {/* v10.1.2: Toggle for element labels */}
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={showLabels} 
+                    onChange={(e) => { setShowLabels(e.target.checked); setViewerKey(prev => prev + 1); }}
+                    size="small"
+                    color="success"
+                  />
+                }
+                label={<Typography variant="caption">Show Labels</Typography>}
+                sx={{ ml: 1 }}
+              />
             </Box>
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <Paper elevation={3} sx={{ bgcolor: 'white', borderRadius: 2, overflow: 'hidden' }}>
               {currentCID ? (
                 <iframe 
-                  key={viewerKey} 
-                  srcDoc={get3DmolHTML(currentCID)} 
+                  key={`${viewerKey}-${showLabels}`} 
+                  srcDoc={get3DmolHTML(currentCID, showLabels)} 
                   title="3D Molecule" 
                   style={{ width: '100%', height: 400, border: 'none' }} 
                   sandbox="allow-scripts" 
