@@ -30,8 +30,8 @@ export function extract3DVisualization(responseText) {
     }
   }
 
-  // Strategy 2: Look for inline JSON with balanced braces
-  const startMatch = responseText.match(/\{\s*"type"\s*:\s*"(3d|chemistry|plotly)"/);
+  // Strategy 2: Look for inline JSON with balanced braces (3D, chemistry, plotly, logic_circuit)
+  const startMatch = responseText.match(/\{\s*"type"\s*:\s*"(3d|chemistry|plotly|logic_circuit)"/);
   
   if (startMatch) {
     const startIndex = responseText.indexOf(startMatch[0]);
@@ -73,7 +73,43 @@ export function extract3DVisualization(responseText) {
     }
   }
 
-  console.log('❌ No 3D visualization found in response');
+  // Strategy 3: Look for circuitVisualization wrapper
+  const circuitMatch = responseText.match(/\{\s*"circuitVisualization"\s*:/);
+  if (circuitMatch) {
+    const startIndex = responseText.indexOf(circuitMatch[0]);
+    console.log('🔍 Found circuitVisualization at position:', startIndex);
+    
+    let braceCount = 0;
+    let jsonEndIndex = -1;
+    
+    for (let i = startIndex; i < responseText.length; i++) {
+      if (responseText[i] === '{') braceCount++;
+      if (responseText[i] === '}') {
+        braceCount--;
+        if (braceCount === 0) {
+          jsonEndIndex = i + 1;
+          break;
+        }
+      }
+    }
+    
+    if (jsonEndIndex > startIndex) {
+      const jsonText = responseText.substring(startIndex, jsonEndIndex);
+      try {
+        const parsed = JSON.parse(jsonText);
+        visualAid = parsed.circuitVisualization || parsed;
+        cleanText = responseText.substring(0, startIndex).trim() + 
+                   responseText.substring(jsonEndIndex).trim();
+        cleanText = cleanText.replace(/\s+$/, '').trim();
+        console.log('✅ Extracted circuit visualization:', visualAid);
+        return { text: cleanText, visualAid };
+      } catch (e) {
+        console.warn('❌ Failed to parse circuit JSON:', e);
+      }
+    }
+  }
+
+  console.log('❌ No visualization found in response');
   return { text: cleanText, visualAid: null };
 }
 

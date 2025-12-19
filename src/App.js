@@ -1146,6 +1146,7 @@ function App() {
                   subscription={subscription}
                   onUpgrade={() => setShowSubscriptionDialog(true)}
                   isMobile={isMobile}
+                  pdfMetadata={currentLibraryItem}
                   onAIQuery={(queryType, queryText) => {
                     // v7.2.24: Track AI queries for analytics
                     if (sessionTrackerRef.current) {

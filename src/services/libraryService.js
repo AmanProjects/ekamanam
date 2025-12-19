@@ -354,23 +354,65 @@ export const removePDFFromLibrary = async (id) => {
 
 /**
  * Update library item metadata
+ * v7.2.26: Updated to support both IndexedDB and Google Drive
  * @param {string} id - Library item ID
  * @param {Object} updates - Fields to update
  * @returns {Promise<Object>} Updated library item
  */
 export const updateLibraryItem = async (id, updates) => {
   try {
-    const db = await initDB();
-    const item = await db.get(STORES.LIBRARY_ITEMS, id);
-    
-    if (!item) {
-      throw new Error('Library item not found');
+    let updatedItem = null;
+    let foundInIndexedDB = false;
+    let foundInDrive = false;
+
+    // Try to update in IndexedDB first
+    try {
+      const db = await initDB();
+      const item = await db.get(STORES.LIBRARY_ITEMS, id);
+      
+      if (item) {
+        foundInIndexedDB = true;
+        updatedItem = { ...item, ...updates };
+        await db.put(STORES.LIBRARY_ITEMS, updatedItem);
+        console.log('✅ Library item updated in IndexedDB:', id);
+      }
+    } catch (dbError) {
+      console.warn('⚠️ IndexedDB update failed:', dbError);
     }
 
-    const updatedItem = { ...item, ...updates };
-    await db.put(STORES.LIBRARY_ITEMS, updatedItem);
+    // v7.2.26: Also update in Google Drive if connected
+    if (hasDrivePermissions()) {
+      try {
+        const { fileId: indexFileId, data: indexData } = await getLibraryIndex();
+        const pdfIndex = indexData.pdfs?.findIndex(pdf => pdf.id === id);
+        
+        if (pdfIndex !== -1 && pdfIndex !== undefined) {
+          foundInDrive = true;
+          
+          // Update the PDF entry in Drive index
+          indexData.pdfs[pdfIndex] = {
+            ...indexData.pdfs[pdfIndex],
+            ...updates
+          };
+          
+          await updateLibraryIndex(indexFileId, indexData);
+          updatedItem = indexData.pdfs[pdfIndex];
+          console.log('✅ Library item updated in Google Drive:', id);
+        }
+      } catch (driveError) {
+        console.warn('⚠️ Drive update failed:', driveError);
+        // Don't throw if IndexedDB succeeded
+        if (!foundInIndexedDB) {
+          throw driveError;
+        }
+      }
+    }
 
-    console.log('✅ Library item updated:', id);
+    // If not found in either place, throw error
+    if (!foundInIndexedDB && !foundInDrive) {
+      throw new Error('Library item not found in local storage or Google Drive');
+    }
+
     return updatedItem;
   } catch (error) {
     console.error('❌ Error updating library item:', error);

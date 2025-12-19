@@ -19,7 +19,15 @@ import {
   CircularProgress,
   Tabs,
   Tab,
-  Stack
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import {
   ArrowBack,
@@ -28,7 +36,8 @@ import {
   ExpandMore,
   CloudDownload,
   MenuBook as SampleIcon,
-  TrendingUp as StatsIcon
+  TrendingUp as StatsIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import libraryService from '../services/libraryService';
 
@@ -46,11 +55,62 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
+// v7.2.25: Educational level options
+const EDUCATION_LEVELS = [
+  { value: '', label: 'Not specified' },
+  { value: '1', label: 'Class 1' },
+  { value: '2', label: 'Class 2' },
+  { value: '3', label: 'Class 3' },
+  { value: '4', label: 'Class 4' },
+  { value: '5', label: 'Class 5' },
+  { value: '6', label: 'Class 6' },
+  { value: '7', label: 'Class 7' },
+  { value: '8', label: 'Class 8' },
+  { value: '9', label: 'Class 9' },
+  { value: '10', label: 'Class 10' },
+  { value: '11', label: 'Class 11 / Jr. College' },
+  { value: '12', label: 'Class 12 / Sr. College' },
+  { value: 'Diploma', label: 'Diploma' },
+  { value: 'B.Tech', label: 'B.Tech / B.E.' },
+  { value: 'M.Tech', label: 'M.Tech / M.E.' },
+  { value: 'University', label: 'University (Other)' }
+];
+
+const SUBJECTS = [
+  { value: '', label: 'Not specified' },
+  { value: 'Mathematics', label: 'Mathematics' },
+  { value: 'Physics', label: 'Physics' },
+  { value: 'Chemistry', label: 'Chemistry' },
+  { value: 'Biology', label: 'Biology' },
+  { value: 'Science', label: 'Science' },
+  { value: 'English', label: 'English' },
+  { value: 'Hindi', label: 'Hindi' },
+  { value: 'Telugu', label: 'Telugu' },
+  { value: 'Social Science', label: 'Social Science' },
+  { value: 'History', label: 'History' },
+  { value: 'Geography', label: 'Geography' },
+  { value: 'Economics', label: 'Economics' },
+  { value: 'Computer Science', label: 'Computer Science' },
+  { value: 'Electronics', label: 'Electronics' },
+  { value: 'Electrical', label: 'Electrical Engineering' },
+  { value: 'Mechanical', label: 'Mechanical Engineering' },
+  { value: 'Civil', label: 'Civil Engineering' },
+  { value: 'Digital Electronics', label: 'Digital Electronics' },
+  { value: 'Circuit Theory', label: 'Circuit Theory' },
+  { value: 'Other', label: 'Other' }
+];
+
 function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
   const [pdfs, setPdfs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
+  
+  // v7.2.25: Edit metadata dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPdf, setEditingPdf] = useState(null);
+  const [editForm, setEditForm] = useState({ class: '', subject: '', collection: '' });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadLibrary();
@@ -68,7 +128,58 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
     }
   };
 
-  const filteredPdfs = pdfs.filter(pdf =>
+  // v7.2.25: Handle edit metadata
+  const handleEditClick = (e, pdf) => {
+    e.stopPropagation(); // Prevent opening PDF
+    setEditingPdf(pdf);
+    setEditForm({
+      class: pdf.class || '',
+      subject: pdf.subject || '',
+      collection: pdf.collection || pdf.name || ''
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveMetadata = async () => {
+    if (!editingPdf) return;
+    
+    // v7.2.26: Prevent editing sample PDFs
+    if (editingPdf.type === 'sample' || editingPdf.id?.startsWith('sample-')) {
+      alert('Sample PDFs cannot be edited. Please upload your own PDF to customize metadata.');
+      setEditDialogOpen(false);
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await libraryService.updateLibraryItem(editingPdf.id, {
+        class: editForm.class,
+        subject: editForm.subject,
+        collection: editForm.collection
+      });
+      
+      // Refresh library
+      await loadLibrary();
+      setEditDialogOpen(false);
+      setEditingPdf(null);
+      console.log('✅ PDF metadata updated successfully');
+    } catch (error) {
+      console.error('❌ Failed to update metadata:', error);
+      // v7.2.26: More specific error message
+      if (error.message?.includes('not found')) {
+        alert('This PDF was not found in your library. It may have been deleted or is a sample PDF.');
+      } else {
+        alert('Failed to update metadata. Please make sure you are signed in and try again.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // v7.2.26: Filter out sample PDFs from My PDFs tab - they should only show in Samples tab
+  const userPdfs = pdfs.filter(pdf => pdf.type !== 'sample' && !pdf.id?.startsWith('sample-'));
+  
+  const filteredPdfs = userPdfs.filter(pdf =>
     pdf.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     pdf.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     pdf.collection?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -97,10 +208,11 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
   };
 
   // Calculate stats
-  const totalPdfs = pdfs.length;
-  const uniqueSubjects = [...new Set(pdfs.map(p => p.subject).filter(Boolean))];
-  const uniqueClasses = [...new Set(pdfs.map(p => p.class).filter(Boolean))];
-  const totalPages = pdfs.reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0);
+  // v7.2.26: Stats should only count user PDFs, not samples
+  const totalPdfs = userPdfs.length;
+  const uniqueSubjects = [...new Set(userPdfs.map(p => p.subject).filter(Boolean))];
+  const uniqueClasses = [...new Set(userPdfs.map(p => p.class).filter(Boolean))];
+  const totalPages = userPdfs.reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0);
 
   // Group PDFs by collection
   const groupedPdfs = filteredPdfs.reduce((groups, pdf) => {
@@ -307,11 +419,29 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
                                 }}
                               />
                             )}
-                            <Typography variant="subtitle2" fontWeight={600} gutterBottom noWrap>
-                              {pdf.chapter ? `Ch ${pdf.chapter}: ` : ''}{pdf.name}
-                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <Typography variant="subtitle2" fontWeight={600} gutterBottom noWrap sx={{ flex: 1 }}>
+                                {pdf.chapter ? `Ch ${pdf.chapter}: ` : ''}{pdf.name}
+                              </Typography>
+                              {/* v7.2.26: Only show edit button for user PDFs, not samples */}
+                              {pdf.type !== 'sample' && !pdf.id?.startsWith('sample-') && (
+                                <IconButton 
+                                  size="small" 
+                                  onClick={(e) => handleEditClick(e, pdf)}
+                                  sx={{ 
+                                    ml: 0.5, 
+                                    mt: -0.5,
+                                    opacity: 0.6,
+                                    '&:hover': { opacity: 1, bgcolor: 'primary.light' }
+                                  }}
+                                  title="Edit metadata"
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              )}
+                            </Box>
                             <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                              {pdf.subject && pdf.class ? `${pdf.subject} • Class ${pdf.class}` : pdf.subject || pdf.class || 'No category'}
+                              {pdf.subject && pdf.class ? `${pdf.subject} • Class ${pdf.class}` : pdf.subject || (pdf.class ? `Class ${pdf.class}` : 'No category')}
                             </Typography>
                             
                             {pdf.lastAccessed && (
@@ -466,6 +596,83 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
           </Container>
         </TabPanel>
       </Box>
+
+      {/* v7.2.25: Edit Metadata Dialog */}
+      <Dialog 
+        open={editDialogOpen} 
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Edit PDF Metadata
+          {editingPdf && (
+            <Typography variant="body2" color="text.secondary">
+              {editingPdf.name}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>Educational Level / Class</InputLabel>
+              <Select
+                value={editForm.class}
+                label="Educational Level / Class"
+                onChange={(e) => setEditForm(prev => ({ ...prev, class: e.target.value }))}
+              >
+                {EDUCATION_LEVELS.map(level => (
+                  <MenuItem key={level.value} value={level.value}>
+                    {level.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Subject</InputLabel>
+              <Select
+                value={editForm.subject}
+                label="Subject"
+                onChange={(e) => setEditForm(prev => ({ ...prev, subject: e.target.value }))}
+              >
+                {SUBJECTS.map(subject => (
+                  <MenuItem key={subject.value} value={subject.value}>
+                    {subject.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              label="Book / Collection Name"
+              value={editForm.collection}
+              onChange={(e) => setEditForm(prev => ({ ...prev, collection: e.target.value }))}
+              helperText="Group related PDFs under a common book name"
+            />
+
+            <Paper sx={{ p: 2, bgcolor: 'info.lighter', border: '1px solid', borderColor: 'info.main' }}>
+              <Typography variant="body2" color="info.dark">
+                <strong>Why set educational level?</strong><br />
+                The AI adapts its explanations based on your level. University/Engineering students get more detailed, technical responses with derivations and theory.
+              </Typography>
+            </Paper>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setEditDialogOpen(false)} disabled={saving}>
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSaveMetadata}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

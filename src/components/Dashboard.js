@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -9,7 +9,11 @@ import {
   Chip,
   Avatar,
   LinearProgress,
-  IconButton
+  IconButton,
+  Switch,
+  FormControlLabel,
+  Collapse,
+  Alert
 } from '@mui/material';
 import {
   LocalLibrary as LibraryIcon,
@@ -20,17 +24,23 @@ import {
   PlayArrow as PlayIcon,
   MenuBook as BookIcon,
   LocalFireDepartment as StreakIcon,
-  ArrowForward as ArrowIcon
+  ArrowForward as ArrowIcon,
+  Construction as ToolIcon,  // v7.2.28: Updated to Construction icon
+  Lock as LockIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
+import AdminOTPDialog from './AdminOTPDialog';
+import { isAuthorizedAdmin } from '../services/otpService';
 
 /**
- * Dashboard Component - v7.2.24
+ * Dashboard Component - v7.2.28
  * 
  * Clean, organized layout with:
  * - Welcome header with subscription status
  * - Quick stats row (PDFs, Cards Due, Streak)
  * - Primary CTA for Library
  * - Learning Tools in clean 3-column grid
+ * - Pro Tools control (OTP protected)
  */
 function Dashboard({
   onOpenLibrary,
@@ -44,6 +54,66 @@ function Dashboard({
   pdfCount = 0,
   currentStreak = 0
 }) {
+  // v7.2.28: Pro Tools state and OTP control
+  const [proToolsEnabled, setProToolsEnabled] = useState(false);
+  const [showOTPDialog, setShowOTPDialog] = useState(false);
+  const [showProSettings, setShowProSettings] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+
+  // Load Pro Tools state from admin config on mount
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('ekamanam_admin_config');
+    if (savedConfig) {
+      try {
+        const config = JSON.parse(savedConfig);
+        setProToolsEnabled(config?.tabs?.proTools?.enabled || false);
+      } catch (e) {
+        console.error('Failed to parse admin config:', e);
+      }
+    }
+  }, []);
+
+  const handleProToolsToggle = () => {
+    // Check if already authorized
+    if (isAuthorizedAdmin()) {
+      toggleProTools();
+    } else {
+      // Need OTP verification
+      setPendingAction(!proToolsEnabled ? 'enable' : 'disable');
+      setShowOTPDialog(true);
+    }
+  };
+
+  const toggleProTools = () => {
+    const newState = !proToolsEnabled;
+    setProToolsEnabled(newState);
+    
+    // Update admin config in localStorage
+    const savedConfig = localStorage.getItem('ekamanam_admin_config');
+    let config = {};
+    try {
+      config = savedConfig ? JSON.parse(savedConfig) : {};
+    } catch (e) {
+      config = {};
+    }
+    
+    if (!config.tabs) config.tabs = {};
+    config.tabs.proTools = { enabled: newState, name: 'Pro Tools' };
+    
+    localStorage.setItem('ekamanam_admin_config', JSON.stringify(config));
+    
+    // Dispatch event to notify other components
+    window.dispatchEvent(new CustomEvent('adminConfigUpdated'));
+    
+    console.log(`🔧 Tool tab ${newState ? 'enabled' : 'disabled'}`);
+  };
+
+  const handleOTPSuccess = () => {
+    toggleProTools();
+    setShowOTPDialog(false);
+    setPendingAction(null);
+  };
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -340,6 +410,78 @@ function Dashboard({
             </Box>
           </Paper>
         )}
+
+        {/* v7.2.28: Tool Control - OTP Protected */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            mb: 2,
+            borderRadius: 2,
+            bgcolor: proToolsEnabled ? 'success.lighter' : 'background.paper',
+            border: '2px solid',
+            borderColor: proToolsEnabled ? 'success.light' : 'divider',
+            transition: 'all 0.3s ease'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Avatar 
+                sx={{ 
+                  bgcolor: proToolsEnabled ? 'success.main' : 'grey.400',
+                  width: 36,
+                  height: 36 
+                }}
+              >
+                <ToolIcon sx={{ fontSize: 20 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="body2" fontWeight={700} color="text.primary">
+                  Tool
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Circuit Visualization · Logic Gates
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip
+                icon={<LockIcon sx={{ fontSize: '0.75rem !important' }} />}
+                label="OTP"
+                size="small"
+                variant="outlined"
+                sx={{ height: 20, fontSize: '0.65rem', '& .MuiChip-icon': { ml: 0.5 } }}
+              />
+              <Switch
+                checked={proToolsEnabled}
+                onChange={handleProToolsToggle}
+                color="success"
+                size="small"
+              />
+            </Box>
+          </Box>
+          <Collapse in={proToolsEnabled}>
+            <Alert 
+              severity="success" 
+              icon={<CheckIcon fontSize="small" />}
+              sx={{ mt: 1.5, py: 0.5, '& .MuiAlert-message': { py: 0.5 } }}
+            >
+              <Typography variant="caption">
+                Tool tab is now visible in the PDF reader.
+              </Typography>
+            </Alert>
+          </Collapse>
+        </Paper>
+
+        {/* OTP Dialog */}
+        <AdminOTPDialog
+          open={showOTPDialog}
+          onClose={() => {
+            setShowOTPDialog(false);
+            setPendingAction(null);
+          }}
+          onSuccess={handleOTPSuccess}
+        />
 
         {/* Footer */}
         <Box sx={{ textAlign: 'center', pt: 2, mt: 1, borderTop: 1, borderColor: 'divider' }}>

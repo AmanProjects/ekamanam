@@ -4,6 +4,10 @@ import UpgradePrompt from './UpgradePrompt';
 import { useAdminConfig, isTabEnabled } from '../hooks/useAdminConfig';
 import { extractFromStructuredResponse } from '../utils/visualizationExtractor';
 import { trackAIQueryUsage } from '../services/subscriptionService';
+// v7.2.25: Circuit visualization components
+import CircuitVisualizer, { LogicGate, GateGallery, InteractiveTruthTable, ROMVisualizer } from './LogicGateVisualizer';
+import CircuitBuilder from './CircuitBuilder';
+import CircuitSimulator from './CircuitSimulator';
 import {
   Box,
   Paper,
@@ -25,14 +29,17 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Snackbar,
-  Badge
+  Badge,
+  Grid,
+  Avatar
 } from '@mui/material';
 import {
   Style as FlashcardIcon
 } from '@mui/icons-material';
 import {
-  School as TeacherIcon,
-  Lightbulb as ExplainIcon,
+  // v7.2.28: Updated icons for cleaner, more professional look
+  AutoStories as LearnIcon,        // Learn tab (was TeacherIcon/School)
+  Psychology as ExplainIcon,       // Explain tab (was Lightbulb) - brain/insight icon
   Sports as ActivitiesIcon,
   Note as NotesIcon,
   VolumeUp,
@@ -41,10 +48,15 @@ import {
   Link as LinkIcon,
   MenuBook as ReadIcon,
   AddCircle as AddToNotesIcon,
-  Quiz as ExamIcon,
+  FactCheck as ExamIcon,           // Exam tab (was Quiz) - professional test icon
   Description as DescriptionIcon,
   Translate as TranslateIcon,
-  Clear as ClearIcon
+  Clear as ClearIcon,
+  // v7.2.25: Circuit visualization icons
+  Memory as CircuitIcon,
+  Construction as ToolIcon,        // Tool tab (was BuildIcon) - professional tools icon
+  Build as BuildIcon,              // Keep for Circuit Builder button
+  Science as SimulateIcon
 } from '@mui/icons-material';
 import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer, translateTeacherModeToEnglish } from '../services/geminiService';
@@ -54,9 +66,310 @@ import {
   getCachedData,
   saveCachedData,
   getPriorPagesContext,
-  getCacheStats
+  getCacheStats,
+  clearPageCache
 } from '../services/cacheService';
 import { createFlashcard } from '../services/spacedRepetitionService';
+
+/**
+ * v7.2.27: Render inline JSON visualizations (tables, K-maps, PLA, circuits)
+ * Parses text containing JSON objects and renders them as visual components
+ */
+function renderWithInlineVisualizations(text, LogicGate, InteractiveTruthTable) {
+  // Handle null/undefined
+  if (!text) return null;
+  
+  // If text is an object (not a string), convert it properly
+  if (typeof text !== 'string') {
+    // If it's a React element, return as-is
+    if (React.isValidElement(text)) return text;
+    
+    // If it's an object with expected explanation fields, extract the explanation
+    if (typeof text === 'object' && text.explanation) {
+      text = text.explanation;
+    } else if (typeof text === 'object') {
+      // Convert object to readable HTML (not raw JSON)
+      console.warn('⚠️ renderWithInlineVisualizations received object, converting to string');
+      // Don't render the raw JSON - just return a placeholder
+      return <span style={{ color: 'red' }}>Error: Unexpected object in explanation. Please click Clear and regenerate.</span>;
+    }
+    
+    // Still not a string? Return null
+    if (typeof text !== 'string') return null;
+  }
+  
+  // Find all JSON objects in the text
+  const parts = [];
+  let lastIndex = 0;
+  let currentIndex = 0;
+  
+  while (currentIndex < text.length) {
+    // Look for JSON object start
+    const jsonStart = text.indexOf('{"type":', currentIndex);
+    const circuitStart = text.indexOf('{"circuitVisualization":', currentIndex);
+    
+    let startIdx = -1;
+    if (jsonStart !== -1 && circuitStart !== -1) {
+      startIdx = Math.min(jsonStart, circuitStart);
+    } else if (jsonStart !== -1) {
+      startIdx = jsonStart;
+    } else if (circuitStart !== -1) {
+      startIdx = circuitStart;
+    }
+    
+    if (startIdx === -1) break;
+    
+    // Add text before JSON
+    if (startIdx > lastIndex) {
+      parts.push({ type: 'text', content: text.slice(lastIndex, startIdx) });
+    }
+    
+    // Extract JSON using brace matching
+    let depth = 0;
+    let endIdx = startIdx;
+    for (let i = startIdx; i < text.length; i++) {
+      if (text[i] === '{') depth++;
+      if (text[i] === '}') depth--;
+      if (depth === 0 && i > startIdx) {
+        endIdx = i + 1;
+        break;
+      }
+    }
+    
+    const jsonStr = text.slice(startIdx, endIdx);
+    try {
+      const jsonObj = JSON.parse(jsonStr);
+      parts.push({ type: 'json', content: jsonObj, raw: jsonStr });
+    } catch (e) {
+      // If parsing fails, treat as text
+      parts.push({ type: 'text', content: jsonStr });
+    }
+    
+    lastIndex = endIdx;
+    currentIndex = endIdx;
+  }
+  
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+  
+  // If no JSON found, render the HTML content properly
+  if (parts.length === 0) {
+    return <span dangerouslySetInnerHTML={{ __html: text }} />;
+  }
+  if (parts.length === 1 && parts[0].type === 'text') {
+    return <span dangerouslySetInnerHTML={{ __html: text }} />;
+  }
+  
+  // Render parts
+  return parts.map((part, idx) => {
+    if (part.type === 'text') {
+      return <span key={idx} dangerouslySetInnerHTML={{ __html: part.content }} />;
+    }
+    
+    const json = part.content;
+    
+    // Render based on type
+    if (json.type === 'table' && json.rows) {
+      // Truth table or general table
+      const headers = json.data ? Object.keys(json.data[0] || {}) : 
+                      (json.rows[0] ? Object.keys(json.rows[0]) : []);
+      return (
+        <Box key={idx} sx={{ my: 2, overflowX: 'auto' }}>
+          <table style={{ 
+            borderCollapse: 'collapse', 
+            width: '100%', 
+            maxWidth: '600px',
+            fontSize: '14px',
+            backgroundColor: 'white',
+            border: '1px solid #ddd'
+          }}>
+            <thead>
+              <tr style={{ backgroundColor: '#1976d2', color: 'white' }}>
+                {headers.map((h, i) => (
+                  <th key={i} style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {json.rows.map((row, rowIdx) => (
+                <tr key={rowIdx} style={{ backgroundColor: rowIdx % 2 === 0 ? '#f9f9f9' : 'white' }}>
+                  {headers.map((h, colIdx) => (
+                    <td key={colIdx} style={{ 
+                      padding: '8px', 
+                      border: '1px solid #ddd', 
+                      textAlign: 'center',
+                      fontFamily: 'monospace'
+                    }}>
+                      {row[h] !== undefined ? String(row[h]) : '-'}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Box>
+      );
+    }
+    
+    if (json.type === 'kmap' && json.data) {
+      // K-map visualization
+      return (
+        <Box key={idx} sx={{ my: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 2 }}>
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            📊 Karnaugh Maps (K-maps):
+          </Typography>
+          {json.data.map((kmap, kmapIdx) => (
+            <Box key={kmapIdx} sx={{ mb: 2, p: 1.5, bgcolor: 'white', borderRadius: 1 }}>
+              <Typography variant="body2" fontWeight={600}>
+                {kmap.function}: Minterms = ∑m({kmap.minterms?.join(', ') || 'N/A'})
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      );
+    }
+    
+    if (json.type === 'pla' && json.data) {
+      // PLA implementation
+      return (
+        <Box key={idx} sx={{ my: 2, p: 2, bgcolor: '#fff3e0', borderRadius: 2, border: '2px solid #ff9800' }}>
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#e65100' }}>
+            🔧 PLA Implementation:
+          </Typography>
+          {json.data.map((func, funcIdx) => (
+            <Box key={funcIdx} sx={{ mb: 1, p: 1.5, bgcolor: 'white', borderRadius: 1 }}>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                <strong>{func.function}</strong> = {func.expression}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      );
+    }
+    
+    if (json.type === 'logic_circuit' || json.circuitVisualization) {
+      // Logic circuit - completely hide from text, shown in dedicated visualization section
+      return null;
+    }
+    
+    // Unknown JSON type - show as formatted JSON
+    return (
+      <Box key={idx} sx={{ my: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+        <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+          📋 Structured Data:
+        </Typography>
+        <pre style={{ 
+          margin: 0, 
+          fontSize: '12px', 
+          overflow: 'auto',
+          maxHeight: '200px',
+          backgroundColor: '#fafafa',
+          padding: '8px',
+          borderRadius: '4px'
+        }}>
+          {JSON.stringify(json, null, 2)}
+        </pre>
+      </Box>
+    );
+  });
+}
+
+/**
+ * v7.2.26: Convert AI circuit response to React Flow format
+ * Transforms the structured circuit data from AI into nodes and edges for the circuit builder
+ */
+function convertAICircuitToReactFlow(circuitData) {
+  if (!circuitData) return null;
+  
+  const nodes = [];
+  const edges = [];
+  let yOffset = 50;
+  
+  // Gate type mapping for React Flow node types
+  const gateTypeMap = {
+    'AND': 'andGate',
+    'OR': 'orGate',
+    'NOT': 'notGate',
+    'NAND': 'nandGate',
+    'NOR': 'norGate',
+    'XOR': 'xorGate',
+    'XNOR': 'xnorGate'
+  };
+  
+  // Create input nodes
+  if (circuitData.inputs) {
+    circuitData.inputs.forEach((input, idx) => {
+      nodes.push({
+        id: input.id,
+        type: 'input',
+        position: input.position || { x: 50, y: yOffset + idx * 100 },
+        data: { label: input.label || input.id, value: 0 }
+      });
+    });
+  }
+  
+  // Create gate nodes
+  if (circuitData.gates) {
+    circuitData.gates.forEach((gate, idx) => {
+      const gateType = gateTypeMap[gate.type.toUpperCase()] || 'andGate';
+      nodes.push({
+        id: gate.id,
+        type: gateType,
+        position: gate.position || { x: 250, y: yOffset + idx * 100 },
+        data: { label: gate.type, output: undefined }
+      });
+    });
+  }
+  
+  // Create output nodes
+  if (circuitData.outputs) {
+    circuitData.outputs.forEach((output, idx) => {
+      nodes.push({
+        id: output.id,
+        type: 'output',
+        position: output.position || { x: 450, y: yOffset + idx * 100 },
+        data: { label: output.label || output.id, value: 0 }
+      });
+    });
+  }
+  
+  // Create edges from connections
+  if (circuitData.connections) {
+    circuitData.connections.forEach((conn, idx) => {
+      // Parse connection format: "A" -> "g1.a" means from A's output to g1's input 'a'
+      let sourceId = conn.from;
+      let sourceHandle = 'out';
+      let targetId = conn.to;
+      let targetHandle = 'a';
+      
+      if (conn.from.includes('.')) {
+        const parts = conn.from.split('.');
+        sourceId = parts[0];
+        sourceHandle = parts[1] === 'out' ? 'out' : parts[1];
+      }
+      
+      if (conn.to.includes('.')) {
+        const parts = conn.to.split('.');
+        targetId = parts[0];
+        targetHandle = parts[1];
+      }
+      
+      edges.push({
+        id: `edge-${idx}`,
+        source: sourceId,
+        sourceHandle: sourceHandle,
+        target: targetId,
+        targetHandle: targetHandle,
+        markerEnd: { type: 'arrowclosed' },
+        style: { strokeWidth: 2 }
+      });
+    });
+  }
+  
+  return { nodes, edges };
+}
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -88,7 +401,8 @@ function AIModePanel({
   subscription,
   onUpgrade,
   isMobile = false,  // v7.2.10: Mobile responsiveness
-  onAIQuery          // v7.2.24: Track AI queries for analytics
+  onAIQuery,         // v7.2.24: Track AI queries for analytics
+  pdfMetadata        // v7.2.25: PDF metadata including class/grade for adaptive responses
 }) {
   // Use controlled state if provided, otherwise use internal state
   const [internalTab, setInternalTab] = useState(0);
@@ -170,6 +484,11 @@ function AIModePanel({
   const [showActivitiesScopeSelector, setShowActivitiesScopeSelector] = useState(true);
   const [resourcesResponse, setResourcesResponse] = useState('');
   const [resourcesResponsePage, setResourcesResponsePage] = useState(null);
+  
+  // v7.2.25: Circuit visualization states
+  const [showCircuitBuilder, setShowCircuitBuilder] = useState(false);
+  const [showCircuitSimulator, setShowCircuitSimulator] = useState(false);
+  const [circuitData, setCircuitData] = useState(null);
   const [notes, setNotes] = useState('');
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizResults, setQuizResults] = useState(null);
@@ -198,6 +517,57 @@ function AIModePanel({
   
   // Manual language selection (overrides auto-detection)
   const [manualLanguage, setManualLanguage] = useState(null);
+
+  // v7.2.27: Auto-detect and extract circuit JSON from explainResponse
+  useEffect(() => {
+    if (!explainResponse || typeof explainResponse !== 'object') return;
+    if (!explainResponse.explanation) return;
+    
+    const explanation = explainResponse.explanation;
+    
+    // Look for circuit JSON patterns
+    const circuitPatterns = [
+      '{"circuitVisualization"',
+      '{"type":"logic_circuit"',
+      '{"type": "logic_circuit"'
+    ];
+    
+    let foundCircuit = null;
+    let startIdx = -1;
+    
+    for (const pattern of circuitPatterns) {
+      startIdx = explanation.indexOf(pattern);
+      if (startIdx !== -1) break;
+    }
+    
+    if (startIdx !== -1) {
+      // Extract using brace matching
+      let depth = 0;
+      let endIdx = startIdx;
+      for (let i = startIdx; i < explanation.length; i++) {
+        if (explanation[i] === '{') depth++;
+        if (explanation[i] === '}') depth--;
+        if (depth === 0 && i > startIdx) {
+          endIdx = i + 1;
+          break;
+        }
+      }
+      
+      const jsonStr = explanation.slice(startIdx, endIdx);
+      try {
+        const parsed = JSON.parse(jsonStr);
+        foundCircuit = parsed.circuitVisualization || parsed;
+        console.log('🔌 [useEffect] Auto-extracted circuit:', foundCircuit?.title);
+        
+        // Set circuitData state for visualization
+        if (foundCircuit && !circuitData) {
+          setCircuitData(foundCircuit);
+        }
+      } catch (e) {
+        console.warn('⚠️ [useEffect] Failed to parse circuit JSON:', e);
+      }
+    }
+  }, [explainResponse, circuitData]);
 
   // Load saved language preference for this PDF
   useEffect(() => {
@@ -325,7 +695,14 @@ function AIModePanel({
   };
 
   // Clear functions for each tab
-  const clearTeacherMode = () => {
+  const clearTeacherMode = async () => {
+    // v7.2.26: Also clear the cache so regeneration works
+    if (pdfId && teacherResponsePage) {
+      const cacheKey = teacherScope === 'chapter' ? 'teacherMode_chapter' : 'teacherMode';
+      await clearPageCache(pdfId, teacherResponsePage, cacheKey);
+      console.log('🗑️ Cleared Teacher Mode cache for page', teacherResponsePage);
+    }
+    
     setTeacherResponse('');
     setTeacherResponsePage(null);
     setTeacherEnglish({});
@@ -336,7 +713,20 @@ function AIModePanel({
     setError(null);
   };
 
-  const clearExplain = () => {
+  const clearExplain = async () => {
+    // v7.2.26: Also clear the cache so regeneration works
+    // FIX: Use correct cache keys that match what's used in handleExplainText
+    if (pdfId && explainResponsePage) {
+      // Clear both page and chapter cache to ensure regeneration works
+      await clearPageCache(pdfId, explainResponsePage, 'explain_fullpage');
+      await clearPageCache(pdfId, explainResponsePage, 'explain_chapter');
+      await clearPageCache(pdfId, explainResponsePage, 'explain_selection');
+      console.log('🗑️ Cleared Smart Explain cache for page', explainResponsePage);
+    }
+    
+    // Also clear circuitData since it might be stale
+    setCircuitData(null);
+    
     setExplainResponse('');
     setExplainResponsePage(null);
     setExplainEnglish(null);
@@ -347,7 +737,15 @@ function AIModePanel({
     setError(null);
   };
 
-  const clearActivities = () => {
+  const clearActivities = async () => {
+    // v7.2.26: Also clear the cache so regeneration works
+    // FIX: Use correct cache keys that match what's used in handleGenerateActivities
+    if (pdfId && activitiesResponsePage) {
+      await clearPageCache(pdfId, activitiesResponsePage, 'activities');
+      await clearPageCache(pdfId, activitiesResponsePage, 'activities_chapter');
+      console.log('🗑️ Cleared Activities cache for page', activitiesResponsePage);
+    }
+    
     setActivitiesResponse(null);
     setActivitiesResponsePage(null);
     setQuizAnswers({});
@@ -358,14 +756,26 @@ function AIModePanel({
     setError(null);
   };
 
-  const clearResources = () => {
+  const clearResources = async () => {
+    // v7.2.26: Also clear the cache so regeneration works
+    if (pdfId && resourcesResponsePage) {
+      await clearPageCache(pdfId, resourcesResponsePage, 'resources');
+      console.log('🗑️ Cleared Resources cache for page', resourcesResponsePage);
+    }
+    
     setResourcesResponse('');
     setResourcesResponsePage(null);
     setUsedCache(false);
     setError(null);
   };
 
-  const clearWordAnalysis = () => {
+  const clearWordAnalysis = async () => {
+    // v7.2.26: Also clear the cache so regeneration works
+    if (pdfId && wordAnalysisPage) {
+      await clearPageCache(pdfId, wordAnalysisPage, 'wordAnalysis');
+      console.log('🗑️ Cleared Word Analysis cache for page', wordAnalysisPage);
+    }
+    
     setWordAnalysis([]);
     setWordAnalysisPage(null);
     setWordBatch(1);
@@ -1418,7 +1828,13 @@ function AIModePanel({
     };
   };
 
-  const clearExamPrep = () => {
+  const clearExamPrep = async () => {
+    // v7.2.26: Also clear the cache so regeneration works
+    if (pdfId && examPrepPage) {
+      await clearPageCache(pdfId, examPrepPage, 'examPrep_full');
+      console.log('🗑️ Cleared Exam Prep cache for page', examPrepPage);
+    }
+    
     setExamPrepResponse(null);
     setExamPrepPage(null);
     setExamAnswers({});
@@ -1558,7 +1974,10 @@ function AIModePanel({
               setChapterProgress(prev => ({ ...prev, current: i + 1 }));
             }
             
-            const chunkResponse = await generateExplanation(chunks[i], priorContext);
+            const chunkResponse = await generateExplanation(chunks[i], priorContext, {
+              educationalLevel: pdfMetadata?.class || pdfMetadata?.educationalLevel,
+              subject: pdfMetadata?.subject
+            });
             
             let cleanResponse = chunkResponse
               .replace(/```json\s*/gi, '')
@@ -1613,7 +2032,11 @@ function AIModePanel({
 
       // 📡 SINGLE CHUNK PROCESSING (original flow)
       console.log(`🔄 Analyzing ${selectedText ? 'selected text' : 'full page'} for exercises and notes...`);
-      const response = await generateExplanation(textToExplain, priorContext);
+      // v7.2.25: Pass educational level for adaptive responses
+      const response = await generateExplanation(textToExplain, priorContext, {
+        educationalLevel: pdfMetadata?.class || pdfMetadata?.educationalLevel,
+        subject: pdfMetadata?.subject
+      });
       
       console.log('📝 [Smart Explain] Raw AI response:', {
         length: response?.length || 0,
@@ -1623,8 +2046,14 @@ function AIModePanel({
       
       // Try to parse JSON response
       try {
-        // Remove markdown code blocks if present
-        let cleanResponse = response.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+        // v7.2.25: Enhanced cleaning - Remove ALL markdown code blocks and variations
+        let cleanResponse = response
+          .replace(/^```json\s*/gim, '')  // Start of string/line
+          .replace(/```json\s*/gi, '')     // Anywhere in text
+          .replace(/^```\s*json\s*/gim, '') // With space
+          .replace(/```\s*$/gim, '')       // End code blocks
+          .replace(/```/g, '')             // Any remaining backticks
+          .trim();
         
         // Extract JSON using balanced brace matching
         let braceCount = 0;
@@ -1722,6 +2151,104 @@ function AIModePanel({
           keys: Object.keys(parsedResponse)
         });
         
+        // v7.2.26: Extract and parse circuitVisualization from response
+        // AI may return circuit data in multiple ways - handle all of them
+        let circuitVisualization = null;
+        
+        // Case 1: Check if circuitVisualization is already in the response as a proper field
+        if (parsedResponse.circuitVisualization) {
+          if (typeof parsedResponse.circuitVisualization === 'string') {
+            try {
+              circuitVisualization = JSON.parse(parsedResponse.circuitVisualization);
+              console.log('🔌 [Circuit] Parsed circuitVisualization from string field');
+            } catch (e) {
+              console.warn('⚠️ [Circuit] Failed to parse circuitVisualization string:', e);
+            }
+          } else {
+            circuitVisualization = parsedResponse.circuitVisualization;
+            console.log('🔌 [Circuit] Found circuitVisualization as object');
+          }
+        }
+        
+        // Case 2: Check if the entire parsedResponse IS the circuit visualization
+        // (AI sometimes returns just the circuit JSON without the full response structure)
+        if (!circuitVisualization && parsedResponse.type === 'logic_circuit') {
+          circuitVisualization = parsedResponse;
+          console.log('🔌 [Circuit] Entire response is circuit visualization');
+          // Create a proper response structure with the circuit
+          parsedResponse = {
+            explanation: `<p>This circuit implements the function <strong>${circuitVisualization.title || 'Logic Circuit'}</strong>.</p>`,
+            circuitVisualization: circuitVisualization
+          };
+        }
+        
+        // Case 3: Check if circuitVisualization JSON is embedded in the explanation text
+        // Using brace-matching to properly handle nested JSON objects
+        if (!circuitVisualization && parsedResponse.explanation) {
+          const explanation = parsedResponse.explanation;
+          
+          // Helper function to extract JSON using brace matching
+          const extractJsonAt = (text, startIdx) => {
+            let depth = 0;
+            let endIdx = startIdx;
+            for (let i = startIdx; i < text.length; i++) {
+              if (text[i] === '{') depth++;
+              if (text[i] === '}') depth--;
+              if (depth === 0 && i > startIdx) {
+                endIdx = i + 1;
+                break;
+              }
+            }
+            return text.slice(startIdx, endIdx);
+          };
+          
+          // Pattern 1: {"circuitVisualization": {...}}
+          const circuitWrapperStart = explanation.indexOf('{"circuitVisualization"');
+          if (circuitWrapperStart !== -1) {
+            const fullMatch = extractJsonAt(explanation, circuitWrapperStart);
+            try {
+              const parsed = JSON.parse(fullMatch);
+              circuitVisualization = parsed.circuitVisualization || parsed;
+              parsedResponse.explanation = explanation.replace(fullMatch, '').trim();
+              console.log('🔌 [Circuit] Extracted {"circuitVisualization":...} using brace matching');
+            } catch (e) {
+              console.warn('⚠️ [Circuit] Failed to parse circuitVisualization wrapper:', e, fullMatch.substring(0, 100));
+            }
+          }
+          
+          // Pattern 2: Standalone {"type":"logic_circuit",...}
+          if (!circuitVisualization) {
+            let startIdx = parsedResponse.explanation.indexOf('{"type":"logic_circuit"');
+            if (startIdx === -1) {
+              startIdx = parsedResponse.explanation.indexOf('{"type": "logic_circuit"');
+            }
+            if (startIdx !== -1) {
+              const fullCircuitJson = extractJsonAt(parsedResponse.explanation, startIdx);
+              try {
+                circuitVisualization = JSON.parse(fullCircuitJson);
+                parsedResponse.explanation = parsedResponse.explanation.replace(fullCircuitJson, '').trim();
+                console.log('🔌 [Circuit] Extracted standalone circuit JSON');
+              } catch (e) {
+                console.warn('⚠️ [Circuit] Failed to parse standalone circuit:', e);
+              }
+            }
+          }
+        }
+        
+        // Add circuitVisualization to parsedResponse if found
+        if (circuitVisualization) {
+          parsedResponse.circuitVisualization = circuitVisualization;
+          console.log('🔌 [Circuit] Circuit visualization ready:', {
+            title: circuitVisualization.title,
+            hasGates: !!(circuitVisualization.gates?.length),
+            hasTruthTable: !!circuitVisualization.truthTable,
+            hasROM: !!circuitVisualization.romContent
+          });
+        }
+        
+        // Note: Circuit JSON cleanup is done after extractFromStructuredResponse
+        // using brace-matching for proper nested JSON handling
+        
         // 🎨 Extract 3D visualizations from all text fields
         const { response: cleanedResponse, visualizations } = extractFromStructuredResponse(parsedResponse);
         
@@ -1733,8 +2260,112 @@ function AIModePanel({
         // Add visualizations array to response for rendering
         cleanedResponse._visualizations = visualizations;
         
+        // v7.2.26: Ensure circuitVisualization is preserved AND clean JSON from explanation
+        if (circuitVisualization) {
+          cleanedResponse.circuitVisualization = circuitVisualization;
+        }
+        
+        // v7.2.27: ALWAYS clean any remaining circuit JSON from explanation (even if no circuit was extracted)
+        if (cleanedResponse.explanation) {
+          let explanation = cleanedResponse.explanation;
+          
+          // Function to remove JSON object starting at a given index using brace matching
+          const removeJsonAt = (text, startIdx) => {
+            let depth = 0;
+            let endIdx = startIdx;
+            for (let i = startIdx; i < text.length; i++) {
+              if (text[i] === '{') depth++;
+              if (text[i] === '}') depth--;
+              if (depth === 0 && i > startIdx) {
+                endIdx = i + 1;
+                break;
+              }
+            }
+            return text.slice(0, startIdx) + text.slice(endIdx);
+          };
+          
+          // Keep removing circuit JSON until none remain
+          let maxIterations = 10; // Safety limit
+          while (maxIterations > 0) {
+            maxIterations--;
+            
+            // Look for {"circuitVisualization": wrapper
+            let circuitStart = explanation.indexOf('{"circuitVisualization"');
+            if (circuitStart !== -1) {
+              console.log('🧹 [Circuit] Found {"circuitVisualization" at index', circuitStart);
+              explanation = removeJsonAt(explanation, circuitStart);
+              continue;
+            }
+            
+            // Look for {"type":"logic_circuit" standalone
+            circuitStart = explanation.indexOf('{"type":"logic_circuit"');
+            if (circuitStart !== -1) {
+              console.log('🧹 [Circuit] Found {"type":"logic_circuit" at index', circuitStart);
+              explanation = removeJsonAt(explanation, circuitStart);
+              continue;
+            }
+            
+            // Look for {"type": "logic_circuit" with space
+            circuitStart = explanation.indexOf('{"type": "logic_circuit"');
+            if (circuitStart !== -1) {
+              console.log('🧹 [Circuit] Found {"type": "logic_circuit" at index', circuitStart);
+              explanation = removeJsonAt(explanation, circuitStart);
+              continue;
+            }
+            
+            // No more circuit JSON found
+            break;
+          }
+          
+          cleanedResponse.explanation = explanation.trim();
+          
+          // If explanation is now empty or just whitespace, add a placeholder
+          if (!cleanedResponse.explanation || cleanedResponse.explanation.length < 10) {
+            cleanedResponse.explanation = '<p>See the circuit visualization below for the implementation.</p>';
+          }
+          
+          console.log('🧹 [Circuit] Final explanation length:', cleanedResponse.explanation.length);
+        }
+        
         setExplainResponse(cleanedResponse);
         setExplainResponsePage(currentPage); // ✅ Track which page this explanation is for
+        
+        // v7.2.27: Auto-detect any remaining circuit JSON and show visualization
+        // This catches cases where cleanup failed
+        if (cleanedResponse.explanation) {
+          const expText = cleanedResponse.explanation;
+          const circuitStart = expText.indexOf('{"circuitVisualization"');
+          const altStart = expText.indexOf('{"type":"logic_circuit"') !== -1 
+            ? expText.indexOf('{"type":"logic_circuit"') 
+            : expText.indexOf('{"type": "logic_circuit"');
+          
+          const startIdx = circuitStart !== -1 ? circuitStart : altStart;
+          if (startIdx !== -1) {
+            // Extract using brace matching
+            let depth = 0;
+            let endIdx = startIdx;
+            for (let i = startIdx; i < expText.length; i++) {
+              if (expText[i] === '{') depth++;
+              if (expText[i] === '}') depth--;
+              if (depth === 0 && i > startIdx) {
+                endIdx = i + 1;
+                break;
+              }
+            }
+            const jsonStr = expText.slice(startIdx, endIdx);
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const circuitObj = parsed.circuitVisualization || parsed;
+              console.log('🔌 [Circuit] Auto-detected circuit in final response, setting circuitData');
+              setCircuitData(circuitObj);
+              // Also ensure it's in the response for rendering
+              cleanedResponse.circuitVisualization = circuitObj;
+              setExplainResponse({...cleanedResponse});
+            } catch (e) {
+              console.warn('⚠️ [Circuit] Failed to parse auto-detected circuit:', e);
+            }
+          }
+        }
 
         // v7.2.24: Track AI query for analytics
         if (onAIQuery) {
@@ -1751,9 +2382,20 @@ function AIModePanel({
       } catch (parseError) {
         console.error('❌ [Smart Explain] JSON parse error (even after repair):', parseError);
         console.error('❌ [Smart Explain] Response:', response?.substring(0, 800));
-        // If parsing fails, store as plain text with explanation field
+        
+        // v7.2.25: Clean up the raw response before displaying
+        let fallbackContent = (response || 'No response received')
+          .replace(/^```json\s*/gim, '')
+          .replace(/```json\s*/gi, '')
+          .replace(/```\s*$/gim, '')
+          .replace(/```/g, '')
+          .trim();
+        
+        // If parsing fails, store as formatted plain text
         setExplainResponse({ 
-          explanation: '<div><h4>Explanation</h4><pre>' + (response || 'No response received') + '</pre></div>',
+          explanation: '<div style="white-space: pre-wrap; font-family: inherit;">' + 
+            fallbackContent.replace(/</g, '&lt;').replace(/>/g, '&gt;') + 
+            '</div>',
           _parseError: true
         });
         setExplainResponsePage(currentPage); // ✅ Still track the page
@@ -2248,6 +2890,7 @@ Return ONLY this valid JSON:
   const showExamPrep = isTabEnabled(adminConfig, 'examPrep');
   const showResources = isTabEnabled(adminConfig, 'resources');
   const showNotes = isTabEnabled(adminConfig, 'notes');
+  const showProTools = isTabEnabled(adminConfig, 'proTools'); // v7.2.28: Pro Tools tab (Circuit Visualization)
 
   // Calculate dynamic tab indices based on which tabs are enabled
   const tabIndices = {};
@@ -2257,6 +2900,7 @@ Return ONLY this valid JSON:
   if (showExplain) { tabIndices.explain = currentIndex++; }
   if (showActivities) { tabIndices.activities = currentIndex++; }
   if (showExamPrep) { tabIndices.examPrep = currentIndex++; }
+  if (showProTools) { tabIndices.proTools = currentIndex++; } // v7.2.28: Pro Tools tab
   if (showResources) { tabIndices.resources = currentIndex++; }
   if (showNotes) { tabIndices.notes = currentIndex++; }
 
@@ -2391,7 +3035,7 @@ Return ONLY this valid JSON:
             }
           }}
         >
-          {showTeacherMode && <Tab icon={<TeacherIcon />} label="Teacher Mode" />}
+          {showTeacherMode && <Tab icon={<LearnIcon />} label="Learn" />}
           {showMultilingual && (
             <Tooltip 
               title={readTabTooltip} 
@@ -2403,13 +3047,14 @@ Return ONLY this valid JSON:
               }}
             >
               <span style={{ display: 'inline-flex' }}>
-                <Tab icon={<ReadIcon />} label="Multilingual" disabled={readTabDisabled} />
+                <Tab icon={<ReadIcon />} label="Read" disabled={readTabDisabled} />
               </span>
             </Tooltip>
           )}
-          {showExplain && <Tab icon={<ExplainIcon />} label="Smart Explain" />}
+          {showExplain && <Tab icon={<ExplainIcon />} label="Explain" />}
           {showActivities && <Tab icon={<ActivitiesIcon />} label="Activities" />}
-          {showExamPrep && <Tab icon={<ExamIcon />} label="Exam Prep" />}
+          {showExamPrep && <Tab icon={<ExamIcon />} label="Exam" />}
+          {showProTools && <Tab icon={<ToolIcon />} label="Tool" />}
           {showResources && <Tab icon={<ResourcesIcon />} label="Resources" />}
           {showNotes && <Tab icon={<NotesIcon />} label="Notes" />}
         </Tabs>
@@ -2443,7 +3088,7 @@ Return ONLY this valid JSON:
                     fullWidth
                     variant="contained"
                     size="large"
-                    startIcon={<TeacherIcon />}
+                    startIcon={<LearnIcon />}
                     onClick={() => handleTeacherMode(teacherScope)}
                     disabled={loading || !pageText || isAIFeatureDisabled()}
                     sx={{ mb: 1 }}
@@ -3210,6 +3855,7 @@ Return ONLY this valid JSON:
                         ? 'Get detailed explanation with exercises and solutions'
                         : 'AI-powered analysis with visual aids'}
                     </Typography>
+                    
                   </>
                 ) : (
                   <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -3427,6 +4073,119 @@ Return ONLY this valid JSON:
                       </Box>
                     </Box>
 
+                    {/* v7.2.26: Circuit Visualization - Auto-rendered from AI response or circuitData state */}
+                    {(() => {
+                      // Use either explainResponse.circuitVisualization or circuitData
+                      const circuitViz = explainResponse.circuitVisualization || circuitData;
+                      if (!circuitViz) return null;
+                      
+                      return (
+                        <Paper 
+                          elevation={3} 
+                          sx={{ 
+                            p: 2, 
+                            mb: 2, 
+                            bgcolor: '#f0f7ff',
+                            border: '2px solid',
+                            borderColor: 'primary.main',
+                            borderRadius: 2
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <CircuitIcon color="primary" />
+                            <Typography variant="h6" fontWeight={700} color="primary">
+                              {circuitViz.title || 'Circuit Visualization'}
+                            </Typography>
+                            <Chip label="Auto-Generated" size="small" color="success" />
+                          </Box>
+                          
+                          {/* Render Gates */}
+                          {circuitViz.gates && circuitViz.gates.length > 0 && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                Logic Gates:
+                              </Typography>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', bgcolor: 'white', p: 2, borderRadius: 1 }}>
+                                {circuitViz.gates.map((gate, idx) => (
+                                  <Box key={idx} sx={{ textAlign: 'center' }}>
+                                    <LogicGate 
+                                      type={gate.type} 
+                                      inputs={gate.inputs} 
+                                      output={gate.output}
+                                      showLabels={true}
+                                    />
+                                    <Typography variant="caption" color="text.secondary">
+                                      {gate.id}: {gate.type}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Box>
+                            </Box>
+                          )}
+                          
+                          {/* Render Truth Table */}
+                          {circuitViz.truthTable && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                Truth Table:
+                              </Typography>
+                              <InteractiveTruthTable
+                                inputs={circuitViz.truthTable.inputs || ['A', 'B']}
+                                outputs={circuitViz.truthTable.outputs || ['F']}
+                                truthTable={
+                                  circuitViz.truthTable.rows?.map(row => [
+                                    ...row.inputs,
+                                    ...row.outputs
+                                  ]) || []
+                                }
+                                highlightRows={circuitViz.truthTable.minterms || []}
+                                title={`Truth Table${circuitViz.truthTable.minterms ? ` - Minterms: ∑m(${circuitViz.truthTable.minterms.join(', ')})` : ''}`}
+                              />
+                            </Box>
+                          )}
+                          
+                          {/* Render ROM Content */}
+                          {circuitViz.romContent && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                ROM Programming:
+                              </Typography>
+                              <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, display: 'inline-block' }}>
+                                <ROMVisualizer
+                                  addressBits={circuitViz.romContent.addressBits || 2}
+                                  outputs={circuitViz.romContent.content || []}
+                                  title={circuitViz.title || 'ROM'}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+                          
+                          {/* Interactive Tools */}
+                          <Box sx={{ display: 'flex', gap: 1, mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<BuildIcon />}
+                              onClick={() => {
+                                setCircuitData(circuitViz);
+                                setShowCircuitBuilder(true);
+                              }}
+                            >
+                              Edit in Circuit Builder
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<SimulateIcon />}
+                              onClick={() => setShowCircuitSimulator(true)}
+                            >
+                              Open Simulator
+                            </Button>
+                          </Box>
+                        </Paper>
+                      );
+                    })()}
+
                     {/* Exercises Section - Bilingual with Answers */}
                     {explainResponse.exercises && explainResponse.exercises.length > 0 && (
                       <Box>
@@ -3469,16 +4228,49 @@ Return ONLY this valid JSON:
                               </Button>
                             </Box>
 
-                            {/* Complete Answer - Bilingual */}
+                            {/* Complete Answer - Bilingual - v7.2.25: Support HTML tables */}
                             {exercise.answer && (
                               <Box sx={{ mb: 2 }}>
-                                <Paper sx={{ p: 2, bgcolor: 'success.lighter', borderLeft: '4px solid', borderColor: 'success.main' }}>
+                                <Paper sx={{ 
+                                  p: 2, 
+                                  bgcolor: 'success.lighter', 
+                                  borderLeft: '4px solid', 
+                                  borderColor: 'success.main',
+                                  // v7.2.25: Table styling for engineering content
+                                  '& table': {
+                                    borderCollapse: 'collapse',
+                                    width: '100%',
+                                    my: 2,
+                                    fontSize: '0.9rem',
+                                    fontFamily: 'monospace'
+                                  },
+                                  '& th, & td': {
+                                    border: '1px solid',
+                                    borderColor: 'grey.400',
+                                    p: 1,
+                                    textAlign: 'center'
+                                  },
+                                  '& th': {
+                                    bgcolor: 'success.light',
+                                    fontWeight: 700
+                                  },
+                                  '& tr:nth-of-type(even)': {
+                                    bgcolor: 'success.lighter'
+                                  }
+                                }}>
                                   <Typography variant="subtitle2" fontWeight={700} color="success.dark" gutterBottom>
                                     ✅ Complete Answer:
                                   </Typography>
-                                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                                    {exercise.answer}
-                                  </Typography>
+                                  {exercise.answer.includes('<table') || exercise.answer.includes('<') ? (
+                                    <Box 
+                                      sx={{ whiteSpace: 'pre-wrap' }}
+                                      dangerouslySetInnerHTML={{ __html: exercise.answer }} 
+                                    />
+                                  ) : (
+                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                                      {exercise.answer}
+                                    </Typography>
+                                  )}
                                   <Button
                                     size="small"
                                     variant={currentSpeakingId === `a${idx}` ? "contained" : "outlined"}
@@ -3520,7 +4312,28 @@ Return ONLY this valid JSON:
                                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
                                   Step-by-Step Solution:
                                 </Typography>
-                                <Paper sx={{ p: 2, bgcolor: 'background.paper' }}>
+                                <Paper sx={{ 
+                                  p: 2, 
+                                  bgcolor: 'background.paper',
+                                  // v7.2.25: Table styling for steps
+                                  '& table': {
+                                    borderCollapse: 'collapse',
+                                    width: '100%',
+                                    my: 1,
+                                    fontSize: '0.85rem',
+                                    fontFamily: 'monospace'
+                                  },
+                                  '& th, & td': {
+                                    border: '1px solid',
+                                    borderColor: 'grey.400',
+                                    p: 0.5,
+                                    textAlign: 'center'
+                                  },
+                                  '& th': {
+                                    bgcolor: 'grey.200',
+                                    fontWeight: 700
+                                  }
+                                }}>
                                   {exercise.steps.map((step, stepIdx) => {
                                     // Handle both old format (string array) and new format (object array)
                                     const stepText = typeof step === 'string' ? step : (step?.text || '');
@@ -3681,12 +4494,55 @@ Return ONLY this valid JSON:
                         <Typography variant="h6" fontWeight={700} gutterBottom>
                           Detailed Explanation
                         </Typography>
-                        <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-                          <Box dangerouslySetInnerHTML={{ __html: explainResponse.explanation }} />
+                        {/* v7.2.28: Handle case where explanation might be malformed */}
+                        {typeof explainResponse.explanation === 'object' ? (
+                          <Alert severity="warning" sx={{ mb: 2 }}>
+                            The explanation data is malformed. Please click "Clear" and regenerate.
+                          </Alert>
+                        ) : (
+                        <>
+                        <Paper sx={{ 
+                          p: 2, 
+                          bgcolor: 'background.default',
+                          // v7.2.25: Table styling for engineering/university content
+                          '& table': {
+                            borderCollapse: 'collapse',
+                            width: '100%',
+                            my: 2,
+                            fontSize: '0.9rem',
+                            fontFamily: 'monospace'
+                          },
+                          '& th, & td': {
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            p: 1,
+                            textAlign: 'center'
+                          },
+                          '& th': {
+                            bgcolor: 'primary.light',
+                            color: 'primary.contrastText',
+                            fontWeight: 700
+                          },
+                          '& tr:nth-of-type(even)': {
+                            bgcolor: 'action.hover'
+                          },
+                          '& pre, & code': {
+                            bgcolor: 'grey.100',
+                            p: 1,
+                            borderRadius: 1,
+                            fontFamily: 'monospace',
+                            fontSize: '0.85rem',
+                            overflowX: 'auto'
+                          }
+                        }}>
+                          {/* v7.2.27: Render explanation with inline visualizations (tables, K-maps, PLA, circuits) */}
+                          <Box>
+                            {renderWithInlineVisualizations(explainResponse.explanation, LogicGate, InteractiveTruthTable)}
+                          </Box>
                           <Button
                             size="small"
                             startIcon="🔊"
-                            onClick={() => handleSpeakText(explainResponse.explanation, explainResponse.language, 'exp')}
+                            onClick={() => handleSpeakText(explainResponse.explanation?.replace(/\{[^}]+\}/g, ''), explainResponse.language, 'exp')}
                             sx={{ mt: 1 }}
                           >
                             Listen to Explanation
@@ -3718,6 +4574,8 @@ Return ONLY this valid JSON:
                               Listen in English
                             </Button>
                           </Paper>
+                        )}
+                        </>
                         )}
                       </Box>
                     )}
@@ -5105,6 +5963,146 @@ Return ONLY this valid JSON:
           </Box>
         </TabPanel>}
 
+        {/* v7.2.28: Tool Tab - Circuit Visualization */}
+        {showProTools && <TabPanel value={activeTab} index={tabIndices.proTools}>
+          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" fontWeight={700} gutterBottom>
+                🔧 Tool - Circuit Visualization
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Build, simulate, and visualize logic circuits for digital electronics and computer architecture studies.
+              </Typography>
+            </Box>
+            
+            <Grid container spacing={2}>
+              {/* Circuit Builder Card */}
+              <Grid item xs={12} md={6}>
+                <Paper 
+                  elevation={2} 
+                  sx={{ 
+                    p: 3, 
+                    height: '100%',
+                    border: '2px solid',
+                    borderColor: 'primary.light',
+                    bgcolor: 'background.paper',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      boxShadow: 4
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
+                      <BuildIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h6" fontWeight={700}>
+                        Circuit Builder
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Drag & drop logic gates
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    Build interactive digital logic circuits with AND, OR, NOT, NAND, NOR, XOR gates. 
+                    Connect inputs and outputs to visualize signal flow.
+                  </Typography>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<BuildIcon />}
+                    onClick={() => setShowCircuitBuilder(true)}
+                    sx={{ mt: 1 }}
+                  >
+                    Open Circuit Builder
+                  </Button>
+                </Paper>
+              </Grid>
+              
+              {/* Circuit Simulator Card */}
+              <Grid item xs={12} md={6}>
+                <Paper 
+                  elevation={2} 
+                  sx={{ 
+                    p: 3, 
+                    height: '100%',
+                    border: '2px solid',
+                    borderColor: 'secondary.light',
+                    bgcolor: 'background.paper',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      borderColor: 'secondary.main',
+                      boxShadow: 4
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'secondary.main', width: 48, height: 48 }}>
+                      <SimulateIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h6" fontWeight={700}>
+                        Circuit Simulator
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Falstad/CircuitJS simulator
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    Explore pre-built circuit templates including logic gates, flip-flops, counters, 
+                    and analog circuits with real-time simulation.
+                  </Typography>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="secondary"
+                    startIcon={<SimulateIcon />}
+                    onClick={() => setShowCircuitSimulator(true)}
+                    sx={{ mt: 1 }}
+                  >
+                    Open Simulator
+                  </Button>
+                </Paper>
+              </Grid>
+            </Grid>
+            
+            {/* Quick Reference */}
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                mt: 3, 
+                p: 2, 
+                bgcolor: 'action.hover',
+                borderRadius: 2
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                📚 Quick Reference - Logic Gates
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
+                <Chip label="AND: Both inputs HIGH" size="small" />
+                <Chip label="OR: Any input HIGH" size="small" />
+                <Chip label="NOT: Inverts input" size="small" />
+                <Chip label="NAND: NOT + AND" size="small" />
+                <Chip label="NOR: NOT + OR" size="small" />
+                <Chip label="XOR: Exclusive OR" size="small" />
+              </Box>
+            </Paper>
+            
+            {/* Gate Gallery */}
+            <Paper elevation={0} sx={{ mt: 2, p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                🎨 Gate Reference
+              </Typography>
+              <GateGallery />
+            </Paper>
+          </Box>
+        </TabPanel>}
+
         {/* Notes Tab */}
         {showNotes && <TabPanel value={activeTab} index={tabIndices.notes}>
           <NotesEditor pdfId={pdfId} />
@@ -5136,6 +6134,24 @@ Return ONLY this valid JSON:
           </Typography>
         </Alert>
       </Snackbar>
+      
+      {/* v7.2.25: Circuit Builder Dialog */}
+      <CircuitBuilder
+        open={showCircuitBuilder}
+        onClose={() => {
+          setShowCircuitBuilder(false);
+          setCircuitData(null);
+        }}
+        initialCircuit={circuitData ? convertAICircuitToReactFlow(circuitData) : null}
+        title={circuitData?.title || "Interactive Circuit Builder"}
+      />
+      
+      {/* v7.2.25: Circuit Simulator Dialog */}
+      <CircuitSimulator
+        open={showCircuitSimulator}
+        onClose={() => setShowCircuitSimulator(false)}
+        title="Circuit Simulator (Falstad)"
+      />
     </Box>
   );
 }

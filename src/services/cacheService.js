@@ -167,6 +167,31 @@ export const isPageCached = async (pdfId, pageNumber, featureType) => {
   return data !== null;
 };
 
+// v7.2.26: Clear cache for a specific page and feature type
+export const clearPageCache = async (pdfId, pageNumber, featureType) => {
+  try {
+    const db = await initDB();
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    
+    const cacheKey = getCacheKey(pdfId, pageNumber, featureType);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.delete(cacheKey);
+      
+      request.onsuccess = () => {
+        console.log(`🗑️ Cleared cache: ${featureType} for page ${pageNumber}`);
+        resolve(true);
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.error('Cache clear error:', error);
+    return false;
+  }
+};
+
 // Clear cache for a specific PDF
 export const clearPDFCache = async (pdfId) => {
   try {

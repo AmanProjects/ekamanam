@@ -344,11 +344,100 @@ Return JSON:
   });
 }
 
-export async function generateExplanation(selectedText, contextText, apiKey = null) {
+export async function generateExplanation(selectedText, contextText, options = {}) {
+  // v7.2.25: Support educational level from PDF metadata
+  const { apiKey = null, educationalLevel = null, subject = null } = options;
+  
   // Handle case where contextText might be an array (priorContext) or string
   const contextString = Array.isArray(contextText) 
     ? contextText.map(p => `Page ${p.pageNumber}: ${p.summary}`).join('\n')
     : (typeof contextText === 'string' ? contextText : '');
+  
+  // v7.2.25: Determine education level context
+  const getEducationContext = () => {
+    if (!educationalLevel) return '';
+    
+    const level = educationalLevel.toString().toLowerCase();
+    
+    // University/College level (B.Tech, B.E., M.Tech, Diploma, 11, 12, UG, PG)
+    if (level.includes('b.tech') || level.includes('b.e') || level.includes('m.tech') || 
+        level.includes('diploma') || level.includes('engineering') || level.includes('ug') || 
+        level.includes('pg') || level.includes('degree') || level.includes('university') ||
+        level === '11' || level === '12' || level === 'class 11' || level === 'class 12' ||
+        level.includes('intermediate') || level.includes('jr college') || level.includes('jntu') ||
+        level.includes('anna university') || level.includes('vtu') || level.includes('iit')) {
+      return `
+🎓 EDUCATION LEVEL: UNIVERSITY/ADVANCED (${educationalLevel}${subject ? `, Subject: ${subject}` : ''})
+
+CRITICAL REQUIREMENTS FOR UNIVERSITY-LEVEL RESPONSES:
+1. Provide DETAILED, RIGOROUS explanations suitable for engineering/university students
+2. Include theoretical background, derivations, and mathematical proofs where applicable
+3. Use proper technical terminology and notation (LaTeX style: ∑, ∫, ∂, etc.)
+4. For circuit/electronics questions: Include truth tables, K-maps, timing diagrams, state diagrams
+5. For ROM/memory questions: Show complete address decoding, memory map, implementation details
+6. Explain the "why" behind each step - university students need to understand the reasoning
+7. Include edge cases, design considerations, and practical applications
+8. Reference relevant theorems, laws, or principles (e.g., Boolean algebra, De Morgan's theorem)
+9. For step-by-step solutions: Number each step clearly, show intermediate results
+10. Tables should be formatted as HTML tables, not JSON
+
+EXAMPLE FOR ROM IMPLEMENTATION:
+- Show the truth table with all minterms
+- Explain which outputs are HIGH for each input combination
+- Show the ROM programming/content matrix
+- Provide the final implementation with proper labeling
+
+`;
+    }
+    
+    // High school (9, 10)
+    if (level === '9' || level === '10' || level === 'class 9' || level === 'class 10' ||
+        level.includes('ssc') || level.includes('high school')) {
+      return `
+🎓 EDUCATION LEVEL: HIGH SCHOOL (${educationalLevel}${subject ? `, Subject: ${subject}` : ''})
+
+REQUIREMENTS FOR HIGH SCHOOL RESPONSES:
+1. Explain concepts clearly with examples
+2. Use age-appropriate language
+3. Connect to real-world applications students can relate to
+4. Break down complex topics into digestible parts
+5. Include practice questions similar to board exam patterns
+
+`;
+    }
+    
+    // Middle school (6, 7, 8)
+    if (level === '6' || level === '7' || level === '8' || level.includes('middle school')) {
+      return `
+🎓 EDUCATION LEVEL: MIDDLE SCHOOL (${educationalLevel})
+
+REQUIREMENTS FOR MIDDLE SCHOOL RESPONSES:
+1. Use simple, clear language
+2. Provide plenty of examples and analogies
+3. Visual representations help understanding
+4. Keep explanations concise but complete
+5. Encourage curiosity with interesting facts
+
+`;
+    }
+    
+    // Elementary (1-5)
+    if (['1', '2', '3', '4', '5'].includes(level) || level.includes('primary')) {
+      return `
+🎓 EDUCATION LEVEL: PRIMARY SCHOOL (${educationalLevel})
+
+REQUIREMENTS FOR PRIMARY SCHOOL RESPONSES:
+1. Use very simple language
+2. Include fun facts and stories
+3. Lots of pictures and visual aids
+4. Short sentences and explanations
+5. Make learning fun and engaging!
+
+`;
+    }
+    
+    return `\n🎓 EDUCATION LEVEL: ${educationalLevel}${subject ? ` (Subject: ${subject})` : ''}\n\n`;
+  };
   
   const prompt = `🎓 EDUCATIONAL CONTENT ANALYZER
 
@@ -362,7 +451,7 @@ The content below is from an Indian textbook and may contain:
 ⚠️ DO NOT say the content is "corrupted" or "encoded"! 
 These are VALID Unicode characters used in Indian education.
 PROCESS THE CONTENT NORMALLY.
-
+${getEducationContext()}
 📚 LANGUAGE HANDLING (V3.0.3 - Simplified):
 - If content is in Telugu → Explain in Telugu ONLY (no English translation for steps)
 - If content is in Hindi → Explain in Hindi ONLY (no English translation for steps)
@@ -382,6 +471,7 @@ ANALYSIS RULES:
 2. For exercises: provide complete step-by-step solutions using prior context
 3. For "Draw" commands: provide actual visualizations in visualAid field
 4. Identify important notes in highlighted boxes
+5. For TABLES: Always render as HTML tables with proper formatting, NOT JSON
 
 VISUALIZATION FORMATS:
 - Chart: {"chartType":"pie|bar|line","data":{"labels":[...],"datasets":[{...}]}}
@@ -390,12 +480,71 @@ VISUALIZATION FORMATS:
 - Maps (Geography): {"type":"leaflet","center":[lat,lon],"zoom":6,"markers":[{"position":[lat,lon],"label":"City"}],"title":"Map Title"}
 - Plotly Geo: {"type":"plotly","data":[{"type":"choropleth","locations":["IND"],"z":[1947],"locationmode":"ISO-3"}],"layout":{"geo":{"scope":"asia"}}}
 - SVG: <svg viewBox="0 0 400 300">...</svg>
+- HTML Tables: <table border="1"><tr><th>Header</th></tr><tr><td>Data</td></tr></table>
+
+🔌 CIRCUIT VISUALIZATION FORMAT (for Digital Electronics/Logic questions):
+When content involves logic gates, combinational circuits, ROM, multiplexers, decoders, flip-flops, etc., include a "circuitVisualization" field:
+{
+  "circuitVisualization": {
+    "type": "logic_circuit",
+    "title": "Circuit Name (e.g., 4x4 ROM Implementation)",
+    "gates": [
+      {"id": "g1", "type": "AND|OR|NOT|NAND|NOR|XOR|XNOR", "inputs": ["A", "B"], "output": "Y1", "position": {"x": 100, "y": 50}},
+      {"id": "g2", "type": "OR", "inputs": ["Y1", "C"], "output": "F", "position": {"x": 200, "y": 50}}
+    ],
+    "inputs": [
+      {"id": "A", "label": "A", "position": {"x": 0, "y": 30}},
+      {"id": "B", "label": "B", "position": {"x": 0, "y": 70}}
+    ],
+    "outputs": [
+      {"id": "F", "label": "F(A,B)", "position": {"x": 300, "y": 50}}
+    ],
+    "connections": [
+      {"from": "A", "to": "g1.a"},
+      {"from": "B", "to": "g1.b"},
+      {"from": "g1.out", "to": "F"}
+    ],
+    "truthTable": {
+      "inputs": ["A", "B"],
+      "outputs": ["F"],
+      "rows": [
+        {"inputs": [0, 0], "outputs": [1]},
+        {"inputs": [0, 1], "outputs": [1]},
+        {"inputs": [1, 0], "outputs": [1]},
+        {"inputs": [1, 1], "outputs": [0]}
+      ],
+      "minterms": [0, 1, 2]
+    },
+    "romContent": {
+      "addressBits": 2,
+      "dataBits": 1,
+      "content": [1, 1, 1, 0]
+    }
+  }
+}
+
+CIRCUIT DETECTION KEYWORDS:
+- ROM implementation, 4x4 ROM, 8x4 ROM, combinational circuit
+- Logic gates: AND, OR, NOT, NAND, NOR, XOR, XNOR
+- Multiplexer (MUX), Decoder, Encoder
+- Truth table, K-map, Karnaugh map
+- Boolean expression, minterms ∑m, maxterms ∏M
+- Flip-flop, SR latch, D flip-flop, JK flip-flop
+- Counter, shift register, sequential circuit
+
+When these are detected:
+1. Include the "circuitVisualization" field in the response
+2. Provide accurate gate connections matching the Boolean expression
+3. Include complete truth table with all input combinations
+4. For ROM: Include complete programming content
 
 Available shapes: cube, sphere, cone, cylinder, pyramid, torus
 Available molecules: water, methane, ethanol, glucose, benzene, caffeine, aspirin, and 100M+ from PubChem!
 Maps: Use for geographic locations, historical events, routes, territories
 
-🔴 CRITICAL: If step says "Draw X" or "Show on map", visualAid MUST contain the actual drawing/map (Chart.js JSON, SVG, 3D JSON, or Map JSON). NOT empty!
+🔴 CRITICAL: 
+- If step says "Draw X" or "Show on map", visualAid MUST contain the actual drawing/map (Chart.js JSON, SVG, 3D JSON, or Map JSON). NOT empty!
+- For TRUTH TABLES and DATA TABLES: Use HTML <table> format, NOT JSON {"type":"table"} format!
 
 Return ONLY this JSON (no markdown blocks):
 
@@ -403,14 +552,14 @@ FOR REGIONAL LANGUAGES (Telugu/Hindi/Tamil/etc):
 {
   "contentType": "exercise|notes|regular",
   "language": "Telugu|Hindi|Tamil|etc",
-  "explanation": "Clear explanation in ORIGINAL language (తెలుగు/हिंदी/தமிழ்)",
+  "explanation": "Clear explanation in ORIGINAL language with HTML tables if needed",
   "exercises": [{
     "question": "Question in original language",
-    "answer": "Complete answer in original language",
+    "answer": "Complete answer in original language (use <table> for tabular data)",
     "hints": ["Hint 1 in original language"],
     "steps": [{
       "text": "Step in original language ONLY (no English needed)",
-      "visualAid": "Chart.js JSON / SVG / 3D JSON (if drawing required)"
+      "visualAid": "Chart.js JSON / SVG / 3D JSON / HTML table (if drawing required)"
     }]
   }],
   "importantNotes": [{
@@ -426,14 +575,14 @@ FOR ENGLISH:
 {
   "contentType": "exercise|notes|regular",
   "language": "English",
-  "explanation": "Clear explanation in English",
+  "explanation": "Clear explanation in English (use HTML <table> for tabular data)",
   "exercises": [{
     "question": "Question in English",
-    "answer": "Complete answer",
+    "answer": "Complete answer (use <table> for truth tables, ROM contents, etc.)",
     "hints": ["Hint 1"],
     "steps": [{
-      "text": "Step in English",
-      "visualAid": "Chart.js JSON / SVG / 3D JSON (if drawing required)"
+      "text": "Step in English with proper formatting",
+      "visualAid": "Chart.js JSON / SVG / 3D JSON / HTML table (if needed)"
     }]
   }],
   "importantNotes": [{
@@ -445,7 +594,13 @@ FOR ENGLISH:
   "pyq": "Exam question"
 }
 
-KEEP IT CONCISE. Use visuals for complex concepts. NO BILINGUAL for step-by-step solutions.`;
+KEEP IT CONCISE. Use visuals for complex concepts. NO BILINGUAL for step-by-step solutions.
+
+🔴 CRITICAL OUTPUT FORMAT:
+- Return ONLY the raw JSON object, starting with { and ending with }
+- Do NOT wrap the response in \`\`\`json code blocks
+- Do NOT include any text before or after the JSON
+- The first character of your response MUST be {`;
 
   // V3.1: Force Gemini for regional languages
   // V3.1.4: Increase tokens for regional languages (Telugu/Hindi need more space)
