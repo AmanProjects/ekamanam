@@ -81,6 +81,39 @@ import {
 import { createFlashcard } from '../services/spacedRepetitionService';
 
 /**
+ * v10.1.1: Clean orphaned JSON artifacts from AI responses
+ * Removes incomplete/orphaned brackets, truncated JSON, and other artifacts
+ */
+function cleanJsonArtifacts(text) {
+  if (!text || typeof text !== 'string') return text;
+  
+  let cleaned = text;
+  
+  // Remove orphaned opening braces at end of sentences (like "Let's pause for a moment. {")
+  cleaned = cleaned.replace(/\s*\{\s*$/gm, '');
+  
+  // Remove incomplete JSON-like patterns at end of text
+  cleaned = cleaned.replace(/\s*\{[^}]*$/g, '');
+  
+  // Remove orphaned JSON key patterns (like '"type":' without complete object)
+  cleaned = cleaned.replace(/\s*"[a-zA-Z]+"\s*:\s*$/gm, '');
+  
+  // Remove lonely brackets with only whitespace
+  cleaned = cleaned.replace(/\{\s*\}/g, '');
+  
+  // Remove truncated JSON that starts but doesn't complete
+  cleaned = cleaned.replace(/\{[^{}]*"[a-zA-Z]+":\s*$/g, '');
+  
+  // Clean up multiple spaces
+  cleaned = cleaned.replace(/\s{2,}/g, ' ');
+  
+  // Clean up trailing punctuation followed by incomplete JSON
+  cleaned = cleaned.replace(/([.!?])\s*\{[^}]*$/g, '$1');
+  
+  return cleaned.trim();
+}
+
+/**
  * v7.2.27: Render inline JSON visualizations (tables, K-maps, PLA, circuits)
  * Parses text containing JSON objects and renders them as visual components
  */
@@ -106,6 +139,9 @@ function renderWithInlineVisualizations(text, LogicGate, InteractiveTruthTable) 
     // Still not a string? Return null
     if (typeof text !== 'string') return null;
   }
+  
+  // v10.1.1: Clean orphaned JSON artifacts before processing
+  text = cleanJsonArtifacts(text);
   
   // Find all JSON objects in the text
   const parts = [];
@@ -3601,7 +3637,7 @@ Return ONLY this valid JSON:
                           </Box>
                         </Box>
                         <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
-                          <Box dangerouslySetInnerHTML={{ __html: teacherResponse.summary }} />
+                          <Box dangerouslySetInnerHTML={{ __html: cleanJsonArtifacts(teacherResponse.summary) }} />
                         </Paper>
                         {teacherEnglish.summary && (
                           <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
@@ -3727,7 +3763,7 @@ Return ONLY this valid JSON:
                           </Box>
                         </Box>
                         <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
-                          <Box dangerouslySetInnerHTML={{ __html: teacherResponse.explanation }} />
+                          <Box dangerouslySetInnerHTML={{ __html: cleanJsonArtifacts(teacherResponse.explanation) }} />
                         </Paper>
                         {teacherEnglish.explanation && (
                           <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
@@ -4116,9 +4152,9 @@ Return ONLY this valid JSON:
                             content = explainResponse;
                           } else {
                             content = `
-                              ${explainResponse.explanation ? `<div><h4>Explanation</h4><p>${explainResponse.explanation}</p></div>` : ''}
-                              ${explainResponse.analogy ? `<div><h4>💡 Analogy</h4><p>${explainResponse.analogy}</p></div>` : ''}
-                              ${explainResponse.pyq ? `<div><h4>📝 Exam Question</h4><p>${explainResponse.pyq}</p></div>` : ''}
+                              ${explainResponse.explanation ? `<div><h4>Explanation</h4><p>${cleanJsonArtifacts(explainResponse.explanation)}</p></div>` : ''}
+                              ${explainResponse.analogy ? `<div><h4>💡 Analogy</h4><p>${cleanJsonArtifacts(explainResponse.analogy)}</p></div>` : ''}
+                              ${explainResponse.pyq ? `<div><h4>📝 Exam Question</h4><p>${cleanJsonArtifacts(explainResponse.pyq)}</p></div>` : ''}
                               ${explainResponse.exercises && explainResponse.exercises.length > 0 ? `
                                 <div><h4>✏️ Exercises & Solutions</h4>
                                 ${explainResponse.exercises.map((ex, idx) => `
@@ -4784,7 +4820,7 @@ Return ONLY this valid JSON:
                           <Button
                             size="small"
                             startIcon="🔊"
-                            onClick={() => handleSpeakText(explainResponse.explanation?.replace(/\{[^}]+\}/g, ''), explainResponse.language, 'exp')}
+                            onClick={() => handleSpeakText(cleanJsonArtifacts(explainResponse.explanation)?.replace(/\{[^}]+\}/g, ''), explainResponse.language, 'exp')}
                             sx={{ mt: 1 }}
                           >
                             Listen to Explanation

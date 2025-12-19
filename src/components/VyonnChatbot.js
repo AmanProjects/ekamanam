@@ -23,6 +23,38 @@ import llmService, { PROVIDERS } from '../services/llmService';
 import VisualAidRenderer from './VisualAidRenderer';
 
 /**
+ * v10.1.1: Clean orphaned JSON artifacts from AI responses
+ */
+function cleanJsonArtifacts(text) {
+  if (!text || typeof text !== 'string') return text;
+  
+  let cleaned = text;
+  
+  // Remove orphaned opening braces at end of sentences
+  cleaned = cleaned.replace(/\s*\{\s*$/gm, '');
+  
+  // Remove incomplete JSON-like patterns at end of text
+  cleaned = cleaned.replace(/\s*\{[^}]*$/g, '');
+  
+  // Remove orphaned JSON key patterns
+  cleaned = cleaned.replace(/\s*"[a-zA-Z]+"\s*:\s*$/gm, '');
+  
+  // Remove lonely brackets with only whitespace
+  cleaned = cleaned.replace(/\{\s*\}/g, '');
+  
+  // Remove truncated JSON that starts but doesn't complete
+  cleaned = cleaned.replace(/\{[^{}]*"[a-zA-Z]+":\s*$/g, '');
+  
+  // Clean up multiple spaces
+  cleaned = cleaned.replace(/\s{2,}/g, ' ');
+  
+  // Clean up trailing punctuation followed by incomplete JSON
+  cleaned = cleaned.replace(/([.!?])\s*\{[^}]*$/g, '$1');
+  
+  return cleaned.trim();
+}
+
+/**
  * Vyonn - The Pattern-Seeker
  * 
  * A non-corporeal, exploratory AI entity that combines childlike curiosity 
@@ -316,12 +348,12 @@ YOUR RESPONSE:`;
         }
       }
 
-      // Add Vyonn's response
+      // Add Vyonn's response (v10.1.1: Clean JSON artifacts)
       setMessages([
         ...newMessages,
         {
           role: 'assistant',
-          content: finalResponse,
+          content: cleanJsonArtifacts(finalResponse),
           timestamp: new Date(),
           source: pdfContext ? 'pattern-analysis-with-context' : 'pattern-analysis',
           action: actionButton,
