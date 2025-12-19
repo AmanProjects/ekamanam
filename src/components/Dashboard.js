@@ -9,7 +9,8 @@ import {
   Chip,
   Avatar,
   LinearProgress,
-  IconButton
+  IconButton,
+  Dialog
 } from '@mui/material';
 import {
   LocalLibrary as LibraryIcon,
@@ -21,10 +22,18 @@ import {
   MenuBook as BookIcon,
   LocalFireDepartment as StreakIcon,
   ArrowForward as ArrowIcon,
-  Construction as ToolIcon
+  Construction as ToolIcon,
+  Calculate as MathIcon,
+  Science as ChemistryIcon,
+  Bolt as PhysicsIcon,
+  Code as CodeIcon,
+  Public as GlobeIcon
 } from '@mui/icons-material';
 import AdminOTPDialog from './AdminOTPDialog';
 import { isAuthorizedAdmin } from '../services/otpService';
+
+// Import educational tools
+import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer } from './tools';
 
 /**
  * Dashboard Component - v7.2.28
@@ -53,6 +62,13 @@ function Dashboard({
   const [showOTPDialog, setShowOTPDialog] = useState(false);
   const [showProSettings, setShowProSettings] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+
+  // v8.1: Educational Tools dialogs
+  const [showMathTools, setShowMathTools] = useState(false);
+  const [showChemistryTools, setShowChemistryTools] = useState(false);
+  const [showPhysicsSimulator, setShowPhysicsSimulator] = useState(false);
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [showGlobeViewer, setShowGlobeViewer] = useState(false);
 
   // Load Pro Tools state from admin config on mount
   useEffect(() => {
@@ -137,14 +153,15 @@ function Dashboard({
     },
     {
       key: 'tools',
-      onClick: handleProToolsToggle,
+      onClick: subscription?.isPaid ? handleProToolsToggle : onUpgrade,
       icon: <ToolIcon />,
-      iconColor: proToolsEnabled ? '#10b981' : '#64748b',
-      iconBg: proToolsEnabled ? 'rgba(16, 185, 129, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+      iconColor: subscription?.isPaid && proToolsEnabled ? '#10b981' : '#64748b',
+      iconBg: subscription?.isPaid && proToolsEnabled ? 'rgba(16, 185, 129, 0.1)' : 'rgba(100, 116, 139, 0.1)',
       title: 'Tools',
-      subtitle: proToolsEnabled ? 'Enabled' : 'Disabled',
-      badge: proToolsEnabled ? '✓' : null,
-      isToggle: true
+      subtitle: subscription?.isPaid ? (proToolsEnabled ? 'Enabled' : 'Disabled') : 'Upgrade',
+      badge: subscription?.isPaid && proToolsEnabled ? '✓' : null,
+      isToggle: subscription?.isPaid,
+      isLocked: !subscription?.isPaid
     }
   ];
 
@@ -344,6 +361,142 @@ function Dashboard({
           ))}
         </Box>
 
+        {/* Educational Tools - Quick Access */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+          <Typography 
+            variant="overline" 
+            sx={{ 
+              color: 'text.secondary', 
+              fontWeight: 600,
+              letterSpacing: 1.5
+            }}
+          >
+            Educational Tools
+          </Typography>
+          <Chip 
+            label="NEW" 
+            size="small" 
+            sx={{ 
+              height: 18, 
+              fontSize: '0.6rem', 
+              fontWeight: 700, 
+              bgcolor: '#ff4757', 
+              color: 'white',
+              '& .MuiChip-label': { px: 0.8 }
+            }} 
+          />
+        </Box>
+        
+        {/* Check if user has paid subscription */}
+        {subscription && subscription.isPaid ? (
+          // Paid users - Show interactive tools
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(5, 1fr)', 
+            gap: 1, 
+            mb: 3 
+          }}>
+            {[
+              { key: 'math', icon: '📐', label: 'Math', color: '#1976d2', onClick: () => setShowMathTools(true) },
+              { key: 'chemistry', icon: '🧪', label: 'Chemistry', color: '#4caf50', onClick: () => setShowChemistryTools(true) },
+              { key: 'physics', icon: '⚡', label: 'Physics', color: '#6c5ce7', onClick: () => setShowPhysicsSimulator(true) },
+              { key: 'code', icon: '💻', label: 'Code', color: '#2d3436', onClick: () => setShowCodeEditor(true) },
+              { key: 'globe', icon: '🌍', label: 'Globe', color: '#0984e3', onClick: () => setShowGlobeViewer(true) }
+            ].map((tool) => (
+              <Paper
+                key={tool.key}
+                elevation={0}
+                onClick={tool.onClick}
+                sx={{
+                  p: 1.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  bgcolor: 'background.paper',
+                  '&:hover': { 
+                    borderColor: tool.color,
+                    transform: 'translateY(-2px)', 
+                    boxShadow: `0 4px 12px ${tool.color}20`
+                  }
+                }}
+              >
+                <Typography fontSize="1.5rem" sx={{ mb: 0.5, lineHeight: 1 }}>
+                  {tool.icon}
+                </Typography>
+                <Typography 
+                  variant="caption" 
+                  fontWeight={600} 
+                  sx={{ 
+                    color: 'text.primary',
+                    fontSize: '0.65rem'
+                  }}
+                >
+                  {tool.label}
+                </Typography>
+              </Paper>
+            ))}
+          </Box>
+        ) : (
+          // Free users - Show marketing message
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2.5,
+              mb: 3,
+              borderRadius: 2,
+              bgcolor: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+              background: 'linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)',
+              border: '1px dashed',
+              borderColor: '#667eea50'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                gap: 0.5, 
+                fontSize: '1.2rem',
+                opacity: 0.6,
+                filter: 'grayscale(0.5)'
+              }}>
+                📐🧪⚡💻🌍
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" fontWeight={700} color="primary.main" gutterBottom>
+                  🔒 Unlock Educational Tools
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.5 }}>
+                  Get access to <strong>AI-powered Math Games</strong>, <strong>Chemistry Lab</strong>, 
+                  <strong>Physics Simulator</strong>, <strong>Code Editor</strong>, and <strong>Interactive Globe</strong>. 
+                  Perfect for students who want to excel!
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={onUpgrade}
+                    sx={{ 
+                      textTransform: 'none', 
+                      fontWeight: 600,
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%)'
+                      }
+                    }}
+                  >
+                    Upgrade to Student Plan
+                  </Button>
+                  <Typography variant="caption" color="text.secondary">
+                    ₹299/month • Cancel anytime
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Paper>
+        )}
+
         {/* AI Queries Usage - For Free Users */}
         {subscription && subscription.isFree && (
           <Paper
@@ -405,6 +558,13 @@ function Dashboard({
           }}
           onSuccess={handleOTPSuccess}
         />
+
+        {/* Educational Tool Dialogs */}
+        <MathTools open={showMathTools} onClose={() => setShowMathTools(false)} />
+        <ChemistryTools open={showChemistryTools} onClose={() => setShowChemistryTools(false)} user={user} />
+        <PhysicsSimulator open={showPhysicsSimulator} onClose={() => setShowPhysicsSimulator(false)} user={user} />
+        <CodeEditor open={showCodeEditor} onClose={() => setShowCodeEditor(false)} />
+        <GlobeViewer open={showGlobeViewer} onClose={() => setShowGlobeViewer(false)} />
 
         {/* Footer */}
         <Box sx={{ textAlign: 'center', pt: 2, mt: 1, borderTop: 1, borderColor: 'divider' }}>

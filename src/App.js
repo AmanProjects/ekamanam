@@ -767,7 +767,7 @@ function App() {
               }}
             />
             <Box sx={{ flex: 1, pt: isMobile ? '10px' : '18px', display: { xs: 'none', sm: 'block' } }}>
-              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 0.3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.3 }}>
                 <Box component="span" sx={{ fontSize: '1.5rem', fontWeight: 600, lineHeight: 1, letterSpacing: '-0.02em' }}>
                   Ekamanam
                 </Box>
@@ -781,7 +781,22 @@ function App() {
                     bgcolor: 'primary.main',
                     color: 'primary.contrastText',
                     '& .MuiChip-label': {
-                      px: 1.5,
+                      px: 1,
+                      py: 0
+                    }
+                  }}
+                />
+                <Chip 
+                  label="BETA"
+                  size="small"
+                  sx={{ 
+                    height: 20,
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    bgcolor: '#ff6b6b',
+                    color: 'white',
+                    '& .MuiChip-label': {
+                      px: 0.8,
                       py: 0
                     }
                   }}
