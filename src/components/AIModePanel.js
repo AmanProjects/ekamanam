@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import VisualAidRenderer from './VisualAidRenderer';
 import UpgradePrompt from './UpgradePrompt';
 import { useAdminConfig, isTabEnabled } from '../hooks/useAdminConfig';
@@ -8,6 +8,7 @@ import { trackAIQueryUsage } from '../services/subscriptionService';
 import CircuitVisualizer, { LogicGate, GateGallery, InteractiveTruthTable, ROMVisualizer } from './LogicGateVisualizer';
 import CircuitBuilder from './CircuitBuilder';
 import CircuitSimulator from './CircuitSimulator';
+import llmService, { PROVIDERS } from '../services/llmService';
 import {
   Box,
   Paper,
@@ -31,7 +32,11 @@ import {
   Snackbar,
   Badge,
   Grid,
-  Avatar
+  Avatar,
+  TextField,
+  List,
+  ListItem,
+  Divider
 } from '@mui/material';
 import {
   Style as FlashcardIcon
@@ -56,7 +61,10 @@ import {
   Memory as CircuitIcon,
   Construction as ToolIcon,        // Tool tab (was BuildIcon) - professional tools icon
   Build as BuildIcon,              // Keep for Circuit Builder button
-  Science as SimulateIcon
+  Science as SimulateIcon,
+  SmartToy as VyonnIcon,           // v7.2.30: Vyonn AI tab icon
+  Send as SendIcon,
+  Delete as ClearChatIcon
 } from '@mui/icons-material';
 import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer, translateTeacherModeToEnglish } from '../services/geminiService';
@@ -512,6 +520,18 @@ function AIModePanel({
   const [examTotalChunks, setExamTotalChunks] = useState(0);
   const [examCurrentTip, setExamCurrentTip] = useState(0);
   
+  // v7.2.30: Vyonn Chat state (embedded in tab)
+  const [vyonnMessages, setVyonnMessages] = useState([
+    {
+      role: 'assistant',
+      content: 'Hi there! I\'m Vyonn, your AI learning companion. How can I help you today?',
+      timestamp: new Date()
+    }
+  ]);
+  const [vyonnInput, setVyonnInput] = useState('');
+  const [vyonnLoading, setVyonnLoading] = useState(false);
+  const vyonnMessagesEndRef = useRef(null);
+  
   // Progress tracking for chapter generation (Teacher, Explain, Activities)
   const [chapterProgress, setChapterProgress] = useState({ current: 0, total: 0, tipIndex: 0 });
   
@@ -781,6 +801,160 @@ function AIModePanel({
     setWordBatch(1);
     setError(null);
   };
+
+  // v7.2.30: Vyonn Chat handlers
+  const handleVyonnSend = async () => {
+    if (!vyonnInput.trim() || vyonnLoading) return;
+
+    const userMessage = vyonnInput.trim();
+    setVyonnInput('');
+    setVyonnLoading(true);
+
+    // Add user message
+    const newMessages = [
+      ...vyonnMessages,
+      {
+        role: 'user',
+        content: userMessage,
+        timestamp: new Date()
+      }
+    ];
+    setVyonnMessages(newMessages);
+
+    try {
+      // Prepare context from PDF if available
+      let contextInfo = '';
+      if (pageText && pageText.trim()) {
+        contextInfo = `\n\n[Context: Currently analyzing study material from page ${currentPage}. Available content: ${pageText.substring(0, 1500)}...]`;
+      }
+
+      // Vyonn's System Prompt
+      const vyonnSystemPrompt = `You are Vyonn, a friendly AI learning assistant for students in the Ekamanam app.
+
+TEACHING STYLE (MANDATORY):
+✅ ALWAYS explain the concept first before showing calculations
+✅ Use simple, conversational language (like talking to a friend)
+✅ Break down solutions step-by-step with reasoning
+✅ Be encouraging and supportive
+✅ Keep responses concise but helpful (4-6 sentences unless more detail needed)
+
+RESPONSE STRUCTURE FOR MATH/SCIENCE QUESTIONS:
+1. **Identify the concept**: "This is a [concept name] problem."
+2. **Explain the approach**: "To solve this, we use [method/formula] because..."
+3. **Show steps**: "Let's work through it: First, ... Next, ... Finally, ..."
+4. **Give the answer**: "So the final answer is..."
+
+APP FEATURES YOU CAN SUGGEST:
+- Learn Tab: Deep dive into concepts (click the Learn tab)
+- Explain Tab: Get explanations for selected text
+- Activities Tab: Practice questions and exercises
+- Exam Prep: MCQs, short & long answer questions
+- Tools Tab: Circuit builders, simulators, and more
+
+${contextInfo ? `CONTEXT: User is on page ${currentPage} of study material.${contextInfo}` : ''}
+
+USER QUESTION: ${userMessage}
+
+INSTRUCTION: Be a helpful teacher. Explain concepts clearly. Make learning easy and enjoyable.`;
+
+      console.log('🔮 Vyonn: Processing query:', userMessage.substring(0, 50));
+
+      // Call LLM service
+      const response = await llmService.callLLM(
+        vyonnSystemPrompt,
+        {
+          providers: [PROVIDERS.GEMINI, PROVIDERS.GROQ],
+          temperature: 0.8,
+          maxTokens: 2000,
+          topP: 0.95
+        }
+      );
+
+      // Track query for analytics
+      if (onAIQuery) {
+        onAIQuery('vyonn_chat', userMessage);
+      }
+
+      // Check for visualization JSON in response
+      let visualAid = null;
+      let finalResponse = response;
+      
+      const startMatch = finalResponse.match(/\{\s*"type"\s*:\s*"(3d|chemistry|plotly|leaflet)"/);
+      if (startMatch) {
+        const startIndex = finalResponse.indexOf(startMatch[0]);
+        let braceCount = 0;
+        let jsonEndIndex = -1;
+        
+        for (let i = startIndex; i < finalResponse.length; i++) {
+          if (finalResponse[i] === '{') braceCount++;
+          if (finalResponse[i] === '}') {
+            braceCount--;
+            if (braceCount === 0 && i > startIndex) {
+              jsonEndIndex = i + 1;
+              break;
+            }
+          }
+        }
+        
+        if (jsonEndIndex > startIndex) {
+          const jsonText = finalResponse.substring(startIndex, jsonEndIndex);
+          try {
+            visualAid = JSON.parse(jsonText);
+            finalResponse = finalResponse.substring(0, startIndex).trim() + 
+                           finalResponse.substring(jsonEndIndex).trim();
+          } catch (e) {
+            console.warn('Failed to parse visualization JSON:', e);
+          }
+        }
+      }
+
+      // Add assistant response
+      setVyonnMessages([
+        ...newMessages,
+        {
+          role: 'assistant',
+          content: finalResponse,
+          timestamp: new Date(),
+          visualAid: visualAid
+        }
+      ]);
+    } catch (error) {
+      console.error('⚠️ Vyonn: Error:', error);
+      setVyonnMessages([
+        ...newMessages,
+        {
+          role: 'assistant',
+          content: 'I ran into a small hiccup! Please try asking again, or check your API key settings.',
+          timestamp: new Date(),
+          error: true
+        }
+      ]);
+    } finally {
+      setVyonnLoading(false);
+    }
+  };
+
+  const handleVyonnKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleVyonnSend();
+    }
+  };
+
+  const clearVyonnChat = () => {
+    setVyonnMessages([
+      {
+        role: 'assistant',
+        content: 'Chat cleared! How can I help you with your studies?',
+        timestamp: new Date()
+      }
+    ]);
+  };
+
+  // Auto-scroll Vyonn messages
+  useEffect(() => {
+    vyonnMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [vyonnMessages]);
 
   // Add content to Notes
   const addToNotes = (content, title = 'AI Explanation') => {
@@ -2890,6 +3064,7 @@ Return ONLY this valid JSON:
   const showExamPrep = isTabEnabled(adminConfig, 'examPrep');
   const showNotes = isTabEnabled(adminConfig, 'notes');
   const showProTools = isTabEnabled(adminConfig, 'proTools'); // v7.2.28: Tools tab
+  const showVyonn = isTabEnabled(adminConfig, 'vyonn'); // v7.2.30: Vyonn AI tab (always enabled by default)
 
   // Calculate dynamic tab indices based on which tabs are enabled
   const tabIndices = {};
@@ -2900,6 +3075,7 @@ Return ONLY this valid JSON:
   if (showActivities) { tabIndices.activities = currentIndex++; }
   if (showExamPrep) { tabIndices.examPrep = currentIndex++; }
   if (showProTools) { tabIndices.proTools = currentIndex++; }
+  if (showVyonn) { tabIndices.vyonn = currentIndex++; }
   if (showNotes) { tabIndices.notes = currentIndex++; }
 
   return (
@@ -3053,6 +3229,7 @@ Return ONLY this valid JSON:
           {showActivities && <Tab icon={<ActivitiesIcon />} label="Activities" />}
           {showExamPrep && <Tab icon={<ExamIcon />} label="Exam" />}
           {showProTools && <Tab icon={<ToolIcon />} label="Tools" />}
+          {showVyonn && <Tab icon={<VyonnIcon />} label="Vyonn" />}
           {showNotes && <Tab icon={<NotesIcon />} label="Notes" />}
         </Tabs>
       </Paper>
@@ -5860,6 +6037,204 @@ Return ONLY this valid JSON:
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
               More coming: Molecules · Maps · Math · 3D Models
             </Typography>
+          </Box>
+        </TabPanel>}
+
+        {/* v7.2.30: Vyonn AI Chat Tab */}
+        {showVyonn && <TabPanel value={activeTab} index={tabIndices.vyonn}>
+          <Box sx={{ 
+            height: '100%', 
+            display: 'flex', 
+            flexDirection: 'column',
+            maxHeight: 'calc(100vh - 200px)'
+          }}>
+            {/* Header */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              pb: 1.5,
+              borderBottom: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Avatar 
+                  src={`${process.env.PUBLIC_URL}/vyonn.png`}
+                  sx={{ 
+                    width: 40, 
+                    height: 40,
+                    bgcolor: 'primary.main',
+                    border: '2px solid',
+                    borderColor: 'primary.light'
+                  }}
+                >
+                  <VyonnIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    Vyonn AI
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Your learning companion
+                  </Typography>
+                </Box>
+              </Box>
+              <Tooltip title="Clear chat">
+                <IconButton 
+                  size="small" 
+                  onClick={clearVyonnChat}
+                  sx={{ color: 'text.secondary' }}
+                >
+                  <ClearChatIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            {/* Context Indicator */}
+            {pageText && (
+              <Chip
+                label={`Context: Page ${currentPage}`}
+                size="small"
+                variant="outlined"
+                sx={{ 
+                  mt: 1.5, 
+                  alignSelf: 'flex-start',
+                  fontSize: '0.7rem',
+                  height: 24,
+                  bgcolor: 'action.hover'
+                }}
+              />
+            )}
+
+            {/* Messages */}
+            <List sx={{ 
+              flexGrow: 1, 
+              overflow: 'auto', 
+              py: 2,
+              '& .MuiListItem-root': { px: 0 }
+            }}>
+              {vyonnMessages.map((message, index) => (
+                <ListItem
+                  key={index}
+                  sx={{
+                    flexDirection: 'column',
+                    alignItems: message.role === 'user' ? 'flex-end' : 'flex-start',
+                    mb: 1.5
+                  }}
+                >
+                  <Box sx={{ maxWidth: '85%' }}>
+                    <Paper
+                      elevation={message.role === 'user' ? 2 : 0}
+                      sx={{
+                        p: 1.5,
+                        bgcolor: message.role === 'user' 
+                          ? 'primary.main' 
+                          : message.error 
+                            ? 'error.light'
+                            : 'action.hover',
+                        color: message.role === 'user' 
+                          ? 'primary.contrastText' 
+                          : 'text.primary',
+                        borderRadius: 2,
+                        border: message.role === 'assistant' && !message.error ? '1px solid' : 'none',
+                        borderColor: 'divider'
+                      }}
+                    >
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          lineHeight: 1.6
+                        }}
+                      >
+                        {message.content}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: 'block',
+                          mt: 0.5,
+                          opacity: 0.6,
+                          fontSize: '0.65rem'
+                        }}
+                      >
+                        {message.timestamp.toLocaleTimeString('en-US', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </Typography>
+                    </Paper>
+                    
+                    {/* Visualization if present */}
+                    {message.visualAid && (
+                      <Box sx={{ mt: 1.5, width: '100%' }}>
+                        <VisualAidRenderer visualAid={JSON.stringify(message.visualAid)} />
+                      </Box>
+                    )}
+                  </Box>
+                </ListItem>
+              ))}
+              {vyonnLoading && (
+                <ListItem sx={{ justifyContent: 'center', py: 2, px: 0 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <CircularProgress size={24} sx={{ mb: 1 }} />
+                    <Typography variant="caption" color="text.secondary">
+                      Thinking...
+                    </Typography>
+                  </Box>
+                </ListItem>
+              )}
+              <div ref={vyonnMessagesEndRef} />
+            </List>
+
+            <Divider />
+
+            {/* Input */}
+            <Box sx={{ pt: 2 }}>
+              <TextField
+                fullWidth
+                multiline
+                maxRows={3}
+                placeholder="Ask me anything about your studies..."
+                value={vyonnInput}
+                onChange={(e) => setVyonnInput(e.target.value)}
+                onKeyPress={handleVyonnKeyPress}
+                disabled={vyonnLoading}
+                size="small"
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      onClick={handleVyonnSend}
+                      disabled={!vyonnInput.trim() || vyonnLoading}
+                      color="primary"
+                      sx={{
+                        bgcolor: vyonnInput.trim() && !vyonnLoading ? 'primary.main' : 'transparent',
+                        color: vyonnInput.trim() && !vyonnLoading ? '#fff' : 'inherit',
+                        '&:hover': {
+                          bgcolor: vyonnInput.trim() && !vyonnLoading ? 'primary.dark' : 'transparent'
+                        }
+                      }}
+                    >
+                      <SendIcon fontSize="small" />
+                    </IconButton>
+                  ),
+                  sx: { borderRadius: 2 }
+                }}
+              />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ 
+                  display: 'block', 
+                  mt: 0.5, 
+                  textAlign: 'center',
+                  fontSize: '0.7rem'
+                }}
+              >
+                Enter to send · Shift+Enter for new line
+              </Typography>
+            </Box>
           </Box>
         </TabPanel>}
 

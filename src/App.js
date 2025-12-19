@@ -13,7 +13,7 @@ import EnhancedSettingsDialog from './components/EnhancedSettingsDialog';
 import AdminDashboard from './components/AdminDashboard';
 import AdminOTPDialog from './components/AdminOTPDialog';
 import AuthButton from './components/AuthButton';
-import VyonnChatbot from './components/VyonnChatbot';
+// VyonnChatbot is now integrated into AIModePanel as a tab (v7.2.30)
 import SubscriptionDialog from './components/SubscriptionDialog';
 import { lightTheme, darkTheme, getThemePreference } from './theme.js';
 import {
@@ -1232,27 +1232,7 @@ function App() {
         />
       )}
 
-      {/* Vyonn - The Pattern-Seeker (Always Available!) */}
-      <VyonnChatbot
-        pdfContext={view === 'reader' ? pageText : null}
-        currentPage={view === 'reader' ? currentPage : null}
-        pdfDocument={view === 'reader' ? pdfDocument : null}
-        onSwitchTab={(tabIndex, userQuery) => {
-          console.log('🔮 Vyonn: Switching to tab', tabIndex, 'with query:', userQuery);
-          if (view === 'reader') {
-            setAiPanelTab(tabIndex);
-            if (userQuery) {
-              setVyonnQuery(userQuery);
-            }
-          }
-        }}
-        onAIQuery={(queryType, queryText) => {
-          // v7.2.24: Track Vyonn queries for analytics
-          if (sessionTrackerRef.current) {
-            sessionTrackerRef.current.recordAIQuery(queryType, queryText, currentPage, cognitiveLoad);
-          }
-        }}
-      />
+      {/* v7.2.30: Vyonn is now integrated into AIModePanel as a tab */}
 
       {/* Subscription Dialog */}
       <SubscriptionDialog
