@@ -105,7 +105,7 @@ function Dashboard({
     // Dispatch event to notify other components
     window.dispatchEvent(new CustomEvent('adminConfigUpdated'));
     
-    console.log(`🔧 Tool tab ${newState ? 'enabled' : 'disabled'}`);
+    console.log(`🧰 Tools tab ${newState ? 'enabled' : 'disabled'}`);
   };
 
   const handleOTPSuccess = () => {
@@ -437,10 +437,10 @@ function Dashboard({
               </Avatar>
               <Box>
                 <Typography variant="body2" fontWeight={700} color="text.primary">
-                  Tool
+                  Tools
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Circuit Visualization · Logic Gates
+                  Circuits · Molecules · Maps · More
                 </Typography>
               </Box>
             </Box>
@@ -467,7 +467,7 @@ function Dashboard({
               sx={{ mt: 1.5, py: 0.5, '& .MuiAlert-message': { py: 0.5 } }}
             >
               <Typography variant="caption">
-                Tool tab is now visible in the PDF reader.
+                Tools tab is now visible in the PDF reader.
               </Typography>
             </Alert>
           </Collapse>

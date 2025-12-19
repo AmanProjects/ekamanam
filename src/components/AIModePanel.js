@@ -3054,7 +3054,7 @@ Return ONLY this valid JSON:
           {showExplain && <Tab icon={<ExplainIcon />} label="Explain" />}
           {showActivities && <Tab icon={<ActivitiesIcon />} label="Activities" />}
           {showExamPrep && <Tab icon={<ExamIcon />} label="Exam" />}
-          {showProTools && <Tab icon={<ToolIcon />} label="Tool" />}
+          {showProTools && <Tab icon={<ToolIcon />} label="Tools" />}
           {showResources && <Tab icon={<ResourcesIcon />} label="Resources" />}
           {showNotes && <Tab icon={<NotesIcon />} label="Notes" />}
         </Tabs>
@@ -5963,15 +5963,15 @@ Return ONLY this valid JSON:
           </Box>
         </TabPanel>}
 
-        {/* v7.2.28: Tool Tab - Circuit Visualization */}
+        {/* v7.2.28: Tools Tab - Interactive Learning Tools */}
         {showProTools && <TabPanel value={activeTab} index={tabIndices.proTools}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ mb: 2 }}>
               <Typography variant="h6" fontWeight={700} gutterBottom>
-                🔧 Tool - Circuit Visualization
+                🧰 Tools
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                Build, simulate, and visualize logic circuits for digital electronics and computer architecture studies.
+                Interactive tools for enhanced learning - circuits, molecules, maps, and more.
               </Typography>
             </Box>
             
@@ -6070,35 +6070,24 @@ Return ONLY this valid JSON:
               </Grid>
             </Grid>
             
-            {/* Quick Reference */}
+            {/* More tools coming soon */}
             <Paper 
               elevation={0} 
               sx={{ 
                 mt: 3, 
                 p: 2, 
                 bgcolor: 'action.hover',
-                borderRadius: 2
+                borderRadius: 2,
+                border: '1px dashed',
+                borderColor: 'divider'
               }}
             >
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                📚 Quick Reference - Logic Gates
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom color="text.secondary">
+                🚀 More Tools Coming Soon
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
-                <Chip label="AND: Both inputs HIGH" size="small" />
-                <Chip label="OR: Any input HIGH" size="small" />
-                <Chip label="NOT: Inverts input" size="small" />
-                <Chip label="NAND: NOT + AND" size="small" />
-                <Chip label="NOR: NOT + OR" size="small" />
-                <Chip label="XOR: Exclusive OR" size="small" />
-              </Box>
-            </Paper>
-            
-            {/* Gate Gallery */}
-            <Paper elevation={0} sx={{ mt: 2, p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                🎨 Gate Reference
+              <Typography variant="body2" color="text.secondary">
+                Molecule Viewer • Interactive Maps • Math Tools • Graphing Calculator • 3D Models
               </Typography>
-              <GateGallery />
             </Paper>
           </Box>
         </TabPanel>}
