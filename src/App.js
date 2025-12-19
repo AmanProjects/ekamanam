@@ -43,6 +43,9 @@ import DoubtLibrary from './components/DoubtLibrary';
 import { SessionHistoryTracker } from './services/sessionHistoryService';
 import SessionTimeline from './components/SessionTimeline';
 
+// v10.1: Onboarding Tour for First-Time Users
+import OnboardingTour, { FirstTimeUserButton } from './components/OnboardingTour';
+
 // v7.0.0: Google Drive Integration
 import { initializeGoogleDrive, hasDrivePermissions } from './services/googleDriveService';
 import DrivePermissionDialog from './components/DrivePermissionDialog';
@@ -53,6 +56,7 @@ import DrivePermissionDialog from './components/DrivePermissionDialog';
 function App() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('dashboard'); // 'dashboard', 'library', or 'reader'
+  const [libraryInitialTab, setLibraryInitialTab] = useState(0); // 0 = My PDFs, 1 = Samples
   const [showSettings, setShowSettings] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showOTPDialog, setShowOTPDialog] = useState(false);
@@ -74,6 +78,10 @@ function App() {
   const isSmallMobile = useMediaQuery('(max-width:599px)'); // < 600px (sm breakpoint)
   const [mobileView, setMobileView] = useState('pdf'); // 'pdf' or 'ai' - which panel to show on mobile
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // v10.1: Onboarding Tour state
+  const [runTour, setRunTour] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
   
   // Layout state - resizable divider (percentage for PDF viewer, rest for AI panel)
   const [pdfWidth, setPdfWidth] = useState(50); // 50% by default
@@ -752,40 +760,38 @@ function App() {
           )}
 
           <Box sx={{ display: 'flex', alignItems: 'flex-start', flexGrow: 1, gap: isMobile ? 1 : 2 }}>
-            <Box
-              component="img"
-              src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
-              alt="Ekamanam"
-              sx={{
-                height: isMobile ? 40 : 56,
-                width: 'auto',
-                objectFit: 'contain',
-                flexShrink: 0
-              }}
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-            <Box sx={{ flex: 1, pt: isMobile ? '10px' : '18px', display: { xs: 'none', sm: 'block' } }}>
+            {/* Logo with version underneath */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+              <Box
+                component="img"
+                src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
+                alt="Ekamanam"
+                sx={{
+                  height: isMobile ? 40 : 50,
+                  width: 'auto',
+                  objectFit: 'contain'
+                }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+              <Box 
+                component="span" 
+                sx={{ 
+                  fontSize: '0.55rem', 
+                  color: 'text.secondary',
+                  fontWeight: 500,
+                  mt: 0.25
+                }}
+              >
+                v{packageJson.version}
+              </Box>
+            </Box>
+            <Box sx={{ flex: 1, pt: isMobile ? '10px' : '14px', display: { xs: 'none', sm: 'block' } }}>
               <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.3 }}>
                 <Box component="span" sx={{ fontSize: '1.5rem', fontWeight: 600, lineHeight: 1, letterSpacing: '-0.02em' }}>
                   Ekamanam
                 </Box>
-                <Chip 
-                  label={`v${packageJson.version}`}
-                  size="small"
-                  sx={{ 
-                    height: 20,
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
-                    '& .MuiChip-label': {
-                      px: 1,
-                      py: 0
-                    }
-                  }}
-                />
                 <Chip 
                   label="BETA"
                   size="small"
@@ -801,6 +807,26 @@ function App() {
                     }
                   }}
                 />
+                {/* Subscription Badge - Moved to left under Beta */}
+                {subscription.isFree && (
+                  <Chip
+                    label={`Free (${subscription.remainingQueries || 0}/${subscription.usage?.limit || 3} left)`}
+                    size="small"
+                    onClick={() => setShowSubscriptionDialog(true)}
+                    sx={{
+                      height: 18,
+                      fontSize: '0.6rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      bgcolor: subscription.remainingQueries === 0 ? '#ffebee' : '#e3f2fd',
+                      color: subscription.remainingQueries === 0 ? '#c62828' : '#1565c0',
+                      border: '1px solid',
+                      borderColor: subscription.remainingQueries === 0 ? '#ef5350' : '#42a5f5',
+                      '& .MuiChip-label': { px: 0.8 },
+                      '&:hover': { opacity: 0.8 }
+                    }}
+                  />
+                )}
               </Box>
               <Box component="span" sx={{ fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1.4 }}>
                 One Focus, Limitless Learning
@@ -810,38 +836,22 @@ function App() {
           
           {/* Desktop Navigation */}
           <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, alignItems: 'center' }}>
-            {/* Subscription Badge */}
-            {subscription.tier && (
+            {/* Subscription Badge - Only for paid users (free users badge is on the left) */}
+            {subscription.isPaid && (
               <Chip
-                label={
-                  subscription.isFree && subscription.remainingQueries !== undefined
-                    ? `FREE (${subscription.remainingQueries}/${subscription.usage?.limit || 3} left)`
-                    : subscription.tier
-                }
+                label={subscription.tier}
                 size="small"
                 onClick={() => setShowSubscriptionDialog(true)}
                 sx={{
                   fontWeight: 600,
                   cursor: 'pointer',
-                  ...(subscription.isPaid ? {
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #5568d3 0%, #6339a3 100%)',
-                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
-                    }
-                  } : {
-                    bgcolor: subscription.remainingQueries === 0 ? 'error.light' : 'grey.200',
-                    color: subscription.remainingQueries === 0 ? 'error.dark' : 'grey.700',
-                    border: '1px solid',
-                    borderColor: subscription.remainingQueries === 0 ? 'error.main' : 'grey.300',
-                    '&:hover': {
-                      bgcolor: subscription.remainingQueries === 0 ? 'error.main' : 'grey.300',
-                      borderColor: subscription.remainingQueries === 0 ? 'error.dark' : 'grey.400',
-                      color: subscription.remainingQueries === 0 ? 'white' : 'grey.700'
-                    }
-                  }),
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  border: 'none',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5568d3 0%, #6339a3 100%)',
+                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                  },
                   transition: 'all 0.2s ease'
                 }}
               />
@@ -869,10 +879,16 @@ function App() {
               </Tooltip>
             )}
 
+            {/* v10.1: First-Time Users Tour Button - First in list */}
+            <FirstTimeUserButton onClick={() => {
+              setRunTour(true);
+              setTourStepIndex(0);
+            }} />
+
             <Tooltip title="Home">
               <IconButton 
                 onClick={() => setView('dashboard')}
-                color={view === 'dashboard' ? 'primary' : 'default'}
+                color="default"
               >
                 <DashboardIcon />
               </IconButton>
@@ -880,8 +896,10 @@ function App() {
 
             <Tooltip title={`My Library${libraryCount > 0 ? ` (${libraryCount} PDFs)` : ''}`}>
               <IconButton 
+                id="library-button"
                 onClick={() => setView('library')}
-                color={view === 'library' ? 'primary' : 'default'}
+                color="default"
+                data-tour="library-button"
               >
                 <Badge badgeContent={libraryCount} color="error">
                   <LibraryIcon />
@@ -899,7 +917,11 @@ function App() {
             </Tooltip>
 
             <Tooltip title="Settings">
-              <IconButton onClick={() => setShowSettings(true)}>
+              <IconButton 
+                id="settings-button"
+                onClick={() => setShowSettings(true)}
+                data-tour="settings-button"
+              >
                 <SettingsIcon />
               </IconButton>
             </Tooltip>
@@ -954,14 +976,14 @@ function App() {
           
           <List>
             <ListItem button onClick={() => { setView('dashboard'); setMobileMenuOpen(false); }}>
-              <ListItemIcon><DashboardIcon color={view === 'dashboard' ? 'primary' : 'inherit'} /></ListItemIcon>
+              <ListItemIcon><DashboardIcon /></ListItemIcon>
               <ListItemText primary="Home" />
             </ListItem>
             
             <ListItem button onClick={() => { setView('library'); setMobileMenuOpen(false); }}>
               <ListItemIcon>
                 <Badge badgeContent={libraryCount} color="error">
-                  <LibraryIcon color={view === 'library' ? 'primary' : 'inherit'} />
+                  <LibraryIcon />
                 </Badge>
               </ListItemIcon>
               <ListItemText primary="My Library" secondary={libraryCount > 0 ? `${libraryCount} PDFs` : null} />
@@ -1044,7 +1066,7 @@ function App() {
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
         {view === 'dashboard' ? (
           <Dashboard
-            onOpenLibrary={() => setView('library')}
+            onOpenLibrary={(tab = 0) => { setLibraryInitialTab(tab); setView('library'); }}
             subscription={subscription}
             onUpgrade={() => setShowSubscriptionDialog(true)}
             onOpenFlashcards={() => setShowFlashcards(true)}
@@ -1054,12 +1076,14 @@ function App() {
             user={user}
             pdfCount={libraryCount}
             currentStreak={streakInfo.currentStreak}
+            onOpenSettings={() => setShowSettings(true)}
           />
         ) : view === 'library' ? (
           <StudentLibrary
             onBack={() => setView('dashboard')}
             onOpenPdf={handleOpenFromLibrary}
             onOpenSamplePDF={handleOpenSamplePDF}
+            initialTab={libraryInitialTab}
           />
         ) : (
           /* v7.2.10: Reader View - Desktop: side-by-side, Mobile: toggle with bottom nav */
@@ -1086,20 +1110,35 @@ function App() {
                 sx={{ 
                   width: isMobile ? '100%' : `${pdfWidth}%`,
                   height: '100%',
-                  overflow: 'hidden',
                   display: isMobile && mobileView !== 'pdf' ? 'none' : 'flex',
                   flexDirection: 'column'
                 }}
               >
-                <PDFViewer
-                  selectedFile={selectedFile}
-                  pdfDocument={pdfDocument}
-                  setPdfDocument={setPdfDocument}
-                  currentPage={currentPage}
-                  setCurrentPage={setCurrentPage}
-                  onTextSelect={handleTextSelect}
-                  onPageTextExtract={setPageText}
-                />
+                <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                  <PDFViewer
+                    selectedFile={selectedFile}
+                    pdfDocument={pdfDocument}
+                    setPdfDocument={setPdfDocument}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    onTextSelect={handleTextSelect}
+                    onPageTextExtract={setPageText}
+                  />
+                </Box>
+                {/* Copyright Disclaimer */}
+                <Box sx={{ 
+                  px: 1, 
+                  py: 0.3, 
+                  bgcolor: 'grey.100', 
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                  textAlign: 'center',
+                  flexShrink: 0
+                }}>
+                  <Box component="span" sx={{ fontSize: '0.55rem', color: 'text.secondary' }}>
+                    © 2025 Amandeep Singh Talwar | PDF copyrights belong to respective owners | For personal educational use only
+                  </Box>
+                </Box>
               </Box>
 
               {/* Resizable Divider - Desktop only */}
@@ -1162,6 +1201,7 @@ function App() {
                   onUpgrade={() => setShowSubscriptionDialog(true)}
                   isMobile={isMobile}
                   pdfMetadata={currentLibraryItem}
+                  onOpenSettings={() => setShowSettings(true)}
                   onAIQuery={(queryType, queryText) => {
                     // v7.2.24: Track AI queries for analytics
                     if (sessionTrackerRef.current) {
@@ -1335,6 +1375,19 @@ function App() {
           }
         }}
       /> */}
+
+      {/* v10.1: Onboarding Tour for First-Time Users */}
+      <OnboardingTour
+        run={runTour}
+        stepIndex={tourStepIndex}
+        onStepChange={setTourStepIndex}
+        onOpenSettings={() => setShowSettings(true)}
+        onCloseSettings={() => setShowSettings(false)}
+        onComplete={() => {
+          setRunTour(false);
+          setTourStepIndex(0);
+        }}
+      />
 
       </Box>
     </ThemeProvider>

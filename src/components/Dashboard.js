@@ -31,6 +31,8 @@ import {
 } from '@mui/icons-material';
 import AdminOTPDialog from './AdminOTPDialog';
 import { isAuthorizedAdmin } from '../services/otpService';
+import llmService, { PROVIDERS } from '../services/llmService';
+import { Snackbar, Alert } from '@mui/material';
 
 // Import educational tools
 import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer } from './tools';
@@ -55,7 +57,8 @@ function Dashboard({
   dueCardCount = 0,
   user,
   pdfCount = 0,
-  currentStreak = 0
+  currentStreak = 0,
+  onOpenSettings  // v10.1: Open settings for API key configuration
 }) {
   // v7.2.28: Pro Tools state and OTP control
   const [proToolsEnabled, setProToolsEnabled] = useState(false);
@@ -69,6 +72,23 @@ function Dashboard({
   const [showPhysicsSimulator, setShowPhysicsSimulator] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showGlobeViewer, setShowGlobeViewer] = useState(false);
+  
+  // v10.1: API key configuration alert
+  const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
+
+  // v10.1: Check if API keys are configured
+  const hasAnyApiKey = () => {
+    return llmService.hasApiKey(PROVIDERS.GEMINI) || llmService.hasApiKey(PROVIDERS.GROQ);
+  };
+
+  // v10.1: Wrapper to check API keys before opening AI-powered tools
+  const openToolWithApiCheck = (toolSetter) => {
+    if (!hasAnyApiKey()) {
+      setShowApiKeyAlert(true);
+      return;
+    }
+    toolSetter(true);
+  };
 
   // Load Pro Tools state from admin config on mount
   useEffect(() => {
@@ -211,7 +231,7 @@ function Dashboard({
         {/* Quick Stats */}
         <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
           {[
-            { icon: <BookIcon />, value: pdfCount, label: 'PDFs', color: '#1976d2', onClick: onOpenLibrary },
+            { icon: <BookIcon />, value: pdfCount, label: 'PDFs', color: '#1976d2', onClick: () => onOpenLibrary(subscription?.isFree ? 1 : 0) },
             { icon: <FlashcardIcon />, value: dueCardCount, label: 'Due', color: dueCardCount > 0 ? '#f59e0b' : '#6366f1', onClick: onOpenFlashcards, highlight: dueCardCount > 0 },
             { icon: <StreakIcon />, value: currentStreak, label: 'Streak', color: currentStreak > 0 ? '#ef4444' : '#9ca3af' }
           ].map((stat, i) => (
@@ -248,7 +268,7 @@ function Dashboard({
         {/* Primary CTA - My Library */}
         <Paper
           elevation={0}
-          onClick={onOpenLibrary}
+          onClick={() => onOpenLibrary(subscription?.isFree ? 1 : 0)}
           sx={{
             p: 2.5,
             mb: 3,
@@ -280,86 +300,90 @@ function Dashboard({
           </Box>
         </Paper>
 
-        {/* Learning Tools */}
-        <Typography 
-          variant="overline" 
-          sx={{ 
-            display: 'block', 
-            mb: 1.5, 
-            color: 'text.secondary', 
-            fontWeight: 600,
-            letterSpacing: 1.5
-          }}
-        >
-          Learning Tools
-        </Typography>
-        
-        <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
-          {tools.map((tool) => (
-            <Paper
-              key={tool.key}
-              elevation={0}
-              onClick={tool.onClick}
-              sx={{
-                flex: 1,
-                p: 2,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
-                textAlign: 'center',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'all 0.2s ease',
-                bgcolor: 'background.paper',
-                '&:hover': { 
-                  borderColor: 'primary.light',
-                  transform: 'translateY(-2px)', 
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                }
+        {/* Learning Tools - Only for paid users */}
+        {subscription && subscription.isPaid && (
+          <>
+            <Typography 
+              variant="overline" 
+              sx={{ 
+                display: 'block', 
+                mb: 1.5, 
+                color: 'text.secondary', 
+                fontWeight: 600,
+                letterSpacing: 1.5
               }}
             >
-              {tool.badge && (
-                <Chip
-                  label={tool.badge}
-                  size="small"
-                  color="warning"
-                  sx={{ 
-                    position: 'absolute', 
-                    top: -8, 
-                    right: -4, 
-                    height: 18, 
-                    fontSize: '0.6rem', 
-                    fontWeight: 700,
-                    '& .MuiChip-label': { px: 1 }
+              Learning Tools
+            </Typography>
+            
+            <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
+              {tools.map((tool) => (
+                <Paper
+                  key={tool.key}
+                  elevation={0}
+                  onClick={tool.onClick}
+                  sx={{
+                    flex: 1,
+                    p: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all 0.2s ease',
+                    bgcolor: 'background.paper',
+                    '&:hover': { 
+                      borderColor: 'primary.light',
+                      transform: 'translateY(-2px)', 
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                    }
                   }}
-                />
-              )}
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  bgcolor: tool.iconBg,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 1,
-                  color: tool.iconColor,
-                  '& svg': { fontSize: 24 }
-                }}
-              >
-                {tool.icon}
-              </Box>
-              <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ lineHeight: 1.2, mb: 0.25 }}>
-                {tool.title}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                {tool.subtitle}
-              </Typography>
-            </Paper>
-          ))}
-        </Box>
+                >
+                  {tool.badge && (
+                    <Chip
+                      label={tool.badge}
+                      size="small"
+                      color="warning"
+                      sx={{ 
+                        position: 'absolute', 
+                        top: -8, 
+                        right: -4, 
+                        height: 18, 
+                        fontSize: '0.6rem', 
+                        fontWeight: 700,
+                        '& .MuiChip-label': { px: 1 }
+                      }}
+                    />
+                  )}
+                  <Box
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: '12px',
+                      bgcolor: tool.iconBg,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mx: 'auto',
+                      mb: 1,
+                      color: tool.iconColor,
+                      '& svg': { fontSize: 24 }
+                    }}
+                  >
+                    {tool.icon}
+                  </Box>
+                  <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ lineHeight: 1.2, mb: 0.25 }}>
+                    {tool.title}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                    {tool.subtitle}
+                  </Typography>
+                </Paper>
+              ))}
+            </Box>
+          </>
+        )}
 
         {/* Educational Tools - Quick Access */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
@@ -397,11 +421,11 @@ function Dashboard({
             mb: 3 
           }}>
             {[
-              { key: 'math', icon: '📐', label: 'Math', color: '#1976d2', onClick: () => setShowMathTools(true) },
-              { key: 'chemistry', icon: '🧪', label: 'Chemistry', color: '#4caf50', onClick: () => setShowChemistryTools(true) },
-              { key: 'physics', icon: '⚡', label: 'Physics', color: '#6c5ce7', onClick: () => setShowPhysicsSimulator(true) },
-              { key: 'code', icon: '💻', label: 'Code', color: '#2d3436', onClick: () => setShowCodeEditor(true) },
-              { key: 'globe', icon: '🌍', label: 'Globe', color: '#0984e3', onClick: () => setShowGlobeViewer(true) }
+              { key: 'math', icon: '📐', label: 'Math', color: '#1976d2', onClick: () => openToolWithApiCheck(setShowMathTools) },
+              { key: 'chemistry', icon: '🧪', label: 'Chemistry', color: '#4caf50', onClick: () => openToolWithApiCheck(setShowChemistryTools) },
+              { key: 'physics', icon: '⚡', label: 'Physics', color: '#6c5ce7', onClick: () => openToolWithApiCheck(setShowPhysicsSimulator) },
+              { key: 'code', icon: '💻', label: 'Code', color: '#2d3436', onClick: () => openToolWithApiCheck(setShowCodeEditor) },
+              { key: 'globe', icon: '🌍', label: 'Globe', color: '#0984e3', onClick: () => openToolWithApiCheck(setShowGlobeViewer) }
             ].map((tool) => (
               <Paper
                 key={tool.key}
@@ -440,114 +464,121 @@ function Dashboard({
             ))}
           </Box>
         ) : (
-          // Free users - Show marketing message
+          // Free users - Compelling upgrade message
           <Paper
-            elevation={0}
+            elevation={2}
             sx={{
-              p: 2.5,
+              p: 0,
               mb: 3,
               borderRadius: 2,
-              bgcolor: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
-              background: 'linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)',
-              border: '1px dashed',
-              borderColor: '#667eea50'
+              overflow: 'hidden',
+              border: '1px solid',
+              borderColor: '#1976d2'
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+            {/* Header */}
+            <Box sx={{ 
+              bgcolor: '#1976d2', 
+              color: 'white', 
+              px: 2, 
+              py: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <Typography variant="subtitle2" fontWeight={600}>
+                Student Plan Benefits
+              </Typography>
+              <Chip 
+                label="Most Popular" 
+                size="small" 
+                sx={{ 
+                  bgcolor: 'rgba(255,255,255,0.2)', 
+                  color: 'white',
+                  height: 20,
+                  fontSize: '0.65rem',
+                  fontWeight: 600
+                }} 
+              />
+            </Box>
+            
+            {/* Content */}
+            <Box sx={{ p: 2 }}>
+              {/* Benefits Grid */}
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: 1.5, 
+                mb: 2 
+              }}>
+                {[
+                  { icon: '∞', text: 'Unlimited AI Queries' },
+                  { icon: '📐', text: 'Math Tools (Class 1-12)' },
+                  { icon: '🧪', text: 'Chemistry Lab & Experiments' },
+                  { icon: '⚡', text: 'Physics Simulator' },
+                  { icon: '💻', text: 'Code Editor' },
+                  { icon: '🌍', text: 'Interactive Globe' },
+                ].map((item, i) => (
+                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ 
+                      width: 24, 
+                      height: 24, 
+                      borderRadius: '50%', 
+                      bgcolor: '#e3f2fd',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.8rem'
+                    }}>
+                      {item.icon}
+                    </Box>
+                    <Typography variant="caption" color="text.primary" fontWeight={500}>
+                      {item.text}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+              
+              {/* CTA */}
               <Box sx={{ 
                 display: 'flex', 
-                gap: 0.5, 
-                fontSize: '1.2rem',
-                opacity: 0.6,
-                filter: 'grayscale(0.5)'
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                pt: 1.5,
+                borderTop: '1px solid',
+                borderColor: 'divider'
               }}>
-                📐🧪⚡💻🌍
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle2" fontWeight={700} color="primary.main" gutterBottom>
-                  🔒 Unlock Educational Tools
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.5 }}>
-                  Get access to <strong>AI-powered Math Games</strong>, <strong>Chemistry Lab</strong>, 
-                  <strong>Physics Simulator</strong>, <strong>Code Editor</strong>, and <strong>Interactive Globe</strong>. 
-                  Perfect for students who want to excel!
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={onUpgrade}
-                    sx={{ 
-                      textTransform: 'none', 
-                      fontWeight: 600,
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%)'
-                      }
-                    }}
-                  >
-                    Upgrade to Student Plan
-                  </Button>
+                <Box>
+                  <Typography variant="h6" fontWeight={700} color="primary.main" sx={{ lineHeight: 1 }}>
+                    ₹299
+                    <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                      /month
+                    </Typography>
+                  </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    ₹299/month • Cancel anytime
+                    Cancel anytime
                   </Typography>
                 </Box>
+                <Button
+                  variant="contained"
+                  size="medium"
+                  onClick={onUpgrade}
+                  sx={{ 
+                    textTransform: 'none', 
+                    fontWeight: 600,
+                    px: 3,
+                    bgcolor: '#1976d2',
+                    '&:hover': { bgcolor: '#1565c0' }
+                  }}
+                >
+                  Upgrade Now
+                </Button>
               </Box>
             </Box>
           </Paper>
         )}
 
-        {/* AI Queries Usage - For Free Users */}
-        {subscription && subscription.isFree && (
-          <Paper
-            elevation={0}
-            sx={{
-              p: 2,
-              mb: 2,
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              border: '1px solid',
-              borderColor: 'divider'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ mb: 0.5 }}>
-                  AI Queries Today
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={Math.min((subscription.usage.count / subscription.usage.limit) * 100, 100)}
-                    sx={{
-                      flex: 1,
-                      maxWidth: 120,
-                      height: 6,
-                      borderRadius: 3,
-                      bgcolor: 'grey.100',
-                      '& .MuiLinearProgress-bar': {
-                        bgcolor: subscription.isLimitReached ? 'error.main' : 'primary.main',
-                        borderRadius: 3
-                      }
-                    }}
-                  />
-                  <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                    {subscription.usage.count}/{subscription.usage.limit}
-                  </Typography>
-                </Box>
-              </Box>
-              <Button
-                variant="outlined"
-                size="small"
-                endIcon={<ArrowIcon sx={{ fontSize: '1rem !important' }} />}
-                onClick={onUpgrade}
-                sx={{ fontWeight: 600, textTransform: 'none', ml: 2 }}
-              >
-                Unlimited
-              </Button>
-            </Box>
-          </Paper>
-        )}
+        {/* AI Queries Usage - Hidden per user request */}
 
         {/* OTP Dialog */}
         <AdminOTPDialog
@@ -566,9 +597,9 @@ function Dashboard({
         <CodeEditor open={showCodeEditor} onClose={() => setShowCodeEditor(false)} />
         <GlobeViewer open={showGlobeViewer} onClose={() => setShowGlobeViewer(false)} />
 
-        {/* Footer */}
-        <Box sx={{ textAlign: 'center', pt: 2, mt: 1, borderTop: 1, borderColor: 'divider' }}>
-          <Typography variant="caption" color="text.secondary">
+        {/* Footer with Copyright and Disclaimer */}
+        <Box sx={{ textAlign: 'center', pt: 2, mt: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
             © 2025{' '}
             <a 
               href="https://www.linkedin.com/in/amantalwar/" 
@@ -578,8 +609,42 @@ function Dashboard({
             >
               Amandeep Singh Talwar
             </a>
+            . All rights reserved.
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem', lineHeight: 1.3, px: 2, display: 'block' }}>
+            Disclaimer: This application provides AI-powered learning assistance. All PDF copyrights belong to their respective owners. For personal educational use only.
           </Typography>
         </Box>
+
+        {/* v10.1: API Key Configuration Alert */}
+        <Snackbar
+          open={showApiKeyAlert}
+          autoHideDuration={8000}
+          onClose={() => setShowApiKeyAlert(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={() => setShowApiKeyAlert(false)} 
+            severity="warning"
+            sx={{ width: '100%' }}
+            action={
+              onOpenSettings && (
+                <Button 
+                  color="inherit" 
+                  size="small" 
+                  onClick={() => {
+                    setShowApiKeyAlert(false);
+                    onOpenSettings();
+                  }}
+                >
+                  Open Settings
+                </Button>
+              )
+            }
+          >
+            Please configure your API keys in Settings to use AI-powered tools.
+          </Alert>
+        </Snackbar>
       </Container>
     </Box>
   );

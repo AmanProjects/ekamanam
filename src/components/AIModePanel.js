@@ -411,7 +411,8 @@ function AIModePanel({
   onUpgrade,
   isMobile = false,  // v7.2.10: Mobile responsiveness
   onAIQuery,         // v7.2.24: Track AI queries for analytics
-  pdfMetadata        // v7.2.25: PDF metadata including class/grade for adaptive responses
+  pdfMetadata,       // v7.2.25: PDF metadata including class/grade for adaptive responses
+  onOpenSettings     // v10.1: Open settings dialog for API key configuration
 }) {
   // Use controlled state if provided, otherwise use internal state
   const [internalTab, setInternalTab] = useState(0);
@@ -718,7 +719,24 @@ function AIModePanel({
     return formatted;
   };
 
+  // v10.1: Check if API keys are configured
+  const hasAnyApiKey = () => {
+    return llmService.hasApiKey(PROVIDERS.GEMINI) || llmService.hasApiKey(PROVIDERS.GROQ);
+  };
+
+  // v10.1: Show API key configuration prompt
+  const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
+
   const handleTabChange = (event, newValue) => {
+    // v10.1: Check for API keys before switching to AI-powered tabs
+    // Notes tab (typically last) doesn't require API keys
+    const notesTabIndex = tabIndices.notes;
+    
+    if (newValue !== notesTabIndex && !hasAnyApiKey()) {
+      setShowApiKeyAlert(true);
+      return; // Don't switch tabs
+    }
+    
     setActiveTab(newValue);
   };
 
@@ -6463,6 +6481,36 @@ Return ONLY this valid JSON:
         open={showGlobeViewer}
         onClose={() => setShowGlobeViewer(false)}
       />
+
+      {/* v10.1: API Key Configuration Alert */}
+      <Snackbar
+        open={showApiKeyAlert}
+        autoHideDuration={8000}
+        onClose={() => setShowApiKeyAlert(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setShowApiKeyAlert(false)} 
+          severity="warning"
+          sx={{ width: '100%' }}
+          action={
+            onOpenSettings && (
+              <Button 
+                color="inherit" 
+                size="small" 
+                onClick={() => {
+                  setShowApiKeyAlert(false);
+                  onOpenSettings();
+                }}
+              >
+                Open Settings
+              </Button>
+            )
+          }
+        >
+          Please configure your API keys in Settings to use AI features.
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

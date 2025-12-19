@@ -100,11 +100,11 @@ const SUBJECTS = [
   { value: 'Other', label: 'Other' }
 ];
 
-function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
+function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF, initialTab = 0 }) {
   const [pdfs, setPdfs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(initialTab);
   
   // v7.2.25: Edit metadata dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -115,6 +115,11 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
   useEffect(() => {
     loadLibrary();
   }, []);
+
+  // Update active tab when initialTab prop changes
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const loadLibrary = async () => {
     setLoading(true);
@@ -176,7 +181,7 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
     }
   };
 
-  // v7.2.26: Filter out sample PDFs from My PDFs tab - they should only show in Samples tab
+  // v7.2.26: Filter out sample PDFs from MY PDF tab - they should only show in Samples tab
   const userPdfs = pdfs.filter(pdf => pdf.type !== 'sample' && !pdf.id?.startsWith('sample-'));
   
   const filteredPdfs = userPdfs.filter(pdf =>
@@ -310,7 +315,7 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <LocalLibrary fontSize="small" />
-                  My PDFs
+                  MY PDF
                 </Box>
               }
               sx={{ minHeight: 40, py: 1 }}
@@ -575,7 +580,7 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
                       </Typography>
                       <Stack direction="row" spacing={0.5} sx={{ mt: 1 }}>
                         <Chip label="History" size="small" />
-                        <Chip label="Telugu" size="small" />
+                        <Chip label="English" size="small" />
                       </Stack>
                     </Box>
                   </Box>
@@ -593,6 +598,25 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF }) {
                 </Paper>
               </Grid>
             </Grid>
+            
+            {/* Footer with Copyright and Disclaimer */}
+            <Box sx={{ 
+              mt: 4, 
+              pt: 2, 
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              textAlign: 'center'
+            }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.3 }}>
+                Sample PDFs: © SCERT Telangana
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                © 2025 Amandeep Singh Talwar. All rights reserved.
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem', lineHeight: 1.3 }}>
+                Disclaimer: This application provides AI-powered learning assistance. All PDF copyrights belong to their respective owners. For personal educational use only.
+              </Typography>
+            </Box>
           </Container>
         </TabPanel>
       </Box>

@@ -454,7 +454,11 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
             {/* Options List */}
             <List sx={{ py: 0 }}>
               {settingsOptions.map((option) => (
-                <ListItem key={option.id} disablePadding>
+                <ListItem 
+                  key={option.id} 
+                  disablePadding 
+                  id={`settings-tab-${option.id}`}
+                >
                   <ListItemButton
                   selected={selectedOption === option.id}
                   onClick={() => setSelectedOption(option.id)}

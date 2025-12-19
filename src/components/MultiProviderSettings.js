@@ -118,7 +118,7 @@ function MultiProviderSettings() {
 
       {/* Gemini Provider */}
       <Accordion defaultExpanded={!hasApiKey(PROVIDERS.GEMINI)}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />} data-tour="gemini-section">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
             <Typography sx={{ fontWeight: 600 }}>
               {PROVIDER_INFO[PROVIDERS.GEMINI].name}
@@ -172,6 +172,7 @@ function MultiProviderSettings() {
                 onClick={() => handleSaveKey(PROVIDERS.GEMINI)}
                 disabled={!keys[PROVIDERS.GEMINI] || saved[PROVIDERS.GEMINI]}
                 startIcon={saved[PROVIDERS.GEMINI] ? <CheckIcon /> : null}
+                data-tour="save-settings"
               >
                 {saved[PROVIDERS.GEMINI] ? 'Saved' : 'Save'}
               </Button>
@@ -210,7 +211,7 @@ function MultiProviderSettings() {
 
       {/* Groq Provider */}
       <Accordion>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />} data-tour="groq-section">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
             <Typography sx={{ fontWeight: 600 }}>
               {PROVIDER_INFO[PROVIDERS.GROQ].name}
