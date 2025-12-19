@@ -62,7 +62,6 @@ import {
   Construction as ToolIcon,        // Tool tab (was BuildIcon) - professional tools icon
   Build as BuildIcon,              // Keep for Circuit Builder button
   Science as SimulateIcon,
-  SmartToy as VyonnIcon,           // v7.2.30: Vyonn AI tab icon
   Send as SendIcon,
   Delete as ClearChatIcon
 } from '@mui/icons-material';
@@ -3229,7 +3228,18 @@ Return ONLY this valid JSON:
           {showActivities && <Tab icon={<ActivitiesIcon />} label="Activities" />}
           {showExamPrep && <Tab icon={<ExamIcon />} label="Exam" />}
           {showProTools && <Tab icon={<ToolIcon />} label="Tools" />}
-          {showVyonn && <Tab icon={<VyonnIcon />} label="Vyonn" />}
+          {showVyonn && <Tab icon={
+            <Box
+              component="img"
+              src={`${process.env.PUBLIC_URL}/vyonn.png`}
+              alt="Vyonn"
+              sx={{
+                width: 24,
+                height: 24,
+                filter: 'brightness(0) contrast(1.2)'
+              }}
+            />
+          } label="Vyonn" />}
           {showNotes && <Tab icon={<NotesIcon />} label="Notes" />}
         </Tabs>
       </Paper>
@@ -6058,18 +6068,16 @@ Return ONLY this valid JSON:
               borderColor: 'divider'
             }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Avatar 
+                <Box
+                  component="img"
                   src={`${process.env.PUBLIC_URL}/vyonn.png`}
+                  alt="Vyonn"
                   sx={{ 
                     width: 40, 
                     height: 40,
-                    bgcolor: 'primary.main',
-                    border: '2px solid',
-                    borderColor: 'primary.light'
+                    filter: 'brightness(0) contrast(1.2)'
                   }}
-                >
-                  <VyonnIcon />
-                </Avatar>
+                />
                 <Box>
                   <Typography variant="subtitle1" fontWeight={700}>
                     Vyonn AI
