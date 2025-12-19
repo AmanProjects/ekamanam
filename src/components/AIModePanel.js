@@ -2888,9 +2888,8 @@ Return ONLY this valid JSON:
   const showExplain = isTabEnabled(adminConfig, 'explain');
   const showActivities = isTabEnabled(adminConfig, 'activities');
   const showExamPrep = isTabEnabled(adminConfig, 'examPrep');
-  const showResources = isTabEnabled(adminConfig, 'resources');
   const showNotes = isTabEnabled(adminConfig, 'notes');
-  const showProTools = isTabEnabled(adminConfig, 'proTools'); // v7.2.28: Pro Tools tab (Circuit Visualization)
+  const showProTools = isTabEnabled(adminConfig, 'proTools'); // v7.2.28: Tools tab
 
   // Calculate dynamic tab indices based on which tabs are enabled
   const tabIndices = {};
@@ -2900,8 +2899,7 @@ Return ONLY this valid JSON:
   if (showExplain) { tabIndices.explain = currentIndex++; }
   if (showActivities) { tabIndices.activities = currentIndex++; }
   if (showExamPrep) { tabIndices.examPrep = currentIndex++; }
-  if (showProTools) { tabIndices.proTools = currentIndex++; } // v7.2.28: Pro Tools tab
-  if (showResources) { tabIndices.resources = currentIndex++; }
+  if (showProTools) { tabIndices.proTools = currentIndex++; }
   if (showNotes) { tabIndices.notes = currentIndex++; }
 
   return (
@@ -3055,7 +3053,6 @@ Return ONLY this valid JSON:
           {showActivities && <Tab icon={<ActivitiesIcon />} label="Activities" />}
           {showExamPrep && <Tab icon={<ExamIcon />} label="Exam" />}
           {showProTools && <Tab icon={<ToolIcon />} label="Tools" />}
-          {showResources && <Tab icon={<ResourcesIcon />} label="Resources" />}
           {showNotes && <Tab icon={<NotesIcon />} label="Notes" />}
         </Tabs>
       </Paper>
@@ -5389,178 +5386,6 @@ Return ONLY this valid JSON:
           </Box>
         </TabPanel>}
 
-        {/* Additional Resources Tab */}
-        {showResources && <TabPanel value={activeTab} index={tabIndices.resources}>
-          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ mb: 2 }}>
-              {selectedText && !isRegionalLanguageOrGarbled(selectedText) && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'action.hover' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    Selected Text:
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    "{selectedText}"
-                  </Typography>
-                </Paper>
-              )}
-              {selectedText && isRegionalLanguageOrGarbled(selectedText) && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'success.lighter' }}>
-                  <Typography variant="caption" color="success.main" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <span>✓</span> Regional Language Text Selected
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-                    {selectedText.length} characters selected. Resources will be in the appropriate language.
-                  </Typography>
-                </Paper>
-              )}
-              {!selectedText && pageText && (
-                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'info.lighter' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
-                    📄 Using Current Page Content
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    No text selected. Will analyze the entire current page for resources.
-                  </Typography>
-                </Paper>
-              )}
-
-              <Button
-                fullWidth
-                variant="contained"
-                color="info"
-                size="large"
-                startIcon={<ResourcesIcon />}
-                onClick={handleGenerateResources}
-                disabled={loading || (!selectedText && !pageText) || isAIFeatureDisabled()}
-              >
-                {loading ? 'Generating...' :
-                 isAIFeatureDisabled() ? 'Upgrade to Continue' :
-                 selectedText ? 'Find Resources for Selection' : 'Find Resources for Current Page'}
-              </Button>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
-                {selectedText 
-                  ? 'Discover resources related to your selected text'
-                  : 'Discover web resources and related topics for this page'
-                }
-              </Typography>
-            </Box>
-
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            
-            {loading && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                <CircularProgress />
-              </Box>
-            )}
-
-            {resourcesResponse && !loading && (
-              <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto', bgcolor: 'background.paper' }}>
-                {resourcesResponse.error ? (
-                  <Typography color="error">{resourcesResponse.error}</Typography>
-                ) : (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    {/* Header with Actions */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="h6" fontWeight={700}>
-                        📚 Resources & Topics
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Tooltip title="Listen to Resources">
-                          <IconButton 
-                            size="small" 
-                            color="primary"
-                            onClick={() => {
-                              const textToRead = [
-                                resourcesResponse.webResources?.map(r => `${r.title}. ${r.description}`).join('. '),
-                                'Related topics: ' + resourcesResponse.relatedTopics?.join(', ')
-                              ].filter(Boolean).join('. ');
-                              handleSpeakSection('Resources', `<p>${textToRead}</p>`);
-                            }}
-                          >
-                            {isSpeaking ? <Stop /> : <VolumeUp />}
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Clear Resources">
-                          <IconButton 
-                            size="small" 
-                            color="error"
-                            onClick={() => {
-                              setResourcesResponse(null);
-                              setError(null);
-                            }}
-                          >
-                            <ClearIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </Box>
-
-                    {/* Web Resources */}
-                    {resourcesResponse.webResources && resourcesResponse.webResources.length > 0 && (
-                      <Box>
-                        <Typography variant="h6" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <LinkIcon /> Recommended Resources
-                        </Typography>
-                        {resourcesResponse.webResources.map((resource, idx) => (
-                          <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 1, bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }}>
-                            <Typography 
-                              variant="subtitle2" 
-                              fontWeight={600} 
-                              color="primary"
-                              component="a"
-                              href={resource.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              sx={{ 
-                                textDecoration: 'none', 
-                                '&:hover': { textDecoration: 'underline' },
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.5
-                              }}
-                            >
-                              {resource.title}
-                              <LinkIcon sx={{ fontSize: 16 }} />
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                              {resource.type} • {resource.url}
-                            </Typography>
-                            <Typography variant="body2" sx={{ mt: 1 }}>
-                              {resource.description}
-                            </Typography>
-                          </Paper>
-                        ))}
-                      </Box>
-                    )}
-
-                    {/* Related Topics */}
-                    {resourcesResponse.relatedTopics && resourcesResponse.relatedTopics.length > 0 && (
-                      <Box>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                          🔗 Related Topics
-                        </Typography>
-                        <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                          {resourcesResponse.relatedTopics.map((topic, idx) => (
-                            <Chip 
-                              key={idx} 
-                              label={topic} 
-                              size="small" 
-                              sx={{ 
-                                bgcolor: 'info.lighter',
-                                '&:hover': { bgcolor: 'info.light' }
-                              }} 
-                            />
-                          ))}
-                        </Box>
-                      </Box>
-                    )}
-                  </Box>
-                )}
-              </Paper>
-            )}
-          </Box>
-        </TabPanel>}
-
         {/* Exam Prep Tab */}
         {showExamPrep && <TabPanel value={activeTab} index={tabIndices.examPrep}>
           <Box>
@@ -5963,132 +5788,78 @@ Return ONLY this valid JSON:
           </Box>
         </TabPanel>}
 
-        {/* v7.2.28: Tools Tab - Interactive Learning Tools */}
+        {/* v7.2.29: Tools Tab - Compact Design */}
         {showProTools && <TabPanel value={activeTab} index={tabIndices.proTools}>
-          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                🧰 Tools
-              </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                Interactive tools for enhanced learning - circuits, molecules, maps, and more.
-              </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {/* Circuit Tools */}
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              {/* Circuit Builder */}
+              <Paper 
+                elevation={0}
+                onClick={() => setShowCircuitBuilder(true)}
+                sx={{ 
+                  flex: 1,
+                  minWidth: 140,
+                  p: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': { 
+                    borderColor: 'primary.main',
+                    bgcolor: 'action.hover',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36 }}>
+                    <BuildIcon sx={{ fontSize: 20 }} />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body2" fontWeight={700}>Circuit Builder</Typography>
+                    <Typography variant="caption" color="text.secondary">Logic gates</Typography>
+                  </Box>
+                </Box>
+              </Paper>
+              
+              {/* Circuit Simulator */}
+              <Paper 
+                elevation={0}
+                onClick={() => setShowCircuitSimulator(true)}
+                sx={{ 
+                  flex: 1,
+                  minWidth: 140,
+                  p: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': { 
+                    borderColor: 'secondary.main',
+                    bgcolor: 'action.hover',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ bgcolor: 'secondary.main', width: 36, height: 36 }}>
+                    <SimulateIcon sx={{ fontSize: 20 }} />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body2" fontWeight={700}>Simulator</Typography>
+                    <Typography variant="caption" color="text.secondary">CircuitJS</Typography>
+                  </Box>
+                </Box>
+              </Paper>
             </Box>
             
-            <Grid container spacing={2}>
-              {/* Circuit Builder Card */}
-              <Grid item xs={12} md={6}>
-                <Paper 
-                  elevation={2} 
-                  sx={{ 
-                    p: 3, 
-                    height: '100%',
-                    border: '2px solid',
-                    borderColor: 'primary.light',
-                    bgcolor: 'background.paper',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      borderColor: 'primary.main',
-                      boxShadow: 4
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-                      <BuildIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h6" fontWeight={700}>
-                        Circuit Builder
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Drag & drop logic gates
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Build interactive digital logic circuits with AND, OR, NOT, NAND, NOR, XOR gates. 
-                    Connect inputs and outputs to visualize signal flow.
-                  </Typography>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<BuildIcon />}
-                    onClick={() => setShowCircuitBuilder(true)}
-                    sx={{ mt: 1 }}
-                  >
-                    Open Circuit Builder
-                  </Button>
-                </Paper>
-              </Grid>
-              
-              {/* Circuit Simulator Card */}
-              <Grid item xs={12} md={6}>
-                <Paper 
-                  elevation={2} 
-                  sx={{ 
-                    p: 3, 
-                    height: '100%',
-                    border: '2px solid',
-                    borderColor: 'secondary.light',
-                    bgcolor: 'background.paper',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      borderColor: 'secondary.main',
-                      boxShadow: 4
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <Avatar sx={{ bgcolor: 'secondary.main', width: 48, height: 48 }}>
-                      <SimulateIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h6" fontWeight={700}>
-                        Circuit Simulator
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Falstad/CircuitJS simulator
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Explore pre-built circuit templates including logic gates, flip-flops, counters, 
-                    and analog circuits with real-time simulation.
-                  </Typography>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    color="secondary"
-                    startIcon={<SimulateIcon />}
-                    onClick={() => setShowCircuitSimulator(true)}
-                    sx={{ mt: 1 }}
-                  >
-                    Open Simulator
-                  </Button>
-                </Paper>
-              </Grid>
-            </Grid>
-            
-            {/* More tools coming soon */}
-            <Paper 
-              elevation={0} 
-              sx={{ 
-                mt: 3, 
-                p: 2, 
-                bgcolor: 'action.hover',
-                borderRadius: 2,
-                border: '1px dashed',
-                borderColor: 'divider'
-              }}
-            >
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom color="text.secondary">
-                🚀 More Tools Coming Soon
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Molecule Viewer • Interactive Maps • Math Tools • Graphing Calculator • 3D Models
-              </Typography>
-            </Paper>
+            {/* Coming Soon - More compact */}
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              More coming: Molecules · Maps · Math · 3D Models
+            </Typography>
           </Box>
         </TabPanel>}
 
