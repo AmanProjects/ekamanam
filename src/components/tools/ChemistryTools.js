@@ -2390,18 +2390,49 @@ Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
 <!DOCTYPE html>
 <html>
 <head>
-  <style>body{margin:0;padding:0;overflow:hidden}#viewer{width:100%;height:100%;position:absolute}</style>
+  <style>
+    body{margin:0;padding:0;overflow:hidden}
+    #viewer{width:100%;height:calc(100% - 40px);position:absolute;top:0}
+    #legend{position:absolute;bottom:0;left:0;right:0;height:40px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;gap:12px;font-family:Arial,sans-serif;font-size:11px;border-top:1px solid #ddd;flex-wrap:wrap;padding:4px 8px}
+    .legend-item{display:flex;align-items:center;gap:4px}
+    .legend-dot{width:12px;height:12px;border-radius:50%;border:1px solid #999}
+  </style>
   <script src="https://3dmol.org/build/3Dmol-min.js"></script>
 </head>
 <body>
   <div id="viewer"></div>
+  <div id="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:#909090"></span>C</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#FFFFFF"></span>H</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#FF0D0D"></span>O</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#3050F8"></span>N</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#FFFF30"></span>S</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#FF8000"></span>P</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#1FF01F"></span>Cl</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#A62929"></span>Br</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#B31FBA"></span>F</span>
+  </div>
   <script>
     fetch('https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type=3d')
       .then(r=>r.text())
       .then(data=>{
         let v=$3Dmol.createViewer('viewer',{backgroundColor:'white'});
-        v.addModel(data,'sdf');
-        v.setStyle({},{stick:{radius:0.15},sphere:{scale:0.25}});
+        let m=v.addModel(data,'sdf');
+        v.setStyle({},{stick:{radius:0.15},sphere:{scale:0.3,colorscheme:'Jmol'}});
+        // Add atom labels for non-hydrogen atoms
+        let atoms=m.selectedAtoms({});
+        atoms.forEach(function(atom){
+          if(atom.elem!=='H'){
+            v.addLabel(atom.elem,{
+              position:{x:atom.x,y:atom.y,z:atom.z},
+              fontSize:10,
+              fontColor:'#333',
+              backgroundColor:'rgba(255,255,255,0.7)',
+              borderRadius:3,
+              padding:1
+            });
+          }
+        });
         v.zoomTo();v.render();v.spin(true);
       })
       .catch(()=>{document.getElementById('viewer').innerHTML='<div style="padding:20px;color:#666;">3D structure not available</div>';});
