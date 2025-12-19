@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ekamanam - One Focus, Limitless Learning</title>
+    <link rel="icon" type="image/png" href="Ekamanam_logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        html { scroll-behavior: smooth; }
+        
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .fade-in.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .blob {
+            position: absolute;
+            filter: blur(60px);
+            z-index: -1;
+            opacity: 0.3;
+            animation: move 15s infinite alternate;
+        }
+        @keyframes move {
+            from { transform: translate(0, 0) scale(1); }
+            to { transform: translate(30px, -30px) scale(1.1); }
+        }
+        
+        .vyonn-logo {
+            filter: brightness(0.2) saturate(1.4) contrast(1.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation (matches app header) -->
+<nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <!-- Logo + Title (matches app) -->
+            <div class="flex items-center gap-3">
+                <img src="Ekamanam_logo.png" alt="Ekamanam" class="h-12 object-contain">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-xl text-gray-900">Ekamanam</span>
+                        <span class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded font-bold">BETA</span>
+                    </div>
+                    <div class="text-xs text-gray-600">One Focus, Limitless Learning</div>
+                </div>
+            </div>
+            <!-- Nav Links -->
+            <div class="hidden md:flex space-x-6">
+                <a href="#story" class="text-gray-600 hover:text-indigo-600 transition">Story</a>
+                <a href="#quick-start" class="text-gray-600 hover:text-indigo-600 transition">Quick Start</a>
+                <a href="#features" class="text-gray-600 hover:text-indigo-600 transition">Features</a>
+                <a href="#tools" class="text-gray-600 hover:text-emerald-600 transition flex items-center gap-1">
+                    Tools <span class="bg-red-500 text-white text-xs px-1 rounded font-bold">NEW</span>
+                </a>
+                <a href="#vyonn" class="text-gray-600 hover:text-indigo-600 transition">Vyonn AI</a>
+                <a href="#pricing" class="text-gray-600 hover:text-indigo-600 transition">Pricing</a>
+            </div>
+            <a href="https://www.ekamanam.com" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-full font-medium transition shadow-lg">
+                Launch App
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="relative min-h-screen flex items-center overflow-hidden pt-16">
+    <div class="blob bg-purple-300 w-96 h-96 rounded-full top-0 left-0 -translate-x-1/2"></div>
+    <div class="blob bg-indigo-300 w-96 h-96 rounded-full bottom-0 right-0 translate-x-1/3"></div>
+
+    <div class="w-full max-w-7xl mx-auto px-4 text-center relative z-10">
+
+        
+        <h2 class="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 fade-in">
+            <span class="gradient-text">See Every Concept. Hear Every Explanation.</span><br/>
+            <span class="gradient-text">Understand Everything.</span>
+        </h2>
+        
+        <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto fade-in">
+            Your smart companion that shows, speaks, and guides you through any subject -
+            with 3D visualizations, interactive maps, and multilingual support.
+        </p>
+        
+        <div class="flex justify-center gap-4 fade-in">
+            <a href="#story" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold transition shadow-lg">
+                Read Our Story
+            </a>
+            <a href="#quick-start" class="border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 px-8 py-3 rounded-lg font-semibold transition">
+                Get Started
+            </a>
+        </div>
+        
+        <!-- Key Stats -->
+        <div class="mt-16 grid grid-cols-2 md:grid-cols-5 gap-4 max-w-5xl mx-auto fade-in">
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="text-3xl font-bold text-indigo-600">10+</div>
+                <div class="text-sm text-gray-600">Languages</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="text-3xl font-bold text-green-600">3D</div>
+                <div class="text-sm text-gray-600">Visualizations</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="text-3xl font-bold text-purple-600">5</div>
+                <div class="text-sm text-gray-600">Ed Tools</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="text-3xl font-bold text-blue-600">12</div>
+                <div class="text-sm text-gray-600">Class Levels</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="text-3xl font-bold text-orange-600">7</div>
+                <div class="text-sm text-gray-600">AI Modes</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- The Story Section -->
+<section id="story" class="py-20 bg-white">
+    <div class="max-w-4xl mx-auto px-4">
+        <div class="fade-in">
+            <div class="border-l-4 border-amber-500 pl-6 mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">The Learning Challenge</h2>
+                <p class="text-lg text-gray-600 italic">
+                    "Papa, I can read the words, but I don't really <em>understand</em> it. 
+                    Can you show me what a cube actually looks like? Where is Hyderabad on a map? 
+                    Can I hear this in my language? I want to <em>see</em> it, not just read about it..."
+                </p>
+            </div>
+            
+            <div class="prose prose-lg text-gray-600 space-y-6">
+                <p>
+                    Students today face a unique challenge: textbooks are flat, static, and often in a language they're still mastering. 
+                    Reading about geometric shapes doesn't help them visualize. Reading about historical locations doesn't show them where they are. 
+                    Reading scientific formulas doesn't make concepts come alive.
+                </p>
+                <p>
+                    The struggle isn't ability; it's <strong>engagement</strong>. Learning needs to:
+                </p>
+                <ul class="list-disc pl-8 space-y-2">
+                    <li><strong>Speaks their language</strong> - Not just English, but Telugu, Hindi, Tamil, and more</li>
+                    <li><strong>Shows, not just tells</strong> - 3D models you can rotate, molecules you can explore, maps you can interact with</li>
+                    <li><strong>Sounds natural</strong> - Voice explanations that help auditory learners and those practicing pronunciation</li>
+                    <li><strong>Responds instantly</strong> - An AI that's always ready to explain one more time, never judges, always patient</li>
+                    <li><strong>Makes connections</strong> - From textbook concepts to real-world understanding</li>
+                </ul>
+                <p>
+                    That's why we created <strong>Ekamanam</strong> (ఏకమనం - "One Mind"). We asked: 
+                    <em>Could we build an AI learning platform that engages all the senses - visual, audio, and interactive?</em>
+                </p>
+                <p class="text-xl font-semibold text-indigo-600">
+                    The answer was yes. And here's what we built.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Start Guide -->
+<section id="quick-start" class="py-20 bg-indigo-50">
+    <div class="max-w-6xl mx-auto px-4">
+        <h2 class="text-4xl font-bold text-center mb-12 fade-in">Quick Start Guide</h2>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Step 1 -->
+            <div class="bg-white p-8 rounded-xl shadow-lg fade-in">
+                <div class="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xl font-bold mb-4">1</div>
+                <h3 class="text-xl font-semibold mb-4">Setup (2 minutes)</h3>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex gap-2">
+                        <i class="fas fa-play-circle text-green-600 mt-1"></i>
+                        <span><strong>NEW: Getting Started Tour!</strong> Click the button for guided setup</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <i class="fas fa-key text-indigo-600 mt-1"></i>
+                        <span><strong>Add API Keys:</strong> Settings → AI Providers (Gemini required)</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <i class="fas fa-user text-indigo-600 mt-1"></i>
+                        <span><strong>Profile:</strong> Add your name and parent email for Admin access</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="bg-white p-8 rounded-xl shadow-lg fade-in">
+                <div class="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xl font-bold mb-4">2</div>
+                <h3 class="text-xl font-semibold mb-4">Load PDFs</h3>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex gap-2">
+                        <i class="fas fa-book text-indigo-600 mt-1"></i>
+                        <span><strong>Try Samples:</strong> My Library → Samples tab</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <i class="fas fa-upload text-indigo-600 mt-1"></i>
+                        <span><strong>Upload:</strong> Add your textbooks, notes, PDFs</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <i class="fas fa-folder-open text-indigo-600 mt-1"></i>
+                        <span><strong>Open:</strong> PDF left, AI features right</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="bg-white p-8 rounded-xl shadow-lg fade-in">
+                <div class="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xl font-bold mb-4">3</div>
+                <h3 class="text-xl font-semibold mb-4">Start Learning</h3>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex gap-2">
+                        <i class="fas fa-tabs text-indigo-600 mt-1"></i>
+                        <span><strong>AI Tabs:</strong> Learn, Explain, Activities, Exam, Tools, Vyonn</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <i class="fas fa-robot text-indigo-600 mt-1"></i>
+                        <span><strong>Ask Vyonn:</strong> Click Vyonn tab for AI chat</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <i class="fas fa-check text-indigo-600 mt-1"></i>
+                        <span><strong>That's it!</strong> AI does the rest</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Grid -->
+<section id="features" class="py-20 bg-gray-900 text-white">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-16 fade-in">
+            <h2 class="text-4xl font-bold mb-4">Powerful Learning Features</h2>
+            <p class="text-xl text-gray-300">Most tools are passive. Ekamanam is active.</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="feature-card bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
+                    <i class="fas fa-book-open text-white text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">📖 Learn Tab</h3>
+                <p class="text-gray-400 text-sm">Comprehensive page/chapter explanations with summaries, key points, flashcards, and exam tips</p>
+            </div>
+
+            <div class="feature-card bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4">
+                    <i class="fas fa-lightbulb text-white text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">💡 Explain Tab</h3>
+                <p class="text-gray-400 text-sm">Deep analysis with step-by-step solutions, hints, and visualizations for any selected text</p>
+            </div>
+
+            <div class="feature-card bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mb-4">
+                    <i class="fas fa-tasks text-white text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">🎯 Activities Tab</h3>
+                <p class="text-gray-400 text-sm">Auto-generated practice questions, word games, and interactive exercises</p>
+            </div>
+
+            <div class="feature-card bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center mb-4">
+                    <i class="fas fa-graduation-cap text-white text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">📝 Exam Tab</h3>
+                <p class="text-gray-400 text-sm">MCQs, short & long answer questions with detailed answers for exam preparation</p>
+            </div>
+
+            <div class="feature-card bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <div class="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center mb-4">
+                    <i class="fas fa-tools text-white text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">🛠️ Tools Tab</h3>
+                <p class="text-gray-400 text-sm">Circuit visualizers, logic gates, interactive tools for enhanced learning</p>
+            </div>
+
+            <div class="feature-card bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center mb-4">
+                    <i class="fas fa-robot text-white text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">🤖 Vyonn AI Tab</h3>
+                <p class="text-gray-400 text-sm">Your AI companion - ask anything, get visualizations, maps, molecules, and personalized help!</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- NEW: Educational Tools Section -->
+<section id="tools" class="py-20 bg-gradient-to-br from-emerald-50 to-teal-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-12 fade-in">
+            <div class="inline-flex items-center gap-2 mb-4">
+                <span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">NEW in v10.0</span>
+            </div>
+            <h2 class="text-4xl font-bold mb-4">🎓 Educational Tools</h2>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">Interactive learning tools designed for students from Class 1 to 12. AI-powered, curriculum-aligned, and absolutely engaging!</p>
+        </div>
+        
+        <div class="grid md:grid-cols-5 gap-6 mb-12">
+            <!-- Math Tools -->
+            <div class="feature-card bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500 text-center">
+                <div class="text-4xl mb-3">📐</div>
+                <h3 class="text-lg font-bold mb-2 text-blue-600">Math Tools</h3>
+                <p class="text-gray-600 text-sm">Interactive games for all classes. Number bonds, fractions, algebra, calculus with voice guidance!</p>
+            </div>
+            
+            <!-- Chemistry Lab -->
+            <div class="feature-card bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500 text-center">
+                <div class="text-4xl mb-3">🧪</div>
+                <h3 class="text-lg font-bold mb-2 text-green-600">Chemistry Lab</h3>
+                <p class="text-gray-600 text-sm">Vyonn AI Chemistry with 3D molecules (with labels!), periodic table, experiments, valency & equation balancing!</p>
+            </div>
+            
+            <!-- Physics Lab -->
+            <div class="feature-card bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500 text-center">
+                <div class="text-4xl mb-3">⚡</div>
+                <h3 class="text-lg font-bold mb-2 text-purple-600">Physics Lab</h3>
+                <p class="text-gray-600 text-sm">Vyonn AI Science Lab with 16+ experiments, real-time simulations, and AI explanations!</p>
+            </div>
+            
+            <!-- Code Editor -->
+            <div class="feature-card bg-white p-6 rounded-xl shadow-lg border-t-4 border-gray-700 text-center">
+                <div class="text-4xl mb-3">💻</div>
+                <h3 class="text-lg font-bold mb-2 text-gray-700">Code Editor</h3>
+                <p class="text-gray-600 text-sm">Full-featured Monaco editor. Python, JavaScript, HTML with live preview!</p>
+            </div>
+            
+            <!-- Globe Viewer -->
+            <div class="feature-card bg-white p-6 rounded-xl shadow-lg border-t-4 border-cyan-500 text-center">
+                <div class="text-4xl mb-3">🌍</div>
+                <h3 class="text-lg font-bold mb-2 text-cyan-600">Globe Viewer</h3>
+                <p class="text-gray-600 text-sm">3D interactive globe for geography. Explore countries, cities, landmarks!</p>
+            </div>
+        </div>
+        
+        <!-- Feature Highlights -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 fade-in">
+            <h3 class="text-2xl font-bold mb-6 text-center">✨ What Makes Our Tools Special</h3>
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-graduation-cap text-blue-600 text-xl"></i>
+                    </div>
+                    <h4 class="font-semibold mb-1">Class 1-12 Aligned</h4>
+                    <p class="text-sm text-gray-600">Tools adapt to student's grade level with appropriate content</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-robot text-green-600 text-xl"></i>
+                    </div>
+                    <h4 class="font-semibold mb-1">AI-Powered</h4>
+                    <p class="text-sm text-gray-600">Vyonn AI integrated for instant explanations and help</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-gamepad text-purple-600 text-xl"></i>
+                    </div>
+                    <h4 class="font-semibold mb-1">Gamified Learning</h4>
+                    <p class="text-sm text-gray-600">Points, streaks, and fun interactions keep students engaged</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-14 h-14 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-volume-up text-orange-600 text-xl"></i>
+                    </div>
+                    <h4 class="font-semibold mb-1">Voice Guided</h4>
+                    <p class="text-sm text-gray-600">Natural voice explanations in multiple languages</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Vyonn AI Section -->
+<section id="vyonn" class="py-20 bg-gradient-to-br from-purple-50 to-blue-50">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="text-center mb-12 fade-in">
+            <img src="vyonn.png" alt="Vyonn AI" class="h-24 mx-auto mb-4 object-contain vyonn-logo">
+            <h2 class="text-4xl font-bold mb-4">Meet Vyonn - Your AI Companion</h2>
+            <p class="text-xl text-gray-600">Ask anything, anytime. Vyonn is always ready to help!</p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-8 mb-12">
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <h3 class="text-2xl font-semibold mb-4">What is Vyonn?</h3>
+                <p class="text-gray-700 mb-4">
+                    Vyonn is your personal AI tutor - now integrated directly into the AI panel as a dedicated tab! 
+                    Context-aware, intelligent, and capable of generating rich visualizations.
+                </p>
+                <ul class="space-y-2 text-gray-700">
+                    <li class="flex gap-2"><i class="fas fa-check text-green-600 mt-1"></i> <span>Integrated in AI panel (Vyonn tab)</span></li>
+                    <li class="flex gap-2"><i class="fas fa-check text-green-600 mt-1"></i> <span>Context-aware - knows your current page</span></li>
+                    <li class="flex gap-2"><i class="fas fa-check text-green-600 mt-1"></i> <span>Creates 3D molecules, interactive maps, diagrams</span></li>
+                    <li class="flex gap-2"><i class="fas fa-check text-green-600 mt-1"></i> <span>Student-friendly explanations in your language</span></li>
+                    <li class="flex gap-2"><i class="fas fa-check text-green-600 mt-1"></i> <span>Remembers chat history during session</span></li>
+                </ul>
+            </div>
+            
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <h3 class="text-2xl font-semibold mb-4">How to Use</h3>
+                <ol class="space-y-3 text-gray-700">
+                    <li class="flex gap-3">
+                        <span class="font-bold text-purple-600">1.</span>
+                        <span>Open any PDF from your library</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="font-bold text-purple-600">2.</span>
+                        <span>Click the <strong>Vyonn</strong> tab in the AI panel (right side)</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="font-bold text-purple-600">3.</span>
+                        <span>Type your question naturally</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="font-bold text-purple-600">4.</span>
+                        <span>Get AI response with visualizations (maps, molecules, 3D)</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="font-bold text-purple-600">5.</span>
+                        <span>Vyonn knows your page context and helps accordingly!</span>
+                    </li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Sample Prompts -->
+        <div class="bg-white p-8 rounded-xl shadow-lg">
+            <h3 class="text-2xl font-semibold mb-6 text-center">Try These Sample Prompts</h3>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <div>
+                    <h4 class="font-semibold text-lg mb-3 text-blue-600"><i class="fas fa-map-marked-alt"></i> Geography</h4>
+                    <div class="space-y-2">
+                        <div class="bg-blue-50 p-3 rounded text-sm">"Where is Hyderabad?"</div>
+                        <div class="bg-blue-50 p-3 rounded text-sm">"Show ancient trade routes"</div>
+                        <div class="bg-blue-50 p-3 rounded text-sm">"Major cities in India"</div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold text-lg mb-3 text-green-600"><i class="fas fa-flask"></i> Science</h4>
+                    <div class="space-y-2">
+                        <div class="bg-green-50 p-3 rounded text-sm">"Show cube in 3D"</div>
+                        <div class="bg-green-50 p-3 rounded text-sm">"Water molecule structure"</div>
+                        <div class="bg-green-50 p-3 rounded text-sm">"Explain Pythagoras"</div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold text-lg mb-3 text-purple-600"><i class="fas fa-book-reader"></i> Learning</h4>
+                    <div class="space-y-2">
+                        <div class="bg-purple-50 p-3 rounded text-sm">"Help me get started"</div>
+                        <div class="bg-purple-50 p-3 rounded text-sm">"Summarize this page"</div>
+                        <div class="bg-purple-50 p-3 rounded text-sm">"Practice questions"</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- The Result -->
+<section class="py-20 bg-indigo-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="lg:flex lg:items-center lg:gap-12 fade-in">
+            <div class="lg:w-1/2">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">
+                    Learning Transformed:<br>
+                    <span class="text-indigo-600">From Confusion to Clarity</span>
+                </h2>
+                <p class="text-lg text-gray-600 mb-6">
+                    Students using Ekamanam discover a completely new way to learn - one that engages all their senses and makes every concept clear.
+                </p>
+                <ul class="space-y-4">
+                    <li class="flex gap-3">
+                        <i class="fas fa-eye text-blue-600 text-xl mt-1"></i>
+                        <span class="text-gray-700"><strong>See it:</strong> 3D shapes rotate, molecules come alive, maps show exact locations</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <i class="fas fa-volume-up text-green-600 text-xl mt-1"></i>
+                        <span class="text-gray-700"><strong>Hear it:</strong> Natural voice in your language, perfect for auditory learners</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <i class="fas fa-hand-pointer text-purple-600 text-xl mt-1"></i>
+                        <span class="text-gray-700"><strong>Interact with it:</strong> Click, zoom, explore - learning becomes an adventure</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <i class="fas fa-comments text-indigo-600 text-xl mt-1"></i>
+                        <span class="text-gray-700"><strong>Ask about it:</strong> Vyonn AI answers every question, explains every concept</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="lg:w-1/2 mt-8 lg:mt-0">
+                <div class="bg-white rounded-2xl shadow-2xl p-8 border-t-8 border-amber-500 transform hover:scale-105 transition">
+                    <i class="fas fa-quote-left text-indigo-600 text-3xl opacity-20 mb-4"></i>
+                    <p class="text-xl font-medium text-gray-900 mb-6">
+                        "For the first time, I could <em>see</em> the cube rotate, <em>hear</em> the explanation in my language, 
+                        and <em>understand</em> where Hyderabad is on a real map. Learning isn't boring anymore - it's exciting!"
+                    </p>
+                    <div class="flex items-center">
+                        <div class="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">S</div>
+                        <div class="ml-3">
+                            <div class="text-sm font-bold text-gray-900">Student User</div>
+                            <div class="text-sm text-gray-500">Class 8, Hyderabad</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section id="pricing" class="py-20 bg-white">
+    <div class="max-w-5xl mx-auto px-4">
+        <div class="text-center mb-12 fade-in">
+            <h2 class="text-4xl font-bold mb-4">Simple, Student-Friendly Pricing</h2>
+            <p class="text-xl text-gray-600">Start free, upgrade when you're ready for more</p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+            <!-- Free Plan -->
+            <div class="bg-gray-50 p-8 rounded-2xl border-2 border-gray-200">
+                <h3 class="text-2xl font-bold mb-2">Free</h3>
+                <p class="text-gray-600 mb-4">Get started with basics</p>
+                <div class="text-4xl font-bold mb-6">₹0<span class="text-lg font-normal text-gray-500">/forever</span></div>
+                <ul class="space-y-3 text-gray-700 mb-6">
+                    <li class="flex gap-2"><i class="fas fa-check text-green-600"></i> 3 AI queries per day</li>
+                    <li class="flex gap-2"><i class="fas fa-check text-green-600"></i> All AI tabs (Learn, Explain, etc.)</li>
+                    <li class="flex gap-2"><i class="fas fa-check text-green-600"></i> Sample PDFs included</li>
+                    <li class="flex gap-2"><i class="fas fa-check text-green-600"></i> Basic visualizations</li>
+                </ul>
+                <a href="https://www.ekamanam.com" class="block w-full py-3 text-center border-2 border-indigo-600 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition">
+                    Start Free
+                </a>
+            </div>
+            
+            <!-- Student Plan -->
+            <div class="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 rounded-2xl text-white relative overflow-hidden">
+                <div class="absolute top-4 right-4 bg-yellow-400 text-gray-900 text-xs px-2 py-1 rounded-full font-bold">POPULAR</div>
+                <h3 class="text-2xl font-bold mb-2">Student</h3>
+                <p class="text-indigo-200 mb-4">Unlimited learning for serious students</p>
+                <div class="text-4xl font-bold mb-6">₹299<span class="text-lg font-normal text-indigo-200">/month</span></div>
+                <ul class="space-y-3 mb-6">
+                    <li class="flex gap-2"><i class="fas fa-check text-yellow-400"></i> <strong>Unlimited</strong> AI queries</li>
+                    <li class="flex gap-2"><i class="fas fa-check text-yellow-400"></i> All Educational Tools (Math, Chemistry, Physics)</li>
+                    <li class="flex gap-2"><i class="fas fa-check text-yellow-400"></i> Google Drive sync for PDFs</li>
+                    <li class="flex gap-2"><i class="fas fa-check text-yellow-400"></i> Advanced visualizations & 3D</li>
+                    <li class="flex gap-2"><i class="fas fa-check text-yellow-400"></i> Priority AI response</li>
+                </ul>
+                <a href="https://www.ekamanam.com" class="block w-full py-3 text-center bg-white text-indigo-600 rounded-lg font-bold hover:bg-gray-100 transition">
+                    Upgrade Now
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-24 bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
+    <div class="max-w-4xl mx-auto text-center px-4">
+        <h2 class="text-4xl font-bold mb-6">Ready to Transform Your Learning?</h2>
+        <p class="text-xl mb-8 opacity-90">
+            Experience learning that engages all your senses. Start free today!
+        </p>
+        <div class="flex justify-center gap-4 flex-wrap">
+            <a href="https://www.ekamanam.com" class="inline-flex items-center bg-white text-indigo-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition shadow-xl">
+                <i class="fas fa-rocket mr-2"></i>
+                Launch Ekamanam
+            </a>
+            <a href="#tools" class="inline-flex items-center bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white/10 transition">
+                <i class="fas fa-flask mr-2"></i>
+                Explore Tools
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-gray-900 text-gray-400 py-12">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="grid md:grid-cols-3 gap-8 mb-8">
+            <div>
+                <h3 class="font-semibold text-white mb-4">Ekamanam</h3>
+                <p class="text-sm">AI-Powered Multilingual Learning Platform</p>
+            </div>
+            <div>
+                <h3 class="font-semibold text-white mb-4">AI Features</h3>
+                <ul class="space-y-2 text-sm">
+                    <li>Learn & Explain Tabs</li>
+                    <li>Activities & Exam Tabs</li>
+                    <li>Vyonn AI (Integrated Tab)</li>
+                    <li>Interactive Tools Tab</li>
+                    <li>Notes & Flashcards</li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="font-semibold text-white mb-4">Resources</h3>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#quick-start" class="hover:text-white">Quick Start</a></li>
+                    <li><a href="#tools" class="hover:text-white">Educational Tools</a></li>
+                    <li><a href="#vyonn" class="hover:text-white">Vyonn AI</a></li>
+                    <li><a href="#pricing" class="hover:text-white">Pricing</a></li>
+                    <li><a href="https://www.ekamanam.com" class="hover:text-white">Launch App</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-gray-800 pt-8 text-center text-sm">
+            <p class="mb-2">&copy; 2025 <a href="https://www.linkedin.com/in/amantalwar/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition underline">Amandeep Singh Talwar</a>. All rights reserved.</p>
+            <p class="text-xs text-gray-500">Disclaimer: This application provides AI-powered learning assistance. All PDF copyrights belong to their respective owners. For personal educational use only.</p>
+        </div>
+    </div>
+</footer>
+
+<!-- Animation Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+    });
+</script>
+
+</body>
+</html>
