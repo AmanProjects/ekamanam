@@ -37,9 +37,13 @@ import {
   CloudDownload,
   MenuBook as SampleIcon,
   TrendingUp as StatsIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  CloudUpload,
+  Warning as WarningIcon
 } from '@mui/icons-material';
+import { Alert } from '@mui/material';
 import libraryService from '../services/libraryService';
+import zipHandler from '../services/zipHandler';
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -111,6 +115,16 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF, initialTab = 0 }) 
   const [editingPdf, setEditingPdf] = useState(null);
   const [editForm, setEditForm] = useState({ class: '', subject: '', collection: '' });
   const [saving, setSaving] = useState(false);
+  
+  // v10.1: Upload PDF/ZIP state
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null);
+  const [uploadMetadata, setUploadMetadata] = useState({ class: '', subject: '', bookName: '' });
+  const [uploading, setUploading] = useState(false);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [extractedPdfs, setExtractedPdfs] = useState([]);
+  const [zipExtracting, setZipExtracting] = useState(false);
+  const [zipProgress, setZipProgress] = useState({ current: 0, total: 0, message: '' });
 
   useEffect(() => {
     loadLibrary();
@@ -178,6 +192,146 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF, initialTab = 0 }) 
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  // v10.1: Handle PDF/ZIP upload
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check if it's a ZIP file
+    if (zipHandler.isZipFile(file)) {
+      await handleZipUpload(file);
+      return;
+    }
+    
+    // Regular PDF upload
+    if (file.type !== 'application/pdf') {
+      alert('Please select a valid PDF or ZIP file');
+      return;
+    }
+    
+    setPendingFile(file);
+    setExtractedPdfs([]);
+    setUploadMetadata({
+      class: '',
+      subject: '',
+      bookName: file.name.replace('.pdf', '')
+    });
+    setDisclaimerAccepted(false);
+    setUploadDialogOpen(true);
+  };
+
+  const handleZipUpload = async (zipFile) => {
+    setZipExtracting(true);
+    setZipProgress({ current: 0, total: 0, message: 'Reading ZIP file...' });
+    
+    try {
+      // Extract all PDFs from ZIP
+      const pdfFiles = await zipHandler.extractZipFile(
+        zipFile,
+        (current, total, message) => {
+          setZipProgress({ current, total, message });
+        }
+      );
+      
+      if (pdfFiles.length === 0) {
+        alert('No PDF files found in the ZIP archive');
+        setZipExtracting(false);
+        return;
+      }
+      
+      // Show metadata confirmation dialog
+      setExtractedPdfs(pdfFiles);
+      const detectedMetadata = pdfFiles[0].metadata;
+      
+      // Ensure we have a collection name
+      let bookName = detectedMetadata.collection || zipFile.name.replace('.zip', '');
+      
+      // If bookName looks like a code, make it more readable
+      if (bookName.length < 10 && /^[a-z0-9]+$/i.test(bookName)) {
+        bookName = bookName.toUpperCase();
+      }
+      
+      setPendingFile(null);
+      setUploadMetadata({
+        subject: detectedMetadata.subject || '',
+        class: detectedMetadata.class || '',
+        bookName: bookName
+      });
+      setZipExtracting(false);
+      setDisclaimerAccepted(false);
+      setUploadDialogOpen(true);
+      
+    } catch (error) {
+      console.error('❌ ZIP extraction error:', error);
+      alert(`Failed to extract ZIP file:\n${error.message}`);
+      setZipExtracting(false);
+    }
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!disclaimerAccepted) return;
+    if (!pendingFile && extractedPdfs.length === 0) return;
+    
+    setUploading(true);
+    
+    const subject = uploadMetadata.subject || 'General';
+    
+    try {
+      // Batch upload from ZIP
+      if (extractedPdfs.length > 0) {
+        setZipProgress({ current: 0, total: extractedPdfs.length, message: 'Adding PDFs to library...' });
+        
+        for (let i = 0; i < extractedPdfs.length; i++) {
+          const pdfData = extractedPdfs[i];
+          setZipProgress({ 
+            current: i + 1, 
+            total: extractedPdfs.length, 
+            message: `Adding ${pdfData.filename}...` 
+          });
+          
+          const collectionName = uploadMetadata.bookName || pdfData.metadata.collection || 'Book Collection';
+          const pdfName = `${collectionName} - ${pdfData.metadata.title}`;
+          
+          await libraryService.addPDFToLibrary(pdfData.file, {
+            name: pdfName,
+            subject: subject,
+            class: uploadMetadata.class || null,
+            workspace: 'My Files',
+            collection: collectionName,
+            chapter: pdfData.metadata.chapter,
+            chapterTitle: pdfData.metadata.title,
+            totalPages: pdfData.metadata.totalPages || 0
+          });
+        }
+        
+        console.log(`✅ Uploaded ${extractedPdfs.length} PDFs from ZIP`);
+      } else {
+        // Single PDF upload
+        await libraryService.addPDFToLibrary(pendingFile, {
+          name: uploadMetadata.bookName || pendingFile.name.replace('.pdf', ''),
+          subject: subject,
+          class: uploadMetadata.class || null,
+          workspace: 'My Files',
+          collection: uploadMetadata.bookName || 'My Books'
+        });
+        console.log('✅ PDF uploaded successfully');
+      }
+      
+      // Refresh library
+      await loadLibrary();
+      setUploadDialogOpen(false);
+      setPendingFile(null);
+      setExtractedPdfs([]);
+      setDisclaimerAccepted(false);
+    } catch (error) {
+      console.error('❌ Failed to upload:', error);
+      alert('Failed to upload. Please try again.');
+    } finally {
+      setUploading(false);
+      setZipProgress({ current: 0, total: 0, message: '' });
     }
   };
 
@@ -269,6 +423,23 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF, initialTab = 0 }) 
             {totalPdfs > 0 && (
               <Chip label={`${totalPdfs} PDFs`} size="small" />
             )}
+            {/* v10.1: Upload Button */}
+            <Button
+              variant="contained"
+              component="label"
+              size="small"
+              startIcon={<CloudUpload />}
+              disabled={zipExtracting}
+              sx={{ ml: 2 }}
+            >
+              {zipExtracting ? 'Extracting...' : 'Upload PDF/ZIP'}
+              <input
+                type="file"
+                hidden
+                accept=".pdf,.zip"
+                onChange={handleFileSelect}
+              />
+            </Button>
           </Box>
           
           {/* Compact Stats */}
@@ -469,6 +640,14 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF, initialTab = 0 }) 
                 </Accordion>
               ))
             )}
+            
+            {/* v10.1: Disclaimer for MY PDF tab */}
+            <Paper sx={{ p: 2, mt: 3, bgcolor: 'grey.50', borderRadius: 2 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                Uploaded PDFs are stored in your Google Drive under the <strong>Ekamanam</strong> folder. 
+                All PDF copyrights belong to their respective owners. For personal educational use only.
+              </Typography>
+            </Paper>
           </Container>
         </TabPanel>
 
@@ -694,6 +873,152 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF, initialTab = 0 }) 
             disabled={saving}
           >
             {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* v10.1: Upload PDF/ZIP Dialog with Disclaimer */}
+      <Dialog open={uploadDialogOpen} onClose={() => !uploading && setUploadDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CloudUpload color="primary" />
+            {extractedPdfs.length > 0 ? `Upload ${extractedPdfs.length} PDFs from ZIP` : 'Upload PDF'}
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
+            {/* File Info - Single PDF */}
+            {pendingFile && (
+              <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+                <Typography variant="body2" color="text.secondary">Selected file:</Typography>
+                <Typography variant="body1" fontWeight={600}>{pendingFile.name}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {(pendingFile.size / (1024 * 1024)).toFixed(2)} MB
+                </Typography>
+              </Paper>
+            )}
+            
+            {/* File Info - ZIP extracted PDFs */}
+            {extractedPdfs.length > 0 && (
+              <Paper sx={{ p: 2, bgcolor: 'success.lighter', border: '1px solid', borderColor: 'success.main' }}>
+                <Typography variant="body2" color="success.dark" fontWeight={600}>
+                  ✅ {extractedPdfs.length} PDF chapters extracted
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                  {extractedPdfs.map(p => p.metadata.title).slice(0, 3).join(', ')}
+                  {extractedPdfs.length > 3 && ` and ${extractedPdfs.length - 3} more...`}
+                </Typography>
+              </Paper>
+            )}
+            
+            {/* Upload Progress */}
+            {uploading && zipProgress.total > 0 && (
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {zipProgress.message}
+                </Typography>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={(zipProgress.current / zipProgress.total) * 100} 
+                  sx={{ mb: 1 }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {zipProgress.current} of {zipProgress.total}
+                </Typography>
+              </Paper>
+            )}
+
+            <TextField
+              fullWidth
+              label="Book / PDF Name"
+              value={uploadMetadata.bookName}
+              onChange={(e) => setUploadMetadata(prev => ({ ...prev, bookName: e.target.value }))}
+              helperText="A descriptive name for this PDF"
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Educational Level / Class</InputLabel>
+              <Select
+                value={uploadMetadata.class}
+                label="Educational Level / Class"
+                onChange={(e) => setUploadMetadata(prev => ({ ...prev, class: e.target.value }))}
+              >
+                {EDUCATION_LEVELS.map(level => (
+                  <MenuItem key={level.value} value={level.value}>
+                    {level.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Subject</InputLabel>
+              <Select
+                value={uploadMetadata.subject}
+                label="Subject"
+                onChange={(e) => setUploadMetadata(prev => ({ ...prev, subject: e.target.value }))}
+              >
+                {SUBJECTS.map(subject => (
+                  <MenuItem key={subject.value} value={subject.value}>
+                    {subject.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Storage Info */}
+            <Alert severity="info" sx={{ py: 1 }}>
+              <Typography variant="body2">
+                📁 Uploaded PDFs are stored in your <strong>Google Drive</strong> under the <strong>Ekamanam</strong> folder.
+              </Typography>
+            </Alert>
+
+            {/* Disclaimer */}
+            <Alert 
+              severity="warning" 
+              icon={<WarningIcon />}
+              sx={{ 
+                '& .MuiAlert-message': { width: '100%' }
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                Important Disclaimer
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                By uploading this PDF, you confirm that:
+              </Typography>
+              <Box component="ul" sx={{ m: 0, pl: 2, fontSize: '0.8rem' }}>
+                <li>You have the legal right or permission to use this PDF</li>
+                <li>The PDF is a valid copy obtained through legitimate means</li>
+                <li>You will use this PDF for <strong>personal educational purposes only</strong></li>
+                <li>You understand that all copyrights belong to their respective owners</li>
+              </Box>
+              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <input 
+                  type="checkbox" 
+                  id="disclaimer-checkbox"
+                  checked={disclaimerAccepted}
+                  onChange={(e) => setDisclaimerAccepted(e.target.checked)}
+                  style={{ width: 18, height: 18 }}
+                />
+                <label htmlFor="disclaimer-checkbox" style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                  I accept these terms and conditions
+                </label>
+              </Box>
+            </Alert>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setUploadDialogOpen(false)} disabled={uploading}>
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleConfirmUpload}
+            disabled={uploading || !disclaimerAccepted || !uploadMetadata.bookName}
+            startIcon={uploading ? <CircularProgress size={16} /> : <CloudUpload />}
+          >
+            {uploading ? 'Uploading...' : 'Upload PDF'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -13,13 +13,37 @@ import {
 } from '@mui/material';
 import { Lock as LockIcon, Email as EmailIcon } from '@mui/icons-material';
 import { sendOTPToAdmin, verifyOTP, createAdminSession } from '../services/otpService';
+import { getParentEmail } from '../services/profileService';
 
-function AdminOTPDialog({ open, onClose, onSuccess }) {
+function AdminOTPDialog({ open, onClose, onSuccess, onOpenSettings }) {
   const [step, setStep] = useState('request'); // 'request' or 'verify'
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
+
+  // Load parent email when dialog opens
+  useEffect(() => {
+    if (open) {
+      const email = getParentEmail();
+      setParentEmail(email || '');
+    }
+  }, [open]);
+
+  // Mask email for privacy (e.g., "john.doe@gmail.com" → "jo****oe@gmail.com")
+  const maskEmail = (email) => {
+    if (!email) return '';
+    const [localPart, domain] = email.split('@');
+    if (!domain) return email;
+    
+    if (localPart.length <= 4) {
+      // Short email: show first char, mask rest
+      return localPart[0] + '****@' + domain;
+    }
+    // Longer email: show first 2 and last 2 chars
+    return localPart.slice(0, 2) + '****' + localPart.slice(-2) + '@' + domain;
+  };
 
   const handleRequestOTP = async () => {
     setLoading(true);
@@ -84,14 +108,52 @@ function AdminOTPDialog({ open, onClose, onSuccess }) {
         {step === 'request' ? (
           <Box sx={{ py: 2 }}>
             <Typography variant="body1" paragraph>
-              Admin dashboard access is restricted. An OTP will be sent to your registered email address.
+              Admin dashboard access is restricted. An OTP will be sent to the registered parent email address.
             </Typography>
             
-            <Alert severity="info" sx={{ mb: 2 }}>
-              <Typography variant="body2">
-                <strong>Email:</strong> amantalwar04@gmail.com
-              </Typography>
-            </Alert>
+            {parentEmail ? (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>Parent Email:</strong> {maskEmail(parentEmail)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  To change this email, go to{' '}
+                  {onOpenSettings ? (
+                    <Button 
+                      size="small" 
+                      onClick={() => { onClose(); onOpenSettings(); }}
+                      sx={{ p: 0, minWidth: 'auto', textTransform: 'none', fontSize: 'inherit', verticalAlign: 'baseline' }}
+                    >
+                      Settings → General
+                    </Button>
+                  ) : (
+                    <strong>Settings → General</strong>
+                  )}
+                </Typography>
+              </Alert>
+            ) : (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <Typography variant="body2" gutterBottom>
+                  No parent email configured.
+                </Typography>
+                <Typography variant="body2">
+                  Please go to{' '}
+                  {onOpenSettings ? (
+                    <Button 
+                      size="small" 
+                      variant="outlined"
+                      onClick={() => { onClose(); onOpenSettings(); }}
+                      sx={{ ml: 1 }}
+                    >
+                      Settings → General
+                    </Button>
+                  ) : (
+                    <strong>Settings → General</strong>
+                  )}
+                  {' '}and add a parent email address.
+                </Typography>
+              </Alert>
+            )}
             
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
@@ -104,10 +166,10 @@ function AdminOTPDialog({ open, onClose, onSuccess }) {
               variant="contained"
               startIcon={loading ? <CircularProgress size={20} /> : <EmailIcon />}
               onClick={handleRequestOTP}
-              disabled={loading}
+              disabled={loading || !parentEmail}
               size="large"
             >
-              {loading ? 'Sending OTP...' : 'Send OTP to My Email'}
+              {loading ? 'Sending OTP...' : 'Send OTP to Parent Email'}
             </Button>
           </Box>
         ) : (
@@ -119,7 +181,7 @@ function AdminOTPDialog({ open, onClose, onSuccess }) {
             )}
             
             <Typography variant="body1" paragraph>
-              Enter the 6-digit OTP sent to your email:
+              Enter the 6-digit OTP sent to <strong>{maskEmail(parentEmail)}</strong>:
             </Typography>
             
             <TextField

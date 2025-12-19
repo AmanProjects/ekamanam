@@ -7,9 +7,6 @@ import {
   TextField,
   Button,
   Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Alert,
   Chip,
   FormControlLabel,
@@ -22,6 +19,8 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemIcon,
+  ListItemButton,
   CircularProgress,
   LinearProgress,
   FormControl,
@@ -30,7 +29,6 @@ import {
   MenuItem
 } from '@mui/material';
 import {
-  ExpandMore,
   Settings as SettingsIcon,
   Save as SaveIcon,
   RestartAlt as ResetIcon,
@@ -38,7 +36,12 @@ import {
   CloudUpload,
   Delete,
   Folder,
-  Refresh
+  Refresh,
+  Visibility,
+  ToggleOn,
+  SmartToy,
+  TextSnippet,
+  ImportExport
 } from '@mui/icons-material';
 import libraryService, { saveExamPrepCache } from '../services/libraryService';
 import zipHandler from '../services/zipHandler';
@@ -47,15 +50,14 @@ import { extractFullPdfText } from '../services/pdfExtractor';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 
 const DEFAULT_CONFIG = {
-  // Tab Visibility
+  // Tab Visibility - Updated to match current app tabs
   tabs: {
-    teacherMode: { enabled: true, label: 'Teacher Mode' },
-    multilingual: { enabled: true, label: 'Multilingual', autoDisableForEnglish: true },
-    explain: { enabled: true, label: 'Smart Explain' },
+    learn: { enabled: true, label: 'Learn' },
+    explain: { enabled: true, label: 'Explain' },
     activities: { enabled: true, label: 'Activities' },
-    examPrep: { enabled: true, label: 'Exam Prep' },
-    resources: { enabled: true, label: 'Resources' },
-    notes: { enabled: true, label: 'Notes' }
+    exam: { enabled: true, label: 'Exam' },
+    tools: { enabled: true, label: 'Tools' },
+    vyonnAI: { enabled: true, label: 'Vyonn AI' }
   },
   
   // Feature Settings
@@ -64,7 +66,7 @@ const DEFAULT_CONFIG = {
     autoSave: true,
     speechSynthesis: true,
     visualAids: true,
-    bilingualMode: true
+    educationalTools: true
   },
   
   // AI Settings
@@ -84,7 +86,7 @@ const DEFAULT_CONFIG = {
   // Prompts (editable)
   prompts: {
     teacherMode: {
-      name: 'Teacher Mode',
+      name: 'Learn Mode',
       system: 'You are an expert teacher explaining educational content.',
       instructions: 'Provide a comprehensive explanation in the same language as the input.'
     },
@@ -101,11 +103,24 @@ const DEFAULT_CONFIG = {
   }
 };
 
+// Navigation items for left pane
+const NAV_ITEMS = [
+  { id: 'tabs', label: 'Tab Visibility', icon: <Visibility /> },
+  { id: 'features', label: 'Feature Settings', icon: <ToggleOn /> },
+  { id: 'ai', label: 'AI Configuration', icon: <SmartToy /> },
+  { id: 'prompts', label: 'AI Prompts', icon: <TextSnippet /> },
+  { id: 'export', label: 'Export / Import', icon: <ImportExport /> }
+];
+
+// Hidden for now - Library Management
+// { id: 'library', label: 'Library Management', icon: <Folder /> },
+
 function AdminDashboard({ open, onClose }) {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [saved, setSaved] = useState(false);
+  const [activeSection, setActiveSection] = useState('tabs');
   
-  // Library management state
+  // Library management state (hidden but kept)
   const [pdfs, setPdfs] = useState([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   
@@ -129,13 +144,40 @@ function AdminDashboard({ open, onClose }) {
     const savedConfig = localStorage.getItem('ekamanam_admin_config');
     if (savedConfig) {
       try {
-        setConfig(JSON.parse(savedConfig));
+        const parsed = JSON.parse(savedConfig);
+        
+        // Only keep tabs that exist in DEFAULT_CONFIG (filter out stale entries)
+        const validTabs = {};
+        Object.keys(DEFAULT_CONFIG.tabs).forEach(key => {
+          if (parsed.tabs && parsed.tabs[key]) {
+            validTabs[key] = { ...DEFAULT_CONFIG.tabs[key], ...parsed.tabs[key] };
+          } else {
+            validTabs[key] = DEFAULT_CONFIG.tabs[key];
+          }
+        });
+        
+        // Only keep features that exist in DEFAULT_CONFIG
+        const validFeatures = {};
+        Object.keys(DEFAULT_CONFIG.features).forEach(key => {
+          validFeatures[key] = parsed.features && parsed.features[key] !== undefined 
+            ? parsed.features[key] 
+            : DEFAULT_CONFIG.features[key];
+        });
+        
+        setConfig({
+          ...DEFAULT_CONFIG,
+          ...parsed,
+          tabs: validTabs,
+          features: validFeatures,
+          ai: { ...DEFAULT_CONFIG.ai, ...(parsed.ai || {}) },
+          prompts: { ...DEFAULT_CONFIG.prompts, ...(parsed.prompts || {}) }
+        });
       } catch (error) {
         console.error('Failed to load admin config:', error);
       }
     }
     
-    // Load library
+    // Load library (kept for future use)
     if (open) {
       loadLibrary();
     }
@@ -153,6 +195,7 @@ function AdminDashboard({ open, onClose }) {
     }
   };
   
+  // eslint-disable-next-line no-unused-vars
   const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -380,6 +423,7 @@ function AdminDashboard({ open, onClose }) {
     setUploadMetadata({ subject: '', class: '', customSubject: '', bookName: '' });
   };
   
+  // eslint-disable-next-line no-unused-vars
   const handleDeletePdf = async (id, name) => {
     if (window.confirm(`Delete "${name}" from library? This cannot be undone.`)) {
       try {
@@ -451,242 +495,78 @@ function AdminDashboard({ open, onClose }) {
     });
   };
 
-  return (
-    <>
-    <Dialog 
-      open={open} 
-      onClose={onClose}
-      maxWidth="lg"
-      fullWidth
-      PaperProps={{
-        sx: { height: '90vh' }
-      }}
-    >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SettingsIcon color="primary" />
-            <Typography variant="h5" fontWeight={700}>
-              🛠️ Admin Dashboard
+  // Render the content for each section
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'tabs':
+        return (
+          <Box>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              Tab Visibility
             </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<ResetIcon />}
-              onClick={handleReset}
-              color="warning"
-              size="small"
-            >
-              Reset
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              size="small"
-            >
-              Save
-            </Button>
-            <IconButton onClick={onClose} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </Box>
-      </DialogTitle>
-      
-      <DialogContent dividers sx={{ p: 3 }}>
-
-        {saved && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Configuration saved successfully! Refresh the page to apply changes.
-          </Alert>
-        )}
-
-        {/* Library Management Section */}
-        <Accordion defaultExpanded>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Folder color="primary" />
-              <Typography variant="h6">📚 Library Management</Typography>
-              <Chip label={`${pdfs.length} PDFs`} size="small" color="primary" />
-            </Box>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Alert severity="info" sx={{ mb: 2 }}>
-              <strong>Admin Only:</strong> Only admins can add or remove PDFs. Students can only view and use PDFs from the library.
-            </Alert>
-            
-            {/* Upload Section */}
-            <Box sx={{ mb: 3 }}>
-              <Button
-                variant="contained"
-                component="label"
-                startIcon={<CloudUpload />}
-                fullWidth
-                size="large"
-              >
-                📤 Upload PDF or ZIP File
-                <input
-                  type="file"
-                  hidden
-                  accept=".pdf,.zip"
-                  onChange={handleFileSelect}
-                />
-              </Button>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, textAlign: 'center' }}>
-                Upload a single PDF or ZIP file containing multiple chapter PDFs. You'll be prompted for metadata.
-              </Typography>
-            </Box>
-            
-            {/* ZIP Extraction Progress */}
-            {zipExtracting && (
-              <Paper sx={{ p: 2, mb: 2 }}>
-                <Typography variant="body2" gutterBottom>
-                  {zipProgress.message}
-                </Typography>
-                <LinearProgress 
-                  variant={zipProgress.total > 0 ? "determinate" : "indeterminate"}
-                  value={zipProgress.total > 0 ? (zipProgress.current / zipProgress.total) * 100 : 0}
-                />
-                {zipProgress.total > 0 && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {zipProgress.current} / {zipProgress.total}
-                  </Typography>
-                )}
-              </Paper>
-            )}
-            
-            {/* PDF List */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1" fontWeight={600}>
-                Current Library ({pdfs.length} PDFs)
-              </Typography>
-              <IconButton onClick={loadLibrary} disabled={loadingLibrary}>
-                <Refresh />
-              </IconButton>
-            </Box>
-            
-            {loadingLibrary ? (
-              <Box sx={{ textAlign: 'center', py: 3 }}>
-                <CircularProgress />
-              </Box>
-            ) : pdfs.length === 0 ? (
-              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'background.default' }}>
-                <Typography color="text.secondary">
-                  No PDFs in library. Upload PDFs to get started.
-                </Typography>
-              </Paper>
-            ) : (
-              <List sx={{ maxHeight: 400, overflowY: 'auto' }}>
-                {pdfs.map(pdf => (
-                  <ListItem
-                    key={pdf.id}
-                    sx={{
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      mb: 1,
-                      bgcolor: 'background.paper'
-                    }}
-                    secondaryAction={
-                      <IconButton
-                        edge="end"
-                        color="error"
-                        onClick={() => handleDeletePdf(pdf.id, pdf.name)}
-                      >
-                        <Delete />
-                      </IconButton>
-                    }
-                  >
-                    <ListItemText
-                      primary={pdf.name}
-                      secondary={
-                        <Box component="span">
-                          {pdf.subject && <Chip label={pdf.subject} size="small" sx={{ mr: 0.5 }} />}
-                          {pdf.class && <Chip label={`Class ${pdf.class}`} size="small" sx={{ mr: 0.5 }} />}
-                          {pdf.collection && <Chip label={pdf.collection} size="small" sx={{ mr: 0.5 }} />}
-                          <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                            {pdf.totalPages || 0} pages • {((pdf.size || 0) / 1024 / 1024).toFixed(2)} MB
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </AccordionDetails>
-        </Accordion>
-
-        {/* Tab Visibility */}
-        <Accordion defaultExpanded>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Typography variant="h6" fontWeight={600}>
-              📑 Tab Visibility
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Control which tabs are visible in the PDF reader view.
             </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
             <Grid container spacing={2}>
-              {Object.entries(config.tabs).map(([key, tab]) => (
-                <Grid item xs={12} sm={6} md={4} key={key}>
-                  <Paper variant="outlined" sx={{ p: 2 }}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={tab.enabled}
-                          onChange={(e) => updateTabEnabled(key, e.target.checked)}
-                        />
-                      }
-                      label={tab.label}
-                    />
-                    {tab.autoDisableForEnglish && (
-                      <Chip label="Auto-disable for English" size="small" sx={{ mt: 1 }} />
-                    )}
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          </AccordionDetails>
-        </Accordion>
-
-        {/* Feature Toggles */}
-        <Accordion>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Typography variant="h6" fontWeight={600}>
-              ⚙️ Feature Settings
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Grid container spacing={2}>
-              {Object.entries(config.features).map(([key, enabled]) => (
-                <Grid item xs={12} sm={6} md={4} key={key}>
-                  <Paper variant="outlined" sx={{ p: 2 }}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={enabled}
-                          onChange={(e) => updateFeature(key, e.target.checked)}
-                        />
-                      }
-                      label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+              {Object.entries(config.tabs)
+                .filter(([key, tab]) => tab && tab.label && DEFAULT_CONFIG.tabs[key]) // Only show valid tabs
+                .map(([key, tab]) => (
+                <Grid item xs={12} sm={6} key={key}>
+                  <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Typography>{tab.label}</Typography>
+                    <Switch
+                      checked={tab.enabled}
+                      onChange={(e) => updateTabEnabled(key, e.target.checked)}
+                      color="primary"
                     />
                   </Paper>
                 </Grid>
               ))}
             </Grid>
-          </AccordionDetails>
-        </Accordion>
+          </Box>
+        );
 
-        {/* AI Settings */}
-        <Accordion>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Typography variant="h6" fontWeight={600}>
-              🤖 AI Configuration
+      case 'features':
+        return (
+          <Box>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              Feature Settings
             </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Enable or disable application features.
+            </Typography>
+            <Grid container spacing={2}>
+              {Object.entries(config.features)
+                .filter(([key]) => DEFAULT_CONFIG.features.hasOwnProperty(key)) // Only show valid features
+                .map(([key, enabled]) => (
+                <Grid item xs={12} sm={6} key={key}>
+                  <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Typography>
+                      {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                    </Typography>
+                    <Switch
+                      checked={enabled}
+                      onChange={(e) => updateFeature(key, e.target.checked)}
+                      color="primary"
+                    />
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        );
+
+      case 'ai':
+        return (
+          <Box>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              AI Configuration
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Configure AI provider settings and token limits.
+            </Typography>
+            
+            <Box sx={{ mb: 4 }}>
               <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                 Default Provider
               </Typography>
@@ -696,6 +576,7 @@ function AdminDashboard({ open, onClose }) {
                 value={config.ai.defaultProvider}
                 onChange={(e) => updateAISetting('defaultProvider', e.target.value)}
                 SelectProps={{ native: true }}
+                size="small"
               >
                 <option value="groq">Groq (Fast)</option>
                 <option value="gemini">Gemini (Balanced)</option>
@@ -704,7 +585,7 @@ function AdminDashboard({ open, onClose }) {
               </TextField>
             </Box>
 
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 4 }}>
               <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                 Temperature: {config.ai.temperature}
               </Typography>
@@ -714,6 +595,7 @@ function AdminDashboard({ open, onClose }) {
                 value={config.ai.temperature}
                 onChange={(e) => updateAISetting('temperature', parseFloat(e.target.value))}
                 inputProps={{ min: 0, max: 1, step: 0.1 }}
+                size="small"
               />
             </Box>
 
@@ -722,7 +604,7 @@ function AdminDashboard({ open, onClose }) {
             </Typography>
             <Grid container spacing={2}>
               {Object.entries(config.ai.maxTokens).map(([key, value]) => (
-                <Grid item xs={12} sm={6} md={4} key={key}>
+                <Grid item xs={12} sm={6} key={key}>
                   <TextField
                     label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                     type="number"
@@ -734,19 +616,20 @@ function AdminDashboard({ open, onClose }) {
                 </Grid>
               ))}
             </Grid>
-          </AccordionDetails>
-        </Accordion>
+          </Box>
+        );
 
-        {/* Prompts */}
-        <Accordion>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Typography variant="h6" fontWeight={600}>
-              📝 AI Prompts (Advanced)
+      case 'prompts':
+        return (
+          <Box>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              AI Prompts (Advanced)
             </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Customize the system prompts and instructions for AI responses.
+            </Typography>
             {Object.entries(config.prompts).map(([key, prompt]) => (
-              <Box key={key} sx={{ mb: 3 }}>
+              <Paper key={key} variant="outlined" sx={{ p: 2, mb: 2 }}>
                 <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                   {prompt.name}
                 </Typography>
@@ -758,6 +641,7 @@ function AdminDashboard({ open, onClose }) {
                   value={prompt.system}
                   onChange={(e) => updatePrompt(key, 'system', e.target.value)}
                   sx={{ mb: 2 }}
+                  size="small"
                 />
                 <TextField
                   label="Instructions"
@@ -766,24 +650,26 @@ function AdminDashboard({ open, onClose }) {
                   rows={3}
                   value={prompt.instructions}
                   onChange={(e) => updatePrompt(key, 'instructions', e.target.value)}
+                  size="small"
                 />
-                <Divider sx={{ mt: 2 }} />
-              </Box>
+              </Paper>
             ))}
-          </AccordionDetails>
-        </Accordion>
+          </Box>
+        );
 
-        {/* Export/Import Config */}
-        <Accordion>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Typography variant="h6" fontWeight={600}>
-              💾 Export / Import
+      case 'export':
+        return (
+          <Box>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              Export / Import Configuration
             </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Backup or restore your admin configuration.
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Button
                 variant="outlined"
+                startIcon={<ImportExport />}
                 onClick={() => {
                   const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
                   const url = URL.createObjectURL(blob);
@@ -822,16 +708,133 @@ function AdminDashboard({ open, onClose }) {
                 />
               </Button>
             </Box>
-          </AccordionDetails>
-        </Accordion>
+          </Box>
+        );
+
+      /* Library Management - Hidden for now
+      case 'library':
+        return (
+          <Box>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              Library Management
+            </Typography>
+            ... library content would go here ...
+          </Box>
+        );
+      */
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <>
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        sx: { height: '85vh' }
+      }}
+    >
+      <DialogTitle sx={{ borderBottom: 1, borderColor: 'divider', py: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SettingsIcon color="primary" />
+            <Typography variant="h6" fontWeight={600}>
+              Admin Dashboard
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              startIcon={<ResetIcon />}
+              onClick={handleReset}
+              color="warning"
+              size="small"
+            >
+              Reset
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<SaveIcon />}
+              onClick={handleSave}
+              size="small"
+            >
+              Save
+            </Button>
+            <IconButton onClick={onClose} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </Box>
+      </DialogTitle>
+      
+      <DialogContent sx={{ p: 0, display: 'flex' }}>
+        {/* Left Navigation Pane */}
+        <Box sx={{ 
+          width: 220, 
+          borderRight: 1, 
+          borderColor: 'divider',
+          bgcolor: 'grey.50',
+          flexShrink: 0
+        }}>
+          <List sx={{ py: 1 }}>
+            {NAV_ITEMS.map((item) => (
+              <ListItemButton
+                key={item.id}
+                selected={activeSection === item.id}
+                onClick={() => setActiveSection(item.id)}
+                sx={{
+                  mx: 1,
+                  borderRadius: 1,
+                  mb: 0.5,
+                  '&.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: 'white',
+                    }
+                  }
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.label} 
+                  primaryTypographyProps={{ 
+                    fontSize: '0.875rem',
+                    fontWeight: activeSection === item.id ? 600 : 400
+                  }}
+                />
+              </ListItemButton>
+            ))}
+          </List>
+        </Box>
+
+        {/* Right Content Pane */}
+        <Box sx={{ flex: 1, p: 3, overflowY: 'auto' }}>
+          {saved && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Configuration saved successfully! Refresh the page to apply changes.
+            </Alert>
+          )}
+          {renderContent()}
+        </Box>
       </DialogContent>
     </Dialog>
     
-    {/* Upload Metadata Dialog */}
+    {/* Upload Metadata Dialog - kept for future use */}
     <Dialog open={uploadDialog} onClose={handleCancelUpload} maxWidth="sm" fullWidth>
       <DialogTitle>
         {extractedPdfs.length > 0 
-          ? `📦 Add ${extractedPdfs.length} PDFs to Library` 
+          ? `Add ${extractedPdfs.length} PDFs to Library` 
           : 'Add PDF to Library'}
       </DialogTitle>
       <DialogContent>
@@ -955,4 +958,3 @@ function AdminDashboard({ open, onClose }) {
 }
 
 export default AdminDashboard;
-

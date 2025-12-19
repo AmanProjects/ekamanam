@@ -1277,6 +1277,7 @@ function App() {
           setShowOTPDialog(false);
           setShowAdmin(true);
         }}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       {/* Admin Dashboard */}

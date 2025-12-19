@@ -115,9 +115,28 @@ const getTourSteps = () => [
     placement: 'bottom-end',
     disableBeacon: true,
     title: 'Open Your Library',
-    content: 'Click My Library to access PDFs. Try the sample textbooks or upload your own.',
+    content: 'Click My Library to access your PDFs and sample textbooks.',
     spotlightClicks: true,
     spotlightPadding: 8,
+  },
+  {
+    target: 'body',
+    placement: 'center',
+    disableBeacon: true,
+    title: 'Upload Your PDFs',
+    content: (
+      <Box>
+        <Box sx={{ mb: 1 }}>In the Library, click the <strong>"Upload PDF/ZIP"</strong> button:</Box>
+        <Box component="ul" sx={{ m: 0, pl: 2, mb: 1 }}>
+          <li>Select a PDF file or ZIP with multiple chapters</li>
+          <li>Add book name, class, and subject</li>
+          <li>Accept the disclaimer and click Upload</li>
+        </Box>
+        <Box sx={{ fontSize: 13, color: '#666' }}>
+          Your PDFs are stored securely in your Google Drive under the Ekamanam folder.
+        </Box>
+      </Box>
+    ),
   },
   {
     target: 'body',
