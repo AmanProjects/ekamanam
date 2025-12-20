@@ -70,7 +70,7 @@ import {
 import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer, translateTeacherModeToEnglish } from '../services/geminiService';
 import { extractFullPdfText } from '../services/pdfExtractor';
-import { getBestVoice, getNaturalVoice } from '../services/voiceService';
+import { getBestVoice, getNaturalVoice, resetSpeechSynthesis, ensureVoicesLoaded } from '../services/voiceService';
 import {
   getCachedData,
   saveCachedData,
@@ -1418,11 +1418,13 @@ Question: ${userMessage}`;
   };
 
   // V3.0.3: Natural text-to-speech for Teacher Mode sections
-  const handleSpeakSection = (sectionName, htmlContent) => {
-    // Stop any current speech
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+  // v10.1.1: Fixed voice loading and Chrome bug workaround
+  const handleSpeakSection = async (sectionName, htmlContent) => {
+    // v10.1.1: Reset speech synthesis to fix Chrome bug
+    resetSpeechSynthesis();
+    
+    // Ensure voices are loaded
+    await ensureVoicesLoaded();
 
     // Extract plain text from HTML
     const tempDiv = document.createElement('div');
@@ -1776,7 +1778,8 @@ Question: ${userMessage}`;
   };
 
   // Enhanced function to speak text naturally with proper language detection
-  const handleSpeakText = (text, language, id) => {
+  // v10.1.1: Fixed voice loading and Chrome bug workaround
+  const handleSpeakText = async (text, language, id) => {
     if ('speechSynthesis' in window) {
       // If clicking the same button while speaking, stop
       if (currentSpeakingId === id) {
@@ -1784,11 +1787,19 @@ Question: ${userMessage}`;
         return;
       }
       
-      // Stop any ongoing speech
-      window.speechSynthesis.cancel();
+      // v10.1.1: Reset speech synthesis to fix Chrome bug
+      resetSpeechSynthesis();
+      
+      // Ensure voices are loaded
+      await ensureVoicesLoaded();
       
       // Strip HTML tags for speech
-      const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const cleanText = text?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() || '';
+      
+      if (!cleanText) {
+        console.log('⚠️ No text to speak');
+        return;
+      }
       
       const utterance = new SpeechSynthesisUtterance(cleanText);
       
@@ -1809,25 +1820,18 @@ Question: ${userMessage}`;
         'English': 'en-US'
       };
       
-      utterance.lang = languageMap[language] || 'en-US';
+      const langCode = languageMap[language] || 'en-US';
+      utterance.lang = langCode;
       utterance.rate = 0.85; // Natural speaking pace
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
       
-      // Load voices and find the best match
-      const voices = window.speechSynthesis.getVoices();
-      const targetLang = (utterance.lang || 'en').split('-')[0];
-      
-      // Try to find a native voice for the language
-      const nativeVoice = voices.find(voice => 
-        voice.lang.startsWith(targetLang) && voice.localService
-      ) || voices.find(voice => 
-        voice.lang.startsWith(targetLang)
-      );
-      
-      if (nativeVoice) {
-        utterance.voice = nativeVoice;
-        console.log(`🔊 Using voice: ${nativeVoice.name} (${nativeVoice.lang})`);
+      // v10.1.1: Use voice service for better voice selection
+      const selectedVoice = getBestVoice(langCode);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
+        console.log(`🔊 Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
       }
       
       // Set speaking state

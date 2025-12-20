@@ -2,6 +2,47 @@
 // Manages text-to-speech voice selection across the application
 // Enhanced with natural-sounding Indian voices
 
+// v10.1.1: Cache for loaded voices
+let cachedVoices = [];
+let voicesLoaded = false;
+
+// v10.1.1: Initialize voices asynchronously
+const initVoices = () => {
+  return new Promise((resolve) => {
+    const loadVoices = () => {
+      cachedVoices = window.speechSynthesis.getVoices();
+      if (cachedVoices.length > 0) {
+        voicesLoaded = true;
+        console.log(`🔊 Loaded ${cachedVoices.length} voices`);
+        resolve(cachedVoices);
+      }
+    };
+    
+    // Try immediately
+    loadVoices();
+    
+    // Also listen for voiceschanged event (Chrome/Edge need this)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        loadVoices();
+      };
+    }
+    
+    // Fallback timeout
+    setTimeout(() => {
+      if (!voicesLoaded) {
+        loadVoices();
+        resolve(cachedVoices);
+      }
+    }, 500);
+  });
+};
+
+// Initialize on module load
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  initVoices();
+}
+
 export const VOICE_OPTIONS = {
   INDIAN_ENGLISH_FEMALE: 'indian_english_female',
   INDIAN_ENGLISH_MALE: 'indian_english_male',
@@ -82,9 +123,19 @@ const isHighQualityVoice = (voice) => {
 
 // Get the best matching voice from browser
 export const getBestVoice = (languageCode = 'en-IN', voicePreference = null) => {
-  const voices = window.speechSynthesis.getVoices();
+  // v10.1.1: Use cached voices or fetch fresh
+  let voices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
+  
+  // Update cache if we got voices
+  if (voices.length > 0 && cachedVoices.length === 0) {
+    cachedVoices = voices;
+    voicesLoaded = true;
+  }
+  
   if (voices.length === 0) {
-    console.warn('⚠️ No voices available yet. Browser might still be loading voices.');
+    console.warn('⚠️ No voices available yet. Triggering voice load...');
+    // Trigger voice loading
+    window.speechSynthesis.getVoices();
     return null;
   }
 
@@ -171,7 +222,8 @@ export const getBestVoice = (languageCode = 'en-IN', voicePreference = null) => 
 
 // v7.2.8: Get the most natural-sounding voice for singing/reciting
 export const getNaturalVoice = (languageCode = 'en-US') => {
-  const voices = window.speechSynthesis.getVoices();
+  // v10.1.1: Use cached voices
+  const voices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
   if (voices.length === 0) return null;
   
   const langCode = languageCode.split('-')[0];
@@ -206,7 +258,26 @@ export const getNaturalVoice = (languageCode = 'en-US') => {
 
 // Get available voices for testing
 export const getAvailableVoices = () => {
-  return window.speechSynthesis.getVoices();
+  return cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
+};
+
+// v10.1.1: Chrome bug workaround - speech synthesis can get stuck
+// This function ensures speech synthesis is reset before each use
+export const resetSpeechSynthesis = () => {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    // Chrome workaround: pause and resume to unstick
+    window.speechSynthesis.pause();
+    window.speechSynthesis.resume();
+  }
+};
+
+// v10.1.1: Ensure voices are loaded (call this before speaking)
+export const ensureVoicesLoaded = async () => {
+  if (voicesLoaded && cachedVoices.length > 0) {
+    return cachedVoices;
+  }
+  return initVoices();
 };
 
 // Test voice by speaking sample text
@@ -244,6 +315,8 @@ export default {
   getBestVoice,
   getNaturalVoice,
   getAvailableVoices,
-  testVoice
+  testVoice,
+  resetSpeechSynthesis,
+  ensureVoicesLoaded
 };
 
