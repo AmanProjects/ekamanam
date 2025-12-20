@@ -358,7 +358,7 @@ export class SessionHistoryTracker {
     }
 
     try {
-      this.endTime = Date.now();
+    this.endTime = Date.now();
       const duration = this.endTime - this.startTime;
       
       // Only save if session has meaningful activity (at least 5 seconds)
@@ -367,34 +367,34 @@ export class SessionHistoryTracker {
         return;
       }
 
-      const sessionData = {
-        userId: this.userId,
-        sessionId: this.sessionId,
+    const sessionData = {
+      userId: this.userId,
+      sessionId: this.sessionId,
         // v7.2.12: Enhanced metadata
         bookTitle: this.bookTitle,
         chapterTitle: this.chapterTitle,
         pdfId: this.pdfId,
         subject: this.subject,
         // Legacy fields for compatibility
-        pdfName: this.pdfName,
-        chapter: this.chapter,
-        startTime: Timestamp.fromMillis(this.startTime),
-        endTime: Timestamp.fromMillis(this.endTime),
+      pdfName: this.pdfName,
+      chapter: this.chapter,
+      startTime: Timestamp.fromMillis(this.startTime),
+      endTime: Timestamp.fromMillis(this.endTime),
         duration: duration,
-        stats: {
-          pagesViewed: Array.from(this.stats.pagesViewed),
-          totalAIQueries: this.stats.totalAIQueries,
-          flashcardsReviewed: this.stats.flashcardsReviewed,
-          doubtsSubmitted: this.stats.doubtsSubmitted,
-          breaksTaken: this.stats.breaksTaken,
-          avgCognitiveLoad: Math.round(this.stats.avgCognitiveLoad),
-          peakCognitiveLoad: Math.round(this.stats.peakCognitiveLoad),
-          conceptsMastered: this.stats.conceptsMastered,
-          totalFocusTime: this.stats.totalFocusTime
-        },
-        eventCount: this.events.length,
-        createdAt: Timestamp.now()
-      };
+      stats: {
+        pagesViewed: Array.from(this.stats.pagesViewed),
+        totalAIQueries: this.stats.totalAIQueries,
+        flashcardsReviewed: this.stats.flashcardsReviewed,
+        doubtsSubmitted: this.stats.doubtsSubmitted,
+        breaksTaken: this.stats.breaksTaken,
+        avgCognitiveLoad: Math.round(this.stats.avgCognitiveLoad),
+        peakCognitiveLoad: Math.round(this.stats.peakCognitiveLoad),
+        conceptsMastered: this.stats.conceptsMastered,
+        totalFocusTime: this.stats.totalFocusTime
+      },
+      eventCount: this.events.length,
+      createdAt: Timestamp.now()
+    };
 
       console.log('📊 Saving session:', {
         sessionId: this.sessionId,
@@ -404,17 +404,17 @@ export class SessionHistoryTracker {
         aiQueries: sessionData.stats.totalAIQueries
       });
 
-      await setDoc(doc(db, COLLECTIONS.SESSION_HISTORY, this.sessionId), sessionData);
+    await setDoc(doc(db, COLLECTIONS.SESSION_HISTORY, this.sessionId), sessionData);
 
-      // Save events separately (for detailed timeline)
+    // Save events separately (for detailed timeline)
       if (this.events.length > 0) {
-        const eventsData = {
-          sessionId: this.sessionId,
-          userId: this.userId,
-          events: this.events.slice(0, 100), // Limit to first 100 events
-          createdAt: Timestamp.now()
-        };
-        await setDoc(doc(db, COLLECTIONS.SESSION_EVENTS, this.sessionId), eventsData);
+    const eventsData = {
+      sessionId: this.sessionId,
+      userId: this.userId,
+      events: this.events.slice(0, 100), // Limit to first 100 events
+      createdAt: Timestamp.now()
+    };
+    await setDoc(doc(db, COLLECTIONS.SESSION_EVENTS, this.sessionId), eventsData);
       }
 
       console.log('✅ Session history saved successfully');

@@ -70,7 +70,7 @@ function AuthButton({ user }) {
         console.log('✅ OAuth access token stored from Firebase credential');
         console.log('🔑 Token preview:', credential.accessToken.substring(0, 20) + '...');
         console.log('✅ Drive permissions included via Firebase scopes');
-      } else {
+            } else {
         console.warn('⚠️ No access token in Firebase credential, requesting via GIS...');
         // Fallback: Request token via Google Identity Services
         await requestDriveTokenViaGIS();

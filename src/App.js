@@ -762,19 +762,19 @@ function App() {
           <Box sx={{ display: 'flex', alignItems: 'flex-start', flexGrow: 1, gap: isMobile ? 1 : 2 }}>
             {/* Logo with version underneath */}
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-              <Box
-                component="img"
-                src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
-                alt="Ekamanam"
-                sx={{
+            <Box
+              component="img"
+              src={`${process.env.PUBLIC_URL}/Ekamanam_logo.png`}
+              alt="Ekamanam"
+              sx={{
                   height: isMobile ? 40 : 50,
-                  width: 'auto',
+                width: 'auto',
                   objectFit: 'contain'
-                }}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
+              }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
               <Box 
                 component="span" 
                 sx={{ 
@@ -845,12 +845,12 @@ function App() {
                 sx={{
                   fontWeight: 600,
                   cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  border: 'none',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5568d3 0%, #6339a3 100%)',
-                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5568d3 0%, #6339a3 100%)',
+                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
                   },
                   transition: 'all 0.2s ease'
                 }}
@@ -1106,24 +1106,24 @@ function App() {
               height: isMobile ? 'calc(100% - 56px)' : '100%' // Account for bottom nav on mobile
             }}>
               {/* PDF Viewer - Desktop: left side, Mobile: full width when active */}
-              <Box 
-                sx={{ 
+            <Box 
+              sx={{ 
                   width: isMobile ? '100%' : `${pdfWidth}%`,
-                  height: '100%',
+                height: '100%',
                   display: isMobile && mobileView !== 'pdf' ? 'none' : 'flex',
-                  flexDirection: 'column'
-                }}
-              >
+                flexDirection: 'column'
+              }}
+            >
                 <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                  <PDFViewer
-                    selectedFile={selectedFile}
-                    pdfDocument={pdfDocument}
-                    setPdfDocument={setPdfDocument}
-                    currentPage={currentPage}
-                    setCurrentPage={setCurrentPage}
-                    onTextSelect={handleTextSelect}
-                    onPageTextExtract={setPageText}
-                  />
+              <PDFViewer
+                selectedFile={selectedFile}
+                pdfDocument={pdfDocument}
+                setPdfDocument={setPdfDocument}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                onTextSelect={handleTextSelect}
+                onPageTextExtract={setPageText}
+              />
                 </Box>
                 {/* Copyright Disclaimer */}
                 <Box sx={{ 
@@ -1139,66 +1139,66 @@ function App() {
                     © 2025 Amandeep Singh Talwar | PDF copyrights belong to respective owners | For personal educational use only
                   </Box>
                 </Box>
-              </Box>
+            </Box>
 
               {/* Resizable Divider - Desktop only */}
               {!isMobile && (
-                <Box
-                  onMouseDown={handleMouseDown}
-                  sx={{
-                    width: '8px',
-                    height: '100%',
-                    backgroundColor: 'divider',
-                    cursor: 'col-resize',
-                    position: 'relative',
-                    transition: isResizing ? 'none' : 'background-color 0.2s',
-                    '&:hover': {
-                      backgroundColor: 'primary.main',
-                      '&::before': {
-                        opacity: 1
-                      }
-                    },
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      left: '50%',
-                      top: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '2px',
-                      height: '40px',
-                      backgroundColor: 'background.paper',
-                      borderRadius: '2px',
-                      opacity: 0.5,
-                      transition: 'opacity 0.2s'
-                    }
-                  }}
-                />
+            <Box
+              onMouseDown={handleMouseDown}
+              sx={{
+                width: '8px',
+                height: '100%',
+                backgroundColor: 'divider',
+                cursor: 'col-resize',
+                position: 'relative',
+                transition: isResizing ? 'none' : 'background-color 0.2s',
+                '&:hover': {
+                  backgroundColor: 'primary.main',
+                  '&::before': {
+                    opacity: 1
+                  }
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '2px',
+                  height: '40px',
+                  backgroundColor: 'background.paper',
+                  borderRadius: '2px',
+                  opacity: 0.5,
+                  transition: 'opacity 0.2s'
+                }
+              }}
+            />
               )}
 
               {/* AI Mode Panel - Desktop: right side, Mobile: full width when active */}
-              <Box 
-                sx={{ 
+            <Box 
+              sx={{ 
                   width: isMobile ? '100%' : `${100 - pdfWidth}%`,
-                  height: '100%',
-                  overflow: 'hidden',
+                height: '100%',
+                overflow: 'hidden',
                   display: isMobile && mobileView !== 'ai' ? 'none' : 'flex',
-                  flexDirection: 'column'
-                }}
-              >
-                <AIModePanel
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  pdfId={pdfId}
-                  selectedText={selectedText}
-                  pageText={pageText}
-                  user={user}
-                  pdfDocument={pdfDocument}
-                  activeTab={aiPanelTab}
-                  onTabChange={setAiPanelTab}
-                  vyonnQuery={vyonnQuery}
-                  onVyonnQueryUsed={() => setVyonnQuery(null)}
-                  subscription={subscription}
-                  onUpgrade={() => setShowSubscriptionDialog(true)}
+                flexDirection: 'column'
+              }}
+            >
+              <AIModePanel
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pdfId={pdfId}
+                selectedText={selectedText}
+                pageText={pageText}
+                user={user}
+                pdfDocument={pdfDocument}
+                activeTab={aiPanelTab}
+                onTabChange={setAiPanelTab}
+                vyonnQuery={vyonnQuery}
+                onVyonnQueryUsed={() => setVyonnQuery(null)}
+                subscription={subscription}
+                onUpgrade={() => setShowSubscriptionDialog(true)}
                   isMobile={isMobile}
                   pdfMetadata={currentLibraryItem}
                   onOpenSettings={() => setShowSettings(true)}
@@ -1208,8 +1208,8 @@ function App() {
                       sessionTrackerRef.current.recordAIQuery(queryType, queryText, currentPage, cognitiveLoad);
                     }
                   }}
-                />
-              </Box>
+              />
+            </Box>
             </Box>
 
             {/* v7.2.10: Mobile Bottom Navigation */}

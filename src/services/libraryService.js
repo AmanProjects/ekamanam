@@ -366,16 +366,16 @@ export const updateLibraryItem = async (id, updates) => {
     let foundInDrive = false;
 
     // Try to update in IndexedDB first
-    try {
-      const db = await initDB();
-      const item = await db.get(STORES.LIBRARY_ITEMS, id);
-      
+  try {
+    const db = await initDB();
+    const item = await db.get(STORES.LIBRARY_ITEMS, id);
+    
       if (item) {
         foundInIndexedDB = true;
         updatedItem = { ...item, ...updates };
         await db.put(STORES.LIBRARY_ITEMS, updatedItem);
         console.log('✅ Library item updated in IndexedDB:', id);
-      }
+    }
     } catch (dbError) {
       console.warn('⚠️ IndexedDB update failed:', dbError);
     }

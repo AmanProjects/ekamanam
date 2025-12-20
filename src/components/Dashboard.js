@@ -195,22 +195,22 @@ function Dashboard({
         {/* Welcome Header */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 0.5 }}>
-            <Typography 
+                  <Typography 
               variant="h5" 
               sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.3 }}
-            >
+                  >
               {getGreeting()}, {user?.displayName?.split(' ')[0] || 'there'}!
-            </Typography>
-            
+                </Typography>
+                
             {subscription && !subscription.loading && (
               subscription.isPaid ? (
-                <Chip
+                    <Chip
                   icon={<CheckIcon sx={{ fontSize: '0.9rem !important' }} />}
                   label={subscription.daysRemaining ? `${subscription.daysRemaining}d left` : 'Active'}
-                  size="small"
+                      size="small"
                   color="success"
                   sx={{ fontWeight: 600, height: 24 }}
-                />
+                    />
               ) : (
                 <Button
                   variant="text"
@@ -239,7 +239,7 @@ function Dashboard({
               key={i}
               elevation={0}
               onClick={stat.onClick}
-              sx={{
+                  sx={{
                 flex: 1,
                 p: 1.5,
                 borderRadius: 2,
@@ -254,22 +254,22 @@ function Dashboard({
             >
               <Box sx={{ color: stat.color, mb: 0.5, '& svg': { fontSize: 22 } }}>
                 {stat.icon}
-              </Box>
+            </Box>
               <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1 }}>
                 {stat.value}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {stat.label}
               </Typography>
-            </Paper>
+          </Paper>
           ))}
         </Box>
 
         {/* Primary CTA - My Library */}
-        <Paper
+        <Paper 
           elevation={0}
           onClick={() => onOpenLibrary(subscription?.isFree ? 1 : 0)}
-          sx={{
+          sx={{ 
             p: 2.5,
             mb: 3,
             borderRadius: 3,
@@ -289,10 +289,10 @@ function Dashboard({
             <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle1" fontWeight={700} color="white">
                 {pdfCount > 0 ? 'Continue Learning' : 'Start Learning'}
-              </Typography>
+          </Typography>
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem' }}>
                 {pdfCount > 0 ? `${pdfCount} PDF${pdfCount !== 1 ? 's' : ''} in library` : 'Add PDFs to begin'}
-              </Typography>
+          </Typography>
             </Box>
             <IconButton sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>
               <PlayIcon />
@@ -305,7 +305,7 @@ function Dashboard({
           <>
             <Typography 
               variant="overline" 
-              sx={{ 
+                sx={{
                 display: 'block', 
                 mb: 1.5, 
                 color: 'text.secondary', 
@@ -314,38 +314,38 @@ function Dashboard({
               }}
             >
               Learning Tools
-            </Typography>
+                </Typography>
             
             <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
               {tools.map((tool) => (
-                <Paper
+              <Paper
                   key={tool.key}
-                  elevation={0}
+                elevation={0}
                   onClick={tool.onClick}
-                  sx={{
+                sx={{
                     flex: 1,
                     p: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
+                  border: '1px solid',
+                  borderColor: 'divider',
                     borderRadius: 2,
-                    textAlign: 'center',
+                  textAlign: 'center',
                     cursor: 'pointer',
                     position: 'relative',
                     transition: 'all 0.2s ease',
                     bgcolor: 'background.paper',
-                    '&:hover': { 
+                  '&:hover': {
                       borderColor: 'primary.light',
-                      transform: 'translateY(-2px)', 
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                    }
-                  }}
-                >
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                  }
+                }}
+              >
                   {tool.badge && (
                     <Chip
                       label={tool.badge}
                       size="small"
                       color="warning"
-                      sx={{ 
+                sx={{
                         position: 'absolute', 
                         top: -8, 
                         right: -4, 
@@ -357,7 +357,7 @@ function Dashboard({
                     />
                   )}
                   <Box
-                    sx={{
+                sx={{
                       width: 44,
                       height: 44,
                       borderRadius: '12px',
@@ -369,8 +369,8 @@ function Dashboard({
                       mb: 1,
                       color: tool.iconColor,
                       '& svg': { fontSize: 24 }
-                    }}
-                  >
+                }}
+              >
                     {tool.icon}
                   </Box>
                   <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ lineHeight: 1.2, mb: 0.25 }}>
@@ -378,8 +378,8 @@ function Dashboard({
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                     {tool.subtitle}
-                  </Typography>
-                </Paper>
+                </Typography>
+              </Paper>
               ))}
             </Box>
           </>
@@ -389,18 +389,18 @@ function Dashboard({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
           <Typography 
             variant="overline" 
-            sx={{ 
+                sx={{
               color: 'text.secondary', 
               fontWeight: 600,
               letterSpacing: 1.5
-            }}
-          >
+                }}
+              >
             Educational Tools
-          </Typography>
-          <Chip 
-            label="NEW" 
-            size="small" 
-            sx={{ 
+                </Typography>
+            <Chip
+              label="NEW"
+              size="small"
+                sx={{
               height: 18, 
               fontSize: '0.6rem', 
               fontWeight: 700, 
@@ -440,9 +440,9 @@ function Dashboard({
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   bgcolor: 'background.paper',
-                  '&:hover': { 
+                  '&:hover': {
                     borderColor: tool.color,
-                    transform: 'translateY(-2px)', 
+                    transform: 'translateY(-2px)',
                     boxShadow: `0 4px 12px ${tool.color}20`
                   }
                 }}
@@ -465,14 +465,14 @@ function Dashboard({
           </Box>
         ) : (
           // Free users - Compelling upgrade message
-          <Paper
+              <Paper
             elevation={2}
-            sx={{
+                sx={{
               p: 0,
               mb: 3,
               borderRadius: 2,
               overflow: 'hidden',
-              border: '1px solid',
+                  border: '1px solid',
               borderColor: '#1976d2'
             }}
           >
@@ -554,16 +554,16 @@ function Dashboard({
                     <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
                       /month
                     </Typography>
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
                     Cancel anytime
-                  </Typography>
+                </Typography>
                 </Box>
                 <Button
                   variant="contained"
                   size="medium"
                   onClick={onUpgrade}
-                  sx={{ 
+                sx={{
                     textTransform: 'none', 
                     fontWeight: 600,
                     px: 3,
@@ -575,7 +575,7 @@ function Dashboard({
                 </Button>
               </Box>
             </Box>
-          </Paper>
+              </Paper>
         )}
 
         {/* AI Queries Usage - Hidden per user request */}

@@ -499,14 +499,14 @@ function AdminDashboard({ open, onClose }) {
   const renderContent = () => {
     switch (activeSection) {
       case 'tabs':
-        return (
+  return (
           <Box>
             <Typography variant="h6" fontWeight={600} gutterBottom>
               Tab Visibility
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Control which tabs are visible in the PDF reader view.
-            </Typography>
+              </Typography>
             <Grid container spacing={2}>
               {Object.entries(config.tabs)
                 .filter(([key, tab]) => tab && tab.label && DEFAULT_CONFIG.tabs[key]) // Only show valid tabs
@@ -514,9 +514,9 @@ function AdminDashboard({ open, onClose }) {
                 <Grid item xs={12} sm={6} key={key}>
                   <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Typography>{tab.label}</Typography>
-                    <Switch
-                      checked={tab.enabled}
-                      onChange={(e) => updateTabEnabled(key, e.target.checked)}
+                        <Switch
+                          checked={tab.enabled}
+                          onChange={(e) => updateTabEnabled(key, e.target.checked)}
                       color="primary"
                     />
                   </Paper>
@@ -544,9 +544,9 @@ function AdminDashboard({ open, onClose }) {
                     <Typography>
                       {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                     </Typography>
-                    <Switch
-                      checked={enabled}
-                      onChange={(e) => updateFeature(key, e.target.checked)}
+                        <Switch
+                          checked={enabled}
+                          onChange={(e) => updateFeature(key, e.target.checked)}
                       color="primary"
                     />
                   </Paper>

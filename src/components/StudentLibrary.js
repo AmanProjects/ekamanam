@@ -597,8 +597,8 @@ function StudentLibrary({ onBack, onOpenPdf, onOpenSamplePDF, initialTab = 0 }) 
                             )}
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <Typography variant="subtitle2" fontWeight={600} gutterBottom noWrap sx={{ flex: 1 }}>
-                                {pdf.chapter ? `Ch ${pdf.chapter}: ` : ''}{pdf.name}
-                              </Typography>
+                              {pdf.chapter ? `Ch ${pdf.chapter}: ` : ''}{pdf.name}
+                            </Typography>
                               {/* v7.2.26: Only show edit button for user PDFs, not samples */}
                               {pdf.type !== 'sample' && !pdf.id?.startsWith('sample-') && (
                                 <IconButton 

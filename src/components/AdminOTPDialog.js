@@ -112,8 +112,8 @@ function AdminOTPDialog({ open, onClose, onSuccess, onOpenSettings }) {
             </Typography>
             
             {parentEmail ? (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                <Typography variant="body2">
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2">
                   <strong>Parent Email:</strong> {maskEmail(parentEmail)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
@@ -151,8 +151,8 @@ function AdminOTPDialog({ open, onClose, onSuccess, onOpenSettings }) {
                     <strong>Settings → General</strong>
                   )}
                   {' '}and add a parent email address.
-                </Typography>
-              </Alert>
+              </Typography>
+            </Alert>
             )}
             
             {error && (

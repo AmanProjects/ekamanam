@@ -186,14 +186,14 @@ export const getBestVoice = (languageCode = 'en-IN', voicePreference = null) => 
   }
   
   if (!fallback) {
-    if (pref.includes('english')) {
-      fallback = voices.find(v => v.lang.startsWith('en-IN')) || voices.find(v => v.lang.startsWith('en'));
-    } else if (pref.includes('hindi')) {
-      fallback = voices.find(v => v.lang.startsWith('hi-IN') || v.lang.startsWith('hi'));
-    } else if (pref.includes('telugu')) {
-      fallback = voices.find(v => v.lang.startsWith('te-IN') || v.lang.startsWith('te'));
-    } else if (pref.includes('tamil')) {
-      fallback = voices.find(v => v.lang.startsWith('ta-IN') || v.lang.startsWith('ta'));
+  if (pref.includes('english')) {
+    fallback = voices.find(v => v.lang.startsWith('en-IN')) || voices.find(v => v.lang.startsWith('en'));
+  } else if (pref.includes('hindi')) {
+    fallback = voices.find(v => v.lang.startsWith('hi-IN') || v.lang.startsWith('hi'));
+  } else if (pref.includes('telugu')) {
+    fallback = voices.find(v => v.lang.startsWith('te-IN') || v.lang.startsWith('te'));
+  } else if (pref.includes('tamil')) {
+    fallback = voices.find(v => v.lang.startsWith('ta-IN') || v.lang.startsWith('ta'));
     }
   }
 

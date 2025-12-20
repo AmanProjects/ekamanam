@@ -55,7 +55,7 @@ import { getSessionHistory, getSessionDetails } from '../services/sessionHistory
 
 /**
  * Session Timeline Component - v7.2.23
- * 
+ *
  * Redesigned with excellent analytics:
  * - Overview dashboard with key metrics
  * - Weekly progress visualization
@@ -306,9 +306,9 @@ function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage }) {
           <IconButton onClick={loadSessions} size="small" title="Refresh">
             <RefreshIcon />
           </IconButton>
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon />
-          </IconButton>
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon />
+        </IconButton>
         </Box>
       </DialogTitle>
 
@@ -321,11 +321,11 @@ function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage }) {
       </Box>
 
       <DialogContent dividers sx={{ p: 2 }}>
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        )}
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            )}
 
         {/* Tab 0: Overview Dashboard */}
         {activeTab === 0 && !loading && (
@@ -489,13 +489,13 @@ function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage }) {
                     <Paper key={bookName} elevation={0} sx={{ mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
                       <Box
                         onClick={() => toggleBook(bookName)}
-                        sx={{
+                      sx={{
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           p: 2,
                           bgcolor: 'action.hover',
-                          cursor: 'pointer',
+                        cursor: 'pointer',
                           '&:hover': { bgcolor: 'action.selected' }
                         }}
                       >
@@ -510,8 +510,8 @@ function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage }) {
                           <Chip size="small" label={`${totals.totalSessions} sessions`} variant="outlined" />
                           <Chip size="small" icon={<TimeIcon />} label={formatDuration(totals.totalTime)} color="primary" />
                         </Box>
-                      </Box>
-                      
+                        </Box>
+
                       <Collapse in={isExpanded}>
                         <TableContainer>
                           <Table size="small">
@@ -577,10 +577,10 @@ function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage }) {
                     <Box>
                       <Typography variant="h6" fontWeight={600}>
                         {selectedSession.bookTitle || selectedSession.pdfName}
-                      </Typography>
+                  </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {selectedSession.chapterTitle || selectedSession.chapter || 'Study Session'} • {formatDate(selectedSession.startTime)}
-                      </Typography>
+                  </Typography>
                     </Box>
                     {selectedSession.pdfId && onOpenPdfAtPage && (
                       <Button

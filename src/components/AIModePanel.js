@@ -417,6 +417,13 @@ function convertAICircuitToReactFlow(circuitData) {
 }
 
 function TabPanel({ children, value, index, ...other }) {
+  // v10.1.2: Debug logging
+  React.useEffect(() => {
+    if (value === index) {
+      console.log(`📄 [TabPanel] Rendering tab index ${index}, active tab: ${value}`);
+    }
+  }, [value, index]);
+
   return (
     <div
       role="tabpanel"
@@ -1294,8 +1301,8 @@ Question: ${userMessage}`;
           
           console.log('🔧 Attempting to parse repaired JSON...');
           try {
-            parsedResponse = JSON.parse(repairedJson);
-            console.log('✅ JSON repair successful!');
+          parsedResponse = JSON.parse(repairedJson);
+          console.log('✅ JSON repair successful!');
           } catch (secondParseError) {
             // Step 3: More aggressive repair - try to build a valid partial JSON
             console.warn('⚠️ Second parse failed, attempting aggressive repair...');
@@ -1441,60 +1448,93 @@ Question: ${userMessage}`;
   };
 
   // V3.0.3: Natural text-to-speech for Teacher Mode sections
-  // v10.1.1: Fixed voice loading and Chrome bug workaround
+  // v10.1.2: Robust speech with fallback and detailed debugging
   const handleSpeakSection = async (sectionName, htmlContent) => {
-    // v10.1.1: Reset speech synthesis to fix Chrome bug
-    resetSpeechSynthesis();
+    console.log('🔊 [Speech] Starting handleSpeakSection for:', sectionName);
     
-    // Ensure voices are loaded
-    await ensureVoicesLoaded();
+    // v10.1.2: Complete reset of speech synthesis
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      // Chrome workaround: pause and resume
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+    } else {
+      console.error('❌ [Speech] Speech synthesis not supported in this browser');
+      setError('Speech synthesis is not supported in your browser');
+      return;
+    }
 
     // Extract plain text from HTML
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
+    tempDiv.innerHTML = htmlContent || '';
     const plainText = tempDiv.textContent || tempDiv.innerText || '';
 
     if (!plainText.trim()) {
-      console.log('⚠️ No text to speak');
+      console.log('⚠️ [Speech] No text to speak');
       return;
     }
+
+    console.log('📝 [Speech] Text to speak:', plainText.substring(0, 100) + '...');
+
+    // v10.1.2: Get voices with retry
+    let voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      console.log('⏳ [Speech] Waiting for voices to load...');
+      await new Promise(resolve => {
+        const checkVoices = setInterval(() => {
+          voices = window.speechSynthesis.getVoices();
+          if (voices.length > 0) {
+            clearInterval(checkVoices);
+            resolve();
+          }
+        }, 100);
+        // Timeout after 2 seconds
+        setTimeout(() => {
+          clearInterval(checkVoices);
+          resolve();
+        }, 2000);
+      });
+      voices = window.speechSynthesis.getVoices();
+    }
+
+    console.log('🎤 [Speech] Available voices:', voices.length, voices.map(v => v.name).slice(0, 5));
 
     // Create speech utterance
     const utterance = new SpeechSynthesisUtterance(plainText);
     
-    // V3.0.3: Use voice service for intelligent voice selection
-    // Detect language and set voice based on user preference
+    // v10.1.2: Simple voice selection - just use the first available voice if custom fails
     const isEnglish = detectedLang?.isEnglish || manualLanguage === 'English';
     const language = manualLanguage || detectedLang?.language || 'English';
     
-    // Map detected language to language code
-    const langCodes = {
-      'English': 'en-US',
-      'Telugu': 'te-IN',
-      'Hindi': 'hi-IN',
-      'Tamil': 'ta-IN',
-      'Kannada': 'kn-IN',
-      'Malayalam': 'ml-IN',
-      'Bengali': 'bn-IN',
-      'Marathi': 'mr-IN',
-      'Gujarati': 'gu-IN'
-    };
-    
-    const languageCode = isEnglish ? 'en-US' : (langCodes[language] || 'hi-IN');
-    
-    // Get best matching voice based on user preference
-    const selectedVoice = getBestVoice(languageCode);
+    // Try to find a suitable voice
+    let selectedVoice = null;
+    if (voices.length > 0) {
+      // First try: exact language match
+      const langCode = isEnglish ? 'en' : (language === 'Hindi' ? 'hi' : language === 'Telugu' ? 'te' : 'en');
+      selectedVoice = voices.find(v => v.lang.startsWith(langCode));
+      
+      // Fallback: any English voice
+      if (!selectedVoice) {
+        selectedVoice = voices.find(v => v.lang.startsWith('en'));
+      }
+      
+      // Final fallback: first available voice
+      if (!selectedVoice) {
+        selectedVoice = voices[0];
+      }
+    }
+
     if (selectedVoice) {
       utterance.voice = selectedVoice;
       utterance.lang = selectedVoice.lang;
-      console.log(`🔊 Using preferred voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+      console.log(`✅ [Speech] Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
     } else {
-      utterance.lang = languageCode;
-      console.log(`🔊 Using default language: ${languageCode}`);
+      utterance.lang = 'en-US';
+      console.log('⚠️ [Speech] No voice selected, using default lang: en-US');
     }
     
-    // Set speech parameters
-    utterance.rate = isEnglish ? 0.95 : 0.9;
+    // Set speech parameters - ensure volume is maximum
+    utterance.rate = 0.9;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
 
@@ -1502,22 +1542,41 @@ Question: ${userMessage}`;
     utterance.onstart = () => {
       setSpeakingSection(sectionName);
       setIsSpeaking(true);
-      console.log(`🔊 Speaking section: ${sectionName}`);
+      console.log(`▶️ [Speech] Speaking section: ${sectionName}`);
     };
 
     utterance.onend = () => {
       setSpeakingSection(null);
       setIsSpeaking(false);
-      console.log('🔇 Speech ended');
+      console.log('⏹️ [Speech] Speech ended normally');
     };
 
     utterance.onerror = (event) => {
-      console.error('❌ Speech error:', event.error);
+      console.error('❌ [Speech] Speech error:', event.error, event);
       setSpeakingSection(null);
       setIsSpeaking(false);
+      
+      // v10.1.2: Retry once if canceled
+      if (event.error === 'canceled' || event.error === 'interrupted') {
+        console.log('🔄 [Speech] Retrying after error...');
+        setTimeout(() => {
+          window.speechSynthesis.speak(utterance);
+        }, 500);
+      }
     };
 
+    // v10.1.2: Wait for any ongoing speech to stop, then wait before speaking
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      console.log('⏸️ [Speech] Waiting for previous speech to stop...');
+      window.speechSynthesis.cancel();
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    console.log('⏳ [Speech] Waiting 200ms before speaking...');
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
     // Speak
+    console.log('🔊 [Speech] Calling speechSynthesis.speak()');
     window.speechSynthesis.speak(utterance);
   };
 
@@ -1801,83 +1860,119 @@ Question: ${userMessage}`;
   };
 
   // Enhanced function to speak text naturally with proper language detection
-  // v10.1.1: Fixed voice loading and Chrome bug workaround
+  // v10.1.2: Robust speech with mutex lock to prevent canceled errors
   const handleSpeakText = async (text, language, id) => {
-    if ('speechSynthesis' in window) {
-      // If clicking the same button while speaking, stop
-      if (currentSpeakingId === id) {
-        handleStopSpeech();
-        return;
-      }
-      
-      // v10.1.1: Reset speech synthesis to fix Chrome bug
-      resetSpeechSynthesis();
-      
-      // Ensure voices are loaded
-      await ensureVoicesLoaded();
-      
-      // Strip HTML tags for speech
-      const cleanText = text?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() || '';
-      
-      if (!cleanText) {
-        console.log('⚠️ No text to speak');
-        return;
-      }
-      
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      
-      // Map detected language to speech synthesis language codes
-      const languageMap = {
-        'Telugu': 'te-IN',
-        'తెలుగు': 'te-IN',
-        'Hindi': 'hi-IN',
-        'हिंदी': 'hi-IN',
-        'Tamil': 'ta-IN',
-        'தமிழ்': 'ta-IN',
-        'Kannada': 'kn-IN',
-        'ಕನ್ನಡ': 'kn-IN',
-        'Malayalam': 'ml-IN',
-        'മലയാളം': 'ml-IN',
-        'Bengali': 'bn-IN',
-        'বাংলা': 'bn-IN',
-        'English': 'en-US'
-      };
-      
-      const langCode = languageMap[language] || 'en-US';
-      utterance.lang = langCode;
-      utterance.rate = 0.85; // Natural speaking pace
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      
-      // v10.1.1: Use voice service for better voice selection
-      const selectedVoice = getBestVoice(langCode);
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
-        console.log(`🔊 Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
-      }
-      
-      // Set speaking state
+    console.log('🔊 [SpeakText] Starting for id:', id);
+    
+    if (!('speechSynthesis' in window)) {
+      console.error('❌ [SpeakText] Speech synthesis not supported');
+      setError('Text-to-speech is not supported in your browser');
+      return;
+    }
+    
+    // If clicking the same button while speaking, stop
+    if (currentSpeakingId === id) {
+      handleStopSpeech();
+      return;
+    }
+    
+    // v10.1.2: Wait for any ongoing speech to fully stop
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      console.log('⏸️ [SpeakText] Waiting for previous speech to stop...');
+      window.speechSynthesis.cancel();
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    // Strip HTML tags for speech
+    const cleanText = text?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() || '';
+    
+    if (!cleanText) {
+      console.log('⚠️ [SpeakText] No text to speak');
+      return;
+    }
+    
+    console.log('📝 [SpeakText] Text preview:', cleanText.substring(0, 50) + '...');
+    
+    // v10.1.2: Get voices with retry
+    let voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      console.log('⏳ [SpeakText] Loading voices...');
+      await new Promise(resolve => {
+        const checkVoices = setInterval(() => {
+          voices = window.speechSynthesis.getVoices();
+          if (voices.length > 0) {
+            clearInterval(checkVoices);
+            resolve();
+          }
+        }, 100);
+        setTimeout(() => { clearInterval(checkVoices); resolve(); }, 2000);
+      });
+      voices = window.speechSynthesis.getVoices();
+    }
+    
+    console.log('🎤 [SpeakText] Voices available:', voices.length);
+    
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    // Simple voice selection
+    let selectedVoice = null;
+    if (voices.length > 0) {
+      const langPrefix = language?.includes('Telugu') ? 'te' : 
+                        language?.includes('Hindi') ? 'hi' : 
+                        language?.includes('Tamil') ? 'ta' : 'en';
+      selectedVoice = voices.find(v => v.lang.startsWith(langPrefix)) || 
+                     voices.find(v => v.lang.startsWith('en')) || 
+                     voices[0];
+    }
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
+      console.log(`✅ [SpeakText] Voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+    } else {
+      utterance.lang = 'en-US';
+      console.log('⚠️ [SpeakText] Using default lang: en-US');
+    }
+    
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Set speaking state AFTER creating utterance
+    utterance.onstart = () => {
+      console.log('▶️ [SpeakText] Speech started successfully');
       setCurrentSpeakingId(id);
       if (id !== undefined) {
         setSpeakingWordIndex(id);
       }
+    };
+    
+    utterance.onend = () => {
+      console.log('⏹️ [SpeakText] Speech ended normally');
+      setCurrentSpeakingId(null);
+      setSpeakingWordIndex(null);
+    };
+    
+    utterance.onerror = (event) => {
+      console.error('❌ [SpeakText] Speech error:', event.error, event);
+      setCurrentSpeakingId(null);
+      setSpeakingWordIndex(null);
       
-      utterance.onend = () => {
-        setCurrentSpeakingId(null);
-        setSpeakingWordIndex(null);
-      };
-      
-      utterance.onerror = (error) => {
-        console.error('Speech error:', error);
-        setCurrentSpeakingId(null);
-        setSpeakingWordIndex(null);
-      };
-      
-      window.speechSynthesis.speak(utterance);
-    } else {
-      setError('Text-to-speech is not supported in your browser');
-    }
+      // v10.1.2: Retry once if canceled
+      if (event.error === 'canceled' || event.error === 'interrupted') {
+        console.log('🔄 [SpeakText] Retrying after error...');
+        setTimeout(() => {
+          window.speechSynthesis.speak(utterance);
+        }, 500);
+      }
+    };
+    
+    // v10.1.2: Wait longer before speaking to ensure everything is ready
+    console.log('⏳ [SpeakText] Waiting 200ms before speaking...');
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    console.log('🔊 [SpeakText] Calling speechSynthesis.speak()');
+    window.speechSynthesis.speak(utterance);
   };
 
   // Helper specifically for word pronunciation
@@ -2405,8 +2500,8 @@ Question: ${userMessage}`;
           
           console.log('🔧 Attempting to parse repaired JSON...');
           try {
-            parsedResponse = JSON.parse(repairedJson);
-            console.log('✅ JSON repair successful!');
+          parsedResponse = JSON.parse(repairedJson);
+          console.log('✅ JSON repair successful!');
           } catch (secondParseError) {
             // Step 3: More aggressive repair - try to salvage partial response
             console.warn('⚠️ Second parse failed, attempting partial recovery...');
@@ -3162,8 +3257,8 @@ Return ONLY this valid JSON:
   const readTabDisabled = false;
   const readTabTooltip = "Word-by-word analysis with pronunciation and meaning";
   
-  // Debug logging for language detection
-  console.log('🔍 [Language Detection]', {
+  // Debug logging for language detection and tab state
+  console.log('🔍 [Language Detection & Tab State]', {
     mode: manualLanguage ? 'Manual' : 'Auto',
     manualLanguage: manualLanguage || 'none',
     autoDetected: autoDetectedLang.language,
@@ -3172,7 +3267,10 @@ Return ONLY this valid JSON:
     pageTextLength: pageText?.length || 0,
     isEnglish,
     readTabDisabled,
-    currentPage
+    currentPage,
+    showMultilingual,
+    multilingual: tabIndices.multilingual,
+    activeTab
   });
 
   // Check tab visibility from admin config
@@ -3940,7 +4038,18 @@ Return ONLY this valid JSON:
         {/* Read & Understand Tab */}
         {showMultilingual && <TabPanel value={activeTab} index={tabIndices.multilingual}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+            {/* v10.1.2: Better UI feedback for Read tab */}
+            <Alert severity="info" sx={{ mb: 2 }}>
+              📚 <strong>Word-by-Word Analysis:</strong> Get pronunciation guide and English meanings for key words in this page.
+            </Alert>
+
+            {!pageText && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                ⚠️ Page text is loading... Please wait a moment and try again.
+              </Alert>
+            )}
+
+            <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Button
                 variant="contained"
                 color="primary"
@@ -3948,7 +4057,7 @@ Return ONLY this valid JSON:
                 startIcon={<ReadIcon />}
                 onClick={() => handleWordByWordAnalysis(false)}
                 disabled={analyzingWords || !pageText}
-                sx={{ flex: 1 }}
+                sx={{ flex: 1, minWidth: '200px' }}
               >
                 {analyzingWords && wordBatch === 1 ? 'Analyzing...' : 'Start Analysis'}
               </Button>
@@ -3971,15 +4080,12 @@ Return ONLY this valid JSON:
                   size="large"
                   onClick={() => handleWordByWordAnalysis(true)}
                   disabled={analyzingWords}
-                  sx={{ flex: 1 }}
+                  sx={{ flex: 1, minWidth: '200px' }}
                 >
                   {analyzingWords ? 'Loading...' : `Load More Words (Batch ${wordBatch + 1})`}
                 </Button>
               )}
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block', textAlign: 'center' }}>
-              Get pronunciation guide and English meanings for key words • Click "Load More" for additional words
-            </Typography>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -4571,9 +4677,9 @@ Return ONLY this valid JSON:
                                       dangerouslySetInnerHTML={{ __html: exercise.answer }} 
                                     />
                                   ) : (
-                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                                      {exercise.answer}
-                                    </Typography>
+                                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                                    {exercise.answer}
+                                  </Typography>
                                   )}
                                   <Button
                                     size="small"

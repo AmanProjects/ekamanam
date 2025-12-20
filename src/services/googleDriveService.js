@@ -239,7 +239,7 @@ export async function requestDrivePermissions() {
       console.error('❌ Token test failed even with fresh token:', testResult);
       throw new Error('Drive access denied. Please check your Google Cloud Console settings.');
     }
-    
+
     console.log('✅ Drive permissions confirmed and initialized');
     return true;
   } catch (error) {
