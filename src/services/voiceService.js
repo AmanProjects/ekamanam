@@ -284,7 +284,7 @@ export const ensureVoicesLoaded = async () => {
 export const testVoice = (voiceOption, text = "Hello! This is how I sound.") => {
   if (!('speechSynthesis' in window)) {
     console.error('Speech synthesis not supported');
-    return;
+    return { success: false, error: 'Speech synthesis not supported in this browser' };
   }
 
   // Cancel any ongoing speech
@@ -302,9 +302,83 @@ export const testVoice = (voiceOption, text = "Hello! This is how I sound.") => 
 
     console.log(`🔊 Testing voice: ${voice.name}`);
     window.speechSynthesis.speak(utterance);
+    return { success: true, voice: voice.name };
   } else {
     console.error('No suitable voice found');
+    return { success: false, error: 'No suitable voice found' };
   }
+};
+
+// v10.1.1: Diagnostic function to test audio
+export const runAudioDiagnostics = async () => {
+  const results = {
+    speechSynthesisSupported: false,
+    voicesAvailable: 0,
+    voicesList: [],
+    testResult: null,
+    browserInfo: navigator.userAgent
+  };
+  
+  // Check speech synthesis support
+  if ('speechSynthesis' in window) {
+    results.speechSynthesisSupported = true;
+    
+    // Ensure voices are loaded
+    await ensureVoicesLoaded();
+    
+    const voices = getAvailableVoices();
+    results.voicesAvailable = voices.length;
+    results.voicesList = voices.map(v => ({
+      name: v.name,
+      lang: v.lang,
+      local: v.localService
+    }));
+    
+    // Try to speak a test phrase
+    return new Promise((resolve) => {
+      const testUtterance = new SpeechSynthesisUtterance("Audio test. If you can hear this, speech synthesis is working.");
+      testUtterance.volume = 1.0;
+      testUtterance.rate = 1.0;
+      testUtterance.pitch = 1.0;
+      
+      // Use default voice or first available
+      if (voices.length > 0) {
+        testUtterance.voice = voices[0];
+        testUtterance.lang = voices[0].lang;
+      }
+      
+      testUtterance.onstart = () => {
+        console.log('🔊 Audio test started');
+        results.testResult = 'started';
+      };
+      
+      testUtterance.onend = () => {
+        console.log('✅ Audio test completed');
+        results.testResult = 'completed';
+        resolve(results);
+      };
+      
+      testUtterance.onerror = (event) => {
+        console.error('❌ Audio test error:', event.error);
+        results.testResult = `error: ${event.error}`;
+        resolve(results);
+      };
+      
+      // Reset and speak
+      resetSpeechSynthesis();
+      window.speechSynthesis.speak(testUtterance);
+      
+      // Timeout fallback
+      setTimeout(() => {
+        if (results.testResult === 'started') {
+          results.testResult = 'timeout - speech may have started but no end event received';
+        }
+        resolve(results);
+      }, 5000);
+    });
+  }
+  
+  return results;
 };
 
 export default {
@@ -317,6 +391,7 @@ export default {
   getAvailableVoices,
   testVoice,
   resetSpeechSynthesis,
-  ensureVoicesLoaded
+  ensureVoicesLoaded,
+  runAudioDiagnostics
 };
 

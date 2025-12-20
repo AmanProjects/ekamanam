@@ -671,32 +671,55 @@ function AIModePanel({
   };
 
   // Helper function to detect language and return details
+  // v10.1.2: Improved detection with character counting for more accurate results
   const detectLanguage = (text) => {
-    if (!text || typeof text !== 'string') {
-      return { language: 'Unknown', emoji: '❓', isEnglish: false };
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      // v10.1.2: Return "Detecting..." instead of Unknown when no text yet
+      return { language: 'Detecting...', emoji: '🔍', isEnglish: false, script: 'Unknown' };
     }
     
-    // Check for regional language scripts
-    const hasDevanagari = /[\u0900-\u097F]/.test(text); // Hindi, Sanskrit, Marathi
-    const hasTelugu = /[\u0C00-\u0C7F]/.test(text);
-    const hasTamil = /[\u0B80-\u0BFF]/.test(text);
-    const hasBengali = /[\u0980-\u09FF]/.test(text);
-    const hasGujarati = /[\u0A80-\u0AFF]/.test(text);
-    const hasGurmukhi = /[\u0A00-\u0A7F]/.test(text); // Punjabi
-    const hasOriya = /[\u0B00-\u0B7F]/.test(text); // Odia
-    const hasMalayalam = /[\u0D00-\u0D7F]/.test(text);
-    const hasKannada = /[\u0C80-\u0CFF]/.test(text);
+    // Count characters of each script type for more accurate detection
+    const scripts = {
+      devanagari: (text.match(/[\u0900-\u097F]/g) || []).length,
+      telugu: (text.match(/[\u0C00-\u0C7F]/g) || []).length,
+      tamil: (text.match(/[\u0B80-\u0BFF]/g) || []).length,
+      bengali: (text.match(/[\u0980-\u09FF]/g) || []).length,
+      gujarati: (text.match(/[\u0A80-\u0AFF]/g) || []).length,
+      gurmukhi: (text.match(/[\u0A00-\u0A7F]/g) || []).length,
+      oriya: (text.match(/[\u0B00-\u0B7F]/g) || []).length,
+      malayalam: (text.match(/[\u0D00-\u0D7F]/g) || []).length,
+      kannada: (text.match(/[\u0C80-\u0CFF]/g) || []).length,
+      latin: (text.match(/[a-zA-Z]/g) || []).length
+    };
     
-    // Return the first detected language
-    if (hasTelugu) return { language: 'Telugu (తెలుగు)', emoji: '🇮🇳', isEnglish: false, script: 'Telugu' };
-    if (hasDevanagari) return { language: 'Hindi (हिंदी)', emoji: '🇮🇳', isEnglish: false, script: 'Devanagari' };
-    if (hasTamil) return { language: 'Tamil (தமிழ்)', emoji: '🇮🇳', isEnglish: false, script: 'Tamil' };
-    if (hasKannada) return { language: 'Kannada (ಕನ್ನಡ)', emoji: '🇮🇳', isEnglish: false, script: 'Kannada' };
-    if (hasMalayalam) return { language: 'Malayalam (മലയാളം)', emoji: '🇮🇳', isEnglish: false, script: 'Malayalam' };
-    if (hasBengali) return { language: 'Bengali (বাংলা)', emoji: '🇮🇳', isEnglish: false, script: 'Bengali' };
-    if (hasGujarati) return { language: 'Gujarati (ગુજરાતી)', emoji: '🇮🇳', isEnglish: false, script: 'Gujarati' };
-    if (hasGurmukhi) return { language: 'Punjabi (ਪੰਜਾਬੀ)', emoji: '🇮🇳', isEnglish: false, script: 'Gurmukhi' };
-    if (hasOriya) return { language: 'Odia (ଓଡ଼ିଆ)', emoji: '🇮🇳', isEnglish: false, script: 'Odia' };
+    // Find the dominant script
+    const totalNonLatin = scripts.devanagari + scripts.telugu + scripts.tamil + 
+                          scripts.bengali + scripts.gujarati + scripts.gurmukhi + 
+                          scripts.oriya + scripts.malayalam + scripts.kannada;
+    
+    // If significant non-Latin characters detected (>5% of text)
+    if (totalNonLatin > text.length * 0.05) {
+      // Return the language with most characters
+      const maxScript = Object.entries(scripts)
+        .filter(([key]) => key !== 'latin')
+        .reduce((max, curr) => curr[1] > max[1] ? curr : max, ['none', 0]);
+      
+      const scriptToLanguage = {
+        telugu: { language: 'Telugu (తెలుగు)', emoji: '🇮🇳', isEnglish: false, script: 'Telugu' },
+        devanagari: { language: 'Hindi (हिंदी)', emoji: '🇮🇳', isEnglish: false, script: 'Devanagari' },
+        tamil: { language: 'Tamil (தமிழ்)', emoji: '🇮🇳', isEnglish: false, script: 'Tamil' },
+        kannada: { language: 'Kannada (ಕನ್ನಡ)', emoji: '🇮🇳', isEnglish: false, script: 'Kannada' },
+        malayalam: { language: 'Malayalam (മലയാളം)', emoji: '🇮🇳', isEnglish: false, script: 'Malayalam' },
+        bengali: { language: 'Bengali (বাংলা)', emoji: '🇮🇳', isEnglish: false, script: 'Bengali' },
+        gujarati: { language: 'Gujarati (ગુજરાતી)', emoji: '🇮🇳', isEnglish: false, script: 'Gujarati' },
+        gurmukhi: { language: 'Punjabi (ਪੰਜਾਬੀ)', emoji: '🇮🇳', isEnglish: false, script: 'Gurmukhi' },
+        oriya: { language: 'Odia (ଓଡ଼ିଆ)', emoji: '🇮🇳', isEnglish: false, script: 'Odia' }
+      };
+      
+      if (maxScript[0] !== 'none' && scriptToLanguage[maxScript[0]]) {
+        return scriptToLanguage[maxScript[0]];
+      }
+    }
     
     // Default to English
     return { language: 'English', emoji: '🇬🇧', isEnglish: true, script: 'Latin' };
@@ -3135,10 +3158,9 @@ Return ONLY this valid JSON:
     ? languageOptions[manualLanguage] 
     : autoDetectedLang;
   const isEnglish = detectedLang.isEnglish;
-  const readTabDisabled = isEnglish;
-  const readTabTooltip = readTabDisabled 
-    ? "This tab is for regional languages (Hindi, Telugu, Tamil, etc.). English PDFs don't need word-by-word analysis."
-    : "Word-by-word analysis with pronunciation and meaning";
+  // v10.1.2: Read tab is always enabled - users may want word analysis even for English
+  const readTabDisabled = false;
+  const readTabTooltip = "Word-by-word analysis with pronunciation and meaning";
   
   // Debug logging for language detection
   console.log('🔍 [Language Detection]', {
