@@ -338,9 +338,9 @@
             >
           </div>
           <p style="font-size: 13px; color: #868e96; margin-bottom: 20px; text-align: center;">
-            A 6-digit code will be generated and displayed in the browser console
+            A 6-digit code will be sent to your email
           </p>
-          <button class="btn btn-primary" onclick="requestOTP()">Generate OTP Code</button>
+          <button type="button" class="btn btn-primary" onclick="requestOTP(); return false;">Generate OTP Code</button>
         </div>
 
         <div id="verify-otp-form" class="hidden">
@@ -358,8 +358,8 @@
               style="text-align: center; font-size: 24px; font-weight: 700; letter-spacing: 8px;"
             >
           </div>
-          <button class="btn btn-primary" onclick="verifyOTP()">Verify & Access</button>
-          <button class="btn btn-secondary" onclick="backToRequest()">Request New Code</button>
+          <button type="button" class="btn btn-primary" onclick="verifyOTP(); return false;">Verify & Access</button>
+          <button type="button" class="btn btn-secondary" onclick="backToRequest(); return false;">Request New Code</button>
         </div>
       </div>
 
@@ -415,6 +415,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
+  <!-- EmailJS for OTP -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
   <script>
     // Firebase configuration (same as main app)
     const firebaseConfig = {
@@ -431,6 +434,14 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
+    // EmailJS Configuration (same as main admin dashboard)
+    const EMAILJS_SERVICE_ID = 'service_2n09tlh';
+    const EMAILJS_TEMPLATE_ID = 'template_qqj7276';
+    const EMAILJS_PUBLIC_KEY = 'EhyhDIZQ3Hvf6I71C';
+
+    // Initialize EmailJS
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
     // Admin email
     const ADMIN_EMAIL = 'amandeep.talwar@gmail.com';
 
@@ -444,11 +455,26 @@
       document.getElementById('loading').classList.add('hidden');
       document.getElementById('auth-section').classList.remove('hidden');
       
-      // Check if already authenticated
-      const sessionAuth = sessionStorage.getItem('admin_authenticated');
-      if (sessionAuth === 'true') {
-        showAdminPanel();
-        loadDemoAccounts();
+      // Check if already authenticated (same session logic as main dashboard)
+      const sessionData = sessionStorage.getItem('admin_authenticated');
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          // Session valid for 1 hour
+          if (session.authorized && Date.now() < session.expiry) {
+            console.log('✅ Valid admin session found');
+            isAuthenticated = true;
+            showAdminPanel();
+            loadDemoAccounts();
+            return;
+          } else {
+            console.log('⏰ Admin session expired');
+            sessionStorage.removeItem('admin_authenticated');
+          }
+        } catch (e) {
+          console.error('❌ Invalid session data:', e);
+          sessionStorage.removeItem('admin_authenticated');
+        }
       }
     });
 
@@ -466,55 +492,86 @@
       return Math.floor(100000 + Math.random() * 900000).toString();
     }
 
-    // Request OTP
+    // Request OTP (using EmailJS - same as main admin dashboard)
     async function requestOTP() {
-      const email = ADMIN_EMAIL; // Always use the authorized email
+      console.log('🚀 requestOTP function called');
+      
+      const email = ADMIN_EMAIL;
+      console.log('📧 Admin email:', email);
+      
+      // Check if EmailJS is loaded
+      if (typeof emailjs === 'undefined') {
+        console.error('❌ EmailJS library not loaded!');
+        showAlert('❌ Email service not available. Check console for OTP.', 'error');
+        return;
+      }
       
       try {
         // Generate OTP
         currentOTP = generateOTP();
-        otpExpiry = Date.now() + (10 * 60 * 1000); // 10 minutes
+        otpExpiry = Date.now() + (5 * 60 * 1000); // 5 minutes (same as main dashboard)
 
-        // Save to Firestore
-        await db.collection('otp').doc(email).set({
-          code: currentOTP,
-          expiresAt: new Date(otpExpiry),
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          purpose: 'admin_demo_config'
-        });
+        console.log('🔐 Generated OTP:', currentOTP);
+        console.log('📧 Sending OTP to:', email);
 
-        // Show OTP prominently
+        // Send email via EmailJS (same service as main dashboard)
+        const templateParams = {
+          to_email: email,
+          to_name: 'Admin',
+          otp_code: currentOTP,
+          expiry_minutes: 5,
+          timestamp: new Date().toLocaleString(),
+          from_name: 'Ekamanam Admin'
+        };
+
+        showAlert('📤 Sending OTP to your email...', 'info');
+
+        const response = await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          templateParams
+        );
+
+        console.log('✅ OTP sent successfully via EmailJS');
+        console.log('📧 EmailJS Response:', response);
+
+        // Show success message
+        showAlert(`✅ OTP sent to ${email.substring(0, 2)}****@gmail.com`, 'success');
+        
+        // Also show in console for development
         console.log('═══════════════════════════════════');
         console.log('🔐 OTP CODE: ' + currentOTP);
-        console.log('📧 For: ' + email);
-        console.log('⏰ Expires in: 10 minutes');
+        console.log('📧 Sent to: ' + email);
+        console.log('⏰ Expires in: 5 minutes');
         console.log('═══════════════════════════════════');
-        
-        // Show alert with OTP
-        alert(`✅ OTP Generated!\n\n🔐 Your Code: ${currentOTP}\n\n⏰ Valid for 10 minutes\n\n(Also check browser console for reference)`);
-        
-        showAlert(`✅ OTP Generated: ${currentOTP} - Enter below`, 'success');
         
         // Show verify form
         document.getElementById('request-otp-form').classList.add('hidden');
         document.getElementById('verify-otp-form').classList.remove('hidden');
         
-        // Focus on OTP input and pre-fill
+        // Focus on OTP input
         setTimeout(() => {
-          const otpInput = document.getElementById('otp-code');
-          otpInput.focus();
-          // Optionally pre-fill for convenience
-          // otpInput.value = currentOTP;
+          document.getElementById('otp-code').focus();
         }, 100);
 
       } catch (error) {
-        console.error('Error requesting OTP:', error);
-        showAlert('❌ Failed to generate OTP. Error: ' + error.message, 'error');
+        console.error('❌ Failed to send OTP:', error);
+        console.error('📧 Error details:', error);
+        
+        // Show error but still allow console OTP for development
+        showAlert('⚠️ Email failed, but OTP shown in console for development: ' + currentOTP, 'warning');
+        
+        // Still show verify form so admin can use console OTP
+        document.getElementById('request-otp-form').classList.add('hidden');
+        document.getElementById('verify-otp-form').classList.remove('hidden');
+        setTimeout(() => {
+          document.getElementById('otp-code').focus();
+        }, 100);
       }
     }
 
-    // Verify OTP
-    async function verifyOTP() {
+    // Verify OTP (same logic as main admin dashboard)
+    function verifyOTP() {
       const enteredCode = document.getElementById('otp-code').value.trim();
       
       if (!enteredCode || enteredCode.length !== 6) {
@@ -522,34 +579,41 @@
         return;
       }
 
+      // Check if OTP exists
+      if (!currentOTP) {
+        showAlert('❌ No OTP has been generated', 'error');
+        backToRequest();
+        return;
+      }
+
       // Check expiry
       if (Date.now() > otpExpiry) {
         showAlert('❌ OTP expired. Request a new one.', 'error');
+        currentOTP = null;
+        otpExpiry = null;
         backToRequest();
         return;
       }
 
       // Verify code
-      try {
-        const otpDoc = await db.collection('otp').doc(ADMIN_EMAIL).get();
-        const otpData = otpDoc.data();
+      const isValid = enteredCode === currentOTP;
+      
+      if (isValid) {
+        console.log('✅ OTP verified successfully');
         
-        if (!otpData || otpData.code !== enteredCode) {
-          showAlert('❌ Invalid OTP code', 'error');
-          return;
-        }
-
-        // Check if expired
-        const expiresAt = otpData.expiresAt.toDate();
-        if (new Date() > expiresAt) {
-          showAlert('❌ OTP expired. Request a new one.', 'error');
-          backToRequest();
-          return;
-        }
-
-        // Success!
+        // Clear OTP after successful verification
+        currentOTP = null;
+        otpExpiry = null;
+        
+        // Create admin session (same as main dashboard)
         isAuthenticated = true;
-        sessionStorage.setItem('admin_authenticated', 'true');
+        const sessionData = {
+          authorized: true,
+          expiry: Date.now() + 60 * 60 * 1000, // 1 hour
+          timestamp: new Date().toISOString()
+        };
+        sessionStorage.setItem('admin_authenticated', JSON.stringify(sessionData));
+        console.log('✅ Admin session created');
         
         showAlert('✅ Authentication successful!', 'success');
         
@@ -557,13 +621,9 @@
           showAdminPanel();
           loadDemoAccounts();
         }, 1000);
-
-        // Delete used OTP
-        await db.collection('otp').doc(ADMIN_EMAIL).delete();
-
-      } catch (error) {
-        console.error('Error verifying OTP:', error);
-        showAlert('❌ Verification failed. Try again.', 'error');
+      } else {
+        console.log('❌ Invalid OTP');
+        showAlert('❌ Invalid OTP code. Please try again.', 'error');
       }
     }
 
