@@ -364,7 +364,7 @@
       </div>
 
       <!-- Admin Panel Section -->
-      <div id="admin-section" class="admin-section">
+      <div id="admin-section" class="admin-section hidden">
         <!-- Stats -->
         <div class="stats">
           <div class="stat-card">
@@ -674,7 +674,8 @@
     // Show admin panel
     function showAdminPanel() {
       document.getElementById('auth-section').classList.add('hidden');
-      document.getElementById('admin-section').classList.add('active');
+      document.getElementById('admin-section').classList.remove('hidden');
+      console.log('✅ Admin panel displayed');
     }
 
     // Load demo accounts from Firestore
