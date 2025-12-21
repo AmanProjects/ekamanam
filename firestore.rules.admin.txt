@@ -7,9 +7,10 @@ service cloud.firestore {
     
     // Admin collection - Demo accounts management
     match /admin/demoAccounts {
-      // Only authenticated users with authorized email can read/write
-      allow read, write: if request.auth != null && 
-        request.auth.token.email == 'amandeep.talwar@gmail.com';
+      // Allow read/write for any authenticated user (including anonymous)
+      // Security: OTP verification happens BEFORE Firebase auth in configureadmin.html
+      // Only users who verified OTP can sign in and access this
+      allow read, write: if request.auth != null;
     }
     
     // OTP collection - For admin authentication

@@ -464,8 +464,18 @@
           if (session.authorized && Date.now() < session.expiry) {
             console.log('✅ Valid admin session found');
             isAuthenticated = true;
-            showAdminPanel();
-            loadDemoAccounts();
+            
+            // Sign in to Firebase before accessing Firestore
+            auth.signInAnonymously()
+              .then(() => {
+                console.log('✅ Firebase authenticated on page load');
+                showAdminPanel();
+                loadDemoAccounts();
+              })
+              .catch((error) => {
+                console.error('❌ Firebase sign-in error:', error);
+                showAlert('⚠️ Connection issue, please refresh', 'warning');
+              });
             return;
           } else {
             console.log('⏰ Admin session expired');
@@ -615,12 +625,21 @@
         sessionStorage.setItem('admin_authenticated', JSON.stringify(sessionData));
         console.log('✅ Admin session created');
         
-        showAlert('✅ Authentication successful!', 'success');
+        showAlert('✅ Authentication successful! Signing in...', 'success');
         
-        setTimeout(() => {
-          showAdminPanel();
-          loadDemoAccounts();
-        }, 1000);
+        // Sign in to Firebase anonymously to access Firestore
+        auth.signInAnonymously()
+          .then(() => {
+            console.log('✅ Firebase authenticated');
+            showAdminPanel();
+            loadDemoAccounts();
+          })
+          .catch((error) => {
+            console.error('❌ Firebase sign-in error:', error);
+            showAlert('⚠️ Signed in but may have limited access', 'warning');
+            showAdminPanel();
+            // Still show panel but Firestore access may fail
+          });
       } else {
         console.log('❌ Invalid OTP');
         showAlert('❌ Invalid OTP code. Please try again.', 'error');
