@@ -421,7 +421,7 @@
   <script>
     // Firebase configuration (same as main app)
     const firebaseConfig = {
-      apiKey: "AIzaSyDj3bQYJu-w2U_OkuTgVKi3oQ0SBEiD4wg",
+      apiKey: "AIzaSyCCIww51kzyr3eN2oJn24D7SmFptfdK_2o",
       authDomain: "ekamanam-72066.firebaseapp.com",
       projectId: "ekamanam-72066",
       storageBucket: "ekamanam-72066.firebasestorage.app",
@@ -533,8 +533,9 @@
         currentOTP = generateOTP();
         otpExpiry = Date.now() + (5 * 60 * 1000); // 5 minutes (same as main dashboard)
 
-        console.log('🔐 Generated OTP:', currentOTP);
-        console.log('📧 Sending OTP to:', email);
+        // SECURITY: Never log OTP in production
+        console.log('🔐 OTP generated and will be sent via email');
+        console.log('📧 Sending to:', email);
 
         // Send email via EmailJS (same service as main dashboard)
         const templateParams = {
@@ -555,17 +556,10 @@
         );
 
         console.log('✅ OTP sent successfully via EmailJS');
-        console.log('📧 EmailJS Response:', response);
+        console.log('📧 EmailJS Response status:', response.status);
 
         // Show success message
-        showAlert(`✅ OTP sent to ${email.substring(0, 2)}****@gmail.com`, 'success');
-        
-        // Also show in console for development
-        console.log('═══════════════════════════════════');
-        console.log('🔐 OTP CODE: ' + currentOTP);
-        console.log('📧 Sent to: ' + email);
-        console.log('⏰ Expires in: 5 minutes');
-        console.log('═══════════════════════════════════');
+        showAlert(`✅ OTP sent to ${email.substring(0, 2)}****@gmail.com - Check your email`, 'success');
         
         // Show verify form
         document.getElementById('request-otp-form').classList.add('hidden');
@@ -577,18 +571,15 @@
         }, 100);
 
       } catch (error) {
-        console.error('❌ Failed to send OTP:', error);
-        console.error('📧 Error details:', error);
+        console.error('❌ Failed to send OTP via email:', error.message);
         
-        // Show error but still allow console OTP for development
-        showAlert('⚠️ Email failed, but OTP shown in console for development: ' + currentOTP, 'warning');
+        // SECURITY: Never show OTP in production
+        // User must receive OTP via email only
+        showAlert('❌ Failed to send OTP. Please check your internet connection and try again.', 'error');
         
-        // Still show verify form so admin can use console OTP
-        document.getElementById('request-otp-form').classList.add('hidden');
-        document.getElementById('verify-otp-form').classList.remove('hidden');
-        setTimeout(() => {
-          document.getElementById('otp-code').focus();
-        }, 100);
+        // Don't proceed without successful email delivery
+        currentOTP = null;
+        otpExpiry = null;
       }
     }
 
