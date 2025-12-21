@@ -13,7 +13,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -31,16 +31,30 @@
     }
 
     .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       color: white;
       padding: 30px;
       text-align: center;
     }
 
+    .header .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 16px;
+      background: white;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
     .header h1 {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: 700;
       margin-bottom: 8px;
+      letter-spacing: -0.5px;
     }
 
     .header p {
@@ -60,7 +74,7 @@
       width: 80px;
       height: 80px;
       margin: 0 auto 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -91,8 +105,8 @@
 
     .form-group input:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     }
 
     .btn {
@@ -108,13 +122,13 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       color: white;
     }
 
     .btn-primary:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
     }
 
     .btn-primary:disabled {
@@ -227,7 +241,7 @@
 
     .stat-card {
       padding: 16px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       color: white;
       border-radius: 8px;
       text-align: center;
@@ -251,7 +265,7 @@
 
     .spinner {
       border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
+      border-top: 4px solid #6366f1;
       border-radius: 50%;
       width: 40px;
       height: 40px;
@@ -286,8 +300,9 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🛡️ Ekamanam Admin</h1>
-      <p>Demo Account Configuration Panel</p>
+      <div class="logo">📚</div>
+      <h1>Ekamanam Admin</h1>
+      <p>Demo Account Configuration</p>
     </div>
 
     <div class="content">
@@ -307,17 +322,23 @@
           <div class="form-group">
             <label for="admin-email">Admin Email</label>
             <input 
-              type="email" 
+              type="text" 
               id="admin-email" 
-              placeholder="amandeep.talwar@gmail.com" 
-              value="amandeep.talwar@gmail.com"
+              value="am****@gmail.com"
               readonly
+              style="text-align: center; font-weight: 600; color: #495057;"
             >
           </div>
-          <button class="btn btn-primary" onclick="requestOTP()">Send OTP Code</button>
+          <p style="font-size: 13px; color: #868e96; margin-bottom: 20px; text-align: center;">
+            A 6-digit code will be generated and displayed in the browser console
+          </p>
+          <button class="btn btn-primary" onclick="requestOTP()">Generate OTP Code</button>
         </div>
 
         <div id="verify-otp-form" class="hidden">
+          <p style="font-size: 13px; color: #495057; margin-bottom: 16px; text-align: center;">
+            Code sent to <strong>am****@gmail.com</strong>
+          </p>
           <div class="form-group">
             <label for="otp-code">Enter 6-Digit Code</label>
             <input 
@@ -326,10 +347,11 @@
               placeholder="000000" 
               maxlength="6"
               pattern="[0-9]{6}"
+              style="text-align: center; font-size: 24px; font-weight: 700; letter-spacing: 8px;"
             >
           </div>
           <button class="btn btn-primary" onclick="verifyOTP()">Verify & Access</button>
-          <button class="btn btn-secondary" onclick="backToRequest()">Resend Code</button>
+          <button class="btn btn-secondary" onclick="backToRequest()">Request New Code</button>
         </div>
       </div>
 
@@ -375,8 +397,8 @@
     </div>
 
     <div class="footer">
-      <p>🔒 Protected Admin Panel · Ekamanam v10.0.0</p>
-      <p style="margin-top: 4px;">Only authorized administrators can access this page</p>
+      <p>📚 Ekamanam · Admin Panel v1.0.0</p>
+      <p style="margin-top: 4px;">🔒 Secure access for authorized administrators only</p>
     </div>
   </div>
 
@@ -438,13 +460,8 @@
 
     // Request OTP
     async function requestOTP() {
-      const email = document.getElementById('admin-email').value;
+      const email = ADMIN_EMAIL; // Always use the authorized email
       
-      if (email !== ADMIN_EMAIL) {
-        showAlert('❌ Unauthorized email address', 'error');
-        return;
-      }
-
       try {
         // Generate OTP
         currentOTP = generateOTP();
@@ -458,22 +475,33 @@
           purpose: 'admin_demo_config'
         });
 
-        console.log('🔐 OTP Generated:', currentOTP, '(for development)');
+        // Show OTP prominently
+        console.log('═══════════════════════════════════');
+        console.log('🔐 OTP CODE: ' + currentOTP);
+        console.log('📧 For: ' + email);
+        console.log('⏰ Expires in: 10 minutes');
+        console.log('═══════════════════════════════════');
         
-        showAlert(`✅ OTP sent to ${email}! Check console for code (dev mode)`, 'success');
+        // Show alert with OTP
+        alert(`✅ OTP Generated!\n\n🔐 Your Code: ${currentOTP}\n\n⏰ Valid for 10 minutes\n\n(Also check browser console for reference)`);
+        
+        showAlert(`✅ OTP Generated: ${currentOTP} - Enter below`, 'success');
         
         // Show verify form
         document.getElementById('request-otp-form').classList.add('hidden');
         document.getElementById('verify-otp-form').classList.remove('hidden');
         
-        // Focus on OTP input
+        // Focus on OTP input and pre-fill
         setTimeout(() => {
-          document.getElementById('otp-code').focus();
+          const otpInput = document.getElementById('otp-code');
+          otpInput.focus();
+          // Optionally pre-fill for convenience
+          // otpInput.value = currentOTP;
         }, 100);
 
       } catch (error) {
         console.error('Error requesting OTP:', error);
-        showAlert('❌ Failed to send OTP. Check console.', 'error');
+        showAlert('❌ Failed to generate OTP. Error: ' + error.message, 'error');
       }
     }
 
