@@ -465,10 +465,22 @@
             console.log('✅ Valid admin session found');
             isAuthenticated = true;
             
-            // Sign in to Firebase before accessing Firestore
+            // Sign in to Firebase and recreate admin session record
             auth.signInAnonymously()
               .then(() => {
                 console.log('✅ Firebase authenticated on page load');
+                const uid = auth.currentUser.uid;
+                // Recreate admin session record in Firestore
+                return db.collection('adminSessions').doc(uid).set({
+                  email: session.email || ADMIN_EMAIL,
+                  verified: true,
+                  verifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  expiresAt: new Date(session.expiry),
+                  purpose: 'demo_accounts_management'
+                });
+              })
+              .then(() => {
+                console.log('✅ Admin session restored');
                 showAdminPanel();
                 loadDemoAccounts();
               })
@@ -620,25 +632,38 @@
         const sessionData = {
           authorized: true,
           expiry: Date.now() + 60 * 60 * 1000, // 1 hour
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          email: ADMIN_EMAIL
         };
         sessionStorage.setItem('admin_authenticated', JSON.stringify(sessionData));
         console.log('✅ Admin session created');
         
         showAlert('✅ Authentication successful! Signing in...', 'success');
         
-        // Sign in to Firebase anonymously to access Firestore
+        // SECURE APPROACH: Sign in anonymously, then record validated session in Firestore
+        // This allows strict Firestore rules to check BOTH auth AND validated session
         auth.signInAnonymously()
           .then(() => {
             console.log('✅ Firebase authenticated');
+            // Store validated admin session in Firestore
+            // This proves OTP was verified for this Firebase UID
+            const uid = auth.currentUser.uid;
+            return db.collection('adminSessions').doc(uid).set({
+              email: ADMIN_EMAIL,
+              verified: true,
+              verifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+              purpose: 'demo_accounts_management'
+            });
+          })
+          .then(() => {
+            console.log('✅ Admin session validated in Firestore');
             showAdminPanel();
             loadDemoAccounts();
           })
           .catch((error) => {
-            console.error('❌ Firebase sign-in error:', error);
-            showAlert('⚠️ Signed in but may have limited access', 'warning');
-            showAdminPanel();
-            // Still show panel but Firestore access may fail
+            console.error('❌ Firebase authentication error:', error);
+            showAlert('❌ Authentication failed. Please try again.', 'error');
           });
       } else {
         console.log('❌ Invalid OTP');

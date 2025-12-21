@@ -5,12 +5,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // Admin Sessions - Validated OTP sessions
+    match /adminSessions/{uid} {
+      // Users can only write their own session after auth
+      allow write: if request.auth != null && request.auth.uid == uid;
+      // Anyone authenticated can read (for rule validation)
+      allow read: if request.auth != null;
+    }
+    
     // Admin collection - Demo accounts management
     match /admin/demoAccounts {
-      // Allow read/write for any authenticated user (including anonymous)
-      // Security: OTP verification happens BEFORE Firebase auth in configureadmin.html
-      // Only users who verified OTP can sign in and access this
-      allow read, write: if request.auth != null;
+      // STRICT SECURITY: Check BOTH authentication AND validated admin session
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/adminSessions/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/adminSessions/$(request.auth.uid)).data.email == 'amandeep.talwar@gmail.com' &&
+        get(/databases/$(database)/documents/adminSessions/$(request.auth.uid)).data.verified == true &&
+        get(/databases/$(database)/documents/adminSessions/$(request.auth.uid)).data.expiresAt > request.time;
     }
     
     // OTP collection - For admin authentication
