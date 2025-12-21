@@ -1,0 +1,36 @@
+// Firestore Security Rules for Admin Demo Accounts
+// Add these rules to your firestore.rules file
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Admin collection - Demo accounts management
+    match /admin/demoAccounts {
+      // Only authenticated users with authorized email can read/write
+      allow read, write: if request.auth != null && 
+        request.auth.token.email == 'amandeep.talwar@gmail.com';
+    }
+    
+    // OTP collection - For admin authentication
+    match /otp/{email} {
+      // Allow write for OTP generation
+      allow write: if email == 'amandeep.talwar@gmail.com';
+      
+      // Allow read for OTP verification
+      allow read: if request.auth != null && 
+        request.auth.token.email == email;
+    }
+    
+    // Existing rules for users, usage, etc.
+    // ... (keep your existing rules)
+    
+  }
+}
+
+// Instructions:
+// 1. Go to Firebase Console → Firestore Database → Rules
+// 2. Add the above rules to your existing rules file
+// 3. Make sure not to overwrite your existing rules
+// 4. Publish the rules
+

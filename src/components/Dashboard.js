@@ -203,7 +203,24 @@ function Dashboard({
                 </Typography>
                 
             {subscription && !subscription.loading && (
-              subscription.isPaid ? (
+              subscription.subscription?.isDemo ? (
+                // Demo account badge
+                <Chip
+                  icon={<CheckIcon sx={{ fontSize: '0.9rem !important' }} />}
+                  label="DEMO (Full Access)"
+                  size="small"
+                  color="warning"
+                  sx={{ 
+                    fontWeight: 700, 
+                    height: 24,
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+                    color: 'white',
+                    '& .MuiChip-icon': {
+                      color: 'white'
+                    }
+                  }}
+                />
+              ) : subscription.isPaid ? (
                     <Chip
                   icon={<CheckIcon sx={{ fontSize: '0.9rem !important' }} />}
                   label={subscription.daysRemaining ? `${subscription.daysRemaining}d left` : 'Active'}

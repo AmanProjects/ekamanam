@@ -9,9 +9,10 @@ import {
 /**
  * React hook for managing user subscription state
  * @param {string} userId - The user's Firebase UID
+ * @param {string} userEmail - The user's email (for demo account detection)
  * @returns {Object} Subscription state and helper functions
  */
-export function useSubscription(userId) {
+export function useSubscription(userId, userEmail = null) {
   const [subscription, setSubscription] = useState({
     tier: 'FREE',
     status: 'active',
@@ -37,17 +38,17 @@ export function useSubscription(userId) {
         ...subscriptionData,
         loading: false
       });
-    });
+    }, userEmail);
 
     return () => unsubscribe();
-  }, [userId]);
+  }, [userId, userEmail]);
 
   // Load today's usage
   useEffect(() => {
     if (!userId) return;
 
     const loadUsage = async () => {
-      const usageData = await getTodayUsage(userId);
+      const usageData = await getTodayUsage(userId, userEmail);
       setUsage(usageData);
     };
 
@@ -56,7 +57,7 @@ export function useSubscription(userId) {
     // Refresh usage every minute
     const interval = setInterval(loadUsage, 60000);
     return () => clearInterval(interval);
-  }, [userId, subscription.tier]);
+  }, [userId, userEmail, subscription.tier]);
 
   // Helper: Check if user can use a specific feature
   const hasFeature = (feature) => {
@@ -101,7 +102,7 @@ export function useSubscription(userId) {
   // Refresh usage counter (call after AI query)
   const refreshUsage = async () => {
     if (!userId) return;
-    const usageData = await getTodayUsage(userId);
+    const usageData = await getTodayUsage(userId, userEmail);
     setUsage(usageData);
   };
 

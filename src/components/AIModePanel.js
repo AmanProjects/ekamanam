@@ -561,6 +561,8 @@ function AIModePanel({
   const [currentSpeakingId, setCurrentSpeakingId] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speakingSection, setSpeakingSection] = useState(null); // Track which teacher section is speaking
+  const [showVolumeNotice, setShowVolumeNotice] = useState(false); // v10.1.2: Show volume help
+  const speechLockRef = useRef(false); // v10.1.2: Prevent overlapping speech calls
   
   // Exam Prep state
   const [examPrepResponse, setExamPrepResponse] = useState(null);
@@ -794,15 +796,22 @@ function AIModePanel({
   const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
 
   const handleTabChange = (event, newValue) => {
+    console.log('🔥🔥🔥 [TAB CLICK] Clicked tab index:', newValue, 'Current:', activeTab, 'Read tab index:', tabIndices.multilingual);
+    
     // v10.1: Check for API keys before switching to AI-powered tabs
     // Notes tab (typically last) doesn't require API keys
     const notesTabIndex = tabIndices.notes;
     
-    if (newValue !== notesTabIndex && !hasAnyApiKey()) {
+    const hasKey = hasAnyApiKey();
+    console.log('🔥🔥🔥 [TAB CLICK] Has API key:', hasKey, 'Is notes tab:', newValue === notesTabIndex);
+    
+    if (newValue !== notesTabIndex && !hasKey) {
+      console.log('❌ [TAB CLICK] BLOCKED - No API key');
       setShowApiKeyAlert(true);
       return; // Don't switch tabs
     }
     
+    console.log('✅ [TAB CLICK] Switching to tab:', newValue);
     setActiveTab(newValue);
   };
 
@@ -1124,7 +1133,7 @@ Question: ${userMessage}`;
 
     // 🔒 Check subscription limits
     if (user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid);
+      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
       if (!usageCheck.allowed) {
         setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
         return;
@@ -1221,15 +1230,21 @@ Question: ${userMessage}`;
       const finalLanguage = manualLanguage || detectedLang.language || 'English';
       
       // 🔍 DEBUG: Log what we're sending to AI
+      // V8.0.0: Extract subject and chapter from metadata
+      const subject = pdfMetadata?.subject || 'General';
+      const chapterName = pdfMetadata?.name || pdfMetadata?.chapter || `Page ${currentPage}`;
+      
       console.log('🔍 [Teacher Mode - Sending to AI]', {
         contentLength: contentToAnalyze?.length || 0,
         language: finalLanguage,
         detectedLanguage: detectedLang.language,
         manualLanguage: manualLanguage,
+        subject: subject,
+        chapter: chapterName,
         contentPreview: contentToAnalyze?.substring(0, 300) || '[NO CONTENT]'
       });
       
-      const response = await generateTeacherMode(contentToAnalyze, null, finalLanguage);
+      const response = await generateTeacherMode(contentToAnalyze, null, finalLanguage, subject, chapterName);
       
       // Try to parse JSON response
       try {
@@ -1309,7 +1324,8 @@ Question: ${userMessage}`;
             
             // Try to extract and parse just the parts we can salvage
             const partialResponse = {};
-            const fields = ['contentType', 'performanceStyle', 'summary', 'keyPoints', 'explanation', 'examples', 'exam'];
+            // V8.0.0: Updated to match optimized Teacher Mode structure from original.html
+            const fields = ['summary', 'keyPoints', 'explanation', 'importantDetails', 'examples', 'thinkAbout', 'exam'];
             
             for (const field of fields) {
               const regex = new RegExp(`"${field}"\\s*:\\s*("(?:[^"\\\\]|\\\\.)*"|\\[[^\\]]*\\])`, 's');
@@ -1356,7 +1372,8 @@ Question: ${userMessage}`;
           onAIQuery('teacher_mode', scope === 'chapter' ? 'Full chapter analysis' : 'Page analysis');
         }
 
-        // 📚 AUTO-GENERATE FLASHCARDS from AI response
+        // 📚 AUTO-GENERATE FLASHCARDS from AI response (optional in V8.0.0 optimized mode)
+        // V8.0.0: Flashcards are optional - optimized Teacher Mode focuses on core teaching content
         if (cleanedResponse.flashcards && Array.isArray(cleanedResponse.flashcards) && cleanedResponse.flashcards.length > 0 && user?.uid) {
           console.log(`📚 Auto-generating ${cleanedResponse.flashcards.length} flashcards...`);
           let savedCount = 0;
@@ -1367,7 +1384,7 @@ Question: ${userMessage}`;
                 await createFlashcard(user.uid, {
                   front: card.front,
                   back: card.back,
-                  chapter: cleanedResponse.contentType || 'General',
+                  chapter: cleanedResponse.contentType || pdfId || 'General',
                   subject: pdfId ? `PDF Page ${currentPage}` : 'Unknown',
                   tags: card.tags || [],
                   source: 'ai_generated'
@@ -1383,6 +1400,8 @@ Question: ${userMessage}`;
             console.log(`✅ Created ${savedCount} flashcards from Teacher Mode`);
             setFlashcardNotification({ open: true, count: savedCount });
           }
+        } else {
+          console.log('ℹ️ No flashcards in response (optimized mode)');
         }
 
         // 💾 SAVE TO CACHE
@@ -1415,7 +1434,7 @@ Question: ${userMessage}`;
   const handleTranslateSection = async (sectionName, sectionContent) => {
     // 🔒 Check subscription limits
     if (user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid);
+      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
       if (!usageCheck.allowed) {
         setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
         return;
@@ -1448,21 +1467,24 @@ Question: ${userMessage}`;
   };
 
   // V3.0.3: Natural text-to-speech for Teacher Mode sections
-  // v10.1.2: Robust speech with fallback and detailed debugging
+  // v10.1.2: Robust speech with mutex lock
   const handleSpeakSection = async (sectionName, htmlContent) => {
     console.log('🔊 [Speech] Starting handleSpeakSection for:', sectionName);
     
-    // v10.1.2: Complete reset of speech synthesis
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      // Chrome workaround: pause and resume
-      window.speechSynthesis.pause();
-      window.speechSynthesis.resume();
-    } else {
+    if (!('speechSynthesis' in window)) {
       console.error('❌ [Speech] Speech synthesis not supported in this browser');
       setError('Speech synthesis is not supported in your browser');
       return;
     }
+    
+    // v10.1.2: Mutex lock
+    if (speechLockRef.current) {
+      console.log('🔒 [Speech] Already processing speech, ignoring click');
+      return;
+    }
+    
+    try {
+      speechLockRef.current = true;
 
     // Extract plain text from HTML
     const tempDiv = document.createElement('div');
@@ -1502,82 +1524,100 @@ Question: ${userMessage}`;
     // Create speech utterance
     const utterance = new SpeechSynthesisUtterance(plainText);
     
-    // v10.1.2: Simple voice selection - just use the first available voice if custom fails
-    const isEnglish = detectedLang?.isEnglish || manualLanguage === 'English';
+    // v10.1.2: Use Indian voices for natural pronunciation of regional content
     const language = manualLanguage || detectedLang?.language || 'English';
     
-    // Try to find a suitable voice
-    let selectedVoice = null;
-    if (voices.length > 0) {
-      // First try: exact language match
-      const langCode = isEnglish ? 'en' : (language === 'Hindi' ? 'hi' : language === 'Telugu' ? 'te' : 'en');
-      selectedVoice = voices.find(v => v.lang.startsWith(langCode));
-      
-      // Fallback: any English voice
-      if (!selectedVoice) {
-        selectedVoice = voices.find(v => v.lang.startsWith('en'));
-      }
-      
-      // Final fallback: first available voice
-      if (!selectedVoice) {
-        selectedVoice = voices[0];
-      }
-    }
+    const languageMap = {
+      'Telugu': 'te-IN',
+      'తెలుగు': 'te-IN',
+      'Hindi': 'hi-IN',
+      'हिंदी': 'hi-IN',
+      'Tamil': 'ta-IN',
+      'தமிழ்': 'ta-IN',
+      'Kannada': 'kn-IN',
+      'ಕನ್ನಡ': 'kn-IN',
+      'Malayalam': 'ml-IN',
+      'മലയാളം': 'ml-IN',
+      'Bengali': 'bn-IN',
+      'বাংলা': 'bn-IN',
+      'Marathi': 'mr-IN',
+      'English': 'en-IN'  // Indian English for better accent with regional content
+    };
+    
+    // Get language code with Indian locale
+    const langCode = languageMap[language] || 'en-IN';
+    
+    // Use voiceService to get best Indian voice
+    const selectedVoice = getBestVoice(langCode);
 
     if (selectedVoice) {
       utterance.voice = selectedVoice;
       utterance.lang = selectedVoice.lang;
-      console.log(`✅ [Speech] Using voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+      console.log(`✅ [Speech] Using Indian voice: ${selectedVoice.name} (${selectedVoice.lang})`);
     } else {
-      utterance.lang = 'en-US';
-      console.log('⚠️ [Speech] No voice selected, using default lang: en-US');
+      utterance.lang = langCode;
+      console.log(`⚠️ [Speech] No voice found, using language code: ${langCode}`);
     }
     
-    // Set speech parameters - ensure volume is maximum
-    utterance.rate = 0.9;
+    // v10.1.2: Optimize for natural-sounding speech
+    utterance.rate = 0.85;  // Slightly slower for natural, non-robotic sound
     utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    utterance.volume = 1.0; // Maximum (Note: actual volume controlled by system)
 
-    // Event handlers
-    utterance.onstart = () => {
-      setSpeakingSection(sectionName);
-      setIsSpeaking(true);
-      console.log(`▶️ [Speech] Speaking section: ${sectionName}`);
-    };
+    // Log speech parameters
+    console.log('🎚️ [Speech] Parameters:', {
+      rate: utterance.rate,
+      volume: utterance.volume,
+      voice: utterance.voice?.name
+    });
 
-    utterance.onend = () => {
-      setSpeakingSection(null);
-      setIsSpeaking(false);
-      console.log('⏹️ [Speech] Speech ended normally');
-    };
+      // Event handlers
+      utterance.onstart = () => {
+        setSpeakingSection(sectionName);
+        setIsSpeaking(true);
+        console.log(`▶️ [Speech] Started playing section: ${sectionName}`);
+      };
 
-    utterance.onerror = (event) => {
-      console.error('❌ [Speech] Speech error:', event.error, event);
-      setSpeakingSection(null);
-      setIsSpeaking(false);
-      
-      // v10.1.2: Retry once if canceled
-      if (event.error === 'canceled' || event.error === 'interrupted') {
-        console.log('🔄 [Speech] Retrying after error...');
-        setTimeout(() => {
-          window.speechSynthesis.speak(utterance);
-        }, 500);
+      utterance.onend = () => {
+        setSpeakingSection(null);
+        setIsSpeaking(false);
+        speechLockRef.current = false; // Release lock
+        console.log('⏹️ [Speech] Speech ended normally');
+      };
+
+      utterance.onerror = (event) => {
+        console.error('❌ [Speech] Error:', event.error);
+        setSpeakingSection(null);
+        setIsSpeaking(false);
+        speechLockRef.current = false; // Release lock
+      };
+
+      // Stop any ongoing speech and wait longer for it to fully cancel
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        console.log('⏸️ [Speech] Stopping previous speech');
+        window.speechSynthesis.cancel();
+        // Wait longer for cancel to fully complete (Chrome/Safari need this)
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
-    };
-
-    // v10.1.2: Wait for any ongoing speech to stop, then wait before speaking
-    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-      console.log('⏸️ [Speech] Waiting for previous speech to stop...');
-      window.speechSynthesis.cancel();
-      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Speak
+      console.log('🔊 [Speech] Speaking...');
+      window.speechSynthesis.speak(utterance);
+      
+      // Release lock after a short delay (backup safety)
+      setTimeout(() => {
+        if (speechLockRef.current && !window.speechSynthesis.speaking) {
+          console.log('🔓 [Speech] Force releasing lock (safety timeout)');
+          speechLockRef.current = false;
+        }
+      }, 1000);
+      
+    } catch (error) {
+      console.error('❌ [Speech] Exception:', error);
+      speechLockRef.current = false;
+      setSpeakingSection(null);
+      setIsSpeaking(false);
     }
-    
-    console.log('⏳ [Speech] Waiting 200ms before speaking...');
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // Speak
-    console.log('🔊 [Speech] Calling speechSynthesis.speak()');
-    window.speechSynthesis.speak(utterance);
   };
 
   // v7.2.7: Enhanced musical singing for rhymes with pitch/rate variations
@@ -1733,7 +1773,9 @@ Question: ${userMessage}`;
   // Removed performOCR - using Teacher Mode technique (pageText) instead
 
   const handleWordByWordAnalysis = async (isLoadMore = false) => {
-    // V3.0.3: Removed API key check - multi-provider handles this
+    // V8.0.3: EXTREME DEBUG - If you don't see this, function isn't being called
+    alert('READ TAB: Button clicked! Check console for details.');
+    console.log('🔍🔍🔍 [READ TAB DEBUG] FUNCTION CALLED!');
     console.log('🔍 [Multilingual] Button clicked:', { isLoadMore, hasPageText: !!pageText, pageTextLength: pageText?.length });
 
     if (!pageText) {
@@ -1744,7 +1786,7 @@ Question: ${userMessage}`;
 
     // 🔒 Check subscription limits (only for new analysis, not for "Load More")
     if (!isLoadMore && user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid);
+      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
       if (!usageCheck.allowed) {
         setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
         return;
@@ -1785,7 +1827,8 @@ Question: ${userMessage}`;
       const batchNumber = isLoadMore ? wordBatch + 1 : 1;
       
       // Use the SAME technique as Teacher Mode - analyze entire page at once
-      const response = await generateWordByWordAnalysis(pageText, existingWords, batchNumber);
+      // V8.0.1: Fixed parameter order - apiKey is 2nd param, excludeWords is 3rd, batchNumber is 4th
+      const response = await generateWordByWordAnalysis(pageText, null, existingWords, batchNumber);
       
       // Parse JSON response (same as Teacher Mode)
       try {
@@ -1852,17 +1895,33 @@ Question: ${userMessage}`;
   // Stop all speech
   const handleStopSpeech = () => {
     if ('speechSynthesis' in window) {
+      console.log('🛑 [Stop] Stopping speech immediately');
+      
+      // Force cancel all speech
       window.speechSynthesis.cancel();
+      
+      // Pause and resume to ensure it's fully stopped (Chrome workaround)
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+      window.speechSynthesis.cancel();
+      
+      // Clear all state
       setCurrentSpeakingId(null);
       setSpeakingWordIndex(null);
-      console.log('🔇 Speech stopped');
+      setSpeakingSection(null);
+      setIsSpeaking(false);
+      
+      // Release the mutex lock
+      speechLockRef.current = false;
+      
+      console.log('✅ [Stop] Speech stopped and lock released');
     }
   };
 
   // Enhanced function to speak text naturally with proper language detection
-  // v10.1.2: Robust speech with mutex lock to prevent canceled errors
+  // v10.1.2: Robust mutex lock to prevent cancellation errors
   const handleSpeakText = async (text, language, id) => {
-    console.log('🔊 [SpeakText] Starting for id:', id);
+    console.log('🔊 [SpeakText] Starting for id:', id, 'language:', language);
     
     if (!('speechSynthesis' in window)) {
       console.error('❌ [SpeakText] Speech synthesis not supported');
@@ -1876,12 +1935,23 @@ Question: ${userMessage}`;
       return;
     }
     
-    // v10.1.2: Wait for any ongoing speech to fully stop
-    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-      console.log('⏸️ [SpeakText] Waiting for previous speech to stop...');
-      window.speechSynthesis.cancel();
-      await new Promise(resolve => setTimeout(resolve, 300));
+    // v10.1.2: Mutex lock - prevent overlapping calls
+    if (speechLockRef.current) {
+      console.log('🔒 [SpeakText] Already processing speech, ignoring click');
+      return;
     }
+    
+    try {
+      // Acquire lock
+      speechLockRef.current = true;
+      
+      // Stop any ongoing speech and wait for it to fully cancel
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        console.log('⏸️ [SpeakText] Stopping previous speech');
+        window.speechSynthesis.cancel();
+        // Wait longer for cancel to fully complete (Chrome/Safari need this)
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     
     // Strip HTML tags for speech
     const cleanText = text?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() || '';
@@ -1891,88 +1961,107 @@ Question: ${userMessage}`;
       return;
     }
     
-    console.log('📝 [SpeakText] Text preview:', cleanText.substring(0, 50) + '...');
+    console.log('📝 [SpeakText] Text:', cleanText.substring(0, 100));
     
-    // v10.1.2: Get voices with retry
+    // Get voices
     let voices = window.speechSynthesis.getVoices();
-    if (voices.length === 0) {
-      console.log('⏳ [SpeakText] Loading voices...');
-      await new Promise(resolve => {
-        const checkVoices = setInterval(() => {
-          voices = window.speechSynthesis.getVoices();
-          if (voices.length > 0) {
-            clearInterval(checkVoices);
-            resolve();
-          }
-        }, 100);
-        setTimeout(() => { clearInterval(checkVoices); resolve(); }, 2000);
-      });
-      voices = window.speechSynthesis.getVoices();
-    }
-    
     console.log('🎤 [SpeakText] Voices available:', voices.length);
     
     const utterance = new SpeechSynthesisUtterance(cleanText);
     
-    // Simple voice selection
-    let selectedVoice = null;
-    if (voices.length > 0) {
-      const langPrefix = language?.includes('Telugu') ? 'te' : 
-                        language?.includes('Hindi') ? 'hi' : 
-                        language?.includes('Tamil') ? 'ta' : 'en';
-      selectedVoice = voices.find(v => v.lang.startsWith(langPrefix)) || 
-                     voices.find(v => v.lang.startsWith('en')) || 
-                     voices[0];
-    }
+    // v10.1.2: Use Indian voices for natural pronunciation
+    const languageMap = {
+      'Telugu': 'te-IN',
+      'తెలుగు': 'te-IN',
+      'Hindi': 'hi-IN',
+      'हिंदी': 'hi-IN',
+      'Tamil': 'ta-IN',
+      'தமிழ்': 'ta-IN',
+      'Kannada': 'kn-IN',
+      'ಕನ್ನಡ': 'kn-IN',
+      'Malayalam': 'ml-IN',
+      'മലയാളം': 'ml-IN',
+      'Bengali': 'bn-IN',
+      'বাংলা': 'bn-IN',
+      'Marathi': 'mr-IN',
+      'English': 'en-IN'  // Indian English for better accent
+    };
+    
+    // Get language code with Indian locale
+    const langCode = languageMap[language] || 'en-IN';
+    
+    // Use voiceService to get best Indian voice
+    const selectedVoice = getBestVoice(langCode);
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
       utterance.lang = selectedVoice.lang;
-      console.log(`✅ [SpeakText] Voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+      console.log(`✅ [SpeakText] Using Indian voice: ${selectedVoice.name} (${selectedVoice.lang})`);
     } else {
-      utterance.lang = 'en-US';
-      console.log('⚠️ [SpeakText] Using default lang: en-US');
+      utterance.lang = langCode;
+      console.log(`⚠️ [SpeakText] No voice found, using language code: ${langCode}`);
     }
     
-    utterance.rate = 0.9;
+    // v10.1.2: Optimize for natural-sounding speech
+    utterance.rate = 0.85;  // Slightly slower for natural, non-robotic sound
     utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    utterance.volume = 1.0; // Maximum (Note: actual volume controlled by system)
     
-    // Set speaking state AFTER creating utterance
-    utterance.onstart = () => {
-      console.log('▶️ [SpeakText] Speech started successfully');
-      setCurrentSpeakingId(id);
-      if (id !== undefined) {
-        setSpeakingWordIndex(id);
-      }
-    };
+    // Log speech parameters for debugging
+    console.log('🎚️ [SpeakText] Parameters:', {
+      rate: utterance.rate,
+      pitch: utterance.pitch, 
+      volume: utterance.volume,
+      voice: utterance.voice?.name,
+      lang: utterance.lang
+    });
     
-    utterance.onend = () => {
-      console.log('⏹️ [SpeakText] Speech ended normally');
-      setCurrentSpeakingId(null);
-      setSpeakingWordIndex(null);
-    };
-    
-    utterance.onerror = (event) => {
-      console.error('❌ [SpeakText] Speech error:', event.error, event);
-      setCurrentSpeakingId(null);
-      setSpeakingWordIndex(null);
+      // Event handlers
+      utterance.onstart = () => {
+        console.log('▶️ [SpeakText] Started playing');
+        setCurrentSpeakingId(id);
+        if (id !== undefined) {
+          setSpeakingWordIndex(id);
+        }
+        // Show volume notice on first use
+        if (!localStorage.getItem('volumeNoticeShown')) {
+          setShowVolumeNotice(true);
+          localStorage.setItem('volumeNoticeShown', 'true');
+        }
+      };
       
-      // v10.1.2: Retry once if canceled
-      if (event.error === 'canceled' || event.error === 'interrupted') {
-        console.log('🔄 [SpeakText] Retrying after error...');
-        setTimeout(() => {
-          window.speechSynthesis.speak(utterance);
-        }, 500);
-      }
-    };
-    
-    // v10.1.2: Wait longer before speaking to ensure everything is ready
-    console.log('⏳ [SpeakText] Waiting 200ms before speaking...');
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    console.log('🔊 [SpeakText] Calling speechSynthesis.speak()');
-    window.speechSynthesis.speak(utterance);
+      utterance.onend = () => {
+        console.log('⏹️ [SpeakText] Ended normally');
+        setCurrentSpeakingId(null);
+        setSpeakingWordIndex(null);
+        speechLockRef.current = false; // Release lock
+      };
+      
+      utterance.onerror = (event) => {
+        console.error('❌ [SpeakText] Error:', event.error);
+        setCurrentSpeakingId(null);
+        setSpeakingWordIndex(null);
+        speechLockRef.current = false; // Release lock
+      };
+      
+      // Speak
+      console.log('🔊 [SpeakText] Speaking...');
+      window.speechSynthesis.speak(utterance);
+      
+      // Release lock after a short delay (backup safety)
+      setTimeout(() => {
+        if (speechLockRef.current && !window.speechSynthesis.speaking) {
+          console.log('🔓 [SpeakText] Force releasing lock (safety timeout)');
+          speechLockRef.current = false;
+        }
+      }, 1000);
+      
+    } catch (error) {
+      console.error('❌ [SpeakText] Exception:', error);
+      speechLockRef.current = false; // Release lock on error
+      setCurrentSpeakingId(null);
+      setSpeakingWordIndex(null);
+    }
   };
 
   // Helper specifically for word pronunciation
@@ -2030,7 +2119,7 @@ Question: ${userMessage}`;
 
     // 🔒 Check subscription limits
     if (user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid);
+      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
       if (!usageCheck.allowed) {
         setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
         return;
@@ -2127,7 +2216,7 @@ Question: ${userMessage}`;
 
     // 🔒 Check subscription limits
     if (user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid);
+      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
       if (!usageCheck.allowed) {
         setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
         return;
@@ -2244,7 +2333,7 @@ Question: ${userMessage}`;
 
     // 🔒 Check subscription limits
     if (user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid);
+      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
       if (!usageCheck.allowed) {
         setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
         return;
@@ -2811,7 +2900,7 @@ Question: ${userMessage}`;
 
     // 🔒 Check subscription limits
     if (user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid);
+      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
       if (!usageCheck.allowed) {
         setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
         return;
@@ -3013,7 +3102,7 @@ Question: ${userMessage}`;
 
     // 🔒 Check subscription limits
     if (user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid);
+      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
       if (!usageCheck.allowed) {
         setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
         return;
@@ -3096,7 +3185,7 @@ Return ONLY this valid JSON:
 
     // 🔒 Check subscription limits
     if (user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid);
+      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
       if (!usageCheck.allowed) {
         setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
         return;
@@ -3257,28 +3346,15 @@ Return ONLY this valid JSON:
   const readTabDisabled = false;
   const readTabTooltip = "Word-by-word analysis with pronunciation and meaning";
   
-  // Debug logging for language detection and tab state
-  console.log('🔍 [Language Detection & Tab State]', {
-    mode: manualLanguage ? 'Manual' : 'Auto',
-    manualLanguage: manualLanguage || 'none',
-    autoDetected: autoDetectedLang.language,
-    finalLanguage: detectedLang.language,
-    script: detectedLang.script,
-    pageTextLength: pageText?.length || 0,
-    isEnglish,
-    readTabDisabled,
-    currentPage,
-    showMultilingual,
-    multilingual: tabIndices.multilingual,
-    activeTab
-  });
-
   // Check tab visibility from admin config
   const showTeacherMode = isTabEnabled(adminConfig, 'teacherMode');
   const showMultilingual = isTabEnabled(adminConfig, 'multilingual');
   const showExplain = isTabEnabled(adminConfig, 'explain');
   const showActivities = isTabEnabled(adminConfig, 'activities');
   const showExamPrep = isTabEnabled(adminConfig, 'examPrep');
+  
+  // V8.0.3: EXTREME DEBUG - Log tab visibility
+  console.log('🔥🔥🔥 [READ TAB DEBUG] showMultilingual:', showMultilingual, 'adminConfig:', adminConfig?.tabs?.multilingual);
   const showNotes = isTabEnabled(adminConfig, 'notes');
   const showProTools = isTabEnabled(adminConfig, 'proTools'); // v7.2.28: Tools tab
   const showVyonn = isTabEnabled(adminConfig, 'vyonn'); // v7.2.30: Vyonn AI tab (always enabled by default)
@@ -3294,6 +3370,22 @@ Return ONLY this valid JSON:
   if (showProTools) { tabIndices.proTools = currentIndex++; }
   if (showVyonn) { tabIndices.vyonn = currentIndex++; }
   if (showNotes) { tabIndices.notes = currentIndex++; }
+
+  // v10.1.2: Debug logging for language detection and tab state
+  console.log('🔍 [Language Detection & Tab State]', {
+    mode: manualLanguage ? 'Manual' : 'Auto',
+    manualLanguage: manualLanguage || 'none',
+    autoDetected: autoDetectedLang.language,
+    finalLanguage: detectedLang.language,
+    script: detectedLang.script,
+    pageTextLength: pageText?.length || 0,
+    isEnglish,
+    readTabDisabled,
+    currentPage,
+    showMultilingual,
+    multilingual: tabIndices.multilingual,
+    activeTab
+  });
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
@@ -3903,6 +3995,68 @@ Return ONLY this valid JSON:
                       </Box>
                     )}
 
+                    {/* Important Details - V8.0.0: New field from optimized Teacher Mode */}
+                    {teacherResponse.importantDetails && (
+                      <Box sx={{ mb: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+                          <Typography variant="h6" fontWeight={600}>
+                            Important Details
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            {/* Listen/Stop Button */}
+                            {speakingSection === 'importantDetails' ? (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="error"
+                                onClick={handleStopSpeaking}
+                                startIcon={<Stop />}
+                              >
+                                Stop
+                              </Button>
+                            ) : (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                onClick={() => handleSpeakSection('importantDetails', teacherResponse.importantDetails)}
+                                startIcon={<VolumeUp />}
+                              >
+                                Listen
+                              </Button>
+                            )}
+                            {/* Explain in English - Only for non-English content */}
+                            {!detectedLang?.isEnglish && manualLanguage !== 'English' && !teacherEnglish.importantDetails && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                onClick={() => handleTranslateSection('importantDetails', teacherResponse.importantDetails)}
+                                disabled={translatingSection === 'importantDetails'}
+                                startIcon={translatingSection === 'importantDetails' ? <CircularProgress size={14} /> : <ExplainIcon />}
+                              >
+                                Explain in English
+                              </Button>
+                            )}
+                          </Box>
+                        </Box>
+                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'info.50', borderColor: 'info.main' }}>
+                          <Box dangerouslySetInnerHTML={{ __html: cleanJsonArtifacts(teacherResponse.importantDetails) }} />
+                        </Paper>
+                        {teacherEnglish.importantDetails && (
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
+                              English Explanation:
+                            </Typography>
+                            <Box 
+                              sx={{ '& p': { mb: 1 }, '& ul': { pl: 2, mb: 1 }, '& strong': { fontWeight: 600 } }}
+                              dangerouslySetInnerHTML={{ __html: markdownToHtml(teacherEnglish.importantDetails) }} 
+                            />
+                          </Paper>
+                        )}
+                      </Box>
+                    )}
+
                     {/* Examples */}
                     {teacherResponse.examples && (
                       <Box sx={{ mb: 3 }}>
@@ -3959,6 +4113,68 @@ Return ONLY this valid JSON:
                             <Box 
                               sx={{ '& p': { mb: 1 }, '& ul': { pl: 2, mb: 1 }, '& strong': { fontWeight: 600 } }}
                               dangerouslySetInnerHTML={{ __html: markdownToHtml(teacherEnglish.examples) }} 
+                            />
+                          </Paper>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Think About - V8.0.0: New field from optimized Teacher Mode */}
+                    {teacherResponse.thinkAbout && (
+                      <Box sx={{ mb: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+                          <Typography variant="h6" fontWeight={600}>
+                            Think About
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            {/* Listen/Stop Button */}
+                            {speakingSection === 'thinkAbout' ? (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="error"
+                                onClick={handleStopSpeaking}
+                                startIcon={<Stop />}
+                              >
+                                Stop
+                              </Button>
+                            ) : (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="secondary"
+                                onClick={() => handleSpeakSection('thinkAbout', teacherResponse.thinkAbout)}
+                                startIcon={<VolumeUp />}
+                              >
+                                Listen
+                              </Button>
+                            )}
+                            {/* Explain in English - Only for non-English content */}
+                            {!detectedLang?.isEnglish && manualLanguage !== 'English' && !teacherEnglish.thinkAbout && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                onClick={() => handleTranslateSection('thinkAbout', teacherResponse.thinkAbout)}
+                                disabled={translatingSection === 'thinkAbout'}
+                                startIcon={translatingSection === 'thinkAbout' ? <CircularProgress size={14} /> : <ExplainIcon />}
+                              >
+                                Explain in English
+                              </Button>
+                            )}
+                          </Box>
+                        </Box>
+                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'secondary.50', borderColor: 'secondary.main' }}>
+                          <Box dangerouslySetInnerHTML={{ __html: cleanJsonArtifacts(teacherResponse.thinkAbout) }} />
+                        </Paper>
+                        {teacherEnglish.thinkAbout && (
+                          <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600} gutterBottom display="block">
+                              English Explanation:
+                            </Typography>
+                            <Box 
+                              sx={{ '& p': { mb: 1 }, '& ul': { pl: 2, mb: 1 }, '& strong': { fontWeight: 600 } }}
+                              dangerouslySetInnerHTML={{ __html: markdownToHtml(teacherEnglish.thinkAbout) }} 
                             />
                           </Paper>
                         )}
@@ -4038,6 +4254,13 @@ Return ONLY this valid JSON:
         {/* Read & Understand Tab */}
         {showMultilingual && <TabPanel value={activeTab} index={tabIndices.multilingual}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            {/* V8.0.3: EXTREME DEBUG */}
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              🔥 READ TAB IS RENDERING! activeTab={activeTab}, tabIndex={tabIndices.multilingual}, showMultilingual={showMultilingual ? 'true' : 'false'}
+            </Alert>
+            <Alert severity="success" sx={{ mb: 2 }}>
+              ✅ YOU ARE IN THE READ TAB! The content should be visible now!
+            </Alert>
             {/* v10.1.2: Better UI feedback for Read tab */}
             <Alert severity="info" sx={{ mb: 2 }}>
               📚 <strong>Word-by-Word Analysis:</strong> Get pronunciation guide and English meanings for key words in this page.
@@ -6649,6 +6872,28 @@ Return ONLY this valid JSON:
         open={showGlobeViewer}
         onClose={() => setShowGlobeViewer(false)}
       />
+
+      {/* v10.1.2: Volume Control Notice */}
+      <Snackbar
+        open={showVolumeNotice}
+        autoHideDuration={6000}
+        onClose={() => setShowVolumeNotice(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setShowVolumeNotice(false)} 
+          severity="info"
+          icon={<VolumeUp />}
+          sx={{ width: '100%', maxWidth: 400 }}
+        >
+          <Typography variant="body2" fontWeight={600} gutterBottom>
+            🔊 Volume Tip
+          </Typography>
+          <Typography variant="caption" display="block">
+            Speech volume is controlled by your <strong>system volume</strong>. If the voice is too quiet, please increase your computer/device volume.
+          </Typography>
+        </Alert>
+      </Snackbar>
 
       {/* v10.1: API Key Configuration Alert */}
       <Snackbar

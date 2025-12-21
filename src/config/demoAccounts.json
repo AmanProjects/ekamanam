@@ -1,0 +1,16 @@
+{
+  "demoEmails": [
+    "ekamanam@gmail.com",
+    "ekamanamdemo@gmail.com"
+  ],
+  "demoSettings": {
+    "tier": "STUDENT",
+    "displayName": "Demo Account (Full Access)",
+    "allowUnlimitedQueries": true,
+    "expiryDate": null,
+    "note": "Demo accounts with unlimited access to all premium features"
+  },
+  "lastUpdated": "2025-12-20",
+  "version": "1.0.0"
+}
+

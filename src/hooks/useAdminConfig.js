@@ -52,9 +52,14 @@ export const useAdminConfig = () => {
  * @returns {boolean} - true if tab is enabled
  */
 export const isTabEnabled = (config, tabKey) => {
-  if (!config || !config.tabs) return true; // Default to enabled
+  if (!config || !config.tabs) {
+    console.log(`✅ [isTabEnabled] No config found, defaulting ${tabKey} to TRUE`);
+    return true; // Default to enabled
+  }
   const tab = config.tabs[tabKey];
-  return tab ? tab.enabled !== false : true;
+  const enabled = tab ? tab.enabled !== false : true;
+  console.log(`🔍 [isTabEnabled] ${tabKey}:`, enabled, 'config:', tab);
+  return enabled;
 };
 
 /**

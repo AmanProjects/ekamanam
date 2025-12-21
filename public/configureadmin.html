@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <title>Ekamanam Admin Configuration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 600px;
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header .logo-container {
+      margin: 0 auto 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .header .logo-container img {
+      width: 120px;
+      height: auto;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .auth-section {
+      text-align: center;
+    }
+
+    .lock-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: #f1f3f5;
+      color: #495057;
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #e9ecef;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .alert-info {
+      background: #e7f5ff;
+      color: #1864ab;
+      border: 1px solid #a5d8ff;
+    }
+
+    .alert-success {
+      background: #d3f9d8;
+      color: #2b8a3e;
+      border: 1px solid #8ce99a;
+    }
+
+    .alert-error {
+      background: #ffe0e0;
+      color: #c92a2a;
+      border: 1px solid #ffa8a8;
+    }
+
+    .admin-section {
+      display: none;
+    }
+
+    .admin-section.active {
+      display: block;
+    }
+
+    .demo-list {
+      margin-top: 20px;
+    }
+
+    .demo-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #e9ecef;
+    }
+
+    .demo-email {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      color: #495057;
+    }
+
+    .demo-email::before {
+      content: "📧";
+      font-size: 20px;
+    }
+
+    .btn-remove {
+      padding: 6px 12px;
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-remove:hover {
+      background: #fa5252;
+      transform: scale(1.05);
+    }
+
+    .add-demo-form {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 2px dashed #dee2e6;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      padding: 16px;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #4f46e5;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #868e96;
+      font-size: 12px;
+      border-top: 1px solid #e9ecef;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo-container">
+        <img src="Ekamanam_logo.png" alt="Ekamanam" />
+      </div>
+      <h1>Ekamanam Admin</h1>
+      <p>Demo Account Configuration</p>
+    </div>
+
+    <div class="content">
+      <!-- Loading State -->
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Initializing Firebase...</p>
+      </div>
+
+      <!-- Authentication Section -->
+      <div id="auth-section" class="auth-section hidden">
+        <div class="lock-icon">🔒</div>
+        
+        <div id="alert-container"></div>
+
+        <div id="request-otp-form">
+          <div class="form-group">
+            <label for="admin-email">Admin Email</label>
+            <input 
+              type="text" 
+              id="admin-email" 
+              value="am****@gmail.com"
+              readonly
+              style="text-align: center; font-weight: 600; color: #495057;"
+            >
+          </div>
+          <p style="font-size: 13px; color: #868e96; margin-bottom: 20px; text-align: center;">
+            A 6-digit code will be sent to your email
+          </p>
+          <button type="button" class="btn btn-primary" onclick="requestOTP(); return false;">Generate OTP Code</button>
+        </div>
+
+        <div id="verify-otp-form" class="hidden">
+          <p style="font-size: 13px; color: #495057; margin-bottom: 16px; text-align: center;">
+            Code sent to <strong>am****@gmail.com</strong>
+          </p>
+          <div class="form-group">
+            <label for="otp-code">Enter 6-Digit Code</label>
+            <input 
+              type="text" 
+              id="otp-code" 
+              placeholder="000000" 
+              maxlength="6"
+              pattern="[0-9]{6}"
+              style="text-align: center; font-size: 24px; font-weight: 700; letter-spacing: 8px;"
+            >
+          </div>
+          <button type="button" class="btn btn-primary" onclick="verifyOTP(); return false;">Verify & Access</button>
+          <button type="button" class="btn btn-secondary" onclick="backToRequest(); return false;">Request New Code</button>
+        </div>
+      </div>
+
+      <!-- Admin Panel Section -->
+      <div id="admin-section" class="admin-section">
+        <!-- Stats -->
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value" id="demo-count">0</div>
+            <div class="stat-label">Active Demos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="last-updated">-</div>
+            <div class="stat-label">Last Updated</div>
+          </div>
+        </div>
+
+        <!-- Current Demo Accounts -->
+        <div>
+          <h3 style="margin-bottom: 16px; color: #212529;">Current Demo Accounts</h3>
+          <div id="demo-list" class="demo-list">
+            <!-- Demo items will be inserted here -->
+          </div>
+        </div>
+
+        <!-- Add New Demo Form -->
+        <div class="add-demo-form">
+          <h4 style="margin-bottom: 16px; color: #495057;">➕ Add New Demo Account</h4>
+          <div class="form-group">
+            <label for="new-demo-email">Email Address</label>
+            <input 
+              type="email" 
+              id="new-demo-email" 
+              placeholder="demo@gmail.com"
+            >
+          </div>
+          <button class="btn btn-primary" onclick="addDemoAccount()">Add Demo Account</button>
+        </div>
+
+        <!-- Logout -->
+        <button class="btn btn-secondary" onclick="logout()" style="margin-top: 24px;">Logout</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>Ekamanam</strong> Admin Panel · v1.0.0</p>
+      <p style="margin-top: 4px;">🔒 Secure access for authorized administrators</p>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <!-- EmailJS for OTP -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+  <script>
+    // Firebase configuration (same as main app)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDj3bQYJu-w2U_OkuTgVKi3oQ0SBEiD4wg",
+      authDomain: "ekamanam-72066.firebaseapp.com",
+      projectId: "ekamanam-72066",
+      storageBucket: "ekamanam-72066.firebasestorage.app",
+      messagingSenderId: "878853196738",
+      appId: "1:878853196738:web:edbc1f2aedd35d76f7cd7c"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // EmailJS Configuration (same as main admin dashboard)
+    const EMAILJS_SERVICE_ID = 'service_2n09tlh';
+    const EMAILJS_TEMPLATE_ID = 'template_qqj7276';
+    const EMAILJS_PUBLIC_KEY = 'EhyhDIZQ3Hvf6I71C';
+
+    // Initialize EmailJS
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    // Admin email
+    const ADMIN_EMAIL = 'amandeep.talwar@gmail.com';
+
+    // State
+    let currentOTP = null;
+    let otpExpiry = null;
+    let isAuthenticated = false;
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('auth-section').classList.remove('hidden');
+      
+      // Check if already authenticated (same session logic as main dashboard)
+      const sessionData = sessionStorage.getItem('admin_authenticated');
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          // Session valid for 1 hour
+          if (session.authorized && Date.now() < session.expiry) {
+            console.log('✅ Valid admin session found');
+            isAuthenticated = true;
+            showAdminPanel();
+            loadDemoAccounts();
+            return;
+          } else {
+            console.log('⏰ Admin session expired');
+            sessionStorage.removeItem('admin_authenticated');
+          }
+        } catch (e) {
+          console.error('❌ Invalid session data:', e);
+          sessionStorage.removeItem('admin_authenticated');
+        }
+      }
+    });
+
+    // Show alert
+    function showAlert(message, type = 'info') {
+      const container = document.getElementById('alert-container');
+      container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 5000);
+    }
+
+    // Generate 6-digit OTP
+    function generateOTP() {
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    // Request OTP (using EmailJS - same as main admin dashboard)
+    async function requestOTP() {
+      console.log('🚀 requestOTP function called');
+      
+      const email = ADMIN_EMAIL;
+      console.log('📧 Admin email:', email);
+      
+      // Check if EmailJS is loaded
+      if (typeof emailjs === 'undefined') {
+        console.error('❌ EmailJS library not loaded!');
+        showAlert('❌ Email service not available. Check console for OTP.', 'error');
+        return;
+      }
+      
+      try {
+        // Generate OTP
+        currentOTP = generateOTP();
+        otpExpiry = Date.now() + (5 * 60 * 1000); // 5 minutes (same as main dashboard)
+
+        console.log('🔐 Generated OTP:', currentOTP);
+        console.log('📧 Sending OTP to:', email);
+
+        // Send email via EmailJS (same service as main dashboard)
+        const templateParams = {
+          to_email: email,
+          to_name: 'Admin',
+          otp_code: currentOTP,
+          expiry_minutes: 5,
+          timestamp: new Date().toLocaleString(),
+          from_name: 'Ekamanam Admin'
+        };
+
+        showAlert('📤 Sending OTP to your email...', 'info');
+
+        const response = await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          templateParams
+        );
+
+        console.log('✅ OTP sent successfully via EmailJS');
+        console.log('📧 EmailJS Response:', response);
+
+        // Show success message
+        showAlert(`✅ OTP sent to ${email.substring(0, 2)}****@gmail.com`, 'success');
+        
+        // Also show in console for development
+        console.log('═══════════════════════════════════');
+        console.log('🔐 OTP CODE: ' + currentOTP);
+        console.log('📧 Sent to: ' + email);
+        console.log('⏰ Expires in: 5 minutes');
+        console.log('═══════════════════════════════════');
+        
+        // Show verify form
+        document.getElementById('request-otp-form').classList.add('hidden');
+        document.getElementById('verify-otp-form').classList.remove('hidden');
+        
+        // Focus on OTP input
+        setTimeout(() => {
+          document.getElementById('otp-code').focus();
+        }, 100);
+
+      } catch (error) {
+        console.error('❌ Failed to send OTP:', error);
+        console.error('📧 Error details:', error);
+        
+        // Show error but still allow console OTP for development
+        showAlert('⚠️ Email failed, but OTP shown in console for development: ' + currentOTP, 'warning');
+        
+        // Still show verify form so admin can use console OTP
+        document.getElementById('request-otp-form').classList.add('hidden');
+        document.getElementById('verify-otp-form').classList.remove('hidden');
+        setTimeout(() => {
+          document.getElementById('otp-code').focus();
+        }, 100);
+      }
+    }
+
+    // Verify OTP (same logic as main admin dashboard)
+    function verifyOTP() {
+      const enteredCode = document.getElementById('otp-code').value.trim();
+      
+      if (!enteredCode || enteredCode.length !== 6) {
+        showAlert('❌ Please enter a 6-digit code', 'error');
+        return;
+      }
+
+      // Check if OTP exists
+      if (!currentOTP) {
+        showAlert('❌ No OTP has been generated', 'error');
+        backToRequest();
+        return;
+      }
+
+      // Check expiry
+      if (Date.now() > otpExpiry) {
+        showAlert('❌ OTP expired. Request a new one.', 'error');
+        currentOTP = null;
+        otpExpiry = null;
+        backToRequest();
+        return;
+      }
+
+      // Verify code
+      const isValid = enteredCode === currentOTP;
+      
+      if (isValid) {
+        console.log('✅ OTP verified successfully');
+        
+        // Clear OTP after successful verification
+        currentOTP = null;
+        otpExpiry = null;
+        
+        // Create admin session (same as main dashboard)
+        isAuthenticated = true;
+        const sessionData = {
+          authorized: true,
+          expiry: Date.now() + 60 * 60 * 1000, // 1 hour
+          timestamp: new Date().toISOString()
+        };
+        sessionStorage.setItem('admin_authenticated', JSON.stringify(sessionData));
+        console.log('✅ Admin session created');
+        
+        showAlert('✅ Authentication successful!', 'success');
+        
+        setTimeout(() => {
+          showAdminPanel();
+          loadDemoAccounts();
+        }, 1000);
+      } else {
+        console.log('❌ Invalid OTP');
+        showAlert('❌ Invalid OTP code. Please try again.', 'error');
+      }
+    }
+
+    // Back to request OTP form
+    function backToRequest() {
+      document.getElementById('verify-otp-form').classList.add('hidden');
+      document.getElementById('request-otp-form').classList.remove('hidden');
+      document.getElementById('otp-code').value = '';
+      currentOTP = null;
+      otpExpiry = null;
+    }
+
+    // Show admin panel
+    function showAdminPanel() {
+      document.getElementById('auth-section').classList.add('hidden');
+      document.getElementById('admin-section').classList.add('active');
+    }
+
+    // Load demo accounts from Firestore
+    async function loadDemoAccounts() {
+      try {
+        const doc = await db.collection('admin').doc('demoAccounts').get();
+        
+        if (!doc.exists) {
+          // Initialize with empty array
+          await db.collection('admin').doc('demoAccounts').set({
+            emails: [],
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: ADMIN_EMAIL
+          });
+          renderDemoList([]);
+          return;
+        }
+
+        const data = doc.data();
+        const emails = data.emails || [];
+        
+        renderDemoList(emails);
+        updateStats(emails.length, data.updatedAt);
+
+      } catch (error) {
+        console.error('Error loading demo accounts:', error);
+        showAlert('❌ Failed to load demo accounts', 'error');
+      }
+    }
+
+    // Render demo list
+    function renderDemoList(emails) {
+      const container = document.getElementById('demo-list');
+      
+      if (emails.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #868e96; padding: 20px;">No demo accounts configured yet.</p>';
+        return;
+      }
+
+      container.innerHTML = emails.map(email => `
+        <div class="demo-item">
+          <span class="demo-email">${email}</span>
+          <button class="btn-remove" onclick="removeDemoAccount('${email}')">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    // Update stats
+    function updateStats(count, updatedAt) {
+      document.getElementById('demo-count').textContent = count;
+      
+      if (updatedAt) {
+        const date = updatedAt.toDate();
+        const timeAgo = getTimeAgo(date);
+        document.getElementById('last-updated').textContent = timeAgo;
+      }
+    }
+
+    // Get time ago
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      
+      if (seconds < 60) return 'Just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+      return Math.floor(seconds / 86400) + 'd ago';
+    }
+
+    // Add demo account
+    async function addDemoAccount() {
+      const email = document.getElementById('new-demo-email').value.trim().toLowerCase();
+      
+      // Validate email
+      if (!email) {
+        showAlert('❌ Please enter an email address', 'error');
+        return;
+      }
+
+      if (!email.includes('@') || !email.includes('.')) {
+        showAlert('❌ Please enter a valid email address', 'error');
+        return;
+      }
+
+      try {
+        // Get current emails
+        const doc = await db.collection('admin').doc('demoAccounts').get();
+        const data = doc.data() || {};
+        const emails = data.emails || [];
+
+        // Check if already exists
+        if (emails.includes(email)) {
+          showAlert('⚠️ This email is already a demo account', 'error');
+          return;
+        }
+
+        // Add new email
+        emails.push(email);
+
+        // Save to Firestore
+        await db.collection('admin').doc('demoAccounts').set({
+          emails: emails,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: ADMIN_EMAIL
+        });
+
+        showAlert(`✅ Added demo account: ${email}`, 'success');
+        
+        // Reload list
+        loadDemoAccounts();
+        
+        // Clear input
+        document.getElementById('new-demo-email').value = '';
+
+      } catch (error) {
+        console.error('Error adding demo account:', error);
+        showAlert('❌ Failed to add demo account', 'error');
+      }
+    }
+
+    // Remove demo account
+    async function removeDemoAccount(email) {
+      if (!confirm(`Remove demo account:\n${email}\n\nAre you sure?`)) {
+        return;
+      }
+
+      try {
+        // Get current emails
+        const doc = await db.collection('admin').doc('demoAccounts').get();
+        const data = doc.data() || {};
+        let emails = data.emails || [];
+
+        // Remove email
+        emails = emails.filter(e => e !== email);
+
+        // Save to Firestore
+        await db.collection('admin').doc('demoAccounts').set({
+          emails: emails,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: ADMIN_EMAIL
+        });
+
+        showAlert(`✅ Removed demo account: ${email}`, 'success');
+        
+        // Reload list
+        loadDemoAccounts();
+
+      } catch (error) {
+        console.error('Error removing demo account:', error);
+        showAlert('❌ Failed to remove demo account', 'error');
+      }
+    }
+
+    // Logout
+    function logout() {
+      sessionStorage.removeItem('admin_authenticated');
+      location.reload();
+    }
+
+    // Enter key handlers
+    document.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        if (!document.getElementById('verify-otp-form').classList.contains('hidden')) {
+          verifyOTP();
+        } else if (!document.getElementById('request-otp-form').classList.contains('hidden')) {
+          requestOTP();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+

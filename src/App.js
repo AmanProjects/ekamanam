@@ -99,7 +99,7 @@ function App() {
   
   // Subscription state
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
-  const subscription = useSubscription(user?.uid);
+  const subscription = useSubscription(user?.uid, user?.email);
 
   // ===== NEW FEATURES STATE =====
 

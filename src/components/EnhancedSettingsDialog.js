@@ -20,7 +20,12 @@ import {
   IconButton,
   Alert,
   Chip,
-  TextField
+  TextField,
+  useMediaQuery,
+  useTheme,
+  Tabs,
+  Tab,
+  AppBar
 } from '@mui/material';
 import {
   Close,
@@ -29,7 +34,8 @@ import {
   Key,
   Info,
   Person,
-  PlayArrow
+  PlayArrow,
+  ArrowBack
 } from '@mui/icons-material';
 import { getThemePreference, saveThemePreference } from '../theme.js';
 import { 
@@ -46,6 +52,10 @@ import {
 import MultiProviderSettings from './MultiProviderSettings';
 
 function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [selectedOption, setSelectedOption] = useState('general');
   const [darkMode, setDarkMode] = useState(false);
   const [voicePreference, setVoicePreference] = useState(VOICE_OPTIONS.INDIAN_ENGLISH_FEMALE);
@@ -147,14 +157,14 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       case 'general':
         return (
           <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography variant={isMobile ? 'h6' : 'h6'} fontWeight={600} gutterBottom>
               General Settings
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
               Set up student and parent information. Parent email will be used for Admin Dashboard OTP verification.
             </Typography>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 2 : 3, mt: isMobile ? 2 : 3 }}>
               <TextField
                 label="Student Name"
                 value={studentName}
@@ -162,6 +172,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                 fullWidth
                 variant="outlined"
                 helperText="The name of the student using Ekamanam"
+                size={isSmallMobile ? 'small' : 'medium'}
               />
 
               <TextField
@@ -171,6 +182,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                 fullWidth
                 variant="outlined"
                 helperText="Parent/guardian's full name"
+                size={isSmallMobile ? 'small' : 'medium'}
               />
 
               <TextField
@@ -183,13 +195,15 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                 helperText="This email will receive OTP for Admin Dashboard access"
                 required
                 error={parentEmail && !parentEmail.includes('@')}
+                size={isSmallMobile ? 'small' : 'medium'}
               />
 
               <Button 
                 variant="contained" 
                 onClick={handleSaveProfile}
-                sx={{ alignSelf: 'flex-start' }}
+                sx={{ alignSelf: isMobile ? 'stretch' : 'flex-start' }}
                 disabled={!studentName || !parentName || !parentEmail || !parentEmail.includes('@')}
+                size={isMobile ? 'large' : 'medium'}
               >
                 Save Profile
               </Button>
@@ -216,16 +230,23 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       case 'appearance':
         return (
           <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography variant={isMobile ? 'h6' : 'h6'} fontWeight={600} gutterBottom>
               Appearance Settings
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
               Customize how Ekamanam looks to reduce eye strain and match your preference.
             </Typography>
 
-            <Box sx={{ mt: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Box>
+            <Box sx={{ mt: isMobile ? 2 : 3 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                mb: 2,
+                flexDirection: isSmallMobile ? 'column' : 'row',
+                gap: isSmallMobile ? 1 : 0
+              }}>
+                <Box sx={{ flex: 1 }}>
                   <Typography variant="subtitle1" fontWeight={600}>
                     Dark Mode
                   </Typography>
@@ -237,6 +258,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                   checked={darkMode}
                   onChange={handleThemeToggle}
                   color="primary"
+                  sx={{ alignSelf: isSmallMobile ? 'flex-end' : 'center' }}
                 />
               </Box>
 
@@ -252,15 +274,15 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       case 'voice':
         return (
           <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography variant={isMobile ? 'h6' : 'h6'} fontWeight={600} gutterBottom>
               Voice & Speech Settings
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
               Choose your preferred voice for all text-to-speech features across the app.
             </Typography>
 
-            <FormControl component="fieldset" sx={{ mt: 3, width: '100%' }}>
-              <FormLabel component="legend" sx={{ fontWeight: 600, mb: 2 }}>
+            <FormControl component="fieldset" sx={{ mt: isMobile ? 2 : 3, width: '100%' }}>
+              <FormLabel component="legend" sx={{ fontWeight: 600, mb: 2, fontSize: isMobile ? '0.875rem' : '1rem' }}>
                 Select Voice Type
               </FormLabel>
               <RadioGroup value={voicePreference} onChange={handleVoiceChange}>
@@ -269,7 +291,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                     key={key}
                     sx={{
                       mb: 1,
-                      p: 1,
+                      p: isMobile ? 1 : 1.5,
                       border: '1px solid',
                       borderColor: voicePreference === key ? 'primary.main' : 'divider',
                       borderRadius: 1,
@@ -285,9 +307,19 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                       value={key}
                       control={<Radio />}
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                          <Box>
-                            <Typography variant="body1" fontWeight={voicePreference === key ? 600 : 400}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'space-between', 
+                          width: '100%',
+                          gap: 1
+                        }}>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography 
+                              variant={isMobile ? 'body2' : 'body1'} 
+                              fontWeight={voicePreference === key ? 600 : 400}
+                              sx={{ wordBreak: 'break-word' }}
+                            >
                               {label}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
@@ -311,8 +343,9 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                               testVoice(key, testText);
                             }}
                             color="primary"
+                            sx={{ flexShrink: 0 }}
                           >
-                            <VolumeUp />
+                            <VolumeUp fontSize={isMobile ? 'small' : 'medium'} />
                           </IconButton>
                         </Box>
                       }
@@ -328,7 +361,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
                 onClick={handleTestVoice}
                 sx={{ mt: 1.5 }}
                 fullWidth
-                size="medium"
+                size={isMobile ? 'large' : 'medium'}
               >
                 Test Voice
               </Button>
@@ -345,7 +378,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       case 'ai':
         return (
           <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography variant={isMobile ? 'h6' : 'h6'} fontWeight={600} gutterBottom>
               AI Provider Settings
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
@@ -353,7 +386,7 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
             </Typography>
 
             <Alert severity="info" sx={{ mb: 2 }}>
-              <Typography variant="body2">
+              <Typography variant={isMobile ? 'caption' : 'body2'}>
                 <strong>🆕 Multi-Provider Support:</strong> Add multiple AI providers for automatic fallback and better reliability.
                 <br />
                 <strong>Recommended:</strong> Gemini + Groq for 16,000 free queries/day!
@@ -367,12 +400,12 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       case 'about':
         return (
           <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography variant={isMobile ? 'h6' : 'h6'} fontWeight={600} gutterBottom>
               About Ekamanam
             </Typography>
             
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            <Box sx={{ mt: isMobile ? 2 : 3 }}>
+              <Typography variant={isMobile ? 'subtitle2' : 'subtitle1'} fontWeight={600} gutterBottom>
                 The Art of Focused Learning
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
@@ -382,14 +415,35 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
 
               <Divider sx={{ my: 2 }} />
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                mb: 1,
+                flexWrap: isMobile ? 'wrap' : 'nowrap',
+                gap: isMobile ? 1 : 0
+              }}>
                 <Typography variant="body2">Version:</Typography>
                 <Chip label="3.3.3" size="small" color="primary" />
               </Box>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'flex-start',
+                mb: 1,
+                flexDirection: isSmallMobile ? 'column' : 'row',
+                gap: isSmallMobile ? 0.5 : 0
+              }}>
                 <Typography variant="body2">Account:</Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ 
+                    wordBreak: 'break-word',
+                    textAlign: isSmallMobile ? 'left' : 'right'
+                  }}
+                >
                   {user ? user.email : 'Not signed in'}
                 </Typography>
               </Box>
@@ -414,10 +468,12 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          height: '85vh',
-          maxHeight: '85vh'
+          height: isMobile ? '100vh' : '85vh',
+          maxHeight: isMobile ? '100vh' : '85vh',
+          m: isMobile ? 0 : 2
         }
       }}
     >
@@ -427,72 +483,132 @@ function EnhancedSettingsDialog({ open, onClose, user, onThemeChange }) {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          p: 2, 
+          p: isMobile ? 1.5 : 2, 
           borderBottom: 1, 
-          borderColor: 'divider' 
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1
         }}>
-          <Typography variant="h6" fontWeight={600}>
+          {isMobile && (
+            <IconButton onClick={onClose} size="small" edge="start">
+              <ArrowBack />
+            </IconButton>
+          )}
+          <Typography variant={isMobile ? 'h6' : 'h6'} fontWeight={600} sx={{ flex: 1, ml: isMobile ? 1 : 0 }}>
             Settings
           </Typography>
-          <IconButton onClick={onClose} size="small">
-            <Close />
-          </IconButton>
+          {!isMobile && (
+            <IconButton onClick={onClose} size="small">
+              <Close />
+            </IconButton>
+          )}
         </Box>
 
-        <Box sx={{ display: 'flex', height: 'calc(100% - 64px)' }}>
-          {/* Left Panel - Options */}
-          <Box
-            sx={{
-              width: 200,
-              borderRight: 1,
-              borderColor: 'divider',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'auto'
-            }}
-          >
-            {/* Options List */}
-            <List sx={{ py: 0 }}>
+        {/* Mobile: Top Tab Bar */}
+        {isMobile && (
+          <Box sx={{ 
+            borderBottom: 1, 
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            overflowX: 'auto',
+            '&::-webkit-scrollbar': {
+              height: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'divider',
+              borderRadius: '2px',
+            }
+          }}>
+            <Tabs
+              value={selectedOption}
+              onChange={(e, newValue) => setSelectedOption(newValue)}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{
+                minHeight: isSmallMobile ? 48 : 56,
+                '& .MuiTab-root': {
+                  minHeight: isSmallMobile ? 48 : 56,
+                  fontSize: isSmallMobile ? '0.75rem' : '0.875rem',
+                  minWidth: isSmallMobile ? 80 : 100,
+                  px: isSmallMobile ? 1 : 2
+                }
+              }}
+            >
               {settingsOptions.map((option) => (
-                <ListItem 
-                  key={option.id} 
-                  disablePadding 
-                  id={`settings-tab-${option.id}`}
-                >
-                  <ListItemButton
-                  selected={selectedOption === option.id}
-                  onClick={() => setSelectedOption(option.id)}
-                  sx={{
-                    py: 1.5,
-                    '&.Mui-selected': {
-                      bgcolor: 'primary.lighter',
-                      borderRight: 3,
-                      borderColor: 'primary.main'
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
-                    {option.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={option.label}
-                    secondary={option.description}
-                    primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                    secondaryTypographyProps={{ variant: 'caption' }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
+                <Tab
+                  key={option.id}
+                  value={option.id}
+                  icon={option.icon}
+                  iconPosition="start"
+                  label={option.label}
+                />
+              ))}
+            </Tabs>
+          </Box>
+        )}
 
-          {/* Right Panel - Content */}
+        <Box sx={{ 
+          display: 'flex', 
+          height: isMobile ? 'calc(100% - 120px)' : 'calc(100% - 64px)',
+          flexDirection: isMobile ? 'column' : 'row'
+        }}>
+          {/* Desktop: Left Panel - Options */}
+          {!isMobile && (
+            <Box
+              sx={{
+                width: 200,
+                borderRight: 1,
+                borderColor: 'divider',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'auto'
+              }}
+            >
+              {/* Options List */}
+              <List sx={{ py: 0 }}>
+                {settingsOptions.map((option) => (
+                  <ListItem 
+                    key={option.id} 
+                    disablePadding 
+                    id={`settings-tab-${option.id}`}
+                  >
+                    <ListItemButton
+                    selected={selectedOption === option.id}
+                    onClick={() => setSelectedOption(option.id)}
+                    sx={{
+                      py: 1.5,
+                      '&.Mui-selected': {
+                        bgcolor: 'primary.lighter',
+                        borderRight: 3,
+                        borderColor: 'primary.main'
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      {option.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={option.label}
+                      secondary={option.description}
+                      primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
+                      secondaryTypographyProps={{ variant: 'caption' }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+          )}
+
+          {/* Content Panel */}
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Content Area */}
             <DialogContent sx={{ 
               flex: 1, 
               overflow: 'auto',
-              p: 3,
+              p: isMobile ? (isSmallMobile ? 2 : 2.5) : 3,
               '&::-webkit-scrollbar': {
                 width: '8px',
               },
