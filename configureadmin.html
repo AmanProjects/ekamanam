@@ -683,17 +683,47 @@
       
       const authSection = document.getElementById('auth-section');
       const adminSection = document.getElementById('admin-section');
+      const contentDiv = document.querySelector('.content');
       
       console.log('🔍 auth-section element:', authSection);
       console.log('🔍 admin-section element:', adminSection);
+      console.log('🔍 content div:', contentDiv);
       console.log('🔍 auth-section classes before:', authSection?.className);
       console.log('🔍 admin-section classes before:', adminSection?.className);
       
       authSection.classList.add('hidden');
       adminSection.classList.remove('hidden');
       
+      // Force visibility with inline styles
+      if (contentDiv) {
+        contentDiv.style.display = 'block';
+        contentDiv.style.visibility = 'visible';
+      }
+      adminSection.style.display = 'block';
+      adminSection.style.visibility = 'visible';
+      adminSection.style.opacity = '1';
+      adminSection.style.position = 'relative';
+      adminSection.style.zIndex = '1';
+      
       console.log('🔍 auth-section classes after:', authSection?.className);
       console.log('🔍 admin-section classes after:', adminSection?.className);
+      console.log('🔍 admin-section computed display:', window.getComputedStyle(adminSection).display);
+      console.log('🔍 admin-section computed visibility:', window.getComputedStyle(adminSection).visibility);
+      console.log('🔍 admin-section innerHTML length:', adminSection.innerHTML.length);
+      
+      // Check child elements
+      const stats = adminSection.querySelector('.stats');
+      const demoList = document.getElementById('demo-list');
+      const addForm = adminSection.querySelector('.add-demo-form');
+      
+      console.log('🔍 .stats element:', stats);
+      console.log('🔍 #demo-list element:', demoList);
+      console.log('🔍 .add-demo-form element:', addForm);
+      
+      if (stats) console.log('🔍 .stats display:', window.getComputedStyle(stats).display);
+      if (demoList) console.log('🔍 #demo-list display:', window.getComputedStyle(demoList).display);
+      if (addForm) console.log('🔍 .add-demo-form display:', window.getComputedStyle(addForm).display);
+      
       console.log('✅ Admin panel should now be visible');
     }
 
@@ -745,10 +775,13 @@
 
     // Render demo list
     function renderDemoList(emails) {
+      console.log('🎨 renderDemoList() called with:', emails);
       const container = document.getElementById('demo-list');
+      console.log('🎨 demo-list container:', container);
       
       if (emails.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #868e96; padding: 20px;">No demo accounts configured yet.</p>';
+        console.log('🎨 Rendered empty state message');
         return;
       }
 
@@ -758,16 +791,29 @@
           <button class="btn-remove" onclick="removeDemoAccount('${email}')">Remove</button>
         </div>
       `).join('');
+      console.log('🎨 Rendered', emails.length, 'demo items');
     }
 
     // Update stats
     function updateStats(count, updatedAt) {
-      document.getElementById('demo-count').textContent = count;
+      console.log('📊 updateStats() called with count:', count);
+      const countElement = document.getElementById('demo-count');
+      const updatedElement = document.getElementById('last-updated');
+      
+      console.log('📊 demo-count element:', countElement);
+      console.log('📊 last-updated element:', updatedElement);
+      
+      countElement.textContent = count;
+      console.log('📊 Set demo-count to:', count);
       
       if (updatedAt) {
         const date = updatedAt.toDate();
         const timeAgo = getTimeAgo(date);
-        document.getElementById('last-updated').textContent = timeAgo;
+        updatedElement.textContent = timeAgo;
+        console.log('📊 Set last-updated to:', timeAgo);
+      } else {
+        updatedElement.textContent = 'Never';
+        console.log('📊 Set last-updated to: Never');
       }
     }
 
