@@ -408,18 +408,36 @@ function PhysicsSimulator({ open, onClose, user }) {
           ? `Topic: "${matchedExp.name}" - ${matchedExp.description}`
           : '';
           
-      const prompt = `You are Vyonn AI, a brilliant and friendly science tutor. Student asked: "${userQuestion}"
+      // v10.3: Detect language and respond in same language
+      const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
+      const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
+      const hasTamil = /[\u0B80-\u0BFF]/.test(userQuestion);
+      const hasKannada = /[\u0C80-\u0CFF]/.test(userQuestion);
+      const hasMalayalam = /[\u0D00-\u0D7F]/.test(userQuestion);
+      
+      const isRegional = hasDevanagari || hasTelugu || hasTamil || hasKannada || hasMalayalam;
+      const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
+                   hasDevanagari ? 'Hindi (हिंदी)' :
+                   hasTamil ? 'Tamil (தமிழ்)' :
+                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
+                   hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
+      
+      const prompt = `You are Vyonn AI, a brilliant and friendly science tutor.
+
+${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
+
+Student asked: "${userQuestion}"
 
 ${topicContext}
 
-Provide a comprehensive, educational response (200-250 words):
-1. Clear explanation of the concept
-2. Key components and their functions
-3. Important formulas or principles
-4. Real-world applications
-5. One interesting fact
+Provide a comprehensive, educational response (200-250 words) ${isRegional ? `in ${lang}` : ''}:
+1. Clear explanation of the concept ${isRegional ? `(in ${lang})` : ''}
+2. Key components and their functions ${isRegional ? `(in ${lang})` : ''}
+3. Important formulas or principles (formulas can use standard symbols)
+4. Real-world applications ${isRegional ? `(in ${lang})` : ''}
+5. One interesting fact ${isRegional ? `(in ${lang})` : ''}
 
-Use bullet points. Be engaging and encouraging!
+${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Use bullet points. Be engaging and encouraging!'}
 ${matchedDiagram ? 'I am showing them a detailed labeled diagram.' : ''}
 ${matchedExp ? 'I will run a physics simulation.' : ''}`;
 

@@ -2337,7 +2337,23 @@ function ChemistryTools({ open, onClose, user }) {
     const matchedDiagram = findMatchingDiagram(userQuestion);
     
     try {
+      // v10.3: Detect language and respond in same language
+      const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
+      const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
+      const hasTamil = /[\u0B80-\u0BFF]/.test(userQuestion);
+      const hasKannada = /[\u0C80-\u0CFF]/.test(userQuestion);
+      const hasMalayalam = /[\u0D00-\u0D7F]/.test(userQuestion);
+      
+      const isRegional = hasDevanagari || hasTelugu || hasTamil || hasKannada || hasMalayalam;
+      const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
+                   hasDevanagari ? 'Hindi (हिंदी)' :
+                   hasTamil ? 'Tamil (தமிழ்)' :
+                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
+                   hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
+      
       const prompt = `You are Vyonn AI Chemistry, a brilliant and friendly chemistry tutor embedded in the Ekamanam learning app.
+
+${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
 
 Student asked: "${userQuestion}"
 
@@ -2347,22 +2363,22 @@ ${matchedDiagram ? `Topic: "${matchedDiagram.title}" - I'm showing a detailed di
 1. First, determine if this question is related to chemistry (including but not limited to: elements, compounds, molecules, atoms, bonds, reactions, acids, bases, pH, ions, electrons, protons, neutrons, periodic table, chemical equations, organic chemistry, inorganic chemistry, solutions, moles, molarity, formulas, oxidation, reduction, redox, catalysts, polymers, hydrocarbons, functional groups, lab techniques, valency, valence, combining capacity, balancing equations, stoichiometry, thermodynamics, electrochemistry, etc.)
 
 2. If the question IS chemistry-related:
-   - Provide a comprehensive, educational chemistry response (200-300 words)
-   - Include clear explanations of chemistry concepts
-   - Show key chemical principles involved
+   ${isRegional ? `- Write ENTIRE response in ${lang} using proper Unicode` : '- Provide a comprehensive, educational chemistry response (200-300 words)'}
+   - Include clear explanations of chemistry concepts ${isRegional ? `(in ${lang})` : ''}
+   - Show key chemical principles involved ${isRegional ? `(explained in ${lang})` : ''}
    - Include important formulas or equations (use proper chemical notation like H₂O, CO₂, NaCl)
-   - Mention real-world applications if relevant
-   - Be engaging and encouraging!
+   - Mention real-world applications if relevant ${isRegional ? `(in ${lang})` : ''}
+   - Be engaging and encouraging! ${isRegional ? `(in ${lang})` : ''}
    ${matchedDiagram ? '- I am showing them a detailed labeled diagram.' : ''}
 
 3. If the question is NOT chemistry-related:
-   - Start with: "🔬 That's a great question, but it's outside my chemistry expertise!"
-   - Briefly explain that you specialize in chemistry topics
-   - Give 2-3 examples of chemistry questions you can help with
-   - End with: "💡 **Tip:** For questions on other subjects like history, geography, physics, math, or general knowledge, try using **Vyonn AI** in the Tools section - it can help with a much broader range of topics!"
-   - Keep this response friendly and helpful (not dismissive)
+   ${isRegional ? `- (${lang}లో వ్రాయండి) Start with: "🔬 That's outside my chemistry expertise!"` : '- Start with: "🔬 That\'s a great question, but it\'s outside my chemistry expertise!"'}
+   - Briefly explain that you specialize in chemistry topics ${isRegional ? `(in ${lang})` : ''}
+   - Give 2-3 examples of chemistry questions you can help with ${isRegional ? `(in ${lang})` : ''}
+   ${isRegional ? `- Suggest using Vyonn AI for other subjects (${lang}లో)` : '- End with: "💡 **Tip:** For questions on other subjects like history, geography, physics, math, or general knowledge, try using **Vyonn AI** in the Tools section - it can help with a much broader range of topics!"'}
+   - Keep this response friendly and helpful (not dismissive) ${isRegional ? `(in ${lang})` : ''}
 
-Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
+${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chemical formulas can use standard notation.` : 'Use bullet points where appropriate. Be warm, encouraging, and supportive!'}`;
 
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Increased for detailed chemistry explanations
       

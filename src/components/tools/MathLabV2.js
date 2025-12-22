@@ -3195,18 +3195,34 @@ function MathAIChat({ user }) {
     setChatHistory(prev => [{ role: 'user', content: userQuestion }, ...prev]);
     
     try {
+      // v10.3: Detect language and respond in same language
+      const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
+      const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
+      const hasTamil = /[\u0B80-\u0BFF]/.test(userQuestion);
+      const hasKannada = /[\u0C80-\u0CFF]/.test(userQuestion);
+      const hasMalayalam = /[\u0D00-\u0D7F]/.test(userQuestion);
+      
+      const isRegional = hasDevanagari || hasTelugu || hasTamil || hasKannada || hasMalayalam;
+      const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
+                   hasDevanagari ? 'Hindi (हिंदी)' :
+                   hasTamil ? 'Tamil (தமிழ்)' :
+                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
+                   hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
+      
       const prompt = `You are Vyonn AI Math, a brilliant and friendly mathematics tutor.
+
+${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
 
 Student asked: "${userQuestion}"
 
 Provide a clear, educational response that:
-1. Explains the concept step-by-step
-2. Uses examples where helpful
+1. Explains the concept step-by-step ${isRegional ? `(in ${lang})` : ''}
+2. Uses examples where helpful ${isRegional ? `(in ${lang})` : ''}
 3. Includes relevant formulas or equations
-4. Is encouraging and supportive
-5. Suggests next steps for learning
+4. Is encouraging and supportive ${isRegional ? `(in ${lang})` : ''}
+5. Suggests next steps for learning ${isRegional ? `(in ${lang})` : ''}
 
-Be warm and engaging!`;
+${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Be warm and engaging!'}`;
 
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Doubled for detailed math explanations
       setChatHistory(prev => [{ role: 'assistant', content: response }, ...prev]);

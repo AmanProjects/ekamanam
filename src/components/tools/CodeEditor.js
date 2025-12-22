@@ -113,16 +113,32 @@ function CodeAIChat({ user, onInsertCode }) {
     setChatHistory(prev => [{ role: 'user', content: userQuestion }, ...prev]);
     
     try {
+      // v10.3: Detect language and respond in same language
+      const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
+      const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
+      const hasTamil = /[\u0B80-\u0BFF]/.test(userQuestion);
+      const hasKannada = /[\u0C80-\u0CFF]/.test(userQuestion);
+      const hasMalayalam = /[\u0D00-\u0D7F]/.test(userQuestion);
+      
+      const isRegional = hasDevanagari || hasTelugu || hasTamil || hasKannada || hasMalayalam;
+      const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
+                   hasDevanagari ? 'Hindi (हिंदी)' :
+                   hasTamil ? 'Tamil (தமிழ்)' :
+                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
+                   hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
+      
       const prompt = `You are Vyonn Code, a brilliant and friendly programming tutor.
+
+${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
 
 Student asked: "${userQuestion}"
 
 Provide a clear, educational response that:
-1. Explains the programming concept step-by-step
+1. Explains the programming concept step-by-step ${isRegional ? `(in ${lang})` : ''}
 2. Includes code examples where helpful
-3. Covers best practices and common pitfalls
-4. Is encouraging and supportive
-5. Suggests next steps for learning
+3. Covers best practices and common pitfalls ${isRegional ? `(explained in ${lang})` : ''}
+4. Is encouraging and supportive ${isRegional ? `(in ${lang})` : ''}
+5. Suggests next steps for learning ${isRegional ? `(in ${lang})` : ''}
 
 When including code examples, wrap them with special markers:
 [CODE_START:language]
@@ -136,7 +152,7 @@ function greet(name) {
 }
 [CODE_END]
 
-Be warm and engaging!`;
+${isRegional ? `Write explanations in ${lang}, but code examples can remain in programming language!` : 'Be warm and engaging!'}`;
 
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Increased for detailed code explanations
       

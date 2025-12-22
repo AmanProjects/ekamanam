@@ -109,16 +109,32 @@ function GlobeAIChat({ user, onViewLocation }) {
     setChatHistory(prev => [{ role: 'user', content: userQuestion }, ...prev]);
     
     try {
+      // v10.3: Detect language and respond in same language
+      const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
+      const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
+      const hasTamil = /[\u0B80-\u0BFF]/.test(userQuestion);
+      const hasKannada = /[\u0C80-\u0CFF]/.test(userQuestion);
+      const hasMalayalam = /[\u0D00-\u0D7F]/.test(userQuestion);
+      
+      const isRegional = hasDevanagari || hasTelugu || hasTamil || hasKannada || hasMalayalam;
+      const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
+                   hasDevanagari ? 'Hindi (हिंदी)' :
+                   hasTamil ? 'Tamil (தமிழ்)' :
+                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
+                   hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
+      
       const prompt = `You are Vyonn Globe, a brilliant and friendly geography tutor.
+
+${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
 
 Student asked: "${userQuestion}"
 
 Provide a clear, educational response that:
-1. Explains the geography concept clearly
-2. Includes interesting facts and context
+1. Explains the geography concept clearly ${isRegional ? `(in ${lang})` : ''}
+2. Includes interesting facts and context ${isRegional ? `(in ${lang})` : ''}
 3. Relates to real-world locations when relevant
-4. Is encouraging and supportive
-5. Suggests related topics to explore
+4. Is encouraging and supportive ${isRegional ? `(in ${lang})` : ''}
+5. Suggests related topics to explore ${isRegional ? `(in ${lang})` : ''}
 
 When mentioning specific geographic locations (cities, landmarks, countries, natural features), format them as:
 [[LocationName|latitude|longitude]]
@@ -128,7 +144,7 @@ For example:
 - "Visit [[Paris|48.8566|2.3522]] to see the Eiffel Tower"
 - "The [[Amazon Rainforest|-3.4653|-62.2159]] spans multiple countries"
 
-You can include multiple locations in your response. Be warm and engaging!`;
+${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Location names can be in original language.` : 'You can include multiple locations in your response. Be warm and engaging!'}`;
 
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Doubled for detailed geography explanations
       
