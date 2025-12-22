@@ -633,12 +633,15 @@
         
         // SECURE APPROACH: Sign in anonymously, then record validated session in Firestore
         // This allows strict Firestore rules to check BOTH auth AND validated session
+        console.log('🔐 Starting Firebase authentication...');
         auth.signInAnonymously()
           .then(() => {
             console.log('✅ Firebase authenticated');
-            // Store validated admin session in Firestore
-            // This proves OTP was verified for this Firebase UID
             const uid = auth.currentUser.uid;
+            console.log('🆔 Firebase UID:', uid);
+            
+            // Store validated admin session in Firestore
+            console.log('💾 Writing admin session to Firestore...');
             return db.collection('adminSessions').doc(uid).set({
               email: ADMIN_EMAIL,
               verified: true,
@@ -649,12 +652,17 @@
           })
           .then(() => {
             console.log('✅ Admin session validated in Firestore');
+            console.log('📱 Showing admin panel...');
             showAdminPanel();
+            console.log('📊 Loading demo accounts...');
             loadDemoAccounts();
           })
           .catch((error) => {
             console.error('❌ Firebase authentication error:', error);
-            showAlert('❌ Authentication failed. Please try again.', 'error');
+            console.error('❌ Error code:', error.code);
+            console.error('❌ Error message:', error.message);
+            console.error('❌ Full error:', JSON.stringify(error, null, 2));
+            showAlert('❌ Authentication failed: ' + error.message, 'error');
           });
       } else {
         console.log('❌ Invalid OTP');
@@ -673,9 +681,22 @@
 
     // Show admin panel
     function showAdminPanel() {
-      document.getElementById('auth-section').classList.add('hidden');
-      document.getElementById('admin-section').classList.remove('hidden');
-      console.log('✅ Admin panel displayed');
+      console.log('🎯 showAdminPanel() called');
+      
+      const authSection = document.getElementById('auth-section');
+      const adminSection = document.getElementById('admin-section');
+      
+      console.log('🔍 auth-section element:', authSection);
+      console.log('🔍 admin-section element:', adminSection);
+      console.log('🔍 auth-section classes before:', authSection?.className);
+      console.log('🔍 admin-section classes before:', adminSection?.className);
+      
+      authSection.classList.add('hidden');
+      adminSection.classList.remove('hidden');
+      
+      console.log('🔍 auth-section classes after:', authSection?.className);
+      console.log('🔍 admin-section classes after:', adminSection?.className);
+      console.log('✅ Admin panel should now be visible');
     }
 
     // Load demo accounts from Firestore
