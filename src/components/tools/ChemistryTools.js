@@ -45,10 +45,13 @@ import {
   PlayArrow as PlayIcon,
   Refresh as ResetIcon,
   School as SchoolIcon,
-  EmojiObjects as TipIcon
+  EmojiObjects as TipIcon,
+  ViewInAr as ViewInArIcon,  // v10.5.0: AR viewer
+  Info as InfoIcon  // v10.5.0: Info icon
 } from '@mui/icons-material';
 import { callLLM } from '../../services/llmService';
 import { markdownToHtml } from '../../utils/markdownRenderer';  // v10.4.18: Proper markdown rendering
+import ChemistryAR from './ChemistryAR';  // v10.5.0: AR viewer
 
 /**
  * Vyonn AI Chemistry Lab - v8.2.0
@@ -2288,6 +2291,8 @@ function ChemistryTools({ open, onClose, user }) {
   const [currentCID, setCurrentCID] = useState(null);
   const [selectedElement, setSelectedElement] = useState(null);
   const [showLabels, setShowLabels] = useState(true); // v10.1.2: Toggle for atom labels
+  const [showAR, setShowAR] = useState(false); // v10.5.0: AR viewer dialog
+  const [molecule3DData, setMolecule3DData] = useState(null); // v10.5.0: 3D coordinates for AR
   
   // AI Chat State
   const [question, setQuestion] = useState('');
@@ -2427,6 +2432,65 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
       setCurrentCID(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // v10.5.0: Fetch 3D molecule coordinates for AR viewing
+  const fetch3DMoleculeData = async (cid) => {
+    try {
+      // Fetch SDF (Structure Data File) format which contains 3D coordinates
+      const response = await fetch(
+        `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/record/SDF/?record_type=3d`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Could not fetch 3D data');
+      }
+      
+      const sdfText = await response.text();
+      
+      // Parse SDF format to extract atom coordinates
+      const atoms = [];
+      const bonds = [];
+      const lines = sdfText.split('\n');
+      
+      // Find counts line (line 4 in SDF format)
+      const countsLine = lines[3];
+      if (!countsLine) return null;
+      
+      const atomCount = parseInt(countsLine.substring(0, 3).trim());
+      const bondCount = parseInt(countsLine.substring(3, 6).trim());
+      
+      // Parse atom block (starts at line 5)
+      for (let i = 0; i < atomCount; i++) {
+        const line = lines[4 + i];
+        if (!line) continue;
+        
+        const x = parseFloat(line.substring(0, 10).trim());
+        const y = parseFloat(line.substring(10, 20).trim());
+        const z = parseFloat(line.substring(20, 30).trim());
+        const element = line.substring(31, 34).trim();
+        
+        atoms.push({ x, y, z, element });
+      }
+      
+      // Parse bond block
+      for (let i = 0; i < bondCount; i++) {
+        const line = lines[4 + atomCount + i];
+        if (!line) continue;
+        
+        const atom1 = parseInt(line.substring(0, 3).trim()) - 1; // Convert to 0-indexed
+        const atom2 = parseInt(line.substring(3, 6).trim()) - 1;
+        const bondType = parseInt(line.substring(6, 9).trim());
+        
+        bonds.push({ atom1, atom2, type: bondType });
+      }
+      
+      setMolecule3DData({ atoms, bonds });
+      
+    } catch (err) {
+      console.error('Error fetching 3D molecule data:', err);
+      setMolecule3DData(null);
     }
   };
 
@@ -2854,15 +2918,49 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
               />
             </Box>
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            
             <Paper elevation={3} sx={{ bgcolor: 'white', borderRadius: 2, overflow: 'hidden' }}>
               {currentCID ? (
-                <iframe 
-                  key={`${viewerKey}-${showLabels}`} 
-                  srcDoc={get3DmolHTML(currentCID, showLabels)} 
-                  title="3D Molecule" 
-                  style={{ width: '100%', height: 400, border: 'none' }} 
-                  sandbox="allow-scripts" 
-                />
+                <>
+                  <iframe 
+                    key={`${viewerKey}-${showLabels}`} 
+                    srcDoc={get3DmolHTML(currentCID, showLabels)} 
+                    title="3D Molecule" 
+                    style={{ width: '100%', height: 400, border: 'none' }} 
+                    sandbox="allow-scripts" 
+                  />
+                  {/* v10.5.0: AR Viewer Button */}
+                  <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', bgcolor: '#f5f5f5', display: 'flex', justifyContent: 'center', gap: 2 }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      startIcon={<ViewInArIcon />}
+                      onClick={() => {
+                        // Prepare molecule data for AR
+                        fetch3DMoleculeData(currentCID);
+                        setShowAR(true);
+                      }}
+                      sx={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        fontWeight: 600,
+                        px: 4,
+                        py: 1.5,
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #5a67d8 0%, #6b4298 100%)',
+                          transform: 'scale(1.02)'
+                        },
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      View in AR
+                    </Button>
+                    <Typography variant="caption" sx={{ alignSelf: 'center', color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <InfoIcon fontSize="small" />
+                      Experience this molecule in augmented reality
+                    </Typography>
+                  </Box>
+                </>
               ) : (
                 <Box sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, color: 'text.secondary' }}>
                   {loading ? <CircularProgress /> : <><ScienceIcon sx={{ fontSize: 48, opacity: 0.5 }} /><Typography>Search for a molecule</Typography></>}
@@ -2995,6 +3093,14 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
           </Box>
         )}
       </DialogContent>
+
+      {/* v10.5.0: AR Viewer Dialog */}
+      <ChemistryAR
+        open={showAR}
+        onClose={() => setShowAR(false)}
+        moleculeData={molecule3DData}
+        moleculeName={moleculeName}
+      />
     </Dialog>
   );
 }
