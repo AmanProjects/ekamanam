@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import VoiceInputButton from '../VoiceInputButton';
 import {
   Dialog,
   DialogTitle,
@@ -3250,6 +3251,12 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
+                <VoiceInputButton
+                  onTranscript={setQuestion}
+                  existingText={question}
+                  disabled={loading}
+                  size="small"
+                />
                 <IconButton onClick={handleAsk} disabled={loading || !question.trim()} color="primary">
                   <SendIcon />
                 </IconButton>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import VoiceInputButton from '../VoiceInputButton';
 import {
   Dialog,
   DialogTitle,
