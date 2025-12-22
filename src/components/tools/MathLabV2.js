@@ -5167,12 +5167,22 @@ function MathLabV2({ open, onClose, user }) {
   const askMathAI = async () => {
     if (!question.trim()) return;
     
+    // v10.4.15: Debug logging for mobile
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      question: question,
+      online: navigator.onLine,
+      userAgent: navigator.userAgent
+    };
+    console.log('🔷 Math AI Request Started:', debugInfo);
+    
     setLoading(true);
     const userQuestion = question;
     setQuestion('');
     setChatHistory(prev => [{ role: 'user', content: userQuestion }, ...prev]);
     
     try {
+      console.log('🔷 Building prompt...');
       // v10.3: Detect language and respond in same language
       const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
       const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
@@ -5202,12 +5212,16 @@ Provide a clear, educational response that:
 
 ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Be warm and engaging!'}`;
 
+      console.log('🔷 Calling LLM service...');
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Doubled for detailed math explanations
+      console.log('🔷 LLM Response received:', { length: response?.length, hasContent: !!response });
       
       // v10.4.13: Ensure response is valid
       if (response && response.trim()) {
+        console.log('✅ Math AI Success - Adding to chat');
         setChatHistory(prev => [{ role: 'assistant', content: response }, ...prev]);
       } else {
+        console.log('⚠️ Math AI Empty Response - Showing fallback');
         // No response - show helpful fallback
         setChatHistory(prev => [{ 
           role: 'assistant', 
@@ -5215,6 +5229,12 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
         }, ...prev]);
       }
     } catch (error) {
+      console.log('❌ Math AI Error:', {
+        message: error?.message,
+        name: error?.name,
+        stack: error?.stack?.substring(0, 200)
+      });
+      
       // v10.4.13: Enhanced mobile-friendly error handling
       const isOffline = !navigator.onLine;
       const errorMsg = error?.message || '';
@@ -5227,6 +5247,9 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
         fallbackMessage = "⚙️ API configuration needed. Please check your settings.";
       } else if (errorMsg.includes('timeout')) {
         fallbackMessage = "⏱️ Request timed out. Please try again.";
+      } else if (errorMsg) {
+        // v10.4.15: Show actual error on mobile for debugging
+        fallbackMessage = `🔧 Debug Info:\n${errorMsg.substring(0, 150)}\n\nPlease try again or contact support.`;
       }
       
       setChatHistory(prev => [{ 
@@ -5234,6 +5257,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
         content: fallbackMessage
       }, ...prev]);
     } finally {
+      console.log('🔷 Math AI Request Complete - Setting loading=false');
       setLoading(false);
     }
   };

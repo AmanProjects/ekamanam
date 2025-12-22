@@ -327,7 +327,7 @@ function GlobeViewer({ open, onClose, user }) {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 20, lng: 0 });
   const [zoom, setZoom] = useState(2);
-  const [showSidebar, setShowSidebar] = useState(true); // v10.4.13: Toggle sidebar on mobile
+  const [showSidebar, setShowSidebar] = useState(false); // v10.4.15: Hidden by default on mobile
   
   // v10.4.10: AI Chat state moved to main component (like Chemistry)
   const [question, setQuestion] = useState('');
@@ -495,6 +495,10 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
   const handleViewLocation = (location) => {
     focusLocation(location);
     setActiveTab(1); // Switch to Globe Explorer tab
+    // v10.4.15: Close sidebar on mobile after clicking location
+    if (isMobile) {
+      setShowSidebar(false);
+    }
   };
 
   return (
