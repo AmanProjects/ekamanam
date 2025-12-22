@@ -455,40 +455,51 @@
       document.getElementById('loading').classList.add('hidden');
       document.getElementById('auth-section').classList.remove('hidden');
       
-      // Check if already authenticated (same session logic as main dashboard)
-      const sessionData = sessionStorage.getItem('admin_authenticated');
-      if (sessionData) {
-        try {
-          const session = JSON.parse(sessionData);
-          // Session valid for 1 hour
-          if (session.authorized && Date.now() < session.expiry) {
-            console.log('✅ Valid admin session found');
-            isAuthenticated = true;
-            
-            // Check if already authenticated from main app
-            const currentUser = auth.currentUser;
-            
-            if (currentUser && currentUser.email === ADMIN_EMAIL) {
-              console.log('✅ Already authenticated as:', currentUser.email);
-              showAdminPanel();
-              loadDemoAccounts();
-            } else if (currentUser) {
-              console.error('❌ Authenticated as wrong user:', currentUser.email);
-              showAlert('❌ Please sign in as ' + ADMIN_EMAIL + ' in the main Ekamanam app', 'error');
+      // Wait for Firebase auth state to load before checking
+      console.log('⏳ Waiting for Firebase auth state...');
+      
+      auth.onAuthStateChanged((user) => {
+        console.log('🔥 Firebase auth state loaded:', user ? user.email : 'not signed in');
+        
+        // Check if already authenticated with valid OTP session
+        const sessionData = sessionStorage.getItem('admin_authenticated');
+        if (sessionData) {
+          try {
+            const session = JSON.parse(sessionData);
+            // Session valid for 1 hour
+            if (session.authorized && Date.now() < session.expiry) {
+              console.log('✅ Valid admin session found');
+              isAuthenticated = true;
+              
+              // Check if authenticated in Firebase (from main app)
+              if (user && user.email === ADMIN_EMAIL) {
+                console.log('✅ Already authenticated as:', user.email);
+                showAdminPanel();
+                loadDemoAccounts();
+              } else if (user) {
+                console.error('❌ Authenticated as wrong user:', user.email);
+                showAlert('❌ Please sign in as ' + ADMIN_EMAIL + ' in the main Ekamanam app', 'error');
+              } else {
+                console.error('❌ Not authenticated in Firebase');
+                showAlert('❌ Please sign in to Ekamanam.com first, then refresh this page', 'error');
+                // Provide link to main app
+                setTimeout(() => {
+                  if (confirm('Open Ekamanam.com to sign in?')) {
+                    window.location.href = 'https://ekamanam.com';
+                  }
+                }, 2000);
+              }
+              return;
             } else {
-              console.error('❌ Not authenticated in Firebase');
-              showAlert('❌ Please sign in to Ekamanam.com first', 'error');
+              console.log('⏰ Admin session expired');
+              sessionStorage.removeItem('admin_authenticated');
             }
-            return;
-          } else {
-            console.log('⏰ Admin session expired');
+          } catch (e) {
+            console.error('❌ Invalid session data:', e);
             sessionStorage.removeItem('admin_authenticated');
           }
-        } catch (e) {
-          console.error('❌ Invalid session data:', e);
-          sessionStorage.removeItem('admin_authenticated');
         }
-      }
+      });
     });
 
     // Show alert
@@ -627,28 +638,30 @@
         console.log('✅ OTP authentication complete');
         console.log('🔐 Checking Firebase authentication...');
         
-        // Check if user is already signed in (from main Ekamanam app)
-        const currentUser = auth.currentUser;
-        
-        if (currentUser && currentUser.email === ADMIN_EMAIL) {
-          console.log('✅ Already authenticated as:', currentUser.email);
-          console.log('📱 Showing admin panel...');
-          showAdminPanel();
-          console.log('📊 Loading demo accounts...');
-          loadDemoAccounts();
-        } else if (currentUser) {
-          console.error('❌ Authenticated as wrong user:', currentUser.email);
-          showAlert('❌ Please sign in as ' + ADMIN_EMAIL + ' in the main Ekamanam app first', 'error');
-        } else {
-          console.error('❌ Not authenticated in Firebase');
-          showAlert('❌ Please sign in to Ekamanam.com first, then return here', 'error');
-          // Provide link to main app
-          setTimeout(() => {
-            if (confirm('Open Ekamanam.com to sign in?')) {
-              window.open('https://ekamanam.com', '_blank');
-            }
-          }, 2000);
-        }
+        // Wait for auth state to be loaded
+        auth.onAuthStateChanged((user) => {
+          console.log('🔥 Firebase auth state:', user ? user.email : 'not signed in');
+          
+          if (user && user.email === ADMIN_EMAIL) {
+            console.log('✅ Already authenticated as:', user.email);
+            console.log('📱 Showing admin panel...');
+            showAdminPanel();
+            console.log('📊 Loading demo accounts...');
+            loadDemoAccounts();
+          } else if (user) {
+            console.error('❌ Authenticated as wrong user:', user.email);
+            showAlert('❌ Please sign in as ' + ADMIN_EMAIL + ' in the main Ekamanam app first', 'error');
+          } else {
+            console.error('❌ Not authenticated in Firebase');
+            showAlert('❌ Please sign in to Ekamanam.com first, then refresh this page', 'error');
+            // Provide link to main app
+            setTimeout(() => {
+              if (confirm('Open Ekamanam.com to sign in?')) {
+                window.location.href = 'https://ekamanam.com';
+              }
+            }, 2000);
+          }
+        });
       } else {
         console.log('❌ Invalid OTP');
         showAlert('❌ Invalid OTP code. Please try again.', 'error');
