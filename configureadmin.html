@@ -465,29 +465,20 @@
             console.log('✅ Valid admin session found');
             isAuthenticated = true;
             
-            // Sign in to Firebase and recreate admin session record
-            auth.signInAnonymously()
-              .then(() => {
-                console.log('✅ Firebase authenticated on page load');
-                const uid = auth.currentUser.uid;
-                // Recreate admin session record in Firestore
-                return db.collection('adminSessions').doc(uid).set({
-                  email: session.email || ADMIN_EMAIL,
-                  verified: true,
-                  verifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                  expiresAt: new Date(session.expiry),
-                  purpose: 'demo_accounts_management'
-                });
-              })
-              .then(() => {
-                console.log('✅ Admin session restored');
-                showAdminPanel();
-                loadDemoAccounts();
-              })
-              .catch((error) => {
-                console.error('❌ Firebase sign-in error:', error);
-                showAlert('⚠️ Connection issue, please refresh', 'warning');
-              });
+            // Check if already authenticated from main app
+            const currentUser = auth.currentUser;
+            
+            if (currentUser && currentUser.email === ADMIN_EMAIL) {
+              console.log('✅ Already authenticated as:', currentUser.email);
+              showAdminPanel();
+              loadDemoAccounts();
+            } else if (currentUser) {
+              console.error('❌ Authenticated as wrong user:', currentUser.email);
+              showAlert('❌ Please sign in as ' + ADMIN_EMAIL + ' in the main Ekamanam app', 'error');
+            } else {
+              console.error('❌ Not authenticated in Firebase');
+              showAlert('❌ Please sign in to Ekamanam.com first', 'error');
+            }
             return;
           } else {
             console.log('⏰ Admin session expired');
@@ -631,39 +622,33 @@
         
         showAlert('✅ Authentication successful! Signing in...', 'success');
         
-        // SECURE APPROACH: Sign in anonymously, then record validated session in Firestore
-        // This allows strict Firestore rules to check BOTH auth AND validated session
-        console.log('🔐 Starting Firebase authentication...');
-        auth.signInAnonymously()
-          .then(() => {
-            console.log('✅ Firebase authenticated');
-            const uid = auth.currentUser.uid;
-            console.log('🆔 Firebase UID:', uid);
-            
-            // Store validated admin session in Firestore
-            console.log('💾 Writing admin session to Firestore...');
-            return db.collection('adminSessions').doc(uid).set({
-              email: ADMIN_EMAIL,
-              verified: true,
-              verifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
-              expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
-              purpose: 'demo_accounts_management'
-            });
-          })
-          .then(() => {
-            console.log('✅ Admin session validated in Firestore');
-            console.log('📱 Showing admin panel...');
-            showAdminPanel();
-            console.log('📊 Loading demo accounts...');
-            loadDemoAccounts();
-          })
-          .catch((error) => {
-            console.error('❌ Firebase authentication error:', error);
-            console.error('❌ Error code:', error.code);
-            console.error('❌ Error message:', error.message);
-            console.error('❌ Full error:', JSON.stringify(error, null, 2));
-            showAlert('❌ Authentication failed: ' + error.message, 'error');
-          });
+        // SECURE APPROACH: Check if already authenticated from main app
+        // No anonymous auth - use actual Firebase account only
+        console.log('✅ OTP authentication complete');
+        console.log('🔐 Checking Firebase authentication...');
+        
+        // Check if user is already signed in (from main Ekamanam app)
+        const currentUser = auth.currentUser;
+        
+        if (currentUser && currentUser.email === ADMIN_EMAIL) {
+          console.log('✅ Already authenticated as:', currentUser.email);
+          console.log('📱 Showing admin panel...');
+          showAdminPanel();
+          console.log('📊 Loading demo accounts...');
+          loadDemoAccounts();
+        } else if (currentUser) {
+          console.error('❌ Authenticated as wrong user:', currentUser.email);
+          showAlert('❌ Please sign in as ' + ADMIN_EMAIL + ' in the main Ekamanam app first', 'error');
+        } else {
+          console.error('❌ Not authenticated in Firebase');
+          showAlert('❌ Please sign in to Ekamanam.com first, then return here', 'error');
+          // Provide link to main app
+          setTimeout(() => {
+            if (confirm('Open Ekamanam.com to sign in?')) {
+              window.open('https://ekamanam.com', '_blank');
+            }
+          }, 2000);
+        }
       } else {
         console.log('❌ Invalid OTP');
         showAlert('❌ Invalid OTP code. Please try again.', 'error');
