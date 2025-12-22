@@ -5211,13 +5211,21 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
       }, ...prev]);
       
     } catch (error) {
-      setChatHistory(prev => [{
-        role: 'assistant',
-        content: "Let me help you understand this math concept!",
-        timestamp: Date.now()
-      }, ...prev]);
+      try {
+        setChatHistory(prev => [{
+          role: 'assistant',
+          content: "Let me help you understand this math concept!",
+          timestamp: Date.now()
+        }, ...prev]);
+      } catch (innerError) {
+        // Failsafe
+      }
     } finally {
-      setLoading(false);
+      try {
+        setLoading(false);
+      } catch (finalError) {
+        // Absolute failsafe - ensure loading clears
+      }
     }
   };
 

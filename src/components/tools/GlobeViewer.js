@@ -168,27 +168,21 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
       
       setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you explore the world!", locations }, ...prev]);
     } catch (error) {
-      // v10.4.13: Enhanced mobile-friendly error handling
-      const isOffline = !navigator.onLine;
-      const errorMsg = error?.message || '';
-      
-      let fallbackMessage = "I'd love to help you explore! Try asking:\n• Tell me about Paris\n• Where is Mount Everest?\n• Explain monsoons\n\nLet's discover the world! 🌍";
-      
-      if (isOffline) {
-        fallbackMessage = "🔌 You're offline! Please check your internet connection and try again.";
-      } else if (errorMsg.includes('API key')) {
-        fallbackMessage = "⚙️ API configuration needed. Please check your settings.";
-      } else if (errorMsg.includes('timeout')) {
-        fallbackMessage = "⏱️ Request timed out. Please try again.";
+      try {
+        setChatHistory(prev => [{ 
+          role: 'assistant', 
+          content: "Let me help you explore the world!",
+          locations: []
+        }, ...prev]);
+      } catch (innerError) {
+        // Failsafe
       }
-      
-      setChatHistory(prev => [{ 
-        role: 'assistant', 
-        content: fallbackMessage,
-        locations: []
-      }, ...prev]);
     } finally {
-      setLoading(false);
+      try {
+        setLoading(false);
+      } catch (finalError) {
+        // Absolute failsafe
+      }
     }
   };
 
@@ -467,27 +461,21 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
       
       setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you explore the world!", locations }, ...prev]);
     } catch (error) {
-      // v10.4.13: Enhanced mobile-friendly error handling
-      const isOffline = !navigator.onLine;
-      const errorMsg = error?.message || '';
-      
-      let fallbackMessage = "I'd love to help you explore! Try asking:\n• Tell me about Paris\n• Where is Mount Everest?\n• Explain monsoons\n\nLet's discover the world! 🌍";
-      
-      if (isOffline) {
-        fallbackMessage = "🔌 You're offline! Please check your internet connection and try again.";
-      } else if (errorMsg.includes('API key')) {
-        fallbackMessage = "⚙️ API configuration needed. Please check your settings.";
-      } else if (errorMsg.includes('timeout')) {
-        fallbackMessage = "⏱️ Request timed out. Please try again.";
+      try {
+        setChatHistory(prev => [{ 
+          role: 'assistant', 
+          content: "Let me help you explore the world!",
+          locations: []
+        }, ...prev]);
+      } catch (innerError) {
+        // Failsafe
       }
-      
-      setChatHistory(prev => [{ 
-        role: 'assistant', 
-        content: fallbackMessage,
-        locations: []
-      }, ...prev]);
     } finally {
-      setLoading(false);
+      try {
+        setLoading(false);
+      } catch (finalError) {
+        // Absolute failsafe
+      }
     }
   };
 
