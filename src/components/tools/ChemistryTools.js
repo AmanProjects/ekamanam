@@ -2541,7 +2541,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab icon={<Box sx={{ display: 'flex', alignItems: 'center' }}><VyonnChemistryIcon size={18} /></Box>} label="Ask Vyonn AI" iconPosition="start" />
+          <Tab icon={<VyonnChemistryIcon size={18} />} label="Ask Vyonn AI" iconPosition="start" />
           <Tab icon={<SchoolIcon sx={{ fontSize: 18 }} />} label="Experiments" iconPosition="start" />
           <Tab icon={<ScienceIcon sx={{ fontSize: 18 }} />} label="3D Molecules" iconPosition="start" />
           <Tab label="🧪 Periodic Table" />

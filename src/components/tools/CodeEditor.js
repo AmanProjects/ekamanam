@@ -158,8 +158,8 @@ ${isRegional ? `Write explanations in ${lang}, but code examples can remain in p
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Increased for detailed code explanations
       
       // Extract code blocks if present
-      const codeMatches = [...response.matchAll(/\[CODE_START:(\w+)\]\n?([\s\S]*?)\n?\[CODE_END\]/g)];
-      let content = response;
+      const codeMatches = [...(response || '').matchAll(/\[CODE_START:(\w+)\]\n?([\s\S]*?)\n?\[CODE_END\]/g)];
+      let content = response || "Let me help you with that coding concept!";
       const codeBlocks = [];
       
       codeMatches.forEach((match, index) => {
@@ -171,8 +171,13 @@ ${isRegional ? `Write explanations in ${lang}, but code examples can remain in p
       
       setChatHistory(prev => [{ role: 'assistant', content, codeBlocks }, ...prev]);
     } catch (error) {
-      console.error('AI error:', error);
-      setChatHistory(prev => [{ role: 'assistant', content: 'Sorry, I encountered an error. Please try again!' }, ...prev]);
+      console.error('❌ Code AI error:', error);
+      console.error('❌ Error details:', error.message, error.stack);
+      // v10.4.6: Graceful fallback like Chemistry - don't show raw error to user
+      setChatHistory(prev => [{ 
+        role: 'assistant', 
+        content: "I'd be happy to help you with programming! Could you please rephrase your question? Try to be specific about what you'd like to learn - whether it's JavaScript, Python, HTML, CSS, or any other programming topic. I'm here to help! 💻" 
+      }, ...prev]);
     } finally {
       setLoading(false);
     }
@@ -425,7 +430,7 @@ function CodeEditor({ open, onClose, user }) {
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#f5f5f5' }}>
         <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ '& .MuiTab-root': { fontWeight: 600, minWidth: 'auto', px: 2 } }}>
-          <Tab icon={<Box sx={{ display: 'flex', alignItems: 'center' }}><VyonnCodeIcon size={18} /></Box>} label="Ask Vyonn AI" iconPosition="start" />
+          <Tab icon={<VyonnCodeIcon size={18} />} label="Ask Vyonn AI" iconPosition="start" />
           <Tab icon={<CodeIcon sx={{ fontSize: 18 }} />} label="Code Editor" iconPosition="start" />
         </Tabs>
       </Box>

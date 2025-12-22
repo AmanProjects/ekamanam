@@ -633,7 +633,7 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#f8fafc' }}>
         <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} variant="fullWidth" sx={{ '& .MuiTab-root': { fontWeight: 600, textTransform: 'none' } }}>
-          <Tab icon={<Box sx={{ display: 'flex', alignItems: 'center' }}><VyonnScienceIcon size={20} /></Box>} label="Ask Vyonn AI" iconPosition="start" />
+          <Tab icon={<VyonnScienceIcon size={18} />} label="Ask Vyonn AI" iconPosition="start" />
           <Tab icon={<DiagramIcon sx={{ fontSize: 20 }} />} label="Visualize" iconPosition="start" />
           <Tab icon={<FormulaIcon sx={{ fontSize: 20 }} />} label="Experiments" iconPosition="start" />
         </Tabs>

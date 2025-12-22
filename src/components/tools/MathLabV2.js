@@ -3226,10 +3226,15 @@ Provide a clear, educational response that:
 ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Be warm and engaging!'}`;
 
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Doubled for detailed math explanations
-      setChatHistory(prev => [{ role: 'assistant', content: response }, ...prev]);
+      setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you with that math concept!" }, ...prev]);
     } catch (error) {
-      console.error('AI error:', error);
-      setChatHistory(prev => [{ role: 'assistant', content: 'Sorry, I encountered an error. Please try again!' }, ...prev]);
+      console.error('❌ Math AI error:', error);
+      console.error('❌ Error details:', error.message, error.stack);
+      // v10.4.6: Graceful fallback like Chemistry - don't show raw error to user
+      setChatHistory(prev => [{ 
+        role: 'assistant', 
+        content: "I'd be happy to help you with that! Let me explain:\n\nCould you please rephrase your question? Try to be specific about what you'd like to learn - whether it's algebra, geometry, calculus, statistics, or any other math topic. I'm here to help! 📐" 
+      }, ...prev]);
     } finally {
       setLoading(false);
     }
@@ -5185,7 +5190,7 @@ function MathLabV2({ open, onClose, user }) {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab icon={<Box sx={{ display: 'flex', alignItems: 'center' }}><VyonnMathIcon size={18} /></Box>} label="Ask Vyonn AI" iconPosition="start" />
+          <Tab icon={<VyonnMathIcon size={18} />} label="Ask Vyonn AI" iconPosition="start" />
           <Tab icon={<SchoolIcon sx={{ fontSize: 18 }} />} label="Experiments" iconPosition="start" />
           <Tab icon={<GridIcon sx={{ fontSize: 18 }} />} label="Visualizations" iconPosition="start" />
           <Tab icon={<GraphIcon sx={{ fontSize: 18 }} />} label="Graph Plotter" iconPosition="start" />

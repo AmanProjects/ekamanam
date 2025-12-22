@@ -154,7 +154,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
       const locationRegex = /\[\[([^\|]+)\|([-\d.]+)\|([-\d.]+)\]\]/g;
       let match;
       
-      while ((match = locationRegex.exec(response)) !== null) {
+      while ((match = locationRegex.exec(response || '')) !== null) {
         locations.push({
           name: match[1].trim(),
           lat: parseFloat(match[2]),
@@ -163,10 +163,16 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
         });
       }
       
-      setChatHistory(prev => [{ role: 'assistant', content: response, locations }, ...prev]);
+      setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you explore the world!", locations }, ...prev]);
     } catch (error) {
-      console.error('AI error:', error);
-      setChatHistory(prev => [{ role: 'assistant', content: 'Sorry, I encountered an error. Please try again!' }, ...prev]);
+      console.error('❌ Globe AI error:', error);
+      console.error('❌ Error details:', error.message, error.stack);
+      // v10.4.6: Graceful fallback like Chemistry - don't show raw error to user
+      setChatHistory(prev => [{ 
+        role: 'assistant', 
+        content: "I'd be happy to help you explore geography! Could you please rephrase your question? Try to be specific about what you'd like to learn - whether it's about countries, cities, climate, landmarks, or any other geography topic. I'm here to help! 🌍",
+        locations: []
+      }, ...prev]);
     } finally {
       setLoading(false);
     }
@@ -392,7 +398,7 @@ function GlobeViewer({ open, onClose, user }) {
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#f5f5f5' }}>
         <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ '& .MuiTab-root': { fontWeight: 600, minWidth: 'auto', px: 2 } }}>
-          <Tab icon={<Box sx={{ display: 'flex', alignItems: 'center' }}><VyonnGlobeIcon size={18} /></Box>} label="Ask Vyonn AI" iconPosition="start" />
+          <Tab icon={<VyonnGlobeIcon size={18} />} label="Ask Vyonn AI" iconPosition="start" />
           <Tab icon={<GlobeIcon sx={{ fontSize: 18 }} />} label="Globe Explorer" iconPosition="start" />
         </Tabs>
       </Box>
