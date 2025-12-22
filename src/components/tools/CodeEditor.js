@@ -22,11 +22,14 @@ import {
   TextField,
   InputAdornment,
   Avatar,
-  CircularProgress
+  CircularProgress,
+  ToggleButtonGroup,
+  ToggleButton
 } from '@mui/material';
 import {
   Close as CloseIcon,
   PlayArrow as RunIcon,
+  PlayArrow,
   ContentCopy as CopyIcon,
   Delete as ClearIcon,
   Code as CodeIcon,
@@ -301,6 +304,7 @@ function CodeEditor({ open, onClose, user }) {
   const [output, setOutput] = useState('');
   const [error, setError] = useState(null);
   const editorRef = useRef(null);
+  const [mobileView, setMobileView] = useState('editor'); // v10.4.9: 'editor' or 'output' for mobile toggle
 
   const languages = [
     { id: 'javascript', name: 'JavaScript', runnable: true },
@@ -351,6 +355,9 @@ function CodeEditor({ open, onClose, user }) {
     } else {
       setOutput(`⚠️ ${language} execution is not supported in browser.\nCode is syntax-highlighted for learning.`);
     }
+    
+    // v10.4.9: Auto-switch to output view on mobile after running
+    setMobileView('output');
   };
 
   // Copy code to clipboard
@@ -462,11 +469,34 @@ function CodeEditor({ open, onClose, user }) {
             >
               Clear
             </Button>
+            
+            {/* v10.4.9: Mobile View Toggle */}
+            <Box sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto', gap: 0.5 }}>
+              <ToggleButtonGroup
+                value={mobileView}
+                exclusive
+                onChange={(e, newView) => newView && setMobileView(newView)}
+                size="small"
+              >
+                <ToggleButton value="editor" sx={{ px: 2 }}>
+                  <CodeIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                  Editor
+                </ToggleButton>
+                <ToggleButton value="output" sx={{ px: 2 }}>
+                  <PlayArrow sx={{ fontSize: 16, mr: 0.5 }} />
+                  Output
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
           </Box>
 
           <Grid container sx={{ flexGrow: 1, height: '100%' }}>
-            {/* Editor */}
-            <Grid item xs={12} md={7} sx={{ height: '100%', borderRight: '1px solid #ddd' }}>
+            {/* Editor - v10.4.9: Hide on mobile when output view selected */}
+            <Grid item xs={12} md={7} sx={{ 
+              height: '100%', 
+              borderRight: '1px solid #ddd',
+              display: { xs: mobileView === 'editor' ? 'block' : 'none', md: 'block' }
+            }}>
             <Editor
               height="100%"
               language={language}
@@ -485,8 +515,12 @@ function CodeEditor({ open, onClose, user }) {
             />
           </Grid>
 
-          {/* Output */}
-          <Grid item xs={12} md={5} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Output - v10.4.9: Hide on mobile when editor view selected */}
+          <Grid item xs={12} md={5} sx={{ 
+            height: '100%', 
+            display: { xs: mobileView === 'output' ? 'flex' : 'none', md: 'flex' },
+            flexDirection: 'column'
+          }}>
             <Box sx={{ p: 1.5, bgcolor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
               <Typography variant="subtitle2">Output</Typography>
             </Box>
