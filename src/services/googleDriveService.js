@@ -191,6 +191,10 @@ async function requestFreshToken() {
         callback: (tokenResponse) => {
           if (tokenResponse.access_token) {
             localStorage.setItem('google_access_token', tokenResponse.access_token);
+            // v10.4.14: Update gapi client token as well
+            if (gapi && gapi.client) {
+              gapi.client.setToken({ access_token: tokenResponse.access_token });
+            }
             console.log('✅ Fresh OAuth token obtained via GIS');
             resolve(tokenResponse.access_token);
           } else {
@@ -207,6 +211,38 @@ async function requestFreshToken() {
       client.requestAccessToken({ prompt: '' }); // Empty prompt to use existing consent if available
     }
   });
+}
+
+/**
+ * Execute a gapi request with automatic token refresh on 401
+ * v10.4.14: Added to handle expired tokens gracefully
+ * @param {Function} requestFn - Function that returns a gapi request
+ * @param {number} retryCount - Internal retry counter
+ * @returns {Promise<any>} Request result
+ */
+async function executeWithTokenRefresh(requestFn, retryCount = 0) {
+  try {
+    const request = requestFn();
+    const response = await request;
+    return response;
+  } catch (error) {
+    // Check if it's a 401 authentication error
+    const is401 = error?.status === 401 || error?.result?.error?.code === 401;
+    
+    if (is401 && retryCount < 1) {
+      console.log('🔄 Token expired (401), attempting automatic refresh...');
+      try {
+        await requestFreshToken();
+        // Retry the request with new token
+        console.log('✅ Token refreshed, retrying request...');
+        return executeWithTokenRefresh(requestFn, retryCount + 1);
+      } catch (refreshError) {
+        console.error('❌ Failed to refresh token:', refreshError);
+        throw new Error('Google Drive authentication expired. Please sign out and sign back in to restore Drive sync.');
+      }
+    }
+    throw error;
+  }
 }
 
 /**
@@ -283,10 +319,13 @@ async function createFolder(name, parentId = null) {
   }
 
   try {
-    const response = await gapi.client.drive.files.create({
-      resource: metadata,
-      fields: 'id, name'
-    });
+    // v10.4.14: Use executeWithTokenRefresh for automatic token refresh on 401
+    const response = await executeWithTokenRefresh(() => 
+      gapi.client.drive.files.create({
+        resource: metadata,
+        fields: 'id, name'
+      })
+    );
 
     console.log(`📁 Created folder: ${name} (${response.result.id})`);
     return response.result.id;
@@ -309,11 +348,14 @@ async function findFolder(name, parentId = null) {
       query += ` and '${parentId}' in parents`;
     }
 
-    const response = await gapi.client.drive.files.list({
-      q: query,
-      fields: 'files(id, name)',
-      spaces: 'drive'
-    });
+    // v10.4.14: Use executeWithTokenRefresh for automatic token refresh on 401
+    const response = await executeWithTokenRefresh(() =>
+      gapi.client.drive.files.list({
+        q: query,
+        fields: 'files(id, name)',
+        spaces: 'drive'
+      })
+    );
 
     if (response.result.files && response.result.files.length > 0) {
       return response.result.files[0].id;
@@ -337,6 +379,10 @@ async function findFolder(name, parentId = null) {
           console.error('👉 The OAuth token does not have the required Drive scopes.');
           console.error('👉 Please sign out and sign back in to grant permissions.');
         }
+      } else if (apiError.code === 401) {
+        // v10.4.14: 401 should have been auto-retried, this means refresh failed
+        console.error('🔴 AUTHENTICATION EXPIRED!');
+        console.error('👉 Please sign out and sign back in to restore Drive sync.');
       }
     }
     console.error(`❌ ${errorMessage}`, error);
@@ -503,20 +549,25 @@ export async function getLibraryIndex() {
   const folders = await initializeFolderStructure();
 
   try {
+    // v10.4.14: Use executeWithTokenRefresh for automatic token refresh on 401
     // Find index file
-    const response = await gapi.client.drive.files.list({
-      q: `name='${LIBRARY_INDEX_FILE}' and '${folders.root}' in parents and trashed=false`,
-      fields: 'files(id, name)',
-      spaces: 'drive'
-    });
+    const response = await executeWithTokenRefresh(() =>
+      gapi.client.drive.files.list({
+        q: `name='${LIBRARY_INDEX_FILE}' and '${folders.root}' in parents and trashed=false`,
+        fields: 'files(id, name)',
+        spaces: 'drive'
+      })
+    );
 
     if (response.result.files && response.result.files.length > 0) {
       // File exists - download it
       const fileId = response.result.files[0].id;
-      const content = await gapi.client.drive.files.get({
-        fileId: fileId,
-        alt: 'media'
-      });
+      const content = await executeWithTokenRefresh(() =>
+        gapi.client.drive.files.get({
+          fileId: fileId,
+          alt: 'media'
+        })
+      );
 
       return {
         fileId: fileId,
@@ -608,9 +659,12 @@ export async function deleteFile(fileId) {
   }
 
   try {
-    await gapi.client.drive.files.delete({
-      fileId: fileId
-    });
+    // v10.4.14: Use executeWithTokenRefresh for automatic token refresh on 401
+    await executeWithTokenRefresh(() =>
+      gapi.client.drive.files.delete({
+        fileId: fileId
+      })
+    );
     console.log(`✅ Deleted file ${fileId}`);
   } catch (error) {
     console.error('❌ Error deleting file:', error);
@@ -647,11 +701,14 @@ export async function testDriveConnection() {
   }
 
   try {
+    // v10.4.14: Use executeWithTokenRefresh for automatic token refresh on 401
     // Try a simple "about" call - this checks if API is enabled
     console.log('📡 Making test API call to Drive...');
-    const response = await gapi.client.drive.about.get({
-      fields: 'user,storageQuota'
-    });
+    const response = await executeWithTokenRefresh(() =>
+      gapi.client.drive.about.get({
+        fields: 'user,storageQuota'
+      })
+    );
     
     diagnostics.apiCallResult = 'SUCCESS';
     diagnostics.user = response.result.user;
