@@ -5147,6 +5147,75 @@ function AdvancedCalculator() {
 // ==================== MAIN COMPONENT ====================
 function MathLabV2({ open, onClose, user }) {
   const [activeTab, setActiveTab] = useState(0);
+  
+  // v10.4.7: Move AI Chat state to main component (like Chemistry)
+  const [question, setQuestion] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Get user info (like Chemistry)
+  const userName = user?.displayName?.split(' ')[0] || 'You';
+  const userPhoto = user?.photoURL;
+
+  const MATH_QUESTIONS = [
+    "Explain quadratic equations",
+    "What is calculus?",
+    "Show me trigonometry basics",
+    "Explain derivatives"
+  ];
+
+  const askMathAI = async () => {
+    if (!question.trim()) return;
+    
+    setLoading(true);
+    const userQuestion = question;
+    setQuestion('');
+    setChatHistory(prev => [{ role: 'user', content: userQuestion }, ...prev]);
+    
+    try {
+      // v10.3: Detect language and respond in same language
+      const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
+      const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
+      const hasTamil = /[\u0B80-\u0BFF]/.test(userQuestion);
+      const hasKannada = /[\u0C80-\u0CFF]/.test(userQuestion);
+      const hasMalayalam = /[\u0D00-\u0D7F]/.test(userQuestion);
+      
+      const isRegional = hasDevanagari || hasTelugu || hasTamil || hasKannada || hasMalayalam;
+      const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
+                   hasDevanagari ? 'Hindi (हिंदी)' :
+                   hasTamil ? 'Tamil (தமிழ்)' :
+                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
+                   hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
+      
+      const prompt = `You are Vyonn AI Math, a brilliant and friendly mathematics tutor.
+
+${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
+
+Student asked: "${userQuestion}"
+
+Provide a clear, educational response that:
+1. Explains the concept step-by-step ${isRegional ? `(in ${lang})` : ''}
+2. Uses examples where helpful ${isRegional ? `(in ${lang})` : ''}
+3. Includes relevant formulas or equations
+4. Is encouraging and supportive ${isRegional ? `(in ${lang})` : ''}
+5. Suggests next steps for learning ${isRegional ? `(in ${lang})` : ''}
+
+${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Be warm and engaging!'}`;
+
+      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Doubled for detailed math explanations
+      setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you with that math concept!" }, ...prev]);
+    } catch (error) {
+      console.error('❌ Math AI error:', error);
+      console.error('❌ Error details:', error.message, error.stack);
+      // v10.4.6: Graceful fallback like Chemistry - don't show raw error to user
+      setChatHistory(prev => [{ 
+        role: 'assistant', 
+        content: "I'd be happy to help you with that! Let me explain:\n\nCould you please rephrase your question? Try to be specific about what you'd like to learn - whether it's algebra, geometry, calculus, statistics, or any other math topic. I'm here to help! 📐" 
+      }, ...prev]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Dialog 
@@ -5199,7 +5268,103 @@ function MathLabV2({ open, onClose, user }) {
       </Box>
 
       <DialogContent sx={{ p: 0, overflow: 'auto', bgcolor: '#fafafa' }}>
-        {activeTab === 0 && <MathAIChat user={user} />}
+        {/* v10.4.7: Inline AI Chat (like Chemistry) */}
+        {activeTab === 0 && (
+          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            {/* Input Section - At Top */}
+            <Paper elevation={0} sx={{ p: 2, borderBottom: '1px solid #e0e0e0', bgcolor: 'white' }}>
+              <TextField
+                fullWidth
+                multiline
+                maxRows={3}
+                placeholder="Ask me anything about mathematics..."
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), askMathAI())}
+                disabled={loading}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <VoiceInputButton
+                        onTranscript={setQuestion}
+                        existingText={question}
+                        disabled={loading}
+                        size="small"
+                      />
+                      <IconButton onClick={askMathAI} disabled={loading || !question.trim()} color="primary">
+                        {loading ? <CircularProgress size={20} /> : <SendIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                {MATH_QUESTIONS.map((q, i) => (
+                  <Chip key={i} label={q} size="small" onClick={() => setQuestion(q)} sx={{ cursor: 'pointer', bgcolor: '#e3f2fd', '&:hover': { bgcolor: '#bbdefb' }, fontSize: '0.75rem' }} />
+                ))}
+              </Box>
+            </Paper>
+
+            {/* Chat History */}
+            <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+              {chatHistory.length === 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
+                  <VyonnMathIcon size={64} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+                    Welcome to Vyonn Math Lab! ➗
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Ask me anything about algebra, geometry, calculus, statistics, trigonometry, and more!
+                  </Typography>
+                </Box>
+              ) : (
+                chatHistory.map((msg, i) => (
+                  <Box key={i} sx={{ mb: 2 }}>
+                    {msg.role === 'user' ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                        <Paper sx={{ p: 2, bgcolor: '#e3f2fd', borderRadius: 2, maxWidth: '80%' }}>
+                          <Typography variant="body2">{msg.content}</Typography>
+                        </Paper>
+                        <Avatar src={userPhoto} sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
+                          {userName[0]}
+                        </Avatar>
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box sx={{ mt: 0.5 }}>
+                          <VyonnMathIcon size={32} />
+                        </Box>
+                        <Box sx={{ flex: 1 }}>
+                          <Paper sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ whiteSpace: 'pre-wrap' }}
+                              dangerouslySetInnerHTML={{ 
+                                __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') 
+                              }}
+                            />
+                          </Paper>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                ))
+              )}
+              {loading && (
+                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                  <Box sx={{ mt: 0.5 }}>
+                    <VyonnMathIcon size={32} />
+                  </Box>
+                  <Paper sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                    <CircularProgress size={16} />
+                    <Typography variant="body2" component="span" sx={{ ml: 1 }}>Thinking...</Typography>
+                  </Paper>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        )}
+        
         {activeTab === 1 && <ExperimentsTab />}
         {activeTab === 2 && <MathVisualization />}
         {activeTab === 3 && <GraphPlotter />}
