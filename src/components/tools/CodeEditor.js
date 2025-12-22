@@ -374,58 +374,24 @@ function CodeEditor({ open, onClose, user }) {
       fullWidth
       PaperProps={{ sx: { height: '90vh' } }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+      <DialogTitle sx={{
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between',
         background: 'linear-gradient(135deg, #2d3436 0%, #1a1d1f 100%)',
         color: 'white',
         py: 1.5
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <VyonnCodeIcon size={36} />
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>Vyonn Code Editor</Typography>
-              <Typography variant="caption" sx={{ opacity: 0.9 }}>JavaScript · Python · Java · HTML · CSS</Typography>
-            </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <VyonnCodeIcon size={36} />
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>Vyonn Code Editor</Typography>
+            <Typography variant="caption" sx={{ opacity: 0.9 }}>JavaScript · Python · Java · HTML · CSS</Typography>
           </Box>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <Select
-              value={language}
-              onChange={(e) => handleLanguageChange(e.target.value)}
-              sx={{ 
-                color: 'white', 
-                '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.5)' },
-                '.MuiSvgIcon-root': { color: 'white' }
-              }}
-            >
-              {languages.map(lang => (
-                <MenuItem key={lang.id} value={lang.id}>
-                  {lang.name} {lang.runnable && '▶'}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            variant="contained" 
-            onClick={runCode}
-            startIcon={<RunIcon />}
-            sx={{ bgcolor: '#27ae60' }}
-            disabled={!languages.find(l => l.id === language)?.runnable}
-          >
-            Run
-          </Button>
-          <IconButton onClick={copyCode} sx={{ color: 'white' }} title="Copy code">
-            <CopyIcon />
-          </IconButton>
-          <IconButton onClick={onClose} sx={{ color: 'white' }}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
+        <IconButton onClick={onClose} sx={{ color: 'white' }}>
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#f5f5f5' }}>
@@ -444,9 +410,63 @@ function CodeEditor({ open, onClose, user }) {
           setActiveTab(1);
         }} />}
         {activeTab === 1 && (
-        <Grid container sx={{ flexGrow: 1, height: '100%' }}>
-          {/* Editor */}
-          <Grid item xs={12} md={7} sx={{ height: '100%', borderRight: '1px solid #ddd' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {/* Toolbar - Language selector and action buttons */}
+          <Box sx={{ 
+            p: 1.5, 
+            bgcolor: '#f8f9fa', 
+            borderBottom: '1px solid #dee2e6',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexWrap: 'wrap'
+          }}>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Language</InputLabel>
+              <Select
+                value={language}
+                onChange={(e) => handleLanguageChange(e.target.value)}
+                label="Language"
+              >
+                {languages.map(lang => (
+                  <MenuItem key={lang.id} value={lang.id}>
+                    {lang.name} {lang.runnable && '▶'}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button 
+              variant="contained" 
+              onClick={runCode}
+              startIcon={<RunIcon />}
+              sx={{ bgcolor: '#27ae60', '&:hover': { bgcolor: '#229954' } }}
+              disabled={!languages.find(l => l.id === language)?.runnable}
+              size="small"
+            >
+              Run
+            </Button>
+            <Button 
+              variant="outlined" 
+              onClick={copyCode}
+              startIcon={<CopyIcon />}
+              size="small"
+            >
+              Copy
+            </Button>
+            <Button 
+              variant="outlined"
+              onClick={() => setCode(codeTemplates[language])}
+              startIcon={<ClearIcon />}
+              size="small"
+              color="error"
+            >
+              Clear
+            </Button>
+          </Box>
+
+          <Grid container sx={{ flexGrow: 1, height: '100%' }}>
+            {/* Editor */}
+            <Grid item xs={12} md={7} sx={{ height: '100%', borderRight: '1px solid #ddd' }}>
             <Editor
               height="100%"
               language={language}
@@ -508,22 +528,22 @@ function CodeEditor({ open, onClose, user }) {
             </Box>
           </Grid>
         </Grid>
-        )}
 
-        {activeTab === 1 && (
-        <Box sx={{ p: 1.5, bgcolor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
-          <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
-            Quick snippets:
-          </Typography>
-          {codeSnippets[language]?.map((snippet, i) => (
-            <Chip
-              key={i}
-              label={snippet.name}
-              size="small"
-              onClick={() => setCode(snippet.code)}
-              sx={{ mr: 0.5, cursor: 'pointer' }}
-            />
-          ))}
+          {/* Quick Snippets */}
+          <Box sx={{ p: 1.5, bgcolor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
+              Quick snippets:
+            </Typography>
+            {codeSnippets[language]?.map((snippet, i) => (
+              <Chip
+                key={i}
+                label={snippet.name}
+                size="small"
+                onClick={() => setCode(snippet.code)}
+                sx={{ mr: 0.5, cursor: 'pointer' }}
+              />
+            ))}
+          </Box>
         </Box>
         )}
       </DialogContent>
