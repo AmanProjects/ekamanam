@@ -165,12 +165,10 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
       
       setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you explore the world!", locations }, ...prev]);
     } catch (error) {
-      console.error('❌ Globe AI error:', error);
-      console.error('❌ Error details:', error.message, error.stack);
-      // v10.4.6: Graceful fallback like Chemistry - don't show raw error to user
+      // v10.4.12: Simplified error handling like Chemistry (no console.error - causes issues on mobile)
       setChatHistory(prev => [{ 
         role: 'assistant', 
-        content: "I'd be happy to help you explore geography! Could you please rephrase your question? Try to be specific about what you'd like to learn - whether it's about countries, cities, climate, landmarks, or any other geography topic. I'm here to help! 🌍",
+        content: "Let me help you explore the world!",
         locations: []
       }, ...prev]);
     } finally {
@@ -449,12 +447,10 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
       
       setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you explore the world!", locations }, ...prev]);
     } catch (error) {
-      console.error('❌ Globe AI error:', error);
-      console.error('❌ Error details:', error.message, error.stack);
-      // v10.4.6: Graceful fallback like Chemistry - don't show raw error to user
+      // v10.4.12: Simplified error handling like Chemistry (no console.error - causes issues on mobile)
       setChatHistory(prev => [{ 
         role: 'assistant', 
-        content: "I'd be happy to help you explore geography! Could you please rephrase your question? Try to be specific about what you'd like to learn - whether it's about countries, cities, climate, landmarks, or any other geography topic. I'm here to help! 🌍",
+        content: "Let me help you explore the world!",
         locations: []
       }, ...prev]);
     } finally {

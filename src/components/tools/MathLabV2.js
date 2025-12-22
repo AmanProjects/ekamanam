@@ -5205,12 +5205,10 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Doubled for detailed math explanations
       setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you with that math concept!" }, ...prev]);
     } catch (error) {
-      console.error('❌ Math AI error:', error);
-      console.error('❌ Error details:', error.message, error.stack);
-      // v10.4.6: Graceful fallback like Chemistry - don't show raw error to user
+      // v10.4.12: Simplified error handling like Chemistry (no console.error - causes issues on mobile)
       setChatHistory(prev => [{ 
         role: 'assistant', 
-        content: "I'd be happy to help you with that! Let me explain:\n\nCould you please rephrase your question? Try to be specific about what you'd like to learn - whether it's algebra, geometry, calculus, statistics, or any other math topic. I'm here to help! 📐" 
+        content: "Let me help you with that math concept!"
       }, ...prev]);
     } finally {
       setLoading(false);

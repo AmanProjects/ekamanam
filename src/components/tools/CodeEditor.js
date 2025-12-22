@@ -174,12 +174,10 @@ ${isRegional ? `Write explanations in ${lang}, but code examples can remain in p
       
       setChatHistory(prev => [{ role: 'assistant', content, codeBlocks }, ...prev]);
     } catch (error) {
-      console.error('❌ Code AI error:', error);
-      console.error('❌ Error details:', error.message, error.stack);
-      // v10.4.6: Graceful fallback like Chemistry - don't show raw error to user
+      // v10.4.12: Simplified error handling like Chemistry (no console.error - causes issues on mobile)
       setChatHistory(prev => [{ 
         role: 'assistant', 
-        content: "I'd be happy to help you with programming! Could you please rephrase your question? Try to be specific about what you'd like to learn - whether it's JavaScript, Python, HTML, CSS, or any other programming topic. I'm here to help! 💻" 
+        content: "I'd be happy to help you with programming! Let me know what you'd like to learn - JavaScript, Python, HTML, CSS, or any other topic. I'm here to help! 💻" 
       }, ...prev]);
     } finally {
       setLoading(false);
