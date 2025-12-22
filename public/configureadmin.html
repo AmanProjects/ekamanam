@@ -699,29 +699,47 @@
 
     // Load demo accounts from Firestore
     async function loadDemoAccounts() {
+      console.log('📊 loadDemoAccounts() called');
       try {
+        console.log('🔍 Fetching from Firestore: admin/demoAccounts');
         const doc = await db.collection('admin').doc('demoAccounts').get();
+        console.log('✅ Firestore query completed. Document exists:', doc.exists);
         
         if (!doc.exists) {
+          console.log('📝 Document doesn\'t exist, creating...');
           // Initialize with empty array
           await db.collection('admin').doc('demoAccounts').set({
             emails: [],
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: ADMIN_EMAIL
           });
+          console.log('✅ Document created successfully');
           renderDemoList([]);
+          updateStats(0, null);
+          console.log('✅ Rendered empty demo list');
           return;
         }
 
         const data = doc.data();
         const emails = data.emails || [];
+        console.log('✅ Loaded emails:', emails);
         
         renderDemoList(emails);
         updateStats(emails.length, data.updatedAt);
+        console.log('✅ Demo accounts loaded and rendered');
 
       } catch (error) {
-        console.error('Error loading demo accounts:', error);
-        showAlert('❌ Failed to load demo accounts', 'error');
+        console.error('❌ Error loading demo accounts:', error);
+        console.error('❌ Error code:', error.code);
+        console.error('❌ Error message:', error.message);
+        
+        // Show error to user
+        showAlert('❌ Failed to load demo accounts: ' + error.message + '. Please update Firestore rules.', 'error');
+        
+        // Still render empty list so form is usable
+        renderDemoList([]);
+        updateStats(0, null);
+        console.log('⚠️ Rendered empty demo list despite error');
       }
     }
 
