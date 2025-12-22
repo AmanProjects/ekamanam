@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Error Help - Ekamanam</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .error-box {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .fix-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .fix-item {
+            display: flex;
+            margin: 25px 0;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .fix-content h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .fix-content p {
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+        
+        .fix-content code {
+            background: #e3f2fd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #1565c0;
+        }
+        
+        .success-box {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .success-box h3 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .fix-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .fix-number {
+                margin: 0 auto 15px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>❌ Voice Error</h1>
+            <p>Let's fix the "canceled" error in 2 minutes</p>
+        </div>
+        
+        <div class="content">
+            <div class="error-box">
+                Error: canceled<br><br>
+                Possible causes:<br>
+                • Speech permission denied<br>
+                • Voice not available<br>
+                • Browser restriction
+            </div>
+            
+            <h2 style="color: #667eea; margin-bottom: 20px;">🔧 Quick Fixes (Try in Order):</h2>
+            
+            <div class="fix-item">
+                <div class="fix-number">1</div>
+                <div class="fix-content">
+                    <h3>Refresh the Page</h3>
+                    <p><strong>Easiest fix!</strong> Press <code>F5</code> or <code>Ctrl+R</code> (Windows) / <code>Cmd+R</code> (Mac)</p>
+                    <p>This clears Chrome's stuck speech queue.</p>
+                </div>
+            </div>
+            
+            <div class="fix-item">
+                <div class="fix-number">2</div>
+                <div class="fix-content">
+                    <h3>Wait Before Clicking</h3>
+                    <p>Click the "Listen" button <strong>once</strong> and wait 2 seconds.</p>
+                    <p><strong>Don't</strong> click multiple Listen buttons rapidly - this causes the error.</p>
+                </div>
+            </div>
+            
+            <div class="fix-item">
+                <div class="fix-number">3</div>
+                <div class="fix-content">
+                    <h3>Check Sound Permission</h3>
+                    <p>1. Click the lock icon 🔒 in your address bar</p>
+                    <p>2. Click "Site settings"</p>
+                    <p>3. Find "Sound" → Set to <strong>"Allow"</strong></p>
+                    <p>4. Reload the page</p>
+                </div>
+            </div>
+            
+            <div class="fix-item">
+                <div class="fix-number">4</div>
+                <div class="fix-content">
+                    <h3>Close Other Audio Tabs</h3>
+                    <p>Chrome limits audio streams. Close tabs with:</p>
+                    <p>• YouTube videos</p>
+                    <p>• Spotify or music players</p>
+                    <p>• Other websites playing audio</p>
+                    <p>Then try voice again.</p>
+                </div>
+            </div>
+            
+            <div class="fix-item">
+                <div class="fix-number">5</div>
+                <div class="fix-content">
+                    <h3>Restart Chrome</h3>
+                    <p>Close <strong>all</strong> Chrome windows completely.</p>
+                    <p>Reopen Chrome and try again.</p>
+                    <p>This resets Chrome's audio system.</p>
+                </div>
+            </div>
+            
+            <div class="success-box">
+                <h3>✅ Good News!</h3>
+                <p>Ekamanam now includes <strong>automatic retry logic</strong> for this error.</p>
+                <p>If the error happens, the app will retry automatically up to 3 times.</p>
+                <p>Most users won't see this error anymore!</p>
+            </div>
+            
+            <hr style="margin: 40px 0; border: none; border-top: 1px solid #e0e0e0;">
+            
+            <h2 style="color: #667eea; margin-bottom: 20px;">🚀 Still Not Working?</h2>
+            
+            <div class="fix-item">
+                <div class="fix-content">
+                    <h3>Option 1: Run Diagnostics</h3>
+                    <p>Our diagnostic tool will identify the exact problem:</p>
+                    <div class="buttons">
+                        <a href="/voice-diagnostics.html" class="button">🔍 Run Diagnostics</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="fix-item">
+                <div class="fix-content">
+                    <h3>Option 2: Try Microsoft Edge</h3>
+                    <p>Edge has better voice support than Chrome, especially for Indian languages.</p>
+                    <p>Download Edge: <code>microsoft.com/edge</code></p>
+                </div>
+            </div>
+            
+            <div class="fix-item">
+                <div class="fix-content">
+                    <h3>Option 3: Use Without Voice</h3>
+                    <p>All Ekamanam features work perfectly without voice!</p>
+                    <p>Voice is just an enhancement - you can still:</p>
+                    <p>• Read all content</p>
+                    <p>• Get AI explanations</p>
+                    <p>• Take quizzes and exams</p>
+                    <p>• Access all learning materials</p>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <button class="button" onclick="window.close()">← Close This Help</button>
+                <a href="/" class="button">🏠 Back to Ekamanam</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

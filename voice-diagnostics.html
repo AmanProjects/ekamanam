@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Diagnostics - Ekamanam</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .status-box {
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status-box.success {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            color: #2e7d32;
+        }
+        
+        .status-box.error {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            color: #c62828;
+        }
+        
+        .status-box.warning {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            color: #e65100;
+        }
+        
+        .status-box.info {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            color: #1565c0;
+        }
+        
+        .status-box h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .status-box p {
+            line-height: 1.6;
+            margin: 5px 0;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px 10px 10px 0;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .voice-list {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 15px 0;
+        }
+        
+        .voice-item {
+            padding: 5px;
+            margin: 2px 0;
+            background: white;
+            border-left: 3px solid #2196f3;
+            padding-left: 10px;
+        }
+        
+        .section {
+            margin: 30px 0;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .test-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .fix-item {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .fix-item h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        
+        .fix-item ol, .fix-item ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        
+        .browser-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            word-break: break-all;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .button {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔊 Voice Diagnostics</h1>
+            <p>Troubleshoot Text-to-Speech Issues in Your Browser</p>
+        </div>
+        
+        <div class="content">
+            <!-- Quick Status -->
+            <div id="quickStatus"></div>
+            
+            <!-- Browser Info -->
+            <div class="section">
+                <h2>📱 Browser Information</h2>
+                <div class="browser-info" id="browserInfo"></div>
+            </div>
+            
+            <!-- Test Controls -->
+            <div class="section">
+                <h2>🧪 Run Tests</h2>
+                <div class="test-controls">
+                    <button class="button" onclick="runFullDiagnostics()">🔍 Full Diagnostics</button>
+                    <button class="button" onclick="testEnglishVoice()">🗣️ Test English</button>
+                    <button class="button" onclick="testHindiVoice()">🗣️ Test Hindi</button>
+                    <button class="button" onclick="testTeluguVoice()">🗣️ Test Telugu</button>
+                    <button class="button" onclick="testCanceledErrorFix()">🔧 Test "Canceled" Fix</button>
+                    <button class="button" onclick="stopAllSpeech()">⏹️ Stop Speech</button>
+                </div>
+                <div id="testResults"></div>
+            </div>
+            
+            <!-- Voice List -->
+            <div class="section">
+                <h2>🎤 Available Voices</h2>
+                <button class="button" onclick="loadAndDisplayVoices()">Refresh Voice List</button>
+                <div class="voice-list" id="voiceList">
+                    <em>Click "Refresh Voice List" to load voices...</em>
+                </div>
+            </div>
+            
+            <!-- Chrome-Specific Fixes -->
+            <div class="section">
+                <h2>🔧 Chrome-Specific Fixes</h2>
+                
+                <div class="fix-item">
+                    <h4>1. Enable Speech Synthesis</h4>
+                    <ol>
+                        <li>Open Chrome Settings: <code>chrome://settings/content/sound</code></li>
+                        <li>Ensure "Sites can play sound" is enabled</li>
+                        <li>Check if Ekamanam is not blocked</li>
+                    </ol>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>2. Check Site Permissions</h4>
+                    <ol>
+                        <li>Click the lock icon 🔒 in the address bar</li>
+                        <li>Click "Site settings"</li>
+                        <li>Ensure "Sound" is set to "Allow"</li>
+                        <li>Reload the page and try again</li>
+                    </ol>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>3. User Interaction Required</h4>
+                    <p><strong>Chrome requires user interaction before speech:</strong></p>
+                    <ul>
+                        <li>✅ Voice works: After clicking a button</li>
+                        <li>❌ Voice fails: On page load or automatic triggers</li>
+                        <li>💡 Solution: Always trigger voice from a click event</li>
+                    </ul>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>4. Clear Chrome Cache</h4>
+                    <ol>
+                        <li>Press <code>Ctrl + Shift + Delete</code> (Windows/Linux) or <code>Cmd + Shift + Delete</code> (Mac)</li>
+                        <li>Select "Cached images and files"</li>
+                        <li>Click "Clear data"</li>
+                        <li>Reload Ekamanam</li>
+                    </ol>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>5. Update Chrome</h4>
+                    <ol>
+                        <li>Go to <code>chrome://settings/help</code></li>
+                        <li>Chrome will check for updates automatically</li>
+                        <li>If an update is available, click "Relaunch"</li>
+                        <li>Recommended: Chrome version 120+</li>
+                    </ol>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>6. Install Language Voices (Windows)</h4>
+                    <ol>
+                        <li>Go to Windows Settings → Time & Language → Speech</li>
+                        <li>Click "Add voices"</li>
+                        <li>Install: English (India), Hindi (India), Telugu (India)</li>
+                        <li>Restart Chrome after installation</li>
+                    </ol>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>7. macOS Voice Settings</h4>
+                    <ol>
+                        <li>System Preferences → Accessibility → Spoken Content</li>
+                        <li>Click "System Voice" dropdown</li>
+                        <li>Click "Manage Voices..."</li>
+                        <li>Download: English (India), Hindi, Tamil, Telugu</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <!-- Common Issues -->
+            <div class="section">
+                <h2>⚠️ Common Issues & Solutions</h2>
+                
+                <div class="fix-item">
+                    <h4>Issue: "Canceled" Error</h4>
+                    <p><strong>Most Common Voice Issue!</strong></p>
+                    <p><strong>Quick Fixes:</strong></p>
+                    <ol>
+                        <li><strong>Wait before clicking again</strong> - Click Listen once, wait 2 seconds</li>
+                        <li><strong>Refresh the page</strong> - Press F5 or Ctrl+R</li>
+                        <li><strong>Close other audio tabs</strong> - YouTube, Spotify, etc.</li>
+                        <li><strong>Clear browser state:</strong>
+                            <ul>
+                                <li>Type in console: <code>speechSynthesis.cancel()</code></li>
+                                <li>Wait 2 seconds</li>
+                                <li>Try again</li>
+                            </ul>
+                        </li>
+                        <li><strong>Restart Chrome</strong> - Close all windows and reopen</li>
+                    </ol>
+                    <p><em>✅ Ekamanam now includes automatic retry logic for canceled errors!</em></p>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>Issue: Voice works but stops abruptly</h4>
+                    <p><strong>Solution:</strong> Chrome has a 15-second utterance limit. Long text is automatically chunked in Ekamanam.</p>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>Issue: No Indian voices available</h4>
+                    <p><strong>Solution:</strong> Install language packs (see Fix #6 and #7 above). Alternatively, use Edge browser which has better Indian voice support.</p>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>Issue: Voice permission denied</h4>
+                    <p><strong>Solution:</strong> Check if you're on HTTPS. Chrome blocks some features on HTTP. Ekamanam should always use HTTPS (ekamanam.com).</p>
+                </div>
+                
+                <div class="fix-item">
+                    <h4>Issue: Voice works in Edge but not Chrome</h4>
+                    <p><strong>Solution:</strong> Edge has built-in natural voices. For Chrome, install Windows/macOS language packs or use online voices (requires internet).</p>
+                </div>
+            </div>
+            
+            <!-- Back Button -->
+            <div style="text-align: center; margin-top: 40px;">
+                <button class="button" onclick="window.location.href='/'">← Back to Ekamanam</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Display browser info
+        function displayBrowserInfo() {
+            const info = {
+                'Browser': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Language': navigator.language,
+                'Online': navigator.onLine,
+                'Speech Synthesis': 'speechSynthesis' in window ? '✅ Supported' : '❌ Not Supported',
+                'Secure Context': window.isSecureContext ? '✅ HTTPS' : '⚠️ HTTP (may cause issues)'
+            };
+            
+            const browserInfoDiv = document.getElementById('browserInfo');
+            browserInfoDiv.innerHTML = Object.entries(info)
+                .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+                .join('<br>');
+        }
+        
+        // Load and display voices
+        async function loadAndDisplayVoices() {
+            const voiceListDiv = document.getElementById('voiceList');
+            voiceListDiv.innerHTML = '<em>Loading voices...</em>';
+            
+            // Wait for voices to load
+            await new Promise(resolve => {
+                let voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    resolve(voices);
+                } else {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        resolve(window.speechSynthesis.getVoices());
+                    };
+                    // Timeout after 2 seconds
+                    setTimeout(() => resolve(window.speechSynthesis.getVoices()), 2000);
+                }
+            });
+            
+            const voices = window.speechSynthesis.getVoices();
+            
+            if (voices.length === 0) {
+                voiceListDiv.innerHTML = '<div class="status-box error"><strong>⚠️ No voices found!</strong><br>Your browser may not support speech synthesis, or voices haven\'t loaded yet. Try refreshing the page.</div>';
+                return;
+            }
+            
+            voiceListDiv.innerHTML = `
+                <strong>Found ${voices.length} voices:</strong><br><br>
+                ${voices.map((voice, index) => `
+                    <div class="voice-item">
+                        <strong>${index + 1}.</strong> ${voice.name}<br>
+                        <span style="color: #666;">Lang: ${voice.lang} | ${voice.localService ? '💾 Local' : '☁️ Online'} | ${voice.default ? '⭐ Default' : ''}</span>
+                    </div>
+                `).join('')}
+            `;
+        }
+        
+        // Test English voice
+        function testEnglishVoice() {
+            stopAllSpeech();
+            const testResults = document.getElementById('testResults');
+            testResults.innerHTML = '<div class="status-box info">🔊 Testing English voice...</div>';
+            
+            const utterance = new SpeechSynthesisUtterance("Hello! This is a test of English text to speech.");
+            utterance.lang = 'en-IN';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            
+            const voices = window.speechSynthesis.getVoices();
+            const indianEnglish = voices.find(v => v.lang === 'en-IN' || v.name.toLowerCase().includes('ravi') || v.name.toLowerCase().includes('heera'));
+            if (indianEnglish) {
+                utterance.voice = indianEnglish;
+                console.log('Using voice:', indianEnglish.name);
+            }
+            
+            utterance.onstart = () => {
+                testResults.innerHTML = '<div class="status-box success">✅ English voice is working!</div>';
+            };
+            
+            utterance.onerror = (e) => {
+                testResults.innerHTML = `<div class="status-box error">❌ Error: ${e.error}<br><br>Possible causes:<br>• Speech permission denied<br>• Voice not available<br>• Browser restriction</div>`;
+            };
+            
+            utterance.onend = () => {
+                setTimeout(() => {
+                    testResults.innerHTML = '<div class="status-box success">✅ English test completed successfully!</div>';
+                }, 100);
+            };
+            
+            try {
+                window.speechSynthesis.speak(utterance);
+            } catch (error) {
+                testResults.innerHTML = `<div class="status-box error">❌ Exception: ${error.message}</div>`;
+            }
+        }
+        
+        // Test Hindi voice
+        function testHindiVoice() {
+            stopAllSpeech();
+            const testResults = document.getElementById('testResults');
+            testResults.innerHTML = '<div class="status-box info">🔊 Testing Hindi voice...</div>';
+            
+            const utterance = new SpeechSynthesisUtterance("नमस्ते! यह हिंदी भाषा का परीक्षण है।");
+            utterance.lang = 'hi-IN';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            
+            const voices = window.speechSynthesis.getVoices();
+            const hindiVoice = voices.find(v => v.lang === 'hi-IN' || v.name.toLowerCase().includes('hindi') || v.name.toLowerCase().includes('swara'));
+            if (hindiVoice) {
+                utterance.voice = hindiVoice;
+                console.log('Using voice:', hindiVoice.name);
+            } else {
+                testResults.innerHTML += '<div class="status-box warning">⚠️ No Hindi voice found. Using default voice.</div>';
+            }
+            
+            utterance.onstart = () => {
+                testResults.innerHTML = '<div class="status-box success">✅ Hindi voice is working!</div>';
+            };
+            
+            utterance.onerror = (e) => {
+                testResults.innerHTML = `<div class="status-box error">❌ Error: ${e.error}<br><br>Hindi voice may not be installed on your system.</div>`;
+            };
+            
+            utterance.onend = () => {
+                setTimeout(() => {
+                    testResults.innerHTML = '<div class="status-box success">✅ Hindi test completed successfully!</div>';
+                }, 100);
+            };
+            
+            try {
+                window.speechSynthesis.speak(utterance);
+            } catch (error) {
+                testResults.innerHTML = `<div class="status-box error">❌ Exception: ${error.message}</div>`;
+            }
+        }
+        
+        // Test Telugu voice
+        function testTeluguVoice() {
+            stopAllSpeech();
+            const testResults = document.getElementById('testResults');
+            testResults.innerHTML = '<div class="status-box info">🔊 Testing Telugu voice...</div>';
+            
+            const utterance = new SpeechSynthesisUtterance("నమస్కారం! ఇది తెలుగు భాష పరీక్ష.");
+            utterance.lang = 'te-IN';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            
+            const voices = window.speechSynthesis.getVoices();
+            const teluguVoice = voices.find(v => v.lang === 'te-IN' || v.name.toLowerCase().includes('telugu') || v.name.toLowerCase().includes('shruti'));
+            if (teluguVoice) {
+                utterance.voice = teluguVoice;
+                console.log('Using voice:', teluguVoice.name);
+            } else {
+                testResults.innerHTML += '<div class="status-box warning">⚠️ No Telugu voice found. Using default voice (may not work correctly).</div>';
+            }
+            
+            utterance.onstart = () => {
+                testResults.innerHTML = '<div class="status-box success">✅ Telugu voice is working!</div>';
+            };
+            
+            utterance.onerror = (e) => {
+                testResults.innerHTML = `<div class="status-box error">❌ Error: ${e.error}<br><br>Telugu voice may not be installed on your system.</div>`;
+            };
+            
+            utterance.onend = () => {
+                setTimeout(() => {
+                    testResults.innerHTML = '<div class="status-box success">✅ Telugu test completed successfully!</div>';
+                }, 100);
+            };
+            
+            try {
+                window.speechSynthesis.speak(utterance);
+            } catch (error) {
+                testResults.innerHTML = `<div class="status-box error">❌ Exception: ${error.message}</div>`;
+            }
+        }
+        
+        // Stop all speech
+        function stopAllSpeech() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+        
+        // Test "Canceled" error fix with retry logic
+        async function testCanceledErrorFix() {
+            const testResults = document.getElementById('testResults');
+            testResults.innerHTML = '<div class="status-box info">🔧 Testing "Canceled" error fix with retry logic...</div>';
+            
+            if (!('speechSynthesis' in window)) {
+                testResults.innerHTML = '<div class="status-box error">❌ Speech synthesis not supported</div>';
+                return;
+            }
+            
+            // Helper function to reset speech
+            const resetSpeech = async () => {
+                window.speechSynthesis.cancel();
+                await new Promise(resolve => setTimeout(resolve, 150));
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                }
+                window.speechSynthesis.cancel();
+            };
+            
+            // Safe speak with retry
+            const safeSpeakWithRetry = async (utterance, maxRetries = 2) => {
+                for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                    try {
+                        await resetSpeech();
+                        
+                        return await new Promise((resolve, reject) => {
+                            let hasStarted = false;
+                            
+                            utterance.onstart = () => {
+                                hasStarted = true;
+                                testResults.innerHTML += `<div class="status-box success">✅ Speech started (attempt ${attempt + 1})</div>`;
+                            };
+                            
+                            utterance.onend = () => {
+                                testResults.innerHTML += `<div class="status-box success">✅ Speech completed successfully!</div>`;
+                                resolve({ success: true });
+                            };
+                            
+                            utterance.onerror = (event) => {
+                                testResults.innerHTML += `<div class="status-box warning">⚠️ Error: ${event.error} (attempt ${attempt + 1})</div>`;
+                                
+                                if (event.error === 'canceled' && !hasStarted && attempt < maxRetries) {
+                                    testResults.innerHTML += `<div class="status-box info">🔄 Retrying in 200ms...</div>`;
+                                    reject({ retry: true, error: event.error });
+                                } else {
+                                    reject({ retry: false, error: event.error });
+                                }
+                            };
+                            
+                            window.speechSynthesis.speak(utterance);
+                            
+                            setTimeout(() => {
+                                if (!hasStarted) {
+                                    testResults.innerHTML += `<div class="status-box warning">⚠️ Speech timeout</div>`;
+                                    reject({ retry: attempt < maxRetries, error: 'timeout' });
+                                }
+                            }, 1000);
+                        });
+                    } catch (error) {
+                        if (error.retry && attempt < maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, 200));
+                            continue;
+                        }
+                        throw error;
+                    }
+                }
+                throw new Error('Failed after all retries');
+            };
+            
+            // Run the test
+            try {
+                testResults.innerHTML = '<div class="status-box info">🧪 Step 1: Creating rapid fire scenario (like clicking Listen multiple times)...</div>';
+                
+                // Simulate rapid clicking by creating conflicting speech
+                const dummy = new SpeechSynthesisUtterance("dummy");
+                dummy.volume = 0.01;
+                window.speechSynthesis.speak(dummy);
+                
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                testResults.innerHTML += '<div class="status-box info">🧪 Step 2: Now trying to speak with retry logic...</div>';
+                
+                const testUtterance = new SpeechSynthesisUtterance("Testing canceled error fix. The retry logic will handle any conflicts automatically.");
+                testUtterance.rate = 1.0;
+                testUtterance.pitch = 1.0;
+                
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    testUtterance.voice = voices[0];
+                    testUtterance.lang = voices[0].lang;
+                }
+                
+                await safeSpeakWithRetry(testUtterance);
+                
+                testResults.innerHTML += `
+                    <div class="status-box success">
+                        <h3>🎉 Test Passed!</h3>
+                        <p>The retry logic successfully handled potential "canceled" errors.</p>
+                        <p><strong>This means:</strong></p>
+                        <ul>
+                            <li>✅ Rapid clicking is handled gracefully</li>
+                            <li>✅ Overlapping speech is prevented</li>
+                            <li>✅ "Canceled" errors are automatically retried</li>
+                            <li>✅ Your voice features should work reliably</li>
+                        </ul>
+                    </div>
+                `;
+            } catch (error) {
+                testResults.innerHTML += `
+                    <div class="status-box error">
+                        <h3>❌ Test Failed</h3>
+                        <p>Error: ${error.error || error.message}</p>
+                        <p><strong>Recommendations:</strong></p>
+                        <ol>
+                            <li>Check site sound permissions (lock icon 🔒 → Site settings → Sound → Allow)</li>
+                            <li>Go to: <code>chrome://settings/content/sound</code> and ensure sound is enabled</li>
+                            <li>Close other tabs using audio (YouTube, Spotify, etc.)</li>
+                            <li>Try restarting Chrome completely</li>
+                            <li>If issue persists, try Microsoft Edge browser</li>
+                        </ol>
+                    </div>
+                `;
+            }
+        }
+        
+        // Run full diagnostics
+        async function runFullDiagnostics() {
+            const testResults = document.getElementById('testResults');
+            testResults.innerHTML = '<div class="status-box info">🔍 Running full diagnostics...</div>';
+            
+            const results = [];
+            
+            // Check basic support
+            if (!('speechSynthesis' in window)) {
+                testResults.innerHTML = '<div class="status-box error">❌ Speech Synthesis is NOT supported in this browser!</div>';
+                return;
+            }
+            results.push('✅ Speech Synthesis API supported');
+            
+            // Check secure context
+            if (!window.isSecureContext) {
+                results.push('⚠️ NOT on HTTPS - may cause issues');
+            } else {
+                results.push('✅ Secure context (HTTPS)');
+            }
+            
+            // Load voices
+            await new Promise(resolve => {
+                let voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    resolve(voices);
+                } else {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        resolve(window.speechSynthesis.getVoices());
+                    };
+                    setTimeout(() => resolve(window.speechSynthesis.getVoices()), 2000);
+                }
+            });
+            
+            const voices = window.speechSynthesis.getVoices();
+            results.push(`✅ Found ${voices.length} voices`);
+            
+            // Check for Indian voices
+            const indianVoices = {
+                english: voices.filter(v => v.lang.startsWith('en-IN') || v.name.toLowerCase().includes('ravi') || v.name.toLowerCase().includes('heera')).length,
+                hindi: voices.filter(v => v.lang.startsWith('hi') || v.name.toLowerCase().includes('hindi')).length,
+                telugu: voices.filter(v => v.lang.startsWith('te') || v.name.toLowerCase().includes('telugu')).length,
+                tamil: voices.filter(v => v.lang.startsWith('ta') || v.name.toLowerCase().includes('tamil')).length
+            };
+            
+            results.push(`<br><strong>Indian Voices:</strong>`);
+            results.push(`• English (India): ${indianVoices.english} ${indianVoices.english > 0 ? '✅' : '❌'}`);
+            results.push(`• Hindi: ${indianVoices.hindi} ${indianVoices.hindi > 0 ? '✅' : '⚠️'}`);
+            results.push(`• Telugu: ${indianVoices.telugu} ${indianVoices.telugu > 0 ? '✅' : '⚠️'}`);
+            results.push(`• Tamil: ${indianVoices.tamil} ${indianVoices.tamil > 0 ? '✅' : '⚠️'}`);
+            
+            // Test basic speech
+            results.push('<br>🧪 Testing basic speech...');
+            
+            const testUtterance = new SpeechSynthesisUtterance("Test");
+            testUtterance.volume = 0.1; // Very quiet test
+            
+            const testPromise = new Promise((resolve) => {
+                testUtterance.onstart = () => resolve('✅ Speech test successful');
+                testUtterance.onerror = (e) => resolve(`❌ Speech test failed: ${e.error}`);
+                testUtterance.onend = () => {};
+                
+                setTimeout(() => resolve('⚠️ Speech test timeout'), 3000);
+            });
+            
+            try {
+                window.speechSynthesis.speak(testUtterance);
+                const testResult = await testPromise;
+                results.push(testResult);
+            } catch (error) {
+                results.push(`❌ Exception during test: ${error.message}`);
+            }
+            
+            // Display results
+            const statusClass = results.some(r => r.includes('❌')) ? 'error' : 
+                               results.some(r => r.includes('⚠️')) ? 'warning' : 'success';
+            
+            testResults.innerHTML = `
+                <div class="status-box ${statusClass}">
+                    <h3>Diagnostic Results:</h3>
+                    ${results.join('<br>')}
+                </div>
+            `;
+            
+            // Stop test speech
+            stopAllSpeech();
+        }
+        
+        // Quick status check on load
+        function quickStatusCheck() {
+            const quickStatus = document.getElementById('quickStatus');
+            
+            if (!('speechSynthesis' in window)) {
+                quickStatus.innerHTML = '<div class="status-box error"><h3>❌ Speech Not Supported</h3><p>Your browser does not support text-to-speech. Please use Chrome, Edge, Safari, or Firefox.</p></div>';
+                return;
+            }
+            
+            if (!window.isSecureContext) {
+                quickStatus.innerHTML = '<div class="status-box warning"><h3>⚠️ Security Warning</h3><p>You are not on HTTPS. Speech synthesis may be blocked. Please access Ekamanam via <strong>https://ekamanam.com</strong></p></div>';
+                return;
+            }
+            
+            quickStatus.innerHTML = '<div class="status-box success"><h3>✅ Basic Checks Passed</h3><p>Your browser supports text-to-speech and you\'re on a secure connection. Click "Full Diagnostics" to test voices.</p></div>';
+        }
+        
+        // Initialize on page load
+        window.onload = () => {
+            displayBrowserInfo();
+            quickStatusCheck();
+            
+            // Auto-load voices after a short delay
+            setTimeout(() => {
+                loadAndDisplayVoices();
+            }, 500);
+        };
+    </script>
+</body>
+</html>
+

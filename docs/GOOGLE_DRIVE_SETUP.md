@@ -1,255 +1,154 @@
-# Google Drive Integration Setup Guide
+# Google Drive Integration Setup - v7.2.0
 
-This guide explains how to configure Google Drive API for Ekamanam to enable cloud storage and sync.
+## Critical Issue Identified
 
-## Overview
+The Google Drive 403 errors are occurring because **Firebase Authentication does NOT provide OAuth access tokens with custom scopes** (like Drive API scopes).
 
-Ekamanam uses Google Drive API to:
-- Store user PDFs in their Google Drive
-- Cache AI responses to save API costs
-- Enable cross-device learning
-- Provide automatic backup
+### The Problem
 
-## Benefits
+When you sign in with `signInWithPopup()` from Firebase Auth, Firebase only provides an ID token for authentication - NOT an OAuth access token with Drive permissions. This is why we're seeing 403 errors despite:
+- ✅ Drive API being enabled
+- ✅ OAuth consent screen configured
+- ✅ Drive scopes added to consent screen
 
-✅ **For Users:**
-- Own their data (stored in their Drive)
-- Access from any device
-- Never lose PDFs or progress
-- Smart AI caching (faster responses)
+### The Solution
 
-✅ **For Developers:**
-- Zero storage costs (users bring their own storage)
-- Scalable architecture
-- GDPR compliant (user owns data)
-- No Firebase Storage fees
+We need to use **Google Identity Services** (the new OAuth library) to request a separate OAuth token with Drive scopes AFTER Firebase authentication succeeds.
 
----
+## Required Setup Steps
 
-## Setup Steps
+### Step 1: Get Your Web OAuth Client ID
 
-### Step 1: Enable Google Drive API
+1. Go to: https://console.cloud.google.com/apis/credentials?project=ekamanam
+2. Look for the **OAuth 2.0 Client IDs** section
+3. Find the client ID for **Web application** (it will look like: `662515641730-xxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com`)
+4. Copy this Client ID
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Select your Firebase project or create a new one
-3. Navigate to **APIs & Services** → **Library**
-4. Search for "Google Drive API"
-5. Click **Enable**
+### Step 2: Verify OAuth Consent Screen Configuration
 
-### Step 2: Configure OAuth Consent Screen
-
-1. Go to **APIs & Services** → **OAuth consent screen**
-2. Choose **External** (for public app) or **Internal** (for workspace)
-3. Fill in required information:
-   - **App name**: Ekamanam
-   - **User support email**: Your email
-   - **Developer contact**: Your email
-   - **App logo**: (Optional) Upload Ekamanam logo
-4. Add scopes:
+1. Go to: https://console.cloud.google.com/apis/credentials/consent?project=ekamanam
+2. Click "EDIT APP"
+3. Navigate to "Scopes" (Step 2)
+4. Verify these scopes are listed:
    - `https://www.googleapis.com/auth/drive.file`
    - `https://www.googleapis.com/auth/drive.appdata`
-5. Add test users (for development):
-   - Add your Gmail address and test users' emails
-6. Save and continue
+5. If not listed, add them:
+   - Click "ADD OR REMOVE SCOPES"
+   - Search for "Google Drive API"
+   - Check both scopes above
+   - Click "UPDATE"
+   - Click "SAVE AND CONTINUE" through remaining steps
 
-### Step 3: Create OAuth 2.0 Credentials
+### Step 3: Update the Code with Your Client ID
 
-1. Go to **APIs & Services** → **Credentials**
-2. Click **Create Credentials** → **OAuth client ID**
-3. Choose **Web application**
-4. Configure:
-   - **Name**: Ekamanam Web Client
-   - **Authorized JavaScript origins**:
-     - `http://localhost:3000` (for development)
-     - `https://www.ekamanam.com` (for production)
-   - **Authorized redirect URIs**:
-     - `http://localhost:3000`
-     - `https://www.ekamanam.com`
-5. Click **Create**
-6. Copy the **Client ID** (you'll need this)
+Open `src/components/AuthButton.js` and replace line 79:
 
-### Step 4: Create API Key (Optional but Recommended)
+```javascript
+// REPLACE THIS LINE:
+const clientId = '662515641730-8n6b0d0u3q7q0q0q0q0q0q0q0q0q0q0q.apps.googleusercontent.com';
 
-1. Go to **APIs & Services** → **Credentials**
-2. Click **Create Credentials** → **API key**
-3. Copy the API key
-4. Click **Restrict Key**:
-   - **Application restrictions**: HTTP referrers
-   - Add: `localhost:3000/*` and `www.ekamanam.com/*`
-   - **API restrictions**: Restrict key → Select "Google Drive API"
-5. Save
-
-### Step 5: Configure Environment Variables
-
-Create `.env.local` file in project root:
-
-```bash
-# Google Drive API Credentials
-REACT_APP_GOOGLE_CLIENT_ID=YOUR_CLIENT_ID_HERE.apps.googleusercontent.com
-REACT_APP_GOOGLE_API_KEY=YOUR_API_KEY_HERE
+// WITH YOUR ACTUAL WEB CLIENT ID:
+const clientId = 'YOUR-ACTUAL-CLIENT-ID-HERE.apps.googleusercontent.com';
 ```
 
-**Important:** Never commit `.env.local` to Git! It's already in `.gitignore`.
+### Step 4: Verify Authorized Domains
 
-### Step 6: Publish OAuth Consent Screen (Production)
+1. In the OAuth consent screen, go to "Authorized domains"
+2. Add these domains:
+   - `ekamanam.com`
+   - `ekamanam.firebaseapp.com`
+   - `localhost` (for testing)
 
-For production use:
+### Step 5: Test the Flow
 
-1. Go back to **OAuth consent screen**
-2. Click **Publish App**
-3. Submit for verification (required if you have >100 users)
-4. Google will review your app (usually takes 1-2 weeks)
+1. Sign out completely
+2. Clear browser localStorage: `localStorage.clear()`
+3. Sign in again
+4. You should see TWO consent prompts:
+   - **First**: Firebase sign-in (email, profile)
+   - **Second**: Drive permissions (Google Drive access)
+5. Grant both permissions
+6. Check console for: `✅ Google OAuth access token with Drive scopes stored`
 
-Until verified, users will see "This app isn't verified" warning (they can still proceed with "Advanced" → "Go to Ekamanam").
+## How It Works Now (v7.2.0)
 
----
+### Two-Step OAuth Flow:
 
-## Folder Structure Created in User's Drive
+1. **Firebase Authentication** (`signInWithPopup`)
+   - Gets user identity (email, name, photo)
+   - Creates Firebase Auth session
+   - Stores user in Firebase Auth
 
-When a user grants Drive permissions, Ekamanam creates:
+2. **Google Identity Services** (`initTokenClient`)
+   - Requests Drive API permissions
+   - Gets OAuth access token with Drive scopes
+   - Stores token in localStorage
+   - Used for all Drive API calls
 
-```
-📁 Ekamanam/
-├── 📁 PDFs/                    # User's uploaded PDFs
-├── 📁 Cache/
-│   ├── 📁 AI_Responses/        # Cached AI queries/responses
-│   ├── 📁 Page_Index/          # Page-level topic indexes
-│   └── 📁 Embeddings/          # Vector embeddings (future)
-├── 📁 Notes/                   # User's notes
-├── 📁 Progress/                # Reading progress tracking
-└── 📄 ekamanam_library.json   # Main library index
-```
+### Why This Approach?
 
----
-
-## Testing
-
-### Local Testing
-
-1. Start development server:
-   ```bash
-   npm start
-   ```
-
-2. Login with test user (added in OAuth consent screen)
-
-3. Click "Connect Google Drive" when prompted
-
-4. Grant permissions (you'll see the consent screen)
-
-5. Verify folder creation in Google Drive
-
-### Production Testing
-
-1. Deploy to production
-2. Test with real users
-3. Monitor Google Cloud Console for API usage
-4. Check quotas and limits
-
----
-
-## API Quotas
-
-Google Drive API has generous free quotas:
-
-- **Queries per day**: 1,000,000,000 (1 billion)
-- **Queries per 100 seconds per user**: 1,000
-- **Storage**: Uses user's Drive quota (15 GB free)
-
-For most educational apps, these limits are more than sufficient.
-
----
-
-## Security Best Practices
-
-✅ **Do:**
-- Only request minimum required scopes
-- Store credentials in environment variables
-- Use HTTPS in production
-- Regularly rotate API keys
-- Monitor API usage in Cloud Console
-
-❌ **Don't:**
-- Commit credentials to Git
-- Request more permissions than needed
-- Store user data on your servers
-- Share API keys publicly
-- Bypass OAuth consent screen
-
----
+- Firebase Auth: Great for user authentication and identity
+- Google Identity Services: Required for OAuth tokens with custom API scopes
+- We need BOTH: Firebase for auth + OAuth token for Drive API
 
 ## Troubleshooting
 
-### "Access blocked: This app's request is invalid"
+### Error: "idpiframe_initialization_failed"
+- **Cause**: OAuth client ID is incorrect or domain not authorized
+- **Fix**: Verify client ID and add domain to OAuth consent screen
 
-**Solution:** Add your email as a test user in OAuth consent screen.
+### Error: "popup_closed_by_user"
+- **Cause**: User closed the Drive permission prompt
+- **Fix**: Sign in again and grant permissions
 
-### "The redirect URI in the request does not match"
+### Error: "access_denied"
+- **Cause**: User declined Drive permissions
+- **Fix**: Sign in again and grant permissions
 
-**Solution:** Add the exact URL (including protocol and port) to authorized redirect URIs.
+### Still Getting 403 Errors?
+1. Verify the OAuth access token is being stored: Check DevTools → Application → Local Storage → `google_access_token`
+2. Check the token scopes in console logs: Look for `📋 Token scopes:` - should include Drive API URLs
+3. Verify Drive API is enabled: https://console.cloud.google.com/apis/library/drive.googleapis.com?project=ekamanam
+4. Wait 5-10 minutes for API changes to propagate
 
-### "API key not valid"
+## Finding Your Web Client ID
 
-**Solution:** Check that:
-1. API key is correctly set in `.env.local`
-2. Google Drive API is enabled
-3. API key restrictions allow your domain
+If you can't find your Web OAuth Client ID:
 
-### "Origin http://localhost:3000 is not allowed"
+1. Go to: https://console.cloud.google.com/apis/credentials?project=ekamanam
+2. You should see a table with these columns: Name | Type | Created | Client ID
+3. Look for a row where:
+   - **Type** = "OAuth 2.0 Client ID"
+   - **Name** = "Web client (auto created by Google Service)" or similar
+4. The **Client ID** column shows the ID you need
+5. It will be in format: `[PROJECT-NUMBER]-[RANDOM-STRING].apps.googleusercontent.com`
 
-**Solution:** Add `http://localhost:3000` to authorized JavaScript origins.
+If no Web client exists:
+1. Click "+ CREATE CREDENTIALS"
+2. Select "OAuth 2.0 Client ID"
+3. Choose "Web application"
+4. Add Authorized JavaScript origins:
+   - `https://ekamanam.com`
+   - `https://ekamanam.firebaseapp.com`
+   - `http://localhost:3000` (for development)
+5. Add Authorized redirect URIs:
+   - `https://ekamanam.com`
+   - `https://ekamanam.firebaseapp.com`
+6. Click "CREATE"
+7. Copy the Client ID shown in the popup
 
-### Users see "This app isn't verified"
+## Next Steps After Setup
 
-**Solution:** This is normal before verification. Users can proceed with "Advanced" → "Go to Ekamanam". Submit app for verification in OAuth consent screen for production.
+Once the correct Client ID is in place and Drive permissions are granted:
 
----
-
-## Support
-
-For issues:
-1. Check Google Cloud Console logs
-2. Review API quotas and billing
-3. Test with different Google accounts
-4. Create GitHub issue with error logs
-
----
-
-## Cost Analysis
-
-### Firebase Storage (without Google Drive):
-- **Free tier**: 5 GB storage
-- **Paid**: $0.026/GB/month
-- **For 1000 users with 50 MB PDFs each**: $1,300/month 💸
-
-### Google Drive Integration:
-- **API calls**: Free (within quota)
-- **Storage**: User's Drive quota
-- **Cost to you**: $0/month ✅
-
-**Savings**: 100% of storage costs!
-
----
-
-## Migration Path
-
-If you later want to move away from Google Drive:
-
-1. Users can export their "Ekamanam" folder anytime
-2. Add Firebase Storage as backup option
-3. Implement hybrid: Drive for primary, Firebase for fallback
-4. Gradual migration with user consent
+1. Deploy the app: `npm run build && npm run deploy`
+2. Test sign-in flow completely
+3. Verify Ekamanam folder appears in Google Drive
+4. Test PDF upload to Drive
+5. Test AI cache storage in Drive
 
 ---
 
-## References
-
-- [Google Drive API Documentation](https://developers.google.com/drive/api/v3/about-sdk)
-- [OAuth 2.0 for Web Apps](https://developers.google.com/identity/protocols/oauth2/javascript-implicit-flow)
-- [API Quotas](https://developers.google.com/drive/api/v3/limits)
-- [gapi-script Documentation](https://github.com/google/google-api-javascript-client)
-
----
-
-**Last Updated**: 2025-01-15
-**Version**: 1.0.0
+**Version**: 7.2.0
+**Date**: 2025-12-16
+**Critical Fix**: Implemented proper OAuth flow for Drive API access
