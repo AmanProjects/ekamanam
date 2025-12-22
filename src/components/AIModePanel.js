@@ -1858,11 +1858,51 @@ Question: ${userMessage}`;
           throw new Error('No more words were found in the analysis');
         }
         
+        // v10.2: CRITICAL FIX - Filter out garbled words BEFORE displaying
+        const detectedLanguage = parsedResponse.language || 'English';
+        const cleanWords = parsedResponse.words.filter(wordObj => {
+          const word = wordObj.word || '';
+          
+          // Check for garbled characters
+          const hasGarbledChars = /[#·+Á÷ÿþü°¤@$%^&*()_+=\[\]{}|\\<>?/~`]/.test(word);
+          
+          // Check for proper Unicode range based on language
+          let hasProperUnicode = true;
+          if (detectedLanguage.includes('Telugu') || detectedLanguage === 'తెలుగు') {
+            hasProperUnicode = /[\u0C00-\u0C7F]/.test(word);
+          } else if (detectedLanguage.includes('Hindi') || detectedLanguage === 'हिंदी') {
+            hasProperUnicode = /[\u0900-\u097F]/.test(word);
+          } else if (detectedLanguage.includes('Tamil') || detectedLanguage === 'தமிழ்') {
+            hasProperUnicode = /[\u0B80-\u0BFF]/.test(word);
+          } else if (detectedLanguage.includes('Kannada') || detectedLanguage === 'ಕನ್ನಡ') {
+            hasProperUnicode = /[\u0C80-\u0CFF]/.test(word);
+          } else if (detectedLanguage.includes('Malayalam') || detectedLanguage === 'മലയാളം') {
+            hasProperUnicode = /[\u0D00-\u0D7F]/.test(word);
+          }
+          
+          const isValid = !hasGarbledChars && hasProperUnicode;
+          
+          if (!isValid) {
+            console.warn(`⚠️ [Word Filter] Removing garbled word: "${word}" (has garbled chars: ${hasGarbledChars}, proper unicode: ${hasProperUnicode})`);
+          }
+          
+          return isValid;
+        });
+        
+        console.log(`✅ [Word Filter] Filtered ${parsedResponse.words.length} → ${cleanWords.length} clean words`);
+        
+        if (cleanWords.length === 0) {
+          throw new Error('All words were garbled. Please try a different PDF page or report this issue.');
+        }
+        
+        // Update parsed response with clean words
+        parsedResponse.words = cleanWords;
+        
         // Merge with existing words if loading more
         if (isLoadMore && wordAnalysis[0]) {
           const mergedAnalysis = {
             ...wordAnalysis[0],
-            words: [...wordAnalysis[0].words, ...parsedResponse.words]
+            words: [...wordAnalysis[0].words, ...cleanWords]
           };
           setWordAnalysis([mergedAnalysis]);
         } else {
@@ -1920,8 +1960,11 @@ Question: ${userMessage}`;
 
   // Enhanced function to speak text naturally with proper language detection
   // v10.1.2: Robust mutex lock to prevent cancellation errors
+  // v10.2: FIX Telugu encoding for speech synthesis
   const handleSpeakText = async (text, language, id) => {
     console.log('🔊 [SpeakText] Starting for id:', id, 'language:', language);
+    console.log('🔊 [SpeakText] RAW TEXT:', text);
+    console.log('🔊 [SpeakText] TEXT CHAR CODES:', Array.from(text || '').slice(0, 20).map(c => c.charCodeAt(0)));
     
     if (!('speechSynthesis' in window)) {
       console.error('❌ [SpeakText] Speech synthesis not supported');
@@ -1953,15 +1996,33 @@ Question: ${userMessage}`;
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     
-    // Strip HTML tags for speech
-    const cleanText = text?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() || '';
+    // v10.2: FIX - Ensure proper Unicode text (detect and decode garbled text)
+    let cleanText = text?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() || '';
+    
+    // v10.2: CRITICAL FIX - Check if text is garbled (contains non-Telugu Unicode in Telugu context)
+    if (language && (language.includes('Telugu') || language === 'తెలుగు')) {
+      const hasTeluguRange = /[\u0C00-\u0C7F]/.test(cleanText);
+      const hasWeirdChars = /[#·+Á÷ÿþü°¤]/.test(cleanText);
+      
+      console.log('🔍 [SpeakText] Telugu check:', { hasTeluguRange, hasWeirdChars, firstChars: cleanText.substring(0, 20) });
+      
+      if (hasWeirdChars || !hasTeluguRange) {
+        console.error('❌ [SpeakText] GARBLED TEXT DETECTED! Word contains non-Telugu characters:', cleanText);
+        console.error('❌ This indicates the PDF extraction or AI response has encoding issues');
+        setError('Cannot read this word - text encoding issue. Please try a different PDF or word.');
+        speechLockRef.current = false;
+        return;
+      }
+    }
     
     if (!cleanText) {
       console.log('⚠️ [SpeakText] No text to speak');
+      speechLockRef.current = false;
       return;
     }
     
-    console.log('📝 [SpeakText] Text:', cleanText.substring(0, 100));
+    console.log('📝 [SpeakText] CLEAN Text for speech:', cleanText);
+    console.log('📝 [SpeakText] First 10 chars:', Array.from(cleanText).slice(0, 10));
     
     // Get voices
     let voices = window.speechSynthesis.getVoices();

@@ -683,41 +683,53 @@ export async function generateWordByWordAnalysis(pageText, apiKey = null, exclud
     ? `\n\nEXTRACT WORDS SEQUENTIALLY: Start from the BEGINNING of the text and extract the first 10 important content words in the order they appear.`
     : `\n\nEXTRACT WORDS SEQUENTIALLY: You already covered these words: ${excludeWords}\nNow continue from where you left off and extract the NEXT 10 important words in sequential order.`;
   
-  const prompt = `You are an expert in Indian languages. The text below is from a PDF and may appear garbled due to encoding issues. Your task is to:
-1. INTERPRET the garbled text and understand its meaning
-2. Return proper, clean Unicode words (NOT the garbled characters)
+  const prompt = `You are an expert in Indian languages. The text below is from a PDF and may appear garbled due to encoding issues.
+
+YOUR CRITICAL TASK:
+1. INTERPRET the garbled/encoded text and understand its ACTUAL meaning
+2. Return ONLY proper, clean Unicode words in the CORRECT script (Telugu/Hindi/Tamil/etc.)
 3. Extract words IN THE ORDER THEY APPEAR in the text (sequential, not random)
-4. Provide pronunciation and English meaning
+4. Provide simple pronunciation guide and English meaning
 
-CRITICAL: DO NOT copy garbled characters. Write words in proper Unicode script.${sequentialInstruction}
+🚨 EXTREMELY IMPORTANT FOR TEXT-TO-SPEECH:
+- The "word" field MUST contain ONLY clean Unicode Telugu/Hindi/Tamil characters
+- ABSOLUTELY NO garbled characters like #·+Á÷ÿþü°¤ or dü÷
+- Check each word: Does it look like proper Telugu స్వ Telugu? If not, FIX IT!
+- Example of CORRECT Telugu Unicode: "పుస్తకం", "చదువు", "విద్య"
+- Example of WRONG (garbled): "d¸¤C°·", "#Ü÷·", "dqÖÁ" ❌
 
-Garbled text from PDF:
+${sequentialInstruction}
+
+Text from PDF (may be garbled):
 ${pageText}
 
 Return ONLY this valid JSON (no markdown, no extra text):
 {
-  "language": "Detected language",
-  "summary": "1 sentence summary",
+  "language": "Telugu|Hindi|Tamil|English",
+  "summary": "1 sentence summary in English",
   "words": [
     {
-      "word": "proper Unicode word (NOT garbled)",
-      "pronunciation": "simple phonetic",
+      "word": "CLEAN UNICODE WORD (e.g., పుస్తకం)",
+      "pronunciation": "simple phonetic (e.g., pus-ta-kam)",
       "meaning": "brief English meaning",
-      "partOfSpeech": "type"
+      "partOfSpeech": "noun|verb|adjective|etc"
     }
   ]
 }
 
-RULES:
+STRICT VALIDATION RULES:
 - Extract exactly 10 words (batch ${batchNumber})
 - Extract words IN SEQUENTIAL ORDER as they appear in the text
-- Write words in proper Telugu/Hindi/Tamil script (clean Unicode)
-- NO garbled or special characters like #·+Á or dü÷
-- Focus on important content words (nouns, verbs, adjectives) but keep their sequential order
-- Skip very common words (the, is, and, etc.) but maintain sequence
-- Brief meanings (under 5 words)
-- Simple pronunciation
-- ONLY valid JSON (no code blocks)`;
+- Each "word" field MUST be in proper regional script Unicode (Telugu: \u0C00-\u0C7F, Hindi: \u0900-\u097F, etc.)
+- NO ASCII special characters in the "word" field (#·+Á÷ÿþü°¤)
+- If you cannot determine the clean Unicode, skip that word and extract the next one
+- Focus on important content words (nouns, verbs, adjectives) but maintain sequential order
+- Skip common filler words (the, is, and, etc.) but maintain sequence
+- Brief English meanings (under 5 words)
+- Simple pronunciation guide using English letters
+- Return ONLY valid JSON (no code blocks, no explanations)
+
+BEFORE RETURNING: Verify each "word" field contains ONLY Telugu/Hindi/Tamil Unicode characters!`;
 
   // V3.1: Force Gemini for regional languages
   // V3.1.4: Already 8K, increase to 16K for word analysis (lots of bilingual data)
