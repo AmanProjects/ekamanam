@@ -2577,6 +2577,12 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
+                      <VoiceInputButton
+                        onTranscript={setQuestion}
+                        existingText={question}
+                        disabled={aiLoading}
+                        size="small"
+                      />
                       <IconButton onClick={askChemistryAI} disabled={aiLoading || !question.trim()} color="primary">
                         {aiLoading ? <CircularProgress size={20} /> : <SendIcon />}
                       </IconButton>

@@ -661,6 +661,12 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
+                      <VoiceInputButton
+                        onTranscript={setQuestion}
+                        existingText={question}
+                        disabled={aiLoading}
+                        size="small"
+                      />
                       <IconButton onClick={askPhysicsAI} disabled={aiLoading || !question.trim()} color="primary" sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, '&.Mui-disabled': { bgcolor: '#e0e0e0' } }}>
                         {aiLoading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
                       </IconButton>
