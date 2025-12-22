@@ -5,22 +5,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Admin Sessions - Validated OTP sessions
-    match /adminSessions/{uid} {
-      // Users can only write their own session after auth
-      allow write: if request.auth != null && request.auth.uid == uid;
-      // Anyone authenticated can read (for rule validation)
-      allow read: if request.auth != null;
-    }
-    
     // Admin collection - Demo accounts management
+    // STRICT EMAIL-BASED SECURITY (No anonymous auth, no session validation)
+    // User MUST be authenticated with the specific admin email
     match /admin/demoAccounts {
-      // STRICT SECURITY: Check BOTH authentication AND validated admin session
       allow read, write: if request.auth != null && 
-        exists(/databases/$(database)/documents/adminSessions/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/adminSessions/$(request.auth.uid)).data.email == 'amandeep.talwar@gmail.com' &&
-        get(/databases/$(database)/documents/adminSessions/$(request.auth.uid)).data.verified == true &&
-        get(/databases/$(database)/documents/adminSessions/$(request.auth.uid)).data.expiresAt > request.time;
+        request.auth.token.email == 'amandeep.talwar@gmail.com';
     }
     
     // OTP collection - For admin authentication
