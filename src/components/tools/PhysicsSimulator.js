@@ -36,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import Matter from 'matter-js';
 import { callLLM } from '../../services/llmService';
+import { markdownToHtml } from '../../utils/markdownRenderer';  // v10.4.18: Proper markdown rendering
 
 /**
  * Vyonn AI Science Lab - v7.2.35
@@ -712,7 +713,19 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
                     </Box>
                     {/* Message content */}
                     <Paper elevation={0} sx={{ p: 1.5, ml: 4, bgcolor: msg.role === 'user' ? '#e3f2fd' : 'white', border: '1px solid', borderColor: msg.role === 'user' ? 'primary.light' : 'divider', borderRadius: 2 }}>
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
+                      <Typography 
+                        variant="body2" 
+                        component="div"
+                        sx={{ 
+                          '& p': { margin: '8px 0' },
+                          '& ul': { margin: '8px 0', paddingLeft: 0 },
+                          '& li': { marginLeft: '20px' },
+                          '& h1, & h2, & h3': { marginTop: '12px', marginBottom: '8px' }
+                        }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: markdownToHtml(msg.content)
+                        }}
+                      />
                       {msg.diagram && (
                         <Button size="small" variant="contained" sx={{ mt: 1.5, textTransform: 'none', borderRadius: 2 }} startIcon={<DiagramIcon />}
                           onClick={() => { setCurrentDiagram(msg.diagram); setCurrentExperiment(null); setActiveTab(1); }}>

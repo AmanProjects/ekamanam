@@ -48,6 +48,7 @@ import {
   EmojiObjects as TipIcon
 } from '@mui/icons-material';
 import { callLLM } from '../../services/llmService';
+import { markdownToHtml } from '../../utils/markdownRenderer';  // v10.4.18: Proper markdown rendering
 
 /**
  * Vyonn AI Chemistry Lab - v8.2.0
@@ -2642,10 +2643,16 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
                       <Box sx={{ flex: 1 }}>
                         <Paper sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
                           <Typography 
-                            variant="body2" 
-                            sx={{ whiteSpace: 'pre-wrap' }}
+                            variant="body2"
+                            component="div" 
+                            sx={{ 
+                              '& p': { margin: '8px 0' },
+                              '& ul': { margin: '8px 0', paddingLeft: 0 },
+                              '& li': { marginLeft: '20px' },
+                              '& h1, & h2, & h3': { marginTop: '12px', marginBottom: '8px' }
+                            }}
                             dangerouslySetInnerHTML={{ 
-                              __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') 
+                              __html: markdownToHtml(msg.content)
                             }}
                           />
                         </Paper>
