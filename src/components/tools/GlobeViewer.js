@@ -7,6 +7,8 @@ import {
   Box,
   Typography,
   IconButton,
+  useMediaQuery,
+  useTheme,
   Paper,
   Chip,
   TextField,
@@ -27,7 +29,8 @@ import {
   Place as PlaceIcon,
   Search as SearchIcon,
   Public as GlobeIcon,
-  Send as SendIcon
+  Send as SendIcon,
+  Menu as MenuIcon
 } from '@mui/icons-material';
 import { callLLM } from '../../services/llmService';
 
@@ -165,10 +168,23 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
       
       setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you explore the world!", locations }, ...prev]);
     } catch (error) {
-      // v10.4.12: Simplified error handling like Chemistry (no console.error - causes issues on mobile)
+      // v10.4.13: Enhanced mobile-friendly error handling
+      const isOffline = !navigator.onLine;
+      const errorMsg = error?.message || '';
+      
+      let fallbackMessage = "I'd love to help you explore! Try asking:\n• Tell me about Paris\n• Where is Mount Everest?\n• Explain monsoons\n\nLet's discover the world! 🌍";
+      
+      if (isOffline) {
+        fallbackMessage = "🔌 You're offline! Please check your internet connection and try again.";
+      } else if (errorMsg.includes('API key')) {
+        fallbackMessage = "⚙️ API configuration needed. Please check your settings.";
+      } else if (errorMsg.includes('timeout')) {
+        fallbackMessage = "⏱️ Request timed out. Please try again.";
+      }
+      
       setChatHistory(prev => [{ 
         role: 'assistant', 
-        content: "Let me help you explore the world!",
+        content: fallbackMessage,
         locations: []
       }, ...prev]);
     } finally {
@@ -303,11 +319,15 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
 }
 
 function GlobeViewer({ open, onClose, user }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // v10.4.13: Mobile detection
+  
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 20, lng: 0 });
   const [zoom, setZoom] = useState(2);
+  const [showSidebar, setShowSidebar] = useState(true); // v10.4.13: Toggle sidebar on mobile
   
   // v10.4.10: AI Chat state moved to main component (like Chemistry)
   const [question, setQuestion] = useState('');
@@ -447,10 +467,23 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
       
       setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you explore the world!", locations }, ...prev]);
     } catch (error) {
-      // v10.4.12: Simplified error handling like Chemistry (no console.error - causes issues on mobile)
+      // v10.4.13: Enhanced mobile-friendly error handling
+      const isOffline = !navigator.onLine;
+      const errorMsg = error?.message || '';
+      
+      let fallbackMessage = "I'd love to help you explore! Try asking:\n• Tell me about Paris\n• Where is Mount Everest?\n• Explain monsoons\n\nLet's discover the world! 🌍";
+      
+      if (isOffline) {
+        fallbackMessage = "🔌 You're offline! Please check your internet connection and try again.";
+      } else if (errorMsg.includes('API key')) {
+        fallbackMessage = "⚙️ API configuration needed. Please check your settings.";
+      } else if (errorMsg.includes('timeout')) {
+        fallbackMessage = "⏱️ Request timed out. Please try again.";
+      }
+      
       setChatHistory(prev => [{ 
         role: 'assistant', 
-        content: "Let me help you explore the world!",
+        content: fallbackMessage,
         locations: []
       }, ...prev]);
     } finally {
@@ -628,16 +661,50 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
         )}
         
         {activeTab === 1 && (
-        <Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
-        {/* Sidebar */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+          {/* v10.4.13: Search bar at top on mobile */}
+          {isMobile && (
+            <Box sx={{ p: 1, borderBottom: '1px solid #ddd', bgcolor: '#f8f9fa' }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  size="small"
+                  fullWidth
+                  placeholder="Search location..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                />
+                <IconButton onClick={handleSearch} color="primary" size="small">
+                  <SearchIcon />
+                </IconButton>
+                <IconButton 
+                  onClick={() => setShowSidebar(!showSidebar)} 
+                  color="primary" 
+                  size="small"
+                  sx={{ bgcolor: showSidebar ? '#e3f2fd' : 'transparent' }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          )}
+          
+        <Box sx={{ display: 'flex', width: '100%', height: '100%', flex: 1 }}>
+        {/* Sidebar - hide on mobile unless toggled */}
+        {(!isMobile || showSidebar) && (
         <Box sx={{ 
-          width: 280, 
-          borderRight: '1px solid #ddd', 
+          width: isMobile ? '100%' : 280, 
+          borderRight: isMobile ? 'none' : '1px solid #ddd', 
           p: 2,
           overflow: 'auto',
-          bgcolor: '#f8f9fa'
+          bgcolor: '#f8f9fa',
+          position: isMobile ? 'absolute' : 'relative',
+          zIndex: isMobile ? 10 : 1,
+          height: '100%',
+          boxShadow: isMobile ? 3 : 0
         }}>
-          {/* Search */}
+          {/* Search - hide on mobile (it's at the top) */}
+          {!isMobile && (
           <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
             <TextField
               size="small"
@@ -651,6 +718,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
               <SearchIcon />
             </IconButton>
           </Box>
+          )}
 
           {/* Quick locations */}
           <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
@@ -707,7 +775,25 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
               </Typography>
             </Paper>
           )}
+          
+          {/* Close button for mobile sidebar */}
+          {isMobile && (
+            <IconButton
+              onClick={() => setShowSidebar(false)}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                bgcolor: 'white',
+                '&:hover': { bgcolor: '#f5f5f5' }
+              }}
+              size="small"
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          )}
         </Box>
+        )}
 
         {/* Map */}
         <Box sx={{ flexGrow: 1, height: '100%', position: 'relative' }}>
@@ -730,8 +816,9 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
               opacity: 0.9
             }}
           >
-            💡 Click locations on the sidebar to explore • Use search for any place worldwide
+            💡 {isMobile ? 'Tap 📍 menu for locations • Search at top' : 'Click locations on the sidebar to explore • Use search for any place worldwide'}
           </Alert>
+        </Box>
         </Box>
         </Box>
         )}

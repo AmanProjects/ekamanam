@@ -5203,12 +5203,35 @@ Provide a clear, educational response that:
 ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Be warm and engaging!'}`;
 
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Doubled for detailed math explanations
-      setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you with that math concept!" }, ...prev]);
+      
+      // v10.4.13: Ensure response is valid
+      if (response && response.trim()) {
+        setChatHistory(prev => [{ role: 'assistant', content: response }, ...prev]);
+      } else {
+        // No response - show helpful fallback
+        setChatHistory(prev => [{ 
+          role: 'assistant', 
+          content: "I'd love to help! Could you rephrase your question? For example:\n• What is the Pythagorean theorem?\n• How do I solve quadratic equations?\n• Explain calculus derivatives\n\nI'm here to make math easy! 📐"
+        }, ...prev]);
+      }
     } catch (error) {
-      // v10.4.12: Simplified error handling like Chemistry (no console.error - causes issues on mobile)
+      // v10.4.13: Enhanced mobile-friendly error handling
+      const isOffline = !navigator.onLine;
+      const errorMsg = error?.message || '';
+      
+      let fallbackMessage = "I'm here to help with math! Try asking:\n• What is algebra?\n• How do fractions work?\n• Explain geometry basics\n\nLet's learn together! 📐";
+      
+      if (isOffline) {
+        fallbackMessage = "🔌 You're offline! Please check your internet connection and try again.";
+      } else if (errorMsg.includes('API key')) {
+        fallbackMessage = "⚙️ API configuration needed. Please check your settings.";
+      } else if (errorMsg.includes('timeout')) {
+        fallbackMessage = "⏱️ Request timed out. Please try again.";
+      }
+      
       setChatHistory(prev => [{ 
         role: 'assistant', 
-        content: "Let me help you with that math concept!"
+        content: fallbackMessage
       }, ...prev]);
     } finally {
       setLoading(false);

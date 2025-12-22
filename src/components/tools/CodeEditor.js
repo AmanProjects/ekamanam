@@ -174,10 +174,23 @@ ${isRegional ? `Write explanations in ${lang}, but code examples can remain in p
       
       setChatHistory(prev => [{ role: 'assistant', content, codeBlocks }, ...prev]);
     } catch (error) {
-      // v10.4.12: Simplified error handling like Chemistry (no console.error - causes issues on mobile)
+      // v10.4.13: Enhanced mobile-friendly error handling
+      const isOffline = !navigator.onLine;
+      const errorMsg = error?.message || '';
+      
+      let fallbackMessage = "I'd love to help you code! Try asking:\n• How do I create a function in JavaScript?\n• Explain Python loops\n• What is HTML?\n\nLet's code together! 💻";
+      
+      if (isOffline) {
+        fallbackMessage = "🔌 You're offline! Please check your internet connection and try again.";
+      } else if (errorMsg.includes('API key')) {
+        fallbackMessage = "⚙️ API configuration needed. Please check your settings.";
+      } else if (errorMsg.includes('timeout')) {
+        fallbackMessage = "⏱️ Request timed out. Please try again.";
+      }
+      
       setChatHistory(prev => [{ 
         role: 'assistant', 
-        content: "I'd be happy to help you with programming! Let me know what you'd like to learn - JavaScript, Python, HTML, CSS, or any other topic. I'm here to help! 💻" 
+        content: fallbackMessage
       }, ...prev]);
     } finally {
       setLoading(false);
