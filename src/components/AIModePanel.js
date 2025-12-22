@@ -3952,8 +3952,22 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
-                          <Box dangerouslySetInnerHTML={{ __html: cleanJsonArtifacts(teacherResponse.summary) }} />
+                        <Paper variant="outlined" sx={{ 
+                          p: 2, 
+                          bgcolor: 'background.default',
+                          '& h1, & h2, & h3': { 
+                            fontWeight: 600, 
+                            color: 'primary.main',
+                            mt: 2,
+                            mb: 1.5
+                          },
+                          '& h3': { fontSize: '1.1rem' },
+                          '& p': { mb: 1.5, lineHeight: 1.7 },
+                          '& ul': { pl: 3, mb: 1.5, '& li': { mb: 0.5 } },
+                          '& strong': { fontWeight: 600, color: 'text.primary' },
+                          '& em': { fontStyle: 'italic' }
+                        }}>
+                          <Box dangerouslySetInnerHTML={{ __html: markdownToHtml(cleanJsonArtifacts(teacherResponse.summary)) }} />
                         </Paper>
                         {teacherEnglish.summary && (
                           <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
@@ -4078,8 +4092,22 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
-                          <Box dangerouslySetInnerHTML={{ __html: cleanJsonArtifacts(teacherResponse.explanation) }} />
+                        <Paper variant="outlined" sx={{ 
+                          p: 2, 
+                          bgcolor: 'background.default',
+                          '& h1, & h2, & h3': { 
+                            fontWeight: 600, 
+                            color: 'primary.main',
+                            mt: 2,
+                            mb: 1.5
+                          },
+                          '& h3': { fontSize: '1.1rem' },
+                          '& p': { mb: 1.5, lineHeight: 1.7 },
+                          '& ul': { pl: 3, mb: 1.5, '& li': { mb: 0.5 } },
+                          '& strong': { fontWeight: 600, color: 'text.primary' },
+                          '& em': { fontStyle: 'italic' }
+                        }}>
+                          <Box dangerouslySetInnerHTML={{ __html: markdownToHtml(cleanJsonArtifacts(teacherResponse.explanation)) }} />
                         </Paper>
                         {teacherEnglish.explanation && (
                           <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
@@ -4140,8 +4168,23 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'info.50', borderColor: 'info.main' }}>
-                          <Box dangerouslySetInnerHTML={{ __html: cleanJsonArtifacts(teacherResponse.importantDetails) }} />
+                        <Paper variant="outlined" sx={{ 
+                          p: 2, 
+                          bgcolor: 'info.50', 
+                          borderColor: 'info.main',
+                          '& h1, & h2, & h3': { 
+                            fontWeight: 600, 
+                            color: 'info.dark',
+                            mt: 2,
+                            mb: 1.5
+                          },
+                          '& h3': { fontSize: '1.1rem' },
+                          '& p': { mb: 1.5, lineHeight: 1.7 },
+                          '& ul': { pl: 3, mb: 1.5, '& li': { mb: 0.5 } },
+                          '& strong': { fontWeight: 600, color: 'text.primary' },
+                          '& em': { fontStyle: 'italic' }
+                        }}>
+                          <Box dangerouslySetInnerHTML={{ __html: markdownToHtml(cleanJsonArtifacts(teacherResponse.importantDetails)) }} />
                         </Paper>
                         {teacherEnglish.importantDetails && (
                           <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
@@ -4202,8 +4245,22 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }}>
-                          <Box dangerouslySetInnerHTML={{ __html: teacherResponse.examples }} />
+                        <Paper variant="outlined" sx={{ 
+                          p: 2, 
+                          bgcolor: 'background.default',
+                          '& h1, & h2, & h3': { 
+                            fontWeight: 600, 
+                            color: 'primary.main',
+                            mt: 2,
+                            mb: 1.5
+                          },
+                          '& h3': { fontSize: '1.1rem' },
+                          '& p': { mb: 1.5, lineHeight: 1.7 },
+                          '& ul': { pl: 3, mb: 1.5, '& li': { mb: 0.5 } },
+                          '& strong': { fontWeight: 600, color: 'text.primary' },
+                          '& em': { fontStyle: 'italic' }
+                        }}>
+                          <Box dangerouslySetInnerHTML={{ __html: markdownToHtml(teacherResponse.examples) }} />
                         </Paper>
                         {teacherEnglish.examples && (
                           <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
@@ -4264,8 +4321,23 @@ Return ONLY this valid JSON:
                             )}
                           </Box>
                         </Box>
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'secondary.50', borderColor: 'secondary.main' }}>
-                          <Box dangerouslySetInnerHTML={{ __html: cleanJsonArtifacts(teacherResponse.thinkAbout) }} />
+                        <Paper variant="outlined" sx={{ 
+                          p: 2, 
+                          bgcolor: 'secondary.50', 
+                          borderColor: 'secondary.main',
+                          '& h1, & h2, & h3': { 
+                            fontWeight: 600, 
+                            color: 'secondary.dark',
+                            mt: 2,
+                            mb: 1.5
+                          },
+                          '& h3': { fontSize: '1.1rem' },
+                          '& p': { mb: 1.5, lineHeight: 1.7 },
+                          '& ul': { pl: 3, mb: 1.5, '& li': { mb: 0.5 } },
+                          '& strong': { fontWeight: 600, color: 'text.primary' },
+                          '& em': { fontStyle: 'italic' }
+                        }}>
+                          <Box dangerouslySetInnerHTML={{ __html: markdownToHtml(cleanJsonArtifacts(teacherResponse.thinkAbout)) }} />
                         </Paper>
                         {teacherEnglish.thinkAbout && (
                           <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: 'action.hover' }}>
