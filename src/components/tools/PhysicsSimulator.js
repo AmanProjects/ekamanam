@@ -293,22 +293,45 @@ function VyonnScienceIcon({ size = 40 }) {
   return (
     <Badge
       overlap="circular"
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       badgeContent={
-        <Avatar sx={{ width: 18, height: 18, bgcolor: '#22c55e', border: '2px solid white' }}>
-          <ScienceIcon sx={{ fontSize: 12 }} />
-        </Avatar>
+        <Box
+          sx={{
+            width: size * 0.5,
+            height: size * 0.5,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #1976d2 0%, #0d47a1 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(25,118,210,0.4)'
+          }}
+        >
+          <SpeedIcon sx={{ fontSize: size * 0.3, color: 'white' }} />
+        </Box>
       }
     >
-      <Avatar sx={{ width: size, height: size, bgcolor: 'rgba(255,255,255,0.2)' }}>
+      <Box
+        sx={{
+          width: size,
+          height: size,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
         <Box
           component="img"
-          src={`${process.env.PUBLIC_URL}/vyonn.png`}
+          src="/vyonn.png"
           alt="Vyonn"
-          sx={{ width: size * 0.6, height: size * 0.6, filter: 'brightness(0) invert(1)' }}
-          onError={(e) => { e.target.style.display = 'none'; }}
+          sx={{
+            width: size * 0.85,
+            height: size * 0.85,
+            filter: 'brightness(0) invert(1) brightness(1.8)',
+            objectFit: 'contain'
+          }}
         />
-      </Avatar>
+      </Box>
     </Badge>
   );
 }
@@ -400,7 +423,7 @@ Use bullet points. Be engaging and encouraging!
 ${matchedDiagram ? 'I am showing them a detailed labeled diagram.' : ''}
 ${matchedExp ? 'I will run a physics simulation.' : ''}`;
 
-      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 1200 });
+      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Increased for detailed physics explanations
       
       setChatHistory(prev => [{ 
         role: 'assistant', 
@@ -581,7 +604,7 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <VyonnScienceIcon size={44} />
           <Box>
-            <Typography variant="subtitle1" fontWeight={700}>Vyonn AI Science Lab</Typography>
+            <Typography variant="subtitle1" fontWeight={700}>Vyonn Science Lab</Typography>
             <Typography variant="caption" sx={{ opacity: 0.85 }}>Diagrams + Simulations</Typography>
           </Box>
         </Box>
@@ -591,7 +614,7 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#f8fafc' }}>
         <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} variant="fullWidth" sx={{ '& .MuiTab-root': { fontWeight: 600, textTransform: 'none' } }}>
-          <Tab icon={<VyonnIcon sx={{ fontSize: 20 }} />} label="Ask Vyonn AI" iconPosition="start" />
+          <Tab icon={<Box sx={{ display: 'flex', alignItems: 'center' }}><VyonnScienceIcon size={20} /></Box>} label="Ask Vyonn AI" iconPosition="start" />
           <Tab icon={<DiagramIcon sx={{ fontSize: 20 }} />} label="Visualize" iconPosition="start" />
           <Tab icon={<FormulaIcon sx={{ fontSize: 20 }} />} label="Experiments" iconPosition="start" />
         </Tabs>
@@ -637,11 +660,7 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
             <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
               {chatHistory.length === 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
-                  <Badge overlap="circular" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} badgeContent={<ScienceIcon sx={{ fontSize: 24, color: '#22c55e' }} />}>
-                    <Avatar sx={{ width: 64, height: 64, bgcolor: '#e3f2fd' }}>
-                      <Box component="img" src={`${process.env.PUBLIC_URL}/vyonn.png`} alt="" sx={{ width: 40, height: 40, filter: 'brightness(0) saturate(100%) invert(35%) sepia(98%) saturate(1000%) hue-rotate(196deg)' }} onError={(e) => { e.target.style.display = 'none'; }} />
-                    </Avatar>
-                  </Badge>
+                  <VyonnScienceIcon size={64} />
                   <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2 }}>Hi! I'm Vyonn AI Science</Typography>
                   <Typography variant="body2" color="text.secondary">Ask about blast furnaces, lenses, atoms, waves, and more!</Typography>
                 </Box>
@@ -657,11 +676,7 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
                         </>
                       ) : (
                         <>
-                          <Badge overlap="circular" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} badgeContent={<ScienceIcon sx={{ fontSize: 10, color: '#22c55e' }} />}>
-                            <Avatar sx={{ width: 24, height: 24, bgcolor: '#1976d2' }}>
-                              <Box component="img" src={`${process.env.PUBLIC_URL}/vyonn.png`} alt="" sx={{ width: 16, height: 16, filter: 'brightness(0) invert(1)' }} onError={(e) => { e.target.style.display = 'none'; }} />
-                            </Avatar>
-                          </Badge>
+                          <VyonnScienceIcon size={24} />
                           <Typography variant="caption" fontWeight={700} color="text.secondary">Vyonn AI Science</Typography>
                         </>
                       )}

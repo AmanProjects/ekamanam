@@ -148,11 +148,19 @@ export const getAvailableVoices = () => {
   return cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
 };
 
-export const resetSpeechSynthesis = () => {
+export const resetSpeechSynthesis = async () => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
-    window.speechSynthesis.pause();
-    window.speechSynthesis.resume();
+    // Wait for cancel to fully complete (Chrome needs this)
+    await new Promise(resolve => setTimeout(resolve, 150));
+    
+    // Clear any stuck state
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+    
+    // Final cancel to ensure clean state
+    window.speechSynthesis.cancel();
   }
 };
 
@@ -163,16 +171,83 @@ export const ensureVoicesLoaded = async () => {
   return initVoices();
 };
 
-export const testVoice = (voiceOption, text = "Hello! This is how I sound.") => {
+// Safe speech wrapper that prevents "canceled" errors
+export const safeSpeakWithRetry = async (utterance, maxRetries = 2) => {
+  if (!('speechSynthesis' in window)) {
+    throw new Error('Speech synthesis not supported');
+  }
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      // Ensure clean state
+      await resetSpeechSynthesis();
+      
+      return await new Promise((resolve, reject) => {
+        let hasStarted = false;
+        let hasEnded = false;
+        
+        utterance.onstart = () => {
+          hasStarted = true;
+          console.log(`✅ Speech started (attempt ${attempt + 1})`);
+        };
+        
+        utterance.onend = () => {
+          hasEnded = true;
+          console.log(`✅ Speech ended successfully`);
+          resolve({ success: true });
+        };
+        
+        utterance.onerror = (event) => {
+          console.error(`❌ Speech error: ${event.error} (attempt ${attempt + 1})`);
+          
+          // If it's a "canceled" error and we haven't started, retry
+          if (event.error === 'canceled' && !hasStarted && attempt < maxRetries) {
+            console.log(`🔄 Retrying due to canceled error...`);
+            reject({ retry: true, error: event.error });
+          } else {
+            reject({ retry: false, error: event.error });
+          }
+        };
+        
+        // Speak
+        window.speechSynthesis.speak(utterance);
+        
+        // Safety timeout
+        setTimeout(() => {
+          if (!hasStarted && !hasEnded) {
+            console.warn('⚠️ Speech timeout - may have been blocked');
+            reject({ retry: attempt < maxRetries, error: 'timeout' });
+          }
+        }, 1000);
+      });
+    } catch (error) {
+      if (error.retry && attempt < maxRetries) {
+        console.log(`🔄 Retrying speech (attempt ${attempt + 2}/${maxRetries + 1})...`);
+        await new Promise(resolve => setTimeout(resolve, 200));
+        continue;
+      }
+      throw error;
+    }
+  }
+  
+  throw new Error('Speech failed after retries');
+};
+
+export const testVoice = async (voiceOption, text = "Hello! This is how I sound.") => {
   if (!('speechSynthesis' in window)) {
     return { success: false, error: 'Speech synthesis not supported' };
   }
 
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voice = getBestVoice('en-US', voiceOption);
-  
-  if (voice) {
+  try {
+    await resetSpeechSynthesis();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = getBestVoice('en-US', voiceOption);
+    
+    if (!voice) {
+      return { success: false, error: 'No suitable voice found' };
+    }
+    
     utterance.voice = voice;
     utterance.lang = voice.lang;
     utterance.rate = 0.95;
@@ -180,10 +255,12 @@ export const testVoice = (voiceOption, text = "Hello! This is how I sound.") => 
     utterance.volume = 1.0;
 
     console.log(`🔊 Testing voice: ${voice.name}`);
-    window.speechSynthesis.speak(utterance);
+    
+    await safeSpeakWithRetry(utterance);
     return { success: true, voice: voice.name };
+  } catch (error) {
+    return { success: false, error: error.error || error.message };
   }
-  return { success: false, error: 'No suitable voice found' };
 };
 
 export const runAudioDiagnostics = async () => {
@@ -258,6 +335,7 @@ export default {
   testVoice,
   resetSpeechSynthesis,
   ensureVoicesLoaded,
-  runAudioDiagnostics
+  runAudioDiagnostics,
+  safeSpeakWithRetry
 };
 

@@ -978,7 +978,7 @@ Question: ${userMessage}`;
           feature: 'general',
           preferredProvider: hasGeminiKey ? PROVIDERS.GEMINI : PROVIDERS.GROQ,
           temperature: 0.8,
-          maxTokens: 2000
+          maxTokens: 4096  // V3.2: Doubled for comprehensive educational responses
         }
       );
       
@@ -3155,7 +3155,7 @@ Return ONLY this valid JSON:
       const resultText = await callLLM(prompt, {
         feature: 'quizEvaluation',
         temperature: 0.5,
-        maxTokens: 2048
+        maxTokens: 4096  // V3.2: Doubled for comprehensive quiz evaluations
       });
       
       let cleanResponse = resultText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();

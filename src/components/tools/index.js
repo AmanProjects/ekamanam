@@ -3,7 +3,7 @@
  * Central export for all educational tool components
  */
 
-export { default as MathTools } from './MathTools';
+export { default as MathTools } from './MathLabV2';
 export { default as ChemistryTools } from './ChemistryTools';
 export { default as PhysicsSimulator } from './PhysicsSimulator';
 export { default as CodeEditor } from './CodeEditor';
@@ -13,9 +13,9 @@ export { default as GlobeViewer } from './GlobeViewer';
 export const toolsList = [
   {
     id: 'math',
-    name: 'Math Tools',
-    description: 'LaTeX · Graphing · Calculator',
-    icon: '📐',
+    name: 'Vyonn Math Lab',
+    description: 'AI Tutor · Experiments · Visualizations',
+    icon: '🧮',
     color: '#1976d2',
     component: 'MathTools'
   },

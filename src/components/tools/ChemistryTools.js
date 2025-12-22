@@ -2234,22 +2234,45 @@ function VyonnChemistryIcon({ size = 40 }) {
   return (
     <Badge
       overlap="circular"
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       badgeContent={
-        <Avatar sx={{ width: 18, height: 18, bgcolor: '#4caf50', border: '2px solid white' }}>
-          <ScienceIcon sx={{ fontSize: 12 }} />
-        </Avatar>
+        <Box
+          sx={{
+            width: size * 0.5,
+            height: size * 0.5,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(76,175,80,0.4)'
+          }}
+        >
+          <ScienceIcon sx={{ fontSize: size * 0.3, color: 'white' }} />
+        </Box>
       }
     >
-      <Avatar sx={{ width: size, height: size, bgcolor: 'rgba(255,255,255,0.2)' }}>
+      <Box
+        sx={{
+          width: size,
+          height: size,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
         <Box
           component="img"
-          src={`${process.env.PUBLIC_URL}/vyonn.png`}
+          src="/vyonn.png"
           alt="Vyonn"
-          sx={{ width: size * 0.6, height: size * 0.6, filter: 'brightness(0) invert(1)' }}
-          onError={(e) => { e.target.style.display = 'none'; }}
+          sx={{
+            width: size * 0.85,
+            height: size * 0.85,
+            filter: 'brightness(0) invert(1) brightness(1.8)',
+            objectFit: 'contain'
+          }}
         />
-      </Avatar>
+      </Box>
     </Badge>
   );
 }
@@ -2341,7 +2364,7 @@ ${matchedDiagram ? `Topic: "${matchedDiagram.title}" - I'm showing a detailed di
 
 Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
 
-      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 1200 });
+      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Increased for detailed chemistry explanations
       
       setChatHistory(prev => [{
         role: 'assistant',
@@ -2486,7 +2509,7 @@ Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <VyonnChemistryIcon size={36} />
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>Vyonn AI Chemistry Lab</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>Vyonn Chemistry Lab</Typography>
             <Typography variant="caption" sx={{ opacity: 0.9 }}>Experiments · Molecules · Periodic Table · AI Tutor</Typography>
           </Box>
         </Box>
@@ -2501,7 +2524,7 @@ Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab icon={<VyonnIcon sx={{ fontSize: 18 }} />} label="Ask Vyonn AI" iconPosition="start" />
+          <Tab icon={<Box sx={{ display: 'flex', alignItems: 'center' }}><VyonnChemistryIcon size={18} /></Box>} label="Ask Vyonn AI" iconPosition="start" />
           <Tab icon={<SchoolIcon sx={{ fontSize: 18 }} />} label="Experiments" iconPosition="start" />
           <Tab icon={<ScienceIcon sx={{ fontSize: 18 }} />} label="3D Molecules" iconPosition="start" />
           <Tab label="🧪 Periodic Table" />
@@ -2567,8 +2590,8 @@ Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
             <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
               {chatHistory.length === 0 && (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <ScienceIcon sx={{ fontSize: 60, color: '#4caf50', opacity: 0.5, mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                  <VyonnChemistryIcon size={64} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
                     Welcome to Vyonn AI Chemistry Lab! 🧪
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -2590,9 +2613,9 @@ Use bullet points where appropriate. Be warm, encouraging, and supportive!`;
                     </Box>
                   ) : (
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: '#4caf50' }}>
-                        <ScienceIcon sx={{ fontSize: 18 }} />
-                      </Avatar>
+                      <Box sx={{ mt: 0.5 }}>
+                        <VyonnChemistryIcon size={32} />
+                      </Box>
                       <Box sx={{ flex: 1 }}>
                         <Paper sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
                           <Typography 

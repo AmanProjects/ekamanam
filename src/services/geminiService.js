@@ -136,11 +136,11 @@ Return this exact structure:
 
 Make it engaging, clear, and encouraging like a good teacher! Remember to use the SAME LANGUAGE as the textbook content.`;
 
-  // OPTIMIZATION 3: Reduced maxTokens from 6144/8192 to 4096 (adequate for simplified structure)
-  // This is proven sufficient for the 7-field JSON structure from original.html
+  // OPTIMIZATION 3: Increased maxTokens from 4096 to 8192 for comprehensive regional language support
+  // V3.2: Doubled to ensure Telugu/Hindi content is never truncated
   const config = createLLMConfig('teacherMode', {
     temperature: 0.7,
-    maxTokens: 4096
+    maxTokens: 8192  // Doubled for better multilingual responses
   }, content, languageHint);
   
   return await callLLM(prompt, config);
@@ -166,7 +166,7 @@ IMPORTANT: Return ONLY the JSON object with English translations. No explanation
   return await callLLM(prompt, {
     feature: 'resources',
     temperature: 0.5,
-    maxTokens: 4096
+    maxTokens: 8192  // V3.2: Doubled for comprehensive resource recommendations
   });
 }
 
@@ -207,7 +207,7 @@ IMPORTANT:
   return await callLLM(prompt, {
     feature: 'explain',
     temperature: 0.5,
-    maxTokens: 6144
+    maxTokens: 8192  // V3.2: Increased for comprehensive translations
   });
 }
 
@@ -246,7 +246,7 @@ Return JSON:
   return await callLLM(prompt, {
     feature: 'explain',
     temperature: 0.3,
-    maxTokens: 2048
+    maxTokens: 4096  // V3.2: Doubled for regional language OCR cleanup + explanations
   });
 }
 
@@ -510,10 +510,11 @@ KEEP IT CONCISE. Use visuals for complex concepts. NO BILINGUAL for step-by-step
 
   // V3.1: Force Gemini for regional languages
   // V3.1.4: Increase tokens for regional languages (Telugu/Hindi need more space)
+  // V3.2: Increased regional from 8K to 16K for comprehensive Telugu analysis
   const isRegional = isRegionalLanguageContent(selectedText + contextString, null);
   const config = createLLMConfig('explain', {
     temperature: 0.7,
-    maxTokens: isRegional ? 8192 : 6144  // 8K for regional, 6K for English
+    maxTokens: isRegional ? 16384 : 8192  // 16K for regional, 8K for English (doubled for better responses)
   }, selectedText + contextString, null);
 
   return await callLLM(prompt, config);
@@ -630,7 +631,7 @@ Return ONLY the JSON.`;
   const isRegional = isRegionalLanguageContent(pageText, null);
   const config = createLLMConfig('activities', {
     temperature: 0.7,
-    maxTokens: isRegional ? 8192 : 6144
+    maxTokens: isRegional ? 16384 : 8192  // V3.2: Doubled for comprehensive regional language activities
   }, pageText, null);
 
   return await callLLM(prompt, config);
@@ -673,7 +674,7 @@ Return ONLY the JSON.`;
   return await callLLM(prompt, {
     feature: 'resources',
     temperature: 0.7,
-    maxTokens: 3072
+    maxTokens: 6144  // V3.2: Doubled for comprehensive resource generation
   });
 }
 
@@ -797,7 +798,7 @@ Return ONLY JSON, no markdown.`;
   // V3.1: Force Gemini for regional languages
   const config = createLLMConfig('examPrep', {
     temperature: 0.7,
-    maxTokens: 4096
+    maxTokens: 8192  // V3.2: Doubled for comprehensive exam prep in regional languages
   }, currentChunk, null);
 
   const response = await callLLM(prompt, config);
@@ -879,7 +880,7 @@ Generate a model answer that would score full marks:`;
   const response = await callLLM(prompt, {
     feature: 'longAnswer',
     temperature: 0.7,
-    maxTokens: 3072  // V3.0: Increased from 2048 for longer answers
+    maxTokens: 6144  // V3.2: Doubled for comprehensive answers in regional languages
   });
 
   return response;

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Voice Test - Does Chrome Work?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 600px;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 25px 50px;
+            border-radius: 50px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+            margin: 20px 0;
+            width: 100%;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.6);
+        }
+        
+        .test-button:active {
+            transform: translateY(0);
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 10px;
+            font-size: 18px;
+            line-height: 1.8;
+        }
+        
+        .result.success {
+            background: #e8f5e9;
+            border: 3px solid #4caf50;
+            color: #2e7d32;
+        }
+        
+        .result.error {
+            background: #ffebee;
+            border: 3px solid #f44336;
+            color: #c62828;
+        }
+        
+        .result.info {
+            background: #e3f2fd;
+            border: 3px solid #2196f3;
+            color: #1565c0;
+        }
+        
+        .steps {
+            text-align: left;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .steps li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        
+        .steps strong {
+            color: #667eea;
+        }
+        
+        code {
+            background: #e3f2fd;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #1565c0;
+        }
+        
+        .icon {
+            font-size: 80px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🔊</div>
+        <h1>Can You Hear Me?</h1>
+        <p style="font-size: 18px; color: #666; margin-bottom: 30px;">
+            This is the simplest possible voice test.<br>
+            Click the button below.
+        </p>
+        
+        <button class="test-button" onclick="simpleTest()" id="testBtn">
+            🎙️ CLICK TO TEST VOICE
+        </button>
+        
+        <div id="result"></div>
+    </div>
+    
+    <script>
+        function simpleTest() {
+            const resultDiv = document.getElementById('result');
+            const testBtn = document.getElementById('testBtn');
+            
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing... Please wait...</div>';
+            testBtn.disabled = true;
+            
+            // Step 1: Check if speech synthesis exists
+            if (!('speechSynthesis' in window)) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h2>❌ NOT SUPPORTED</h2>
+                        <p>Your browser doesn't support text-to-speech at all.</p>
+                        <div class="steps">
+                            <strong>Try:</strong>
+                            <ol>
+                                <li>Update Chrome to the latest version</li>
+                                <li>Try Microsoft Edge instead</li>
+                                <li>Check if you're using a very old browser</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+                testBtn.disabled = false;
+                return;
+            }
+            
+            // Step 2: Check secure context
+            if (!window.isSecureContext) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h2>⚠️ NOT SECURE</h2>
+                        <p>You're on HTTP, not HTTPS. Chrome blocks voice on insecure sites.</p>
+                        <div class="steps">
+                            <strong>Fix:</strong>
+                            <ol>
+                                <li>Use: <code>https://ekamanam.com</code> (not http://)</li>
+                                <li>Or use: <code>localhost</code> (secure by default)</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+                testBtn.disabled = false;
+                return;
+            }
+            
+            // Step 3: Try to speak
+            const utterance = new SpeechSynthesisUtterance("Hello! If you can hear this, voice is working perfectly in Chrome.");
+            
+            let hasStarted = false;
+            let hasEnded = false;
+            
+            utterance.onstart = () => {
+                hasStarted = true;
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h2>✅ VOICE IS WORKING!</h2>
+                        <p><strong>You should be hearing:</strong> "Hello! If you can hear this, voice is working perfectly in Chrome."</p>
+                        <p>If you heard the voice, Chrome voice is working!</p>
+                        <div class="steps">
+                            <strong>Can't hear it?</strong>
+                            <ol>
+                                <li>Check your system volume (not muted?)</li>
+                                <li>Check Chrome isn't muted (right-click Chrome tab)</li>
+                                <li>Check headphones/speakers are connected</li>
+                                <li>Try playing YouTube - does that work?</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            };
+            
+            utterance.onend = () => {
+                hasEnded = true;
+                testBtn.disabled = false;
+                testBtn.textContent = '🔄 TEST AGAIN';
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h2>✅ TEST COMPLETED</h2>
+                        <p><strong>Did you hear the voice?</strong></p>
+                        <div class="steps">
+                            <p><strong>✅ YES, I heard it:</strong></p>
+                            <p>Great! Chrome voice works. The problem might be specific to Ekamanam. Try:</p>
+                            <ol>
+                                <li>Clear Ekamanam cache: <code>Ctrl+Shift+Delete</code></li>
+                                <li>Check Ekamanam isn't muted in Chrome volume mixer</li>
+                                <li>Reload Ekamanam and try again</li>
+                            </ol>
+                            <br>
+                            <p><strong>❌ NO, I didn't hear anything:</strong></p>
+                            <p>This is a system/Chrome audio issue, not Ekamanam:</p>
+                            <ol>
+                                <li><strong>Check system volume:</strong> Turn up speakers/headphones</li>
+                                <li><strong>Check Chrome volume:</strong> Right-click Chrome tab → Unmute site</li>
+                                <li><strong>Test YouTube:</strong> Play any video - does sound work?</li>
+                                <li><strong>Restart Chrome:</strong> Close all windows, reopen</li>
+                                <li><strong>Check Windows sound:</strong> Settings → Sound → Output device</li>
+                                <li><strong>Try Edge:</strong> Microsoft Edge has better voice support</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            };
+            
+            utterance.onerror = (event) => {
+                console.error('Speech error:', event);
+                
+                let errorMessage = '';
+                let fixes = [];
+                
+                switch(event.error) {
+                    case 'not-allowed':
+                    case 'not-supported':
+                        errorMessage = '🔒 PERMISSION DENIED';
+                        fixes = [
+                            'Click the lock icon 🔒 in address bar',
+                            'Click "Site settings"',
+                            'Find "Sound" → Set to "Allow"',
+                            'Reload this page and try again'
+                        ];
+                        break;
+                        
+                    case 'network':
+                        errorMessage = '🌐 NETWORK ERROR';
+                        fixes = [
+                            'Your Chrome is trying to download voices online',
+                            'Check your internet connection',
+                            'Or go to Chrome settings and install offline voices',
+                            'Windows: Settings → Time & Language → Speech → Add voices'
+                        ];
+                        break;
+                        
+                    case 'canceled':
+                        errorMessage = '❌ CANCELED';
+                        fixes = [
+                            'This means Chrome stopped the speech',
+                            'Just click the test button again',
+                            'If it keeps happening: restart Chrome completely'
+                        ];
+                        break;
+                        
+                    case 'audio-busy':
+                        errorMessage = '📢 AUDIO BUSY';
+                        fixes = [
+                            'Close other tabs playing audio (YouTube, Spotify, etc.)',
+                            'Wait a few seconds',
+                            'Try again'
+                        ];
+                        break;
+                        
+                    default:
+                        errorMessage = `⚠️ ERROR: ${event.error}`;
+                        fixes = [
+                            'Unknown error - Chrome might be blocking voice',
+                            'Try: chrome://settings/content/sound',
+                            'Ensure "Sites can play sound" is enabled',
+                            'Try restarting Chrome completely'
+                        ];
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h2>${errorMessage}</h2>
+                        <div class="steps">
+                            <strong>How to fix:</strong>
+                            <ol>
+                                ${fixes.map(fix => `<li>${fix}</li>`).join('')}
+                            </ol>
+                        </div>
+                    </div>
+                `;
+                testBtn.disabled = false;
+            };
+            
+            // Safety timeout
+            setTimeout(() => {
+                if (!hasStarted && !hasEnded) {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h2>⏱️ TIMEOUT</h2>
+                            <p>Voice didn't start within 3 seconds.</p>
+                            <div class="steps">
+                                <strong>This usually means:</strong>
+                                <ol>
+                                    <li><strong>Chrome blocked the voice</strong>
+                                        <br>→ Go to: <code>chrome://settings/content/sound</code>
+                                        <br>→ Ensure "Sites can play sound" is ON
+                                        <br>→ Check this site isn't in the blocked list
+                                    </li>
+                                    <li><strong>No voices installed</strong>
+                                        <br>→ Windows: Settings → Time & Language → Speech
+                                        <br>→ Mac: System Preferences → Accessibility → Spoken Content
+                                        <br>→ Download at least one English voice
+                                    </li>
+                                    <li><strong>Chrome audio system crashed</strong>
+                                        <br>→ Restart Chrome completely (close all windows)
+                                        <br>→ If still doesn't work, restart your computer
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+                    `;
+                    testBtn.disabled = false;
+                }
+            }, 3000);
+            
+            // Cancel any previous speech
+            window.speechSynthesis.cancel();
+            
+            // Small delay to ensure cancel completes
+            setTimeout(() => {
+                try {
+                    window.speechSynthesis.speak(utterance);
+                    console.log('✅ Speech command sent to Chrome');
+                } catch (error) {
+                    console.error('❌ Exception:', error);
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h2>💥 EXCEPTION</h2>
+                            <p>JavaScript error: ${error.message}</p>
+                            <p>This is unusual. Your browser might have security restrictions.</p>
+                            <div class="steps">
+                                <strong>Try:</strong>
+                                <ol>
+                                    <li>Update Chrome to latest version</li>
+                                    <li>Disable browser extensions (try Incognito mode)</li>
+                                    <li>Try Microsoft Edge instead</li>
+                                </ol>
+                            </div>
+                        </div>
+                    `;
+                    testBtn.disabled = false;
+                }
+            }, 100);
+        }
+        
+        // Auto-display initial instructions
+        window.onload = () => {
+            console.log('🔊 Voice Test Page Loaded');
+            console.log('Browser:', navigator.userAgent);
+            console.log('Speech Synthesis:', 'speechSynthesis' in window ? 'Supported ✅' : 'Not Supported ❌');
+            console.log('Secure Context:', window.isSecureContext ? 'Yes ✅' : 'No ❌');
+            
+            // Show helpful info before test
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="result info">
+                    <h3>📋 Pre-Test Checklist:</h3>
+                    <div class="steps">
+                        <ol>
+                            <li>✓ Check your speakers/headphones are on</li>
+                            <li>✓ Check system volume is not muted</li>
+                            <li>✓ Close other tabs playing audio</li>
+                            <li>✓ Ensure you're on <strong>https://</strong> (not http://)</li>
+                        </ol>
+                    </div>
+                    <p>Then click the button above!</p>
+                </div>
+            `;
+        };
+    </script>
+</body>
+</html>
+

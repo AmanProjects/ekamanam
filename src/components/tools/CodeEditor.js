@@ -14,21 +14,245 @@ import {
   InputLabel,
   Grid,
   Chip,
-  Alert
+  Alert,
+  Badge,
+  Tabs,
+  Tab,
+  TextField,
+  InputAdornment,
+  Avatar,
+  CircularProgress
 } from '@mui/material';
 import {
   Close as CloseIcon,
   PlayArrow as RunIcon,
   ContentCopy as CopyIcon,
-  Delete as ClearIcon
+  Delete as ClearIcon,
+  Code as CodeIcon,
+  Send as SendIcon,
+  AddCircle as InsertIcon
 } from '@mui/icons-material';
 import Editor from '@monaco-editor/react';
+import { callLLM } from '../../services/llmService';
 
 /**
  * CodeEditor - Interactive code editor for programming practice
  * Features: Syntax highlighting, multiple languages, code execution (JS)
  */
-function CodeEditor({ open, onClose }) {
+
+// Vyonn Code Icon component
+function VyonnCodeIcon({ size = 40 }) {
+  return (
+    <Badge
+      overlap="circular"
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      badgeContent={
+        <Box
+          sx={{
+            width: size * 0.5,
+            height: size * 0.5,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #2d3436 0%, #1a1d1f 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(45,52,54,0.4)'
+          }}
+        >
+          <CodeIcon sx={{ fontSize: size * 0.3, color: 'white' }} />
+        </Box>
+      }
+    >
+      <Box
+        sx={{
+          width: size,
+          height: size,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <Box
+          component="img"
+          src="/vyonn.png"
+          alt="Vyonn"
+          sx={{
+            width: size * 0.85,
+            height: size * 0.85,
+            filter: 'brightness(0) invert(1) brightness(1.8)',
+            objectFit: 'contain'
+          }}
+        />
+      </Box>
+    </Badge>
+  );
+}
+
+// AI Chat Component
+function CodeAIChat({ user, onInsertCode }) {
+  const [question, setQuestion] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  const userName = user?.displayName?.split(' ')[0] || 'You';
+  const userPhoto = user?.photoURL;
+
+  const SUGGESTED_QUESTIONS = [
+    "Explain JavaScript async/await",
+    "What are Python classes?",
+    "How do CSS flexbox layouts work?",
+    "Explain SQL JOIN operations"
+  ];
+
+  const handleAsk = async () => {
+    if (!question.trim()) return;
+    
+    setLoading(true);
+    const userQuestion = question;
+    setQuestion('');
+    setChatHistory(prev => [{ role: 'user', content: userQuestion }, ...prev]);
+    
+    try {
+      const prompt = `You are Vyonn Code, a brilliant and friendly programming tutor.
+
+Student asked: "${userQuestion}"
+
+Provide a clear, educational response that:
+1. Explains the programming concept step-by-step
+2. Includes code examples where helpful
+3. Covers best practices and common pitfalls
+4. Is encouraging and supportive
+5. Suggests next steps for learning
+
+When including code examples, wrap them with special markers:
+[CODE_START:language]
+your code here
+[CODE_END]
+
+For example:
+[CODE_START:javascript]
+function greet(name) {
+  console.log('Hello, ' + name);
+}
+[CODE_END]
+
+Be warm and engaging!`;
+
+      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Increased for detailed code explanations
+      
+      // Extract code blocks if present
+      const codeMatches = [...response.matchAll(/\[CODE_START:(\w+)\]\n?([\s\S]*?)\n?\[CODE_END\]/g)];
+      let content = response;
+      const codeBlocks = [];
+      
+      codeMatches.forEach((match, index) => {
+        const [fullMatch, language, code] = match;
+        codeBlocks.push({ language, code: code.trim(), index });
+        // Replace code block with a placeholder in the displayed text
+        content = content.replace(fullMatch, `\n[Code Example ${index + 1} - ${language}]\n`);
+      });
+      
+      setChatHistory(prev => [{ role: 'assistant', content, codeBlocks }, ...prev]);
+    } catch (error) {
+      console.error('AI error:', error);
+      setChatHistory(prev => [{ role: 'assistant', content: 'Sorry, I encountered an error. Please try again!' }, ...prev]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Input Section - At Top */}
+      <Paper elevation={0} sx={{ p: 2, borderBottom: '1px solid #e0e0e0', bgcolor: 'white' }}>
+        <TextField
+          fullWidth
+          multiline
+          maxRows={3}
+          placeholder="Ask me anything about programming..."
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAsk())}
+          disabled={loading}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={handleAsk} disabled={loading || !question.trim()} color="primary">
+                  <SendIcon />
+                </IconButton>
+              </InputAdornment>
+            )
+          }}
+        />
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+          {SUGGESTED_QUESTIONS.map((q, i) => (
+            <Chip key={i} label={q} size="small" onClick={() => setQuestion(q)} sx={{ cursor: 'pointer', bgcolor: '#e3f2fd', '&:hover': { bgcolor: '#bbdefb' }, fontSize: '0.75rem' }} />
+          ))}
+        </Box>
+      </Paper>
+
+      {/* Chat History */}
+      <Box sx={{ flex: 1, overflow: 'auto', p: 2, bgcolor: '#fafafa' }}>
+        {chatHistory.length === 0 ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
+            <VyonnCodeIcon size={64} />
+            <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2 }}>Hi! I'm Vyonn Code</Typography>
+            <Typography variant="body2" color="text.secondary">Ask me about JavaScript, Python, Java, HTML, CSS, and more!</Typography>
+          </Box>
+        ) : (
+          chatHistory.map((msg, i) => (
+            <Box key={i} sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                {msg.role === 'user' ? (
+                  <>
+                    <Avatar src={userPhoto} sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>{userName[0]}</Avatar>
+                    <Typography variant="caption" fontWeight={700} color="primary.main">{userName}</Typography>
+                  </>
+                ) : (
+                  <>
+                    <VyonnCodeIcon size={24} />
+                    <Typography variant="caption" fontWeight={700} color="text.secondary">Vyonn Code</Typography>
+                  </>
+                )}
+              </Box>
+              <Paper elevation={0} sx={{ p: 1.5, ml: 4, bgcolor: msg.role === 'user' ? '#e3f2fd' : 'white', border: '1px solid', borderColor: msg.role === 'user' ? 'primary.light' : 'divider', borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
+                {msg.codeBlocks && msg.codeBlocks.length > 0 && (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}>
+                    {msg.codeBlocks.map((block, idx) => (
+                      <Button
+                        key={idx}
+                        size="small"
+                        variant="contained"
+                        startIcon={<InsertIcon />}
+                        onClick={() => onInsertCode(block.code, block.language)}
+                        sx={{ textTransform: 'none', borderRadius: 2 }}
+                      >
+                        Insert {block.language} Code
+                      </Button>
+                    ))}
+                  </Box>
+                )}
+              </Paper>
+            </Box>
+          ))
+        )}
+        {loading && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <VyonnCodeIcon size={24} />
+            <Paper elevation={0} sx={{ p: 1.5, ml: 4, bgcolor: 'white', border: '1px solid #e0e0e0', borderRadius: 2 }}>
+              <CircularProgress size={16} />
+              <Typography variant="body2" component="span" sx={{ ml: 1 }}>Thinking...</Typography>
+            </Paper>
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+function CodeEditor({ open, onClose, user }) {
+  const [activeTab, setActiveTab] = useState(0);
   const [language, setLanguage] = useState('javascript');
   const [code, setCode] = useState(codeTemplates.javascript);
   const [output, setOutput] = useState('');
@@ -111,12 +335,18 @@ function CodeEditor({ open, onClose }) {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
-        bgcolor: '#2d3436',
+        background: 'linear-gradient(135deg, #2d3436 0%, #1a1d1f 100%)',
         color: 'white',
         py: 1.5
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="h6">💻 Code Editor</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <VyonnCodeIcon size={36} />
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>Vyonn Code Editor</Typography>
+              <Typography variant="caption" sx={{ opacity: 0.9 }}>JavaScript · Python · Java · HTML · CSS</Typography>
+            </Box>
+          </Box>
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <Select
               value={language}
@@ -155,7 +385,22 @@ function CodeEditor({ open, onClose }) {
         </Box>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#f5f5f5' }}>
+        <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ '& .MuiTab-root': { fontWeight: 600, minWidth: 'auto', px: 2 } }}>
+          <Tab icon={<Box sx={{ display: 'flex', alignItems: 'center' }}><VyonnCodeIcon size={18} /></Box>} label="Ask Vyonn AI" iconPosition="start" />
+          <Tab icon={<CodeIcon sx={{ fontSize: 18 }} />} label="Code Editor" iconPosition="start" />
+        </Tabs>
+      </Box>
+
+      <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {activeTab === 0 && <CodeAIChat user={user} onInsertCode={(codeContent, lang) => {
+          setCode(codeContent);
+          if (lang && languages.find(l => l.id === lang.toLowerCase())) {
+            setLanguage(lang.toLowerCase());
+          }
+          setActiveTab(1);
+        }} />}
+        {activeTab === 1 && (
         <Grid container sx={{ flexGrow: 1, height: '100%' }}>
           {/* Editor */}
           <Grid item xs={12} md={7} sx={{ height: '100%', borderRight: '1px solid #ddd' }}>
@@ -220,8 +465,9 @@ function CodeEditor({ open, onClose }) {
             </Box>
           </Grid>
         </Grid>
+        )}
 
-        {/* Code snippets */}
+        {activeTab === 1 && (
         <Box sx={{ p: 1.5, bgcolor: '#f0f0f0', borderTop: '1px solid #ddd' }}>
           <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
             Quick snippets:
@@ -236,6 +482,7 @@ function CodeEditor({ open, onClose }) {
             />
           ))}
         </Box>
+        )}
       </DialogContent>
     </Dialog>
   );

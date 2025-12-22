@@ -76,7 +76,7 @@ export async function callLLM(prompt, config = {}) {
   const {
     feature = 'general',
     temperature = 0.7,
-    maxTokens = 4096,
+    maxTokens = 8192, // V3.2: Increased from 4096 for better Telugu/regional language support
     systemPrompt = null,
     preferredProvider = null, // Allow manual override
     // v7.1.0: Cache parameters
