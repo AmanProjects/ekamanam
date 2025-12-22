@@ -193,10 +193,28 @@ export async function callLLM(prompt, config = {}) {
     } catch (error) {
       lastError = error;
       console.error(`❌ [${feature}] ${providers[i]} failed:`, error.message);
+      console.error('Full error:', error);
+      console.error('Error stack:', error.stack);
 
-      // If last provider, throw error
+      // If last provider, throw error with more context
       if (i === providers.length - 1) {
-        throw new Error(`All providers failed for ${feature}: ${error.message}`);
+        // v10.4.2: Better error messages for mobile browsers
+        let errorMessage = error.message || 'Unknown error occurred';
+        
+        // Check for common mobile/Android Chrome issues
+        if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+          errorMessage = 'Network connection issue. Please check your internet connection and try again.';
+        } else if (error.message?.includes('No API key')) {
+          errorMessage = 'API key not configured. Please go to Settings and add your Gemini or Groq API key.';
+        } else if (error.message?.includes('safety filters')) {
+          errorMessage = 'Content blocked by safety filters. Please rephrase your question.';
+        } else if (error.message?.includes('truncated') || error.message?.includes('MAX_TOKENS')) {
+          errorMessage = 'Response too long. Please ask a more specific question.';
+        } else if (error.message?.includes('Invalid response')) {
+          errorMessage = 'Received invalid response from AI service. Please try again.';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       // Otherwise, continue to next provider
@@ -204,7 +222,7 @@ export async function callLLM(prompt, config = {}) {
     }
   }
 
-  throw lastError || new Error(`No providers available for ${feature}`);
+  throw lastError || new Error('AI service temporarily unavailable. Please check your internet connection and try again.');
 }
 
 // ===== PROVIDER ROUTER =====
@@ -273,24 +291,42 @@ async function callGemini(prompt, apiKey, config) {
   const model = 'gemini-2.5-flash';
   const url = `${PROVIDER_ENDPOINTS[PROVIDERS.GEMINI]}${model}:generateContent?key=${apiKey}`;
   
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: config.temperature,
-        maxOutputTokens: config.maxTokens
+  // v10.4.2: Add timeout and better error handling for mobile browsers
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: config.temperature,
+          maxOutputTokens: config.maxTokens
+        }
+      }),
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      let errorMessage = 'Gemini API failed';
+      try {
+        const error = await response.json();
+        errorMessage = error.error?.message || errorMessage;
+      } catch (e) {
+        // If JSON parsing fails, use status text
+        errorMessage = `Gemini API failed: ${response.status} ${response.statusText}`;
       }
-    })
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Gemini API failed');
-  }
-  
-  const data = await response.json();
+      throw new Error(errorMessage);
+    }
+    
+    const data = await response.json();
   
   // Validate response
   if (!data.candidates || !data.candidates[0]) {
@@ -309,18 +345,25 @@ async function callGemini(prompt, apiKey, config) {
     throw new Error('Response truncated - increase maxOutputTokens');
   }
   
-  // Extract text from parts (handle single or multiple parts)
-  const parts = candidate.content.parts;
-  if (!parts || parts.length === 0) {
-    throw new Error('No text in Gemini response');
+    // Extract text from parts (handle single or multiple parts)
+    const parts = candidate.content.parts;
+    if (!parts || parts.length === 0) {
+      throw new Error('No text in Gemini response');
+    }
+    
+    // If multiple parts, join them
+    if (parts.length > 1) {
+      return parts.map(part => part.text || '').join('\n');
+    }
+    
+    return parts[0].text || '';
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out. Please check your internet connection and try again.');
+    }
+    throw error;
   }
-  
-  // If multiple parts, join them
-  if (parts.length > 1) {
-    return parts.map(part => part.text || '').join('\n');
-  }
-  
-  return parts[0].text || '';
 }
 
 /**

@@ -1081,9 +1081,17 @@ YOUR ${detectedLanguage} RESPONSE:` :
     } catch (error) {
       console.error('⚠️ Vyonn: Error:', error);
       console.error('⚠️ Vyonn: Error message:', error.message);
+      console.error('⚠️ Browser:', navigator.userAgent);
+      console.error('⚠️ Online status:', navigator.onLine);
+      console.error('⚠️ Error stack:', error.stack);
       
-      let errorMessage = 'I ran into a hiccup! Please try again.';
-      if (error.message?.includes('API key') || error.message?.includes('No API key')) {
+      // v10.4.2: Better error messages for mobile browsers
+      let errorMessage = error.message || 'I ran into a hiccup! Please try again.';
+      
+      // Check for offline status first
+      if (!navigator.onLine) {
+        errorMessage = '📡 You appear to be offline. Please check your internet connection and try again.';
+      } else if (error.message?.includes('API key') || error.message?.includes('No API key')) {
         errorMessage = '🔑 No API key found! Please go to Settings (gear icon) and add your Gemini API key.';
       } else if (error.message?.includes('401') || error.message?.includes('invalid')) {
         errorMessage = '🔑 Your API key seems invalid. Please check it in Settings.';

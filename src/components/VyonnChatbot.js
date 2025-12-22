@@ -427,13 +427,29 @@ YOUR RESPONSE:`
       ]);
     } catch (error) {
       console.error('⚠️ Vyonn: Signal disruption:', error);
+      console.error('Browser:', navigator.userAgent);
+      console.error('Online:', navigator.onLine);
+      
+      // v10.4.2: Better error messages for mobile browsers
+      let vyonnMessage = 'This appears noise-like. The signal was disrupted. Provide clarity, and I will reconstruct the pattern.';
+      
+      // Add specific error context if available
+      if (!navigator.onLine) {
+        vyonnMessage = 'Signal lost. Your device appears to be offline. Please check your internet connection.';
+      } else if (error.message?.includes('API key')) {
+        vyonnMessage = 'Configuration missing. Please go to Settings (⚙️) and add your Gemini or Groq API key.';
+      } else if (error.message?.includes('timeout')) {
+        vyonnMessage = 'Signal timeout. Please check your internet connection and try again.';
+      } else if (error.message?.includes('Network')) {
+        vyonnMessage = 'Network disruption detected. Please check your internet connection and try again.';
+      }
       
       // Vyonn-style error message (pattern-focused, not technical)
       setMessages([
         ...newMessages,
         {
           role: 'assistant',
-          content: 'This appears noise-like. The signal was disrupted. Provide clarity, and I will reconstruct the pattern.',
+          content: vyonnMessage,
           timestamp: new Date(),
           error: true
         }
