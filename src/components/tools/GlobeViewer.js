@@ -213,59 +213,74 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
         {chatHistory.length === 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
             <VyonnGlobeIcon size={64} />
-            <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2 }}>Hi! I'm Vyonn Globe</Typography>
-            <Typography variant="body2" color="text.secondary">Ask me about countries, cities, climate, landmarks, and more!</Typography>
+            <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+              Welcome to Vyonn Globe Explorer! 🌍
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Ask me anything about countries, cities, climate, landmarks, geography, and more!
+            </Typography>
           </Box>
         ) : (
           chatHistory.map((msg, i) => (
             <Box key={i} sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                {msg.role === 'user' ? (
-                  <>
-                    <Avatar src={userPhoto} sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>{userName[0]}</Avatar>
-                    <Typography variant="caption" fontWeight={700} color="primary.main">{userName}</Typography>
-                  </>
-                ) : (
-                  <>
-                    <VyonnGlobeIcon size={24} />
-                    <Typography variant="caption" fontWeight={700} color="text.secondary">Vyonn Globe</Typography>
-                  </>
-                )}
-              </Box>
-              <Paper elevation={0} sx={{ p: 1.5, ml: 4, bgcolor: msg.role === 'user' ? '#e3f2fd' : 'white', border: '1px solid', borderColor: msg.role === 'user' ? 'primary.light' : 'divider', borderRadius: 2 }}>
-                {msg.role === 'assistant' && msg.locations && msg.locations.length > 0 ? (
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                    {msg.content.split(/(\[\[[^\]]+\]\])/).map((part, idx) => {
-                      // Check if this part is a location placeholder
-                      const location = msg.locations.find(loc => loc.placeholder === part);
-                      if (location) {
-                        return (
-                          <Typography
-                            key={idx}
-                            component="span"
-                            onClick={() => onViewLocation({ name: location.name, lat: location.lat, lng: location.lng })}
-                            sx={{
-                              color: 'primary.main',
-                              textDecoration: 'underline',
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                              '&:hover': {
-                                color: 'primary.dark',
-                                textDecoration: 'underline'
-                              }
-                            }}
-                          >
-                            {location.name}
-                          </Typography>
-                        );
-                      }
-                      return part;
-                    })}
-                  </Typography>
-                ) : (
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
-                )}
-              </Paper>
+              {msg.role === 'user' ? (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                  <Paper sx={{ p: 2, bgcolor: '#e3f2fd', borderRadius: 2, maxWidth: '80%' }}>
+                    <Typography variant="body2">{msg.content}</Typography>
+                  </Paper>
+                  <Avatar src={userPhoto} sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
+                    {userName[0]}
+                  </Avatar>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Box sx={{ mt: 0.5 }}>
+                    <VyonnGlobeIcon size={32} />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Paper sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                      {msg.locations && msg.locations.length > 0 ? (
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                          {msg.content.split(/(\[\[[^\]]+\]\])/).map((part, idx) => {
+                            // Check if this part is a location placeholder
+                            const location = msg.locations.find(loc => loc.placeholder === part);
+                            if (location) {
+                              return (
+                                <Typography
+                                  key={idx}
+                                  component="span"
+                                  onClick={() => onViewLocation({ name: location.name, lat: location.lat, lng: location.lng })}
+                                  sx={{
+                                    color: 'primary.main',
+                                    textDecoration: 'underline',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    '&:hover': {
+                                      color: 'primary.dark',
+                                      textDecoration: 'underline'
+                                    }
+                                  }}
+                                >
+                                  {location.name}
+                                </Typography>
+                              );
+                            }
+                            return part;
+                          })}
+                        </Typography>
+                      ) : (
+                        <Typography 
+                          variant="body2" 
+                          sx={{ whiteSpace: 'pre-wrap' }}
+                          dangerouslySetInnerHTML={{ 
+                            __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') 
+                          }}
+                        />
+                      )}
+                    </Paper>
+                  </Box>
+                </Box>
+              )}
             </Box>
           ))
         )}

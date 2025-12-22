@@ -686,8 +686,12 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
               {chatHistory.length === 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
                   <VyonnScienceIcon size={64} />
-                  <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2 }}>Hi! I'm Vyonn AI Science</Typography>
-                  <Typography variant="body2" color="text.secondary">Ask about blast furnaces, lenses, atoms, waves, and more!</Typography>
+                  <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+                    Welcome to Vyonn Science Lab! ⚛️
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Ask me anything about physics - motion, forces, energy, light, electricity, magnetism, and more!
+                  </Typography>
                 </Box>
               ) : (
                 chatHistory.map((msg, i) => (

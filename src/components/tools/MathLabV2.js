@@ -3276,28 +3276,43 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
         {chatHistory.length === 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
             <VyonnMathIcon size={64} />
-            <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2 }}>Hi! I'm Vyonn AI Math</Typography>
-            <Typography variant="body2" color="text.secondary">Ask me about algebra, geometry, calculus, statistics, and more!</Typography>
+            <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+              Welcome to Vyonn Math Lab! ➗
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Ask me anything about algebra, geometry, calculus, statistics, trigonometry, and more!
+            </Typography>
           </Box>
         ) : (
           chatHistory.map((msg, i) => (
             <Box key={i} sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                {msg.role === 'user' ? (
-                  <>
-                    <Avatar src={userPhoto} sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>{userName[0]}</Avatar>
-                    <Typography variant="caption" fontWeight={700} color="primary.main">{userName}</Typography>
-                  </>
-                ) : (
-                  <>
-                    <VyonnMathIcon size={24} />
-                    <Typography variant="caption" fontWeight={700} color="text.secondary">Vyonn AI Math</Typography>
-                  </>
-                )}
-              </Box>
-              <Paper elevation={0} sx={{ p: 1.5, ml: 4, bgcolor: msg.role === 'user' ? '#e3f2fd' : 'white', border: '1px solid', borderColor: msg.role === 'user' ? 'primary.light' : 'divider', borderRadius: 2 }}>
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
-              </Paper>
+              {msg.role === 'user' ? (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                  <Paper sx={{ p: 2, bgcolor: '#e3f2fd', borderRadius: 2, maxWidth: '80%' }}>
+                    <Typography variant="body2">{msg.content}</Typography>
+                  </Paper>
+                  <Avatar src={userPhoto} sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
+                    {userName[0]}
+                  </Avatar>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Box sx={{ mt: 0.5 }}>
+                    <VyonnMathIcon size={32} />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Paper sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ whiteSpace: 'pre-wrap' }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') 
+                        }}
+                      />
+                    </Paper>
+                  </Box>
+                </Box>
+              )}
             </Box>
           ))
         )}
