@@ -2929,8 +2929,8 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
                     style={{ width: '100%', height: 400, border: 'none' }} 
                     sandbox="allow-scripts" 
                   />
-                  {/* v10.5.0: AR Viewer Button */}
-                  <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', bgcolor: '#f5f5f5', display: 'flex', justifyContent: 'center' }}>
+                  {/* v10.5.0: AR Viewer Button - v10.5.2: HIDDEN (not working on Samsung Android) */}
+                  <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', bgcolor: '#f5f5f5', display: 'none', justifyContent: 'center' }}>
                     <Button
                       variant="contained"
                       size="large"
