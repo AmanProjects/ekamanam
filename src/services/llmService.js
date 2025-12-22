@@ -88,6 +88,43 @@ export async function callLLM(prompt, config = {}) {
     skipCache = false // Force fresh API call
   } = config;
 
+  // v10.4.4: Enhanced mobile diagnostics for Android debugging
+  console.log('📱 Device Diagnostics:', {
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    language: navigator.language,
+    online: navigator.onLine,
+    cookieEnabled: navigator.cookieEnabled,
+    vendor: navigator.vendor,
+    isAndroid: /Android/i.test(navigator.userAgent),
+    isChrome: /Chrome/i.test(navigator.userAgent)
+  });
+  
+  // v10.4.4: Test localStorage availability
+  try {
+    const testKey = '_ekamanam_storage_test';
+    localStorage.setItem(testKey, 'test');
+    const testValue = localStorage.getItem(testKey);
+    localStorage.removeItem(testKey);
+    console.log('✅ localStorage is working, test value:', testValue);
+  } catch (storageError) {
+    console.error('❌ localStorage test failed:', storageError);
+    console.error('❌ Storage error details:', {
+      name: storageError.name,
+      message: storageError.message,
+      code: storageError.code
+    });
+    throw new Error('Browser storage is disabled or unavailable. Please enable cookies and site data in your browser settings, then refresh the page.');
+  }
+  
+  // v10.4.4: Log API key status (without exposing actual keys)
+  console.log('🔑 API Keys Status:', {
+    gemini: localStorage.getItem('gemini_pat') ? `Set (${localStorage.getItem('gemini_pat').substring(0, 10)}...)` : 'NOT SET',
+    groq: localStorage.getItem('groq_api_key') ? `Set (${localStorage.getItem('groq_api_key').substring(0, 10)}...)` : 'NOT SET',
+    perplexity: localStorage.getItem('perplexity_api_key') ? 'Set' : 'NOT SET',
+    mistral: localStorage.getItem('mistral_api_key') ? 'Set' : 'NOT SET'
+  });
+
   // v7.1.0: Check cache first (if Drive connected and cache params provided)
   if (!skipCache && pdfId && page && hasDrivePermissions()) {
     try {

@@ -430,18 +430,27 @@ YOUR RESPONSE:`
       console.error('Browser:', navigator.userAgent);
       console.error('Online:', navigator.onLine);
       
-      // v10.4.2: Better error messages for mobile browsers
+      // v10.4.4: Better error messages for mobile browsers
       let vyonnMessage = 'This appears noise-like. The signal was disrupted. Provide clarity, and I will reconstruct the pattern.';
+      
+      // Check if Android for diagnostic link
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const diagnosticLink = isAndroid ? '\n\n🔧 Troubleshoot: Open android-diagnostic.html in a new tab.' : '';
       
       // Add specific error context if available
       if (!navigator.onLine) {
-        vyonnMessage = 'Signal lost. Your device appears to be offline. Please check your internet connection.';
+        vyonnMessage = 'Signal lost. Your device appears to be offline. Please check your internet connection.' + diagnosticLink;
       } else if (error.message?.includes('API key')) {
-        vyonnMessage = 'Configuration missing. Please go to Settings (⚙️) and add your Gemini or Groq API key.';
+        vyonnMessage = 'Configuration missing. Please go to Settings (⚙️) and add your Gemini or Groq API key.' + diagnosticLink;
+      } else if (error.message?.includes('storage')) {
+        vyonnMessage = 'Browser storage is disabled. Please enable cookies and site data in your browser settings, then refresh the page.' + diagnosticLink;
       } else if (error.message?.includes('timeout')) {
-        vyonnMessage = 'Signal timeout. Please check your internet connection and try again.';
+        vyonnMessage = 'Signal timeout. Please check your internet connection and try again.' + diagnosticLink;
       } else if (error.message?.includes('Network')) {
-        vyonnMessage = 'Network disruption detected. Please check your internet connection and try again.';
+        vyonnMessage = 'Network disruption detected. Please check your internet connection and try again.' + diagnosticLink;
+      } else if (isAndroid) {
+        // Generic error on Android - suggest diagnostics
+        vyonnMessage += diagnosticLink;
       }
       
       // Vyonn-style error message (pattern-focused, not technical)

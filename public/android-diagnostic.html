@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Android/Mobile Diagnostic Tool - Ekamanam</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .section {
+      margin-bottom: 25px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .section-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: auto;
+    }
+    
+    .status.pass {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status.fail {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .status.warn {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    @media (max-width: 600px) {
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .detail-item {
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    
+    .detail-label {
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .detail-value {
+      color: #333;
+      word-break: break-all;
+    }
+    
+    .button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: all 0.3s;
+    }
+    
+    .button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .button:active {
+      transform: translateY(0);
+    }
+    
+    .log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+    
+    .log-entry {
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #333;
+    }
+    
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    
+    .log-time {
+      color: #858585;
+      margin-right: 10px;
+    }
+    
+    .log-success { color: #4ec9b0; }
+    .log-error { color: #f48771; }
+    .log-warn { color: #dcdcaa; }
+    .log-info { color: #9cdcfe; }
+    
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .alert.error {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #f5c6cb;
+    }
+    
+    .alert.success {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #c3e6cb;
+    }
+    
+    .alert.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #bee5eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Android/Mobile Diagnostic Tool</h1>
+    <p class="subtitle">For Ekamanam AI Issues on Mobile Browsers</p>
+    
+    <!-- Overall Status -->
+    <div id="overallStatus"></div>
+    
+    <!-- Device Info -->
+    <div class="section">
+      <div class="section-title">
+        📱 Device Information
+        <span id="deviceStatus" class="status">Checking...</span>
+      </div>
+      <div class="detail-grid" id="deviceInfo"></div>
+    </div>
+    
+    <!-- Storage Test -->
+    <div class="section">
+      <div class="section-title">
+        💾 Browser Storage
+        <span id="storageStatus" class="status">Checking...</span>
+      </div>
+      <div class="detail-grid" id="storageInfo"></div>
+    </div>
+    
+    <!-- Network Test -->
+    <div class="section">
+      <div class="section-title">
+        🌐 Network Connectivity
+        <span id="networkStatus" class="status">Checking...</span>
+      </div>
+      <div class="detail-grid" id="networkInfo"></div>
+    </div>
+    
+    <!-- API Key Status -->
+    <div class="section">
+      <div class="section-title">
+        🔑 API Keys
+        <span id="apiKeyStatus" class="status">Checking...</span>
+      </div>
+      <div class="detail-grid" id="apiKeyInfo"></div>
+    </div>
+    
+    <!-- API Test -->
+    <div class="section">
+      <div class="section-title">
+        🤖 AI API Test
+        <span id="apiTestStatus" class="status">Not Tested</span>
+      </div>
+      <button class="button" onclick="testAPI()">Test AI Connection</button>
+      <div id="apiTestResult"></div>
+    </div>
+    
+    <!-- Debug Log -->
+    <div class="section">
+      <div class="section-title">
+        📋 Debug Log
+      </div>
+      <div class="log" id="debugLog"></div>
+    </div>
+    
+    <!-- Actions -->
+    <div class="section">
+      <div class="section-title">
+        🛠️ Actions
+      </div>
+      <button class="button" onclick="copyDiagnostics()">📋 Copy Diagnostics to Clipboard</button>
+      <button class="button" onclick="window.location.reload()" style="background: #28a745; margin-top: 10px;">🔄 Refresh Page</button>
+      <button class="button" onclick="window.location.href='/'" style="background: #6c757d; margin-top: 10px;">🏠 Back to Ekamanam</button>
+    </div>
+  </div>
+
+  <script>
+    const log = [];
+    
+    function addLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      log.push({ timestamp, message, type });
+      
+      const logDiv = document.getElementById('debugLog');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<span class="log-time">${timestamp}</span><span class="log-${type}">${message}</span>`;
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    
+    function setStatus(elementId, status, text = null) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.className = `status ${status}`;
+        if (text) el.textContent = text;
+      }
+    }
+    
+    function addDetail(containerId, label, value, copyable = false) {
+      const container = document.getElementById(containerId);
+      const item = document.createElement('div');
+      item.className = 'detail-item';
+      item.innerHTML = `
+        <div class="detail-label">${label}</div>
+        <div class="detail-value">${value || 'N/A'}</div>
+      `;
+      container.appendChild(item);
+    }
+    
+    // Run diagnostics on load
+    window.onload = function() {
+      addLog('🚀 Starting diagnostics...', 'info');
+      runDiagnostics();
+    };
+    
+    function runDiagnostics() {
+      checkDevice();
+      checkStorage();
+      checkNetwork();
+      checkAPIKeys();
+      updateOverallStatus();
+    }
+    
+    function checkDevice() {
+      addLog('📱 Checking device information...', 'info');
+      
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isChrome = /Chrome/i.test(navigator.userAgent);
+      const isMobile = /Mobile/i.test(navigator.userAgent);
+      
+      addDetail('deviceInfo', 'Platform', navigator.platform);
+      addDetail('deviceInfo', 'User Agent', navigator.userAgent);
+      addDetail('deviceInfo', 'Language', navigator.language);
+      addDetail('deviceInfo', 'Vendor', navigator.vendor);
+      addDetail('deviceInfo', 'Is Android', isAndroid ? '✅ Yes' : '❌ No');
+      addDetail('deviceInfo', 'Is Chrome', isChrome ? '✅ Yes' : '❌ No');
+      addDetail('deviceInfo', 'Is Mobile', isMobile ? '✅ Yes' : '❌ No');
+      addDetail('deviceInfo', 'Screen Size', `${window.screen.width} x ${window.screen.height}`);
+      
+      setStatus('deviceStatus', 'pass', 'Detected');
+      addLog(`✅ Device detected: ${isAndroid ? 'Android' : 'Other'} ${isChrome ? 'Chrome' : 'Browser'}`, 'success');
+    }
+    
+    function checkStorage() {
+      addLog('💾 Checking browser storage...', 'info');
+      
+      try {
+        // Test localStorage
+        const testKey = '_diagnostic_test';
+        localStorage.setItem(testKey, 'test_value');
+        const testValue = localStorage.getItem(testKey);
+        localStorage.removeItem(testKey);
+        
+        if (testValue === 'test_value') {
+          addDetail('storageInfo', 'localStorage', '✅ Working');
+          setStatus('storageStatus', 'pass', 'Working');
+          addLog('✅ localStorage is working correctly', 'success');
+        } else {
+          throw new Error('Test value mismatch');
+        }
+        
+        // Check cookies
+        addDetail('storageInfo', 'Cookies Enabled', navigator.cookieEnabled ? '✅ Yes' : '❌ No');
+        
+        // Check storage quota (if available)
+        if (navigator.storage && navigator.storage.estimate) {
+          navigator.storage.estimate().then(estimate => {
+            const used = (estimate.usage / 1024 / 1024).toFixed(2);
+            const quota = (estimate.quota / 1024 / 1024).toFixed(2);
+            addDetail('storageInfo', 'Storage Used', `${used} MB / ${quota} MB`);
+          });
+        }
+        
+        // Check existing data
+        const keyCount = Object.keys(localStorage).length;
+        addDetail('storageInfo', 'Stored Keys', `${keyCount} items`);
+        
+      } catch (e) {
+        addDetail('storageInfo', 'localStorage', `❌ FAILED: ${e.message}`);
+        setStatus('storageStatus', 'fail', 'Failed');
+        addLog(`❌ localStorage test failed: ${e.message}`, 'error');
+        
+        if (e.name === 'QuotaExceededError') {
+          addLog('⚠️ Storage quota exceeded. Clear browser data and try again.', 'warn');
+        } else if (!navigator.cookieEnabled) {
+          addLog('⚠️ Cookies are disabled. Enable them in browser settings.', 'warn');
+        }
+      }
+    }
+    
+    function checkNetwork() {
+      addLog('🌐 Checking network connectivity...', 'info');
+      
+      const online = navigator.onLine;
+      addDetail('networkInfo', 'Online Status', online ? '✅ Online' : '❌ Offline');
+      
+      if (online) {
+        // Check connection type (if available)
+        if (navigator.connection) {
+          const conn = navigator.connection;
+          addDetail('networkInfo', 'Connection Type', conn.effectiveType || 'Unknown');
+          addDetail('networkInfo', 'Downlink', conn.downlink ? `${conn.downlink} Mbps` : 'Unknown');
+          addDetail('networkInfo', 'RTT', conn.rtt ? `${conn.rtt} ms` : 'Unknown');
+          addDetail('networkInfo', 'Save Data', conn.saveData ? '⚠️ Enabled' : 'Disabled');
+        }
+        
+        setStatus('networkStatus', 'pass', 'Online');
+        addLog('✅ Device is online', 'success');
+      } else {
+        setStatus('networkStatus', 'fail', 'Offline');
+        addLog('❌ Device is offline', 'error');
+      }
+    }
+    
+    function checkAPIKeys() {
+      addLog('🔑 Checking API keys...', 'info');
+      
+      const geminiKey = localStorage.getItem('gemini_pat');
+      const groqKey = localStorage.getItem('groq_api_key');
+      const perplexityKey = localStorage.getItem('perplexity_api_key');
+      const mistralKey = localStorage.getItem('mistral_api_key');
+      
+      addDetail('apiKeyInfo', 'Gemini API Key', geminiKey ? `✅ Set (${geminiKey.substring(0, 10)}...)` : '❌ Not Set');
+      addDetail('apiKeyInfo', 'Groq API Key', groqKey ? `✅ Set (${groqKey.substring(0, 10)}...)` : '❌ Not Set');
+      addDetail('apiKeyInfo', 'Perplexity API Key', perplexityKey ? '✅ Set' : '❌ Not Set');
+      addDetail('apiKeyInfo', 'Mistral API Key', mistralKey ? '✅ Set' : '❌ Not Set');
+      
+      const hasAnyKey = geminiKey || groqKey || perplexityKey || mistralKey;
+      
+      if (hasAnyKey) {
+        setStatus('apiKeyStatus', 'pass', 'Configured');
+        addLog('✅ At least one API key is configured', 'success');
+      } else {
+        setStatus('apiKeyStatus', 'fail', 'Missing');
+        addLog('❌ No API keys found. Go to Settings and add at least one API key.', 'error');
+      }
+    }
+    
+    async function testAPI() {
+      addLog('🤖 Testing AI API connection...', 'info');
+      setStatus('apiTestStatus', 'warn', 'Testing...');
+      
+      const resultDiv = document.getElementById('apiTestResult');
+      resultDiv.innerHTML = '<div class="log" style="margin-top: 10px;">Testing...</div>';
+      
+      try {
+        const geminiKey = localStorage.getItem('gemini_pat');
+        
+        if (!geminiKey) {
+          throw new Error('No Gemini API key found. Please add one in Settings.');
+        }
+        
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Hello! Reply with just OK.' }] }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 50
+            }
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`API Error: ${errorData.error?.message || response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+        
+        resultDiv.innerHTML = `
+          <div class="alert success" style="margin-top: 10px;">
+            <strong>✅ SUCCESS!</strong><br>
+            AI responded: "${aiResponse}"<br>
+            Your API key is working correctly on this device.
+          </div>
+        `;
+        
+        setStatus('apiTestStatus', 'pass', 'Working');
+        addLog('✅ AI API test successful!', 'success');
+        
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <div class="alert error" style="margin-top: 10px;">
+            <strong>❌ FAILED!</strong><br>
+            ${error.message}<br><br>
+            <strong>Possible solutions:</strong><br>
+            1. Check your internet connection<br>
+            2. Verify API key in Settings<br>
+            3. Enable cookies/storage in browser<br>
+            4. Try a different network (WiFi vs Mobile Data)
+          </div>
+        `;
+        
+        setStatus('apiTestStatus', 'fail', 'Failed');
+        addLog(`❌ AI API test failed: ${error.message}`, 'error');
+      }
+    }
+    
+    function updateOverallStatus() {
+      const storageOk = document.getElementById('storageStatus').classList.contains('pass');
+      const networkOk = document.getElementById('networkStatus').classList.contains('pass');
+      const apiKeysOk = document.getElementById('apiKeyStatus').classList.contains('pass');
+      
+      const statusDiv = document.getElementById('overallStatus');
+      
+      if (storageOk && networkOk && apiKeysOk) {
+        statusDiv.innerHTML = `
+          <div class="alert success">
+            <strong>✅ All checks passed!</strong><br>
+            Your device appears to be configured correctly. If you're still experiencing issues, click "Test AI Connection" below.
+          </div>
+        `;
+      } else {
+        const issues = [];
+        if (!storageOk) issues.push('Browser storage is not working');
+        if (!networkOk) issues.push('Device is offline');
+        if (!apiKeysOk) issues.push('No API keys configured');
+        
+        statusDiv.innerHTML = `
+          <div class="alert error">
+            <strong>❌ Issues detected:</strong><br>
+            ${issues.map(issue => `• ${issue}`).join('<br>')}
+          </div>
+        `;
+      }
+    }
+    
+    function copyDiagnostics() {
+      const diagnostics = {
+        timestamp: new Date().toISOString(),
+        device: {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language,
+          online: navigator.onLine,
+          cookieEnabled: navigator.cookieEnabled
+        },
+        storage: {
+          localStorageAvailable: (() => {
+            try {
+              localStorage.setItem('_test', 'test');
+              localStorage.removeItem('_test');
+              return true;
+            } catch (e) {
+              return false;
+            }
+          })(),
+          keyCount: Object.keys(localStorage).length
+        },
+        apiKeys: {
+          gemini: !!localStorage.getItem('gemini_pat'),
+          groq: !!localStorage.getItem('groq_api_key'),
+          perplexity: !!localStorage.getItem('perplexity_api_key'),
+          mistral: !!localStorage.getItem('mistral_api_key')
+        },
+        log: log
+      };
+      
+      const text = JSON.stringify(diagnostics, null, 2);
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert('✅ Diagnostics copied to clipboard! You can now paste this in a support message.');
+        }).catch(err => {
+          prompt('Copy this diagnostic information:', text);
+        });
+      } else {
+        prompt('Copy this diagnostic information:', text);
+      }
+      
+      addLog('📋 Diagnostics copied to clipboard', 'success');
+    }
+  </script>
+</body>
+</html>
+

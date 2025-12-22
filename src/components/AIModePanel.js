@@ -1085,20 +1085,31 @@ YOUR ${detectedLanguage} RESPONSE:` :
       console.error('⚠️ Online status:', navigator.onLine);
       console.error('⚠️ Error stack:', error.stack);
       
-      // v10.4.2: Better error messages for mobile browsers
+      // v10.4.4: Better error messages for mobile browsers with diagnostic link
       let errorMessage = error.message || 'I ran into a hiccup! Please try again.';
+      
+      // Check if Android for diagnostic link
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const diagnosticLink = isAndroid ? '\n\n🔧 Need help? Visit: android-diagnostic.html' : '';
       
       // Check for offline status first
       if (!navigator.onLine) {
-        errorMessage = '📡 You appear to be offline. Please check your internet connection and try again.';
+        errorMessage = '📡 You appear to be offline. Please check your internet connection and try again.' + diagnosticLink;
       } else if (error.message?.includes('API key') || error.message?.includes('No API key')) {
-        errorMessage = '🔑 No API key found! Please go to Settings (gear icon) and add your Gemini API key.';
+        errorMessage = '🔑 No API key found! Please go to Settings (gear icon) and add your Gemini API key.' + diagnosticLink;
+      } else if (error.message?.includes('storage')) {
+        errorMessage = '💾 Browser storage is disabled. Please enable cookies and site data in your browser settings, then refresh.' + diagnosticLink;
       } else if (error.message?.includes('401') || error.message?.includes('invalid')) {
-        errorMessage = '🔑 Your API key seems invalid. Please check it in Settings.';
+        errorMessage = '🔑 Your API key seems invalid. Please check it in Settings.' + diagnosticLink;
       } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
-        errorMessage = '📡 Network error. Please check your internet connection.';
+        errorMessage = '📡 Network error. Please check your internet connection.' + diagnosticLink;
       } else if (error.message?.includes('blocked') || error.message?.includes('safety')) {
         errorMessage = '⚠️ That content was blocked. Try rephrasing your question.';
+      } else if (error.message?.includes('timeout')) {
+        errorMessage = '⏱️ Request timed out. Please check your internet connection and try again.' + diagnosticLink;
+      } else if (isAndroid) {
+        // Generic error on Android - add diagnostic link
+        errorMessage += diagnosticLink;
       }
       
       setVyonnMessages([
