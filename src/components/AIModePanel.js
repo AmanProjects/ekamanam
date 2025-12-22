@@ -11,6 +11,7 @@ import CircuitSimulator from './CircuitSimulator';
 import llmService, { PROVIDERS } from '../services/llmService';
 // v7.2.32: Educational tools
 import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer } from './tools';
+import VoiceInputButton from './VoiceInputButton';
 import {
   Box,
   Paper,
@@ -38,7 +39,8 @@ import {
   TextField,
   List,
   ListItem,
-  Divider
+  Divider,
+  InputAdornment
 } from '@mui/material';
 import {
   Style as FlashcardIcon
@@ -6938,20 +6940,28 @@ Return ONLY this valid JSON:
                 size="small"
                 InputProps={{
                   endAdornment: (
-                    <IconButton
-                      onClick={handleVyonnSend}
-                      disabled={!vyonnInput.trim() || vyonnLoading}
-                      color="primary"
-                      sx={{
-                        bgcolor: vyonnInput.trim() && !vyonnLoading ? 'primary.main' : 'transparent',
-                        color: vyonnInput.trim() && !vyonnLoading ? '#fff' : 'inherit',
-                        '&:hover': {
-                          bgcolor: vyonnInput.trim() && !vyonnLoading ? 'primary.dark' : 'transparent'
-                        }
-                      }}
-                    >
-                      <SendIcon fontSize="small" />
-                    </IconButton>
+                    <InputAdornment position="end">
+                      <VoiceInputButton
+                        onTranscript={setVyonnInput}
+                        existingText={vyonnInput}
+                        disabled={vyonnLoading}
+                        size="small"
+                      />
+                      <IconButton
+                        onClick={handleVyonnSend}
+                        disabled={!vyonnInput.trim() || vyonnLoading}
+                        color="primary"
+                        sx={{
+                          bgcolor: vyonnInput.trim() && !vyonnLoading ? 'primary.main' : 'transparent',
+                          color: vyonnInput.trim() && !vyonnLoading ? '#fff' : 'inherit',
+                          '&:hover': {
+                            bgcolor: vyonnInput.trim() && !vyonnLoading ? 'primary.dark' : 'transparent'
+                          }
+                        }}
+                      >
+                        <SendIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
                   ),
                   sx: { borderRadius: 2 }
                 }}

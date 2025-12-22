@@ -12,7 +12,8 @@ import {
   Chip,
   CircularProgress,
   Tooltip,
-  Divider
+  Divider,
+  InputAdornment
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -21,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import llmService, { PROVIDERS } from '../services/llmService';
 import VisualAidRenderer from './VisualAidRenderer';
+import VoiceInputButton from './VoiceInputButton';
 
 /**
  * v10.1.1: Clean orphaned JSON artifacts from AI responses
@@ -716,24 +718,32 @@ YOUR RESPONSE:`
             disabled={loading}
             InputProps={{
               endAdornment: (
-                <IconButton
-                  onClick={handleSend}
-                  disabled={!input.trim() || loading}
-                  color="primary"
-                  sx={{
-                    background: input.trim() && !loading 
-                      ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-                      : 'transparent',
-                    color: input.trim() && !loading ? '#fff' : 'inherit',
-                    '&:hover': {
+                <InputAdornment position="end">
+                  <VoiceInputButton
+                    onTranscript={setInput}
+                    existingText={input}
+                    disabled={loading}
+                    size="small"
+                  />
+                  <IconButton
+                    onClick={handleSend}
+                    disabled={!input.trim() || loading}
+                    color="primary"
+                    sx={{
                       background: input.trim() && !loading 
-                        ? 'linear-gradient(135deg, #16213e 0%, #0f3460 100%)'
-                        : 'transparent'
-                    }
-                  }}
-                >
-                  <SendIcon />
-                </IconButton>
+                        ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
+                        : 'transparent',
+                      color: input.trim() && !loading ? '#fff' : 'inherit',
+                      '&:hover': {
+                        background: input.trim() && !loading 
+                          ? 'linear-gradient(135deg, #16213e 0%, #0f3460 100%)'
+                          : 'transparent'
+                      }
+                    }}
+                  >
+                    <SendIcon />
+                  </IconButton>
+                </InputAdornment>
               )
             }}
             sx={{
