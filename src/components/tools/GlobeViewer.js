@@ -310,6 +310,22 @@ function GlobeViewer({ open, onClose, user }) {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 20, lng: 0 });
   const [zoom, setZoom] = useState(2);
+  
+  // v10.4.10: AI Chat state moved to main component (like Chemistry)
+  const [question, setQuestion] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Get user info (like Chemistry)
+  const userName = user?.displayName?.split(' ')[0] || 'You';
+  const userPhoto = user?.photoURL;
+
+  const GEOGRAPHY_QUESTIONS = [
+    "Tell me about the Amazon rainforest",
+    "What causes earthquakes?",
+    "Explain climate zones",
+    "Where is Mount Everest?"
+  ];
 
   // Important locations for education
   const educationalLocations = [
@@ -368,6 +384,90 @@ function GlobeViewer({ open, onClose, user }) {
     return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${mapCenter.lat},${mapCenter.lng}`;
   };
 
+  // v10.4.10: AI Chat function moved to main component (like Chemistry)
+  const askGeographyAI = async () => {
+    if (!question.trim()) return;
+    
+    setLoading(true);
+    const userQuestion = question;
+    setQuestion('');
+    setChatHistory(prev => [{ role: 'user', content: userQuestion }, ...prev]);
+    
+    try {
+      // v10.3: Detect language and respond in same language
+      const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
+      const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
+      const hasTamil = /[\u0B80-\u0BFF]/.test(userQuestion);
+      const hasKannada = /[\u0C80-\u0CFF]/.test(userQuestion);
+      const hasMalayalam = /[\u0D00-\u0D7F]/.test(userQuestion);
+      
+      const isRegional = hasDevanagari || hasTelugu || hasTamil || hasKannada || hasMalayalam;
+      const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
+                   hasDevanagari ? 'Hindi (हिंदी)' :
+                   hasTamil ? 'Tamil (தமிழ்)' :
+                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
+                   hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
+      
+      const prompt = `You are Vyonn Globe, a brilliant and friendly geography tutor.
+
+${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
+
+Student asked: "${userQuestion}"
+
+Provide a clear, educational response that:
+1. Explains the geography concept clearly ${isRegional ? `(in ${lang})` : ''}
+2. Includes interesting facts and context ${isRegional ? `(in ${lang})` : ''}
+3. Relates to real-world locations when relevant
+4. Is encouraging and supportive ${isRegional ? `(in ${lang})` : ''}
+5. Suggests related topics to explore ${isRegional ? `(in ${lang})` : ''}
+
+When mentioning specific geographic locations (cities, landmarks, countries, natural features), format them as:
+[[LocationName|latitude|longitude]]
+
+For example:
+- "[[Mount Everest|27.9881|86.9250]] is the highest peak..."
+- "Visit [[Paris|48.8566|2.3522]] to see the Eiffel Tower"
+- "The [[Amazon Rainforest|-3.4653|-62.2159]] spans multiple countries"
+
+${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Location names can be in original language.` : 'You can include multiple locations in your response. Be warm and engaging!'}`;
+
+      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });
+      
+      // Parse all location links
+      const locations = [];
+      const locationRegex = /\[\[([^\|]+)\|([-\d.]+)\|([-\d.]+)\]\]/g;
+      let match;
+      
+      while ((match = locationRegex.exec(response || '')) !== null) {
+        locations.push({
+          name: match[1].trim(),
+          lat: parseFloat(match[2]),
+          lng: parseFloat(match[3]),
+          placeholder: match[0]
+        });
+      }
+      
+      setChatHistory(prev => [{ role: 'assistant', content: response || "Let me help you explore the world!", locations }, ...prev]);
+    } catch (error) {
+      console.error('❌ Globe AI error:', error);
+      console.error('❌ Error details:', error.message, error.stack);
+      // v10.4.6: Graceful fallback like Chemistry - don't show raw error to user
+      setChatHistory(prev => [{ 
+        role: 'assistant', 
+        content: "I'd be happy to help you explore geography! Could you please rephrase your question? Try to be specific about what you'd like to learn - whether it's about countries, cities, climate, landmarks, or any other geography topic. I'm here to help! 🌍",
+        locations: []
+      }, ...prev]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle location click from AI response
+  const handleViewLocation = (location) => {
+    focusLocation(location);
+    setActiveTab(1); // Switch to Globe Explorer tab
+  };
+
   return (
     <Dialog 
       open={open} 
@@ -404,12 +504,133 @@ function GlobeViewer({ open, onClose, user }) {
       </Box>
 
       <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {activeTab === 0 && <GlobeAIChat user={user} onViewLocation={(location) => {
-          setSelectedLocation(location);
-          setMapCenter({ lat: location.lat, lng: location.lng });
-          setZoom(10);
-          setActiveTab(1);
-        }} />}
+        {/* v10.4.10: Inline AI Chat (like Chemistry) */}
+        {activeTab === 0 && (
+          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            {/* Input Section - At Top */}
+            <Paper elevation={0} sx={{ p: 2, borderBottom: '1px solid #e0e0e0', bgcolor: 'white' }}>
+              <TextField
+                fullWidth
+                multiline
+                maxRows={3}
+                placeholder="Ask me anything about geography..."
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), askGeographyAI())}
+                disabled={loading}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <VoiceInputButton
+                        onTranscript={setQuestion}
+                        existingText={question}
+                        disabled={loading}
+                        size="small"
+                      />
+                      <IconButton onClick={askGeographyAI} disabled={loading || !question.trim()} color="primary">
+                        {loading ? <CircularProgress size={20} /> : <SendIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                {GEOGRAPHY_QUESTIONS.map((q, i) => (
+                  <Chip key={i} label={q} size="small" onClick={() => setQuestion(q)} sx={{ cursor: 'pointer', bgcolor: '#e3f2fd', '&:hover': { bgcolor: '#bbdefb' }, fontSize: '0.75rem' }} />
+                ))}
+              </Box>
+            </Paper>
+
+            {/* Chat History */}
+            <Box sx={{ flex: 1, overflow: 'auto', p: 2, bgcolor: '#fafafa' }}>
+              {chatHistory.length === 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
+                  <VyonnGlobeIcon size={64} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+                    Welcome to Vyonn Globe Explorer! 🌍
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Ask me anything about countries, cities, climate, landmarks, geography, and more!
+                  </Typography>
+                </Box>
+              ) : (
+                chatHistory.map((msg, i) => (
+                  <Box key={i} sx={{ mb: 2 }}>
+                    {msg.role === 'user' ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                        <Paper sx={{ p: 2, bgcolor: '#e3f2fd', borderRadius: 2, maxWidth: '80%' }}>
+                          <Typography variant="body2">{msg.content}</Typography>
+                        </Paper>
+                        <Avatar src={userPhoto} sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
+                          {userName[0]}
+                        </Avatar>
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box sx={{ mt: 0.5 }}>
+                          <VyonnGlobeIcon size={32} />
+                        </Box>
+                        <Box sx={{ flex: 1 }}>
+                          <Paper sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                            {msg.locations && msg.locations.length > 0 ? (
+                              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                {msg.content.split(/(\[\[[^\]]+\]\])/).map((part, idx) => {
+                                  const location = msg.locations.find(loc => loc.placeholder === part);
+                                  if (location) {
+                                    return (
+                                      <Typography
+                                        key={idx}
+                                        component="span"
+                                        onClick={() => handleViewLocation(location)}
+                                        sx={{
+                                          color: 'primary.main',
+                                          textDecoration: 'underline',
+                                          cursor: 'pointer',
+                                          fontWeight: 600,
+                                          '&:hover': {
+                                            color: 'primary.dark',
+                                            textDecoration: 'underline'
+                                          }
+                                        }}
+                                      >
+                                        {location.name}
+                                      </Typography>
+                                    );
+                                  }
+                                  return part;
+                                })}
+                              </Typography>
+                            ) : (
+                              <Typography 
+                                variant="body2" 
+                                sx={{ whiteSpace: 'pre-wrap' }}
+                                dangerouslySetInnerHTML={{ 
+                                  __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') 
+                                }}
+                              />
+                            )}
+                          </Paper>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                ))
+              )}
+              {loading && (
+                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                  <Box sx={{ mt: 0.5 }}>
+                    <VyonnGlobeIcon size={32} />
+                  </Box>
+                  <Paper sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                    <CircularProgress size={16} />
+                    <Typography variant="body2" component="span" sx={{ ml: 1 }}>Thinking...</Typography>
+                  </Paper>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        )}
+        
         {activeTab === 1 && (
         <Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
         {/* Sidebar */}
