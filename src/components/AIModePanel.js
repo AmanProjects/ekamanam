@@ -7051,14 +7051,16 @@ Return ONLY this valid JSON:
         title="Circuit Simulator (Falstad)"
       />
 
-      {/* v7.2.32: Educational Tools Dialogs */}
+      {/* v7.2.32: Educational Tools Dialogs - v10.4.11: All now pass user prop */}
       <MathTools
         open={showMathTools}
         onClose={() => setShowMathTools(false)}
+        user={user}
       />
       <ChemistryTools
         open={showChemistryTools}
         onClose={() => setShowChemistryTools(false)}
+        user={user}
       />
       <PhysicsSimulator
         open={showPhysicsSimulator}
@@ -7068,10 +7070,12 @@ Return ONLY this valid JSON:
       <CodeEditor
         open={showCodeEditor}
         onClose={() => setShowCodeEditor(false)}
+        user={user}
       />
       <GlobeViewer
         open={showGlobeViewer}
         onClose={() => setShowGlobeViewer(false)}
+        user={user}
       />
 
       {/* v10.1.2: Volume Control Notice */}

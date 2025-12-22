@@ -608,11 +608,11 @@ function Dashboard({
         />
 
         {/* Educational Tool Dialogs */}
-        <MathTools open={showMathTools} onClose={() => setShowMathTools(false)} />
+        <MathTools open={showMathTools} onClose={() => setShowMathTools(false)} user={user} />
         <ChemistryTools open={showChemistryTools} onClose={() => setShowChemistryTools(false)} user={user} />
         <PhysicsSimulator open={showPhysicsSimulator} onClose={() => setShowPhysicsSimulator(false)} user={user} />
-        <CodeEditor open={showCodeEditor} onClose={() => setShowCodeEditor(false)} />
-        <GlobeViewer open={showGlobeViewer} onClose={() => setShowGlobeViewer(false)} />
+        <CodeEditor open={showCodeEditor} onClose={() => setShowCodeEditor(false)} user={user} />
+        <GlobeViewer open={showGlobeViewer} onClose={() => setShowGlobeViewer(false)} user={user} />
 
         {/* Footer with Copyright and Disclaimer */}
         <Box sx={{ textAlign: 'center', pt: 2, mt: 2, borderTop: 1, borderColor: 'divider' }}>
