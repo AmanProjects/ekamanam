@@ -2930,7 +2930,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
                     sandbox="allow-scripts" 
                   />
                   {/* v10.5.0: AR Viewer Button */}
-                  <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', bgcolor: '#f5f5f5', display: 'flex', justifyContent: 'center', gap: 2 }}>
+                  <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', bgcolor: '#f5f5f5', display: 'flex', justifyContent: 'center' }}>
                     <Button
                       variant="contained"
                       size="large"
@@ -2941,13 +2941,13 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
                         setShowAR(true);
                       }}
                       sx={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        bgcolor: '#4caf50',
                         color: 'white',
                         fontWeight: 600,
                         px: 4,
                         py: 1.5,
                         '&:hover': {
-                          background: 'linear-gradient(135deg, #5a67d8 0%, #6b4298 100%)',
+                          bgcolor: '#45a049',
                           transform: 'scale(1.02)'
                         },
                         transition: 'all 0.2s'
@@ -2955,10 +2955,6 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
                     >
                       View in AR
                     </Button>
-                    <Typography variant="caption" sx={{ alignSelf: 'center', color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <InfoIcon fontSize="small" />
-                      Experience this molecule in augmented reality
-                    </Typography>
                   </Box>
                 </>
               ) : (

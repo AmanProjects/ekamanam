@@ -26,6 +26,7 @@ import * as THREE from 'three';
 
 function ChemistryAR({ open, onClose, moleculeData, moleculeName }) {
   const containerRef = useRef(null);
+  const canvasRef = useRef(null);  // v10.5.1: For gesture handling
   const [arSupported, setArSupported] = useState(null);
   const [arSession, setArSession] = useState(null);
   const [error, setError] = useState(null);
@@ -59,13 +60,22 @@ function ChemistryAR({ open, onClose, moleculeData, moleculeName }) {
   };
 
   // Create 3D molecule from data
-  const createMolecule = (scene) => {
+  const createMolecule = (scene, canvas) => {
     if (!moleculeData || !moleculeData.atoms) {
       console.error('No molecule data available');
       return;
     }
 
     const moleculeGroup = new THREE.Group();
+    
+    // v10.5.1: Track for gesture controls
+    const gestureState = {
+      scale: 0.5,  // Start smaller (was too big)
+      rotation: { x: 0, y: 0 },
+      lastPinchDistance: 0,
+      lastTouchX: 0,
+      lastTouchY: 0
+    };
 
     // Atom colors (CPK coloring scheme)
     const atomColors = {
@@ -107,11 +117,11 @@ function ChemistryAR({ open, onClose, moleculeData, moleculeName }) {
       });
       const sphere = new THREE.Mesh(geometry, material);
 
-      // Position (scale to reasonable AR size - molecules are tiny!)
+      // Position (scale to reasonable AR size - v10.5.1: reduced to 0.02 from 0.1)
       sphere.position.set(
-        (atom.x || 0) * 0.1,  // Scale down by 10x for AR viewing
-        (atom.y || 0) * 0.1,
-        (atom.z || 0) * 0.1
+        (atom.x || 0) * 0.02,  // Much smaller - was too big in AR
+        (atom.y || 0) * 0.02,
+        (atom.z || 0) * 0.02
       );
 
       moleculeGroup.add(sphere);
@@ -124,8 +134,8 @@ function ChemistryAR({ open, onClose, moleculeData, moleculeName }) {
         const atom2 = moleculeData.atoms[bond.atom2];
 
         if (atom1 && atom2) {
-          const start = new THREE.Vector3(atom1.x * 0.1, atom1.y * 0.1, atom1.z * 0.1);
-          const end = new THREE.Vector3(atom2.x * 0.1, atom2.y * 0.1, atom2.z * 0.1);
+          const start = new THREE.Vector3(atom1.x * 0.02, atom1.y * 0.02, atom1.z * 0.02);
+          const end = new THREE.Vector3(atom2.x * 0.02, atom2.y * 0.02, atom2.z * 0.02);
           const direction = new THREE.Vector3().subVectors(end, start);
           const length = direction.length();
 
@@ -155,10 +165,76 @@ function ChemistryAR({ open, onClose, moleculeData, moleculeName }) {
 
     scene.add(moleculeGroup);
 
-    // Add rotation animation
+    // v10.5.1: Add touch gesture controls
+    let autoRotate = true;
+    
+    const handleTouchStart = (event) => {
+      if (event.touches.length === 1) {
+        gestureState.lastTouchX = event.touches[0].clientX;
+        gestureState.lastTouchY = event.touches[0].clientY;
+        autoRotate = false; // Stop auto-rotation when user touches
+      } else if (event.touches.length === 2) {
+        const dx = event.touches[0].clientX - event.touches[1].clientX;
+        const dy = event.touches[0].clientY - event.touches[1].clientY;
+        gestureState.lastPinchDistance = Math.sqrt(dx * dx + dy * dy);
+        autoRotate = false;
+      }
+    };
+
+    const handleTouchMove = (event) => {
+      event.preventDefault();
+      
+      if (event.touches.length === 1) {
+        // Single finger drag - rotate
+        const deltaX = event.touches[0].clientX - gestureState.lastTouchX;
+        const deltaY = event.touches[0].clientY - gestureState.lastTouchY;
+        
+        moleculeGroup.rotation.y += deltaX * 0.01;
+        moleculeGroup.rotation.x += deltaY * 0.01;
+        
+        gestureState.lastTouchX = event.touches[0].clientX;
+        gestureState.lastTouchY = event.touches[0].clientY;
+        
+      } else if (event.touches.length === 2) {
+        // Two finger pinch - zoom
+        const dx = event.touches[0].clientX - event.touches[1].clientX;
+        const dy = event.touches[0].clientY - event.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (gestureState.lastPinchDistance > 0) {
+          const scaleFactor = distance / gestureState.lastPinchDistance;
+          const newScale = moleculeGroup.scale.x * scaleFactor;
+          
+          // Limit scale between 0.1 and 3.0
+          if (newScale >= 0.1 && newScale <= 3.0) {
+            moleculeGroup.scale.multiplyScalar(scaleFactor);
+          }
+        }
+        
+        gestureState.lastPinchDistance = distance;
+      }
+    };
+
+    const handleTouchEnd = (event) => {
+      if (event.touches.length === 0) {
+        autoRotate = true; // Resume auto-rotation when no touches
+      }
+      gestureState.lastPinchDistance = 0;
+    };
+
+    // Add touch listeners to canvas
+    if (canvas) {
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleTouchEnd);
+    }
+
+    // Animation loop with conditional auto-rotation
     const animate = () => {
       if (moleculeGroup && arSession) {
-        moleculeGroup.rotation.y += 0.01;
+        if (autoRotate) {
+          moleculeGroup.rotation.y += 0.005; // Slower rotation
+        }
         requestAnimationFrame(animate);
       }
     };
@@ -188,6 +264,7 @@ function ChemistryAR({ open, onClose, moleculeData, moleculeName }) {
 
       // Setup WebGL context
       const canvas = document.createElement('canvas');
+      canvasRef.current = canvas;  // v10.5.1: Store canvas ref for gesture handlers
       const gl = canvas.getContext('webgl', { xrCompatible: true });
 
       // Create Three.js renderer
@@ -218,8 +295,8 @@ function ChemistryAR({ open, onClose, moleculeData, moleculeName }) {
       directionalLight.position.set(0, 1, 1);
       scene.add(directionalLight);
 
-      // Create molecule
-      createMolecule(scene);
+      // Create molecule with canvas for gesture handling
+      createMolecule(scene, canvas);
 
       // Render loop
       renderer.setAnimationLoop((time, frame) => {
