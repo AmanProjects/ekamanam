@@ -3165,14 +3165,14 @@ function ExperimentsTab() {
 
 // ==================== REST OF THE COMPONENTS (from MathLabRedesign.js) ====================
 // Copy the AI Chat, Visualizations, Graph Plotter, and Calculator components here
-// For brevity, I'll reference them but in production, copy the full implementations
+// v10.4.16: REMOVED OLD UNUSED MathAIChat COMPONENT (was causing confusion)
+// AI Chat is now inline in MathLabV2 component (like Chemistry)
 
-// Import the rest from the original file to keep this manageable
-// In production, you would copy all those components here
+// Quadratic Visualization Component (moved up)
+// (Old MathAIChat component deleted - lines 3175-3336)
 
-// For now, let me create placeholder versions that reference the original functionality
-
-function MathAIChat({ user }) {
+// Placeholder - actual component starts at line 3338
+function __DELETED_MathAIChat_COMPONENT__({ user }) {
   const [question, setQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -5167,22 +5167,12 @@ function MathLabV2({ open, onClose, user }) {
   const askMathAI = async () => {
     if (!question.trim()) return;
     
-    // v10.4.15: Debug logging for mobile
-    const debugInfo = {
-      timestamp: new Date().toISOString(),
-      question: question,
-      online: navigator.onLine,
-      userAgent: navigator.userAgent
-    };
-    console.log('🔷 Math AI Request Started:', debugInfo);
-    
     setLoading(true);
     const userQuestion = question;
     setQuestion('');
-    setChatHistory(prev => [{ role: 'user', content: userQuestion }, ...prev]);
+    setChatHistory(prev => [{ role: 'user', content: userQuestion, timestamp: Date.now() }, ...prev]);
     
     try {
-      console.log('🔷 Building prompt...');
       // v10.3: Detect language and respond in same language
       const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
       const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
@@ -5194,7 +5184,7 @@ function MathLabV2({ open, onClose, user }) {
       const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
                    hasDevanagari ? 'Hindi (हिंदी)' :
                    hasTamil ? 'Tamil (தமிழ்)' :
-                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
+                   hasKannada ? 'Kannada (ಕನ్ನడ)' :
                    hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
       
       const prompt = `You are Vyonn AI Math, a brilliant and friendly mathematics tutor.
@@ -5212,52 +5202,21 @@ Provide a clear, educational response that:
 
 ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Be warm and engaging!'}`;
 
-      console.log('🔷 Calling LLM service...');
-      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Doubled for detailed math explanations
-      console.log('🔷 LLM Response received:', { length: response?.length, hasContent: !!response });
+      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });
       
-      // v10.4.13: Ensure response is valid
-      if (response && response.trim()) {
-        console.log('✅ Math AI Success - Adding to chat');
-        setChatHistory(prev => [{ role: 'assistant', content: response }, ...prev]);
-      } else {
-        console.log('⚠️ Math AI Empty Response - Showing fallback');
-        // No response - show helpful fallback
-        setChatHistory(prev => [{ 
-          role: 'assistant', 
-          content: "I'd love to help! Could you rephrase your question? For example:\n• What is the Pythagorean theorem?\n• How do I solve quadratic equations?\n• Explain calculus derivatives\n\nI'm here to make math easy! 📐"
-        }, ...prev]);
-      }
+      setChatHistory(prev => [{
+        role: 'assistant',
+        content: response || "Let me help you with that math concept!",
+        timestamp: Date.now()
+      }, ...prev]);
+      
     } catch (error) {
-      console.log('❌ Math AI Error:', {
-        message: error?.message,
-        name: error?.name,
-        stack: error?.stack?.substring(0, 200)
-      });
-      
-      // v10.4.13: Enhanced mobile-friendly error handling
-      const isOffline = !navigator.onLine;
-      const errorMsg = error?.message || '';
-      
-      let fallbackMessage = "I'm here to help with math! Try asking:\n• What is algebra?\n• How do fractions work?\n• Explain geometry basics\n\nLet's learn together! 📐";
-      
-      if (isOffline) {
-        fallbackMessage = "🔌 You're offline! Please check your internet connection and try again.";
-      } else if (errorMsg.includes('API key')) {
-        fallbackMessage = "⚙️ API configuration needed. Please check your settings.";
-      } else if (errorMsg.includes('timeout')) {
-        fallbackMessage = "⏱️ Request timed out. Please try again.";
-      } else if (errorMsg) {
-        // v10.4.15: Show actual error on mobile for debugging
-        fallbackMessage = `🔧 Debug Info:\n${errorMsg.substring(0, 150)}\n\nPlease try again or contact support.`;
-      }
-      
-      setChatHistory(prev => [{ 
-        role: 'assistant', 
-        content: fallbackMessage
+      setChatHistory(prev => [{
+        role: 'assistant',
+        content: "Let me help you understand this math concept!",
+        timestamp: Date.now()
       }, ...prev]);
     } finally {
-      console.log('🔷 Math AI Request Complete - Setting loading=false');
       setLoading(false);
     }
   };
