@@ -866,19 +866,6 @@ function App() {
               />
             )}
 
-            {/* Flashcard Badge - Show due count */}
-            {dueCardCount > 0 && (
-              <Tooltip title={`${dueCardCount} flashcard${dueCardCount !== 1 ? 's' : ''} due for review`}>
-                <Chip
-                  label={`${dueCardCount} due`}
-                  size="small"
-                  color="warning"
-                  onClick={() => setShowFlashcards(true)}
-                  sx={{ fontWeight: 600, cursor: 'pointer' }}
-                />
-              </Tooltip>
-            )}
-
             {/* v10.1: First-Time Users Tour Button - First in list */}
             <FirstTimeUserButton onClick={() => {
               setRunTour(true);
@@ -988,13 +975,6 @@ function App() {
               </ListItemIcon>
               <ListItemText primary="My Library" secondary={libraryCount > 0 ? `${libraryCount} PDFs` : null} />
             </ListItem>
-
-            {dueCardCount > 0 && (
-              <ListItem button onClick={() => { setShowFlashcards(true); setMobileMenuOpen(false); }}>
-                <ListItemIcon><Badge badgeContent={dueCardCount} color="warning"><AutoAwesome /></Badge></ListItemIcon>
-                <ListItemText primary="Flashcards Due" />
-              </ListItem>
-            )}
           </List>
           
           <Divider />

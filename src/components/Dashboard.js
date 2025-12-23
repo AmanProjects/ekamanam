@@ -94,13 +94,14 @@ function Dashboard({
     toolSetter(true);
   };
 
-  // Load Pro Tools state from admin config on mount
+  // Load Pro Tools state from admin config on mount - v10.5.6: Default to disabled
   useEffect(() => {
     const savedConfig = localStorage.getItem('ekamanam_admin_config');
     if (savedConfig) {
       try {
         const config = JSON.parse(savedConfig);
-        setProToolsEnabled(config?.tabs?.proTools?.enabled || false);
+        // v10.5.6: Explicitly default to false (disabled)
+        setProToolsEnabled(config?.tabs?.proTools?.enabled === true);
       } catch (e) {
         console.error('Failed to parse admin config:', e);
       }
@@ -567,25 +568,7 @@ function Dashboard({
           vyonnContext={toolContext}
         />
 
-        {/* Pro Tools Toggle - Admin Only (moved to footer) */}
-        {subscription && subscription.isPaid && (
-          <Box sx={{ textAlign: 'center', pt: 2, mt: 2, borderTop: 1, borderColor: 'divider', mb: 2 }}>
-            <Button
-              size="small"
-              variant="text"
-              onClick={handleProToolsToggle}
-              startIcon={<ToolIcon />}
-              sx={{
-                textTransform: 'none',
-                color: proToolsEnabled ? 'success.main' : 'text.secondary',
-                fontSize: '0.75rem',
-                '&:hover': { bgcolor: 'action.hover' }
-              }}
-            >
-              Pro Tools: {proToolsEnabled ? 'Enabled' : 'Disabled'}
-            </Button>
-          </Box>
-        )}
+        {/* v10.5.6: Pro Tools Toggle - Hidden per user request (tools only from Dashboard) */}
 
         {/* Footer with Copyright and Disclaimer */}
         <Box sx={{ textAlign: 'center', pt: 2, borderTop: 1, borderColor: 'divider' }}>
