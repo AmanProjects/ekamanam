@@ -503,7 +503,34 @@ function Dashboard({
         />
 
         {/* Tool Dialogs - All consistent with Chemistry AI structure */}
-        <VyonnAI open={showVyonnAI} onClose={() => setShowVyonnAI(false)} user={user} />
+        <VyonnAI 
+          open={showVyonnAI} 
+          onClose={() => setShowVyonnAI(false)} 
+          user={user}
+          onOpenTool={(tool) => {
+            // Close Vyonn AI and open the requested tool
+            setShowVyonnAI(false);
+            switch(tool) {
+              case 'math':
+                openToolWithApiCheck(setShowMathTools);
+                break;
+              case 'chemistry':
+                openToolWithApiCheck(setShowChemistryTools);
+                break;
+              case 'physics':
+                openToolWithApiCheck(setShowPhysicsSimulator);
+                break;
+              case 'code':
+                openToolWithApiCheck(setShowCodeEditor);
+                break;
+              case 'globe':
+                openToolWithApiCheck(setShowGlobeViewer);
+                break;
+              default:
+                break;
+            }
+          }}
+        />
         <MathTools open={showMathTools} onClose={() => setShowMathTools(false)} user={user} />
         <ChemistryTools open={showChemistryTools} onClose={() => setShowChemistryTools(false)} user={user} />
         <PhysicsSimulator open={showPhysicsSimulator} onClose={() => setShowPhysicsSimulator(false)} user={user} />

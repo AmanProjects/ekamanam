@@ -23,9 +23,9 @@ import VoiceInputButton from '../VoiceInputButton';
 /**
  * Vyonn AI - Standalone Chat Interface
  * Consistent with Chemistry/Math/Physics AI labs
- * v10.5.6
+ * v10.5.6: Connected to all lab tools
  */
-function VyonnAI({ open, onClose, user }) {
+function VyonnAI({ open, onClose, user, onOpenTool }) {
   const [question, setQuestion] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([
@@ -74,7 +74,7 @@ function VyonnAI({ open, onClose, user }) {
                                hasMalayalam ? 'Malayalam (മലയാളം)' :
                                hasBengali ? 'Bengali (বাংলা)' : 'English';
       
-      const systemPrompt = `You are Vyonn, a friendly AI learning assistant for students.
+      const systemPrompt = `You are Vyonn, a friendly AI learning assistant for students in the Ekamanam app.
 
 ${isRegionalLanguage ? `
 🚨 CRITICAL: The student asked in ${detectedLanguage}.
@@ -99,6 +99,35 @@ For math/science questions:
 3. Show steps clearly
 4. Give the final answer
 
+🎓 INTERACTIVE TOOLS YOU CAN SUGGEST:
+When relevant, recommend these specialized tools to students:
+
+📐 **Math Lab** - For: algebra, calculus, geometry, trigonometry, probability, statistics, graphing, matrices
+   Tools: Quadratic solver, Pythagorean visualizer, trigonometry, matrix calculator, probability games, graph plotter
+
+🧪 **Chemistry Lab** - For: molecules, periodic table, chemical reactions, bonding, acids/bases, organic chemistry
+   Tools: 3D molecules, periodic table explorer, equation balancer, reaction simulator
+
+⚡ **Physics Lab** - For: forces, motion, gravity, circuits, electricity, magnetism, waves, optics
+   Tools: Physics simulator, circuit builder, force diagrams, projectile motion
+
+💻 **Code Editor** - For: programming, coding, JavaScript, Python, HTML, CSS, algorithms
+   Tools: Monaco editor with live preview, syntax highlighting, code execution
+
+🌍 **Globe Explorer** - For: geography, countries, capitals, continents, maps, locations, world landmarks
+   Tools: Interactive 3D globe, country information, world exploration
+
+HOW TO SUGGEST TOOLS:
+${isRegionalLanguage ? `
+- After explaining the concept in ${detectedLanguage}, add:
+  "[Use Math Lab]" or "[Use Chemistry Lab]" etc.
+- Example: "...కాబట్టి సమాధానం x = 5. [Use Math Lab]"
+` : `
+- After your explanation, add one of these action tags:
+  [Use Math Lab] or [Use Chemistry Lab] or [Use Physics Lab] or [Use Code Editor] or [Use Globe Explorer]
+- Example: "To solve quadratic equations like this, you use the formula... The answer is x = 5. [Use Math Lab]"
+`}
+
 ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond in ${detectedLanguage}!` : ''}`;
 
       // Build conversation context from history
@@ -120,9 +149,27 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
         maxTokens: 2048 
       });
       
+      // Detect suggested tools
+      const toolSuggestions = {
+        math: /\[Use Math Lab\]/i.test(response),
+        chemistry: /\[Use Chemistry Lab\]/i.test(response),
+        physics: /\[Use Physics Lab\]/i.test(response),
+        code: /\[Use Code Editor\]/i.test(response),
+        globe: /\[Use Globe Explorer\]/i.test(response)
+      };
+      
+      // Remove action tags from display
+      let cleanResponse = response || "Let me help you understand that!";
+      cleanResponse = cleanResponse.replace(/\[Use Math Lab\]/gi, '');
+      cleanResponse = cleanResponse.replace(/\[Use Chemistry Lab\]/gi, '');
+      cleanResponse = cleanResponse.replace(/\[Use Physics Lab\]/gi, '');
+      cleanResponse = cleanResponse.replace(/\[Use Code Editor\]/gi, '');
+      cleanResponse = cleanResponse.replace(/\[Use Globe Explorer\]/gi, '');
+      
       setChatHistory([...newHistory, {
         role: 'assistant',
-        content: response || "Let me help you understand that!",
+        content: cleanResponse.trim(),
+        toolSuggestions,
         timestamp: Date.now()
       }]);
     } catch (error) {
@@ -221,22 +268,94 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
                 </Avatar>
               )}
               
-              <Paper
-                elevation={1}
-                sx={{
-                  p: 2,
-                  maxWidth: '70%',
-                  bgcolor: msg.role === 'user' ? '#546e7a' : 'white',
-                  color: msg.role === 'user' ? 'white' : 'text.primary',
-                  borderRadius: 2
-                }}
-              >
-                <Typography
-                  variant="body1"
-                  sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-                  dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }}
-                />
-              </Paper>
+              <Box sx={{ maxWidth: '70%' }}>
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    bgcolor: msg.role === 'user' ? '#546e7a' : 'white',
+                    color: msg.role === 'user' ? 'white' : 'text.primary',
+                    borderRadius: 2
+                  }}
+                >
+                  <Typography
+                    variant="body1"
+                    sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                    dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }}
+                  />
+                </Paper>
+                
+                {/* Tool Suggestions */}
+                {msg.toolSuggestions && msg.role === 'assistant' && (
+                  <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                    {msg.toolSuggestions.math && (
+                      <Chip
+                        icon={<Typography fontSize="0.9rem">📐</Typography>}
+                        label="Open Math Lab"
+                        onClick={() => {
+                          onClose();
+                          if (onOpenTool) onOpenTool('math');
+                        }}
+                        clickable
+                        size="small"
+                        sx={{ bgcolor: '#1976d2', color: 'white', '&:hover': { bgcolor: '#1565c0' } }}
+                      />
+                    )}
+                    {msg.toolSuggestions.chemistry && (
+                      <Chip
+                        icon={<Typography fontSize="0.9rem">🧪</Typography>}
+                        label="Open Chemistry Lab"
+                        onClick={() => {
+                          onClose();
+                          if (onOpenTool) onOpenTool('chemistry');
+                        }}
+                        clickable
+                        size="small"
+                        sx={{ bgcolor: '#4caf50', color: 'white', '&:hover': { bgcolor: '#388e3c' } }}
+                      />
+                    )}
+                    {msg.toolSuggestions.physics && (
+                      <Chip
+                        icon={<Typography fontSize="0.9rem">⚡</Typography>}
+                        label="Open Physics Lab"
+                        onClick={() => {
+                          onClose();
+                          if (onOpenTool) onOpenTool('physics');
+                        }}
+                        clickable
+                        size="small"
+                        sx={{ bgcolor: '#6c5ce7', color: 'white', '&:hover': { bgcolor: '#5a4fd4' } }}
+                      />
+                    )}
+                    {msg.toolSuggestions.code && (
+                      <Chip
+                        icon={<Typography fontSize="0.9rem">💻</Typography>}
+                        label="Open Code Editor"
+                        onClick={() => {
+                          onClose();
+                          if (onOpenTool) onOpenTool('code');
+                        }}
+                        clickable
+                        size="small"
+                        sx={{ bgcolor: '#2d3436', color: 'white', '&:hover': { bgcolor: '#1e272e' } }}
+                      />
+                    )}
+                    {msg.toolSuggestions.globe && (
+                      <Chip
+                        icon={<Typography fontSize="0.9rem">🌍</Typography>}
+                        label="Open Globe Explorer"
+                        onClick={() => {
+                          onClose();
+                          if (onOpenTool) onOpenTool('globe');
+                        }}
+                        clickable
+                        size="small"
+                        sx={{ bgcolor: '#0984e3', color: 'white', '&:hover': { bgcolor: '#0770c9' } }}
+                      />
+                    )}
+                  </Box>
+                )}
+              </Box>
               
               {msg.role === 'user' && user && (
                 <Avatar 
