@@ -148,7 +148,7 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
         alignItems: 'center', 
         justifyContent: 'space-between',
         p: 2,
-        bgcolor: '#6366f1',
+        bgcolor: '#37474f',
         color: 'white'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -196,7 +196,7 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
               }}
             >
               {msg.role === 'assistant' && (
-                <Avatar sx={{ bgcolor: '#6366f1', width: 40, height: 40 }}>
+                <Avatar sx={{ bgcolor: '#37474f', width: 40, height: 40 }}>
                   <img 
                     src="/vyonn.png" 
                     alt="Vyonn" 
@@ -214,7 +214,7 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
                 sx={{
                   p: 2,
                   maxWidth: '70%',
-                  bgcolor: msg.role === 'user' ? '#6366f1' : 'white',
+                  bgcolor: msg.role === 'user' ? '#546e7a' : 'white',
                   color: msg.role === 'user' ? 'white' : 'text.primary',
                   borderRadius: 2
                 }}
@@ -240,7 +240,7 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
           
           {aiLoading && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 1 }}>
-              <Avatar sx={{ bgcolor: '#6366f1', width: 40, height: 40 }}>
+              <Avatar sx={{ bgcolor: '#37474f', width: 40, height: 40 }}>
                 <img 
                   src="/vyonn.png" 
                   alt="Vyonn" 
@@ -295,10 +295,10 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
                     disabled={!question.trim() || aiLoading}
                     color="primary"
                     sx={{
-                      bgcolor: question.trim() && !aiLoading ? '#6366f1' : 'transparent',
+                      bgcolor: question.trim() && !aiLoading ? '#546e7a' : 'transparent',
                       color: question.trim() && !aiLoading ? 'white' : 'inherit',
                       '&:hover': {
-                        bgcolor: question.trim() && !aiLoading ? '#5558e3' : 'transparent'
+                        bgcolor: question.trim() && !aiLoading ? '#455a64' : 'transparent'
                       }
                     }}
                   >
