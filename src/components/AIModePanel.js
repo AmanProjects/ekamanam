@@ -555,11 +555,6 @@ function AIModePanel({
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizResults, setQuizResults] = useState(null);
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
-  const [wordAnalysis, setWordAnalysis] = useState([]);
-  const [wordAnalysisPage, setWordAnalysisPage] = useState(null);
-  const [analyzingWords, setAnalyzingWords] = useState(false);
-  const [wordBatch, setWordBatch] = useState(1); // Track which batch of words we're on
-  const [speakingWordIndex, setSpeakingWordIndex] = useState(null);
   const [currentSpeakingId, setCurrentSpeakingId] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speakingSection, setSpeakingSection] = useState(null); // Track which teacher section is speaking
@@ -798,7 +793,7 @@ function AIModePanel({
   const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
 
   const handleTabChange = (event, newValue) => {
-    console.log('🔥🔥🔥 [TAB CLICK] Clicked tab index:', newValue, 'Current:', activeTab, 'Read tab index:', tabIndices.multilingual);
+    console.log('🔥🔥🔥 [TAB CLICK] Clicked tab index:', newValue, 'Current:', activeTab);
     
     // v10.1: Check for API keys before switching to AI-powered tabs
     // Notes tab (typically last) doesn't require API keys
@@ -889,19 +884,6 @@ function AIModePanel({
     setResourcesResponse('');
     setResourcesResponsePage(null);
     setUsedCache(false);
-    setError(null);
-  };
-
-  const clearWordAnalysis = async () => {
-    // v7.2.26: Also clear the cache so regeneration works
-    if (pdfId && wordAnalysisPage) {
-      await clearPageCache(pdfId, wordAnalysisPage, 'wordAnalysis');
-      console.log('🗑️ Cleared Word Analysis cache for page', wordAnalysisPage);
-    }
-    
-    setWordAnalysis([]);
-    setWordAnalysisPage(null);
-    setWordBatch(1);
     setError(null);
   };
 
@@ -1832,165 +1814,7 @@ YOUR ${detectedLanguage} RESPONSE:` :
 
   // Removed performOCR - using Teacher Mode technique (pageText) instead
 
-  const handleWordByWordAnalysis = async (isLoadMore = false) => {
-    // V8.0.3: EXTREME DEBUG - If you don't see this, function isn't being called
-    alert('READ TAB: Button clicked! Check console for details.');
-    console.log('🔍🔍🔍 [READ TAB DEBUG] FUNCTION CALLED!');
-    console.log('🔍 [Multilingual] Button clicked:', { isLoadMore, hasPageText: !!pageText, pageTextLength: pageText?.length });
-
-    if (!pageText) {
-      setError('Please load a PDF page first');
-      console.error('❌ [Multilingual] No pageText available');
-      return;
-    }
-
-    // 🔒 Check subscription limits (only for new analysis, not for "Load More")
-    if (!isLoadMore && user && subscription) {
-      const usageCheck = await trackAIQueryUsage(user.uid, user.email);
-      if (!usageCheck.allowed) {
-        setError(usageCheck.message || 'Daily limit reached. Please upgrade to continue.');
-        return;
-      }
-      if (subscription.refreshUsage) {
-        subscription.refreshUsage();
-      }
-    }
-
-    setAnalyzingWords(true);
-    setError(null);
-    setUsedCache(false);
-    console.log('🔄 [Multilingual] Starting word analysis...');
-    
-    if (!isLoadMore) {
-      setWordAnalysis([]);
-      setWordBatch(1);
-
-      // 🔍 CHECK CACHE FOR FIRST BATCH
-      if (pdfId && currentPage) {
-        const cachedData = await getCachedData(pdfId, currentPage, 'wordAnalysis');
-        if (cachedData) {
-          console.log('⚡ Cache HIT: Using cached Word Analysis');
-          setWordAnalysis([cachedData]);
-          setUsedCache(true);
-          setAnalyzingWords(false);
-          return;
-        }
-      }
-    }
-
-    try {
-      // Get words already analyzed (to avoid duplicates)
-      const existingWords = isLoadMore && wordAnalysis[0]?.words 
-        ? wordAnalysis[0].words.map(w => w.word).join(', ')
-        : '';
-      
-      const batchNumber = isLoadMore ? wordBatch + 1 : 1;
-      
-      // Use the SAME technique as Teacher Mode - analyze entire page at once
-      // V8.0.1: Fixed parameter order - apiKey is 2nd param, excludeWords is 3rd, batchNumber is 4th
-      const response = await generateWordByWordAnalysis(pageText, null, existingWords, batchNumber);
-      
-      // Parse JSON response (same as Teacher Mode)
-      try {
-        let cleanResponse = response
-          .replace(/```json\s*/gi, '')
-          .replace(/```\s*/g, '')
-          .trim();
-        
-        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-        if (jsonMatch && jsonMatch[0]) {
-          cleanResponse = jsonMatch[0];
-        }
-        
-        const parsedResponse = JSON.parse(cleanResponse);
-        
-        // Validate the response structure
-        if (!parsedResponse || typeof parsedResponse !== 'object') {
-          throw new Error('Invalid response: not a valid object');
-        }
-        
-        if (!parsedResponse.words || !Array.isArray(parsedResponse.words)) {
-          console.warn('Response structure:', parsedResponse);
-          throw new Error('Invalid response structure: words array is missing');
-        }
-        
-        if (parsedResponse.words.length === 0) {
-          throw new Error('No more words were found in the analysis');
-        }
-        
-        // v10.2: CRITICAL FIX - Filter out garbled words BEFORE displaying
-        const detectedLanguage = parsedResponse.language || 'English';
-        const cleanWords = parsedResponse.words.filter(wordObj => {
-          const word = wordObj.word || '';
-          
-          // Check for garbled characters
-          const hasGarbledChars = /[#·+Á÷ÿþü°¤@$%^&*()_+=\[\]{}|\\<>?/~`]/.test(word);
-          
-          // Check for proper Unicode range based on language
-          let hasProperUnicode = true;
-          if (detectedLanguage.includes('Telugu') || detectedLanguage === 'తెలుగు') {
-            hasProperUnicode = /[\u0C00-\u0C7F]/.test(word);
-          } else if (detectedLanguage.includes('Hindi') || detectedLanguage === 'हिंदी') {
-            hasProperUnicode = /[\u0900-\u097F]/.test(word);
-          } else if (detectedLanguage.includes('Tamil') || detectedLanguage === 'தமிழ்') {
-            hasProperUnicode = /[\u0B80-\u0BFF]/.test(word);
-          } else if (detectedLanguage.includes('Kannada') || detectedLanguage === 'ಕನ್ನಡ') {
-            hasProperUnicode = /[\u0C80-\u0CFF]/.test(word);
-          } else if (detectedLanguage.includes('Malayalam') || detectedLanguage === 'മലയാളം') {
-            hasProperUnicode = /[\u0D00-\u0D7F]/.test(word);
-          }
-          
-          const isValid = !hasGarbledChars && hasProperUnicode;
-          
-          if (!isValid) {
-            console.warn(`⚠️ [Word Filter] Removing garbled word: "${word}" (has garbled chars: ${hasGarbledChars}, proper unicode: ${hasProperUnicode})`);
-          }
-          
-          return isValid;
-        });
-        
-        console.log(`✅ [Word Filter] Filtered ${parsedResponse.words.length} → ${cleanWords.length} clean words`);
-        
-        if (cleanWords.length === 0) {
-          throw new Error('All words were garbled. Please try a different PDF page or report this issue.');
-        }
-        
-        // Update parsed response with clean words
-        parsedResponse.words = cleanWords;
-        
-        // Merge with existing words if loading more
-        if (isLoadMore && wordAnalysis[0]) {
-          const mergedAnalysis = {
-            ...wordAnalysis[0],
-            words: [...wordAnalysis[0].words, ...cleanWords]
-          };
-          setWordAnalysis([mergedAnalysis]);
-        } else {
-          // Store the complete analysis (Teacher Mode style - all at once)
-          setWordAnalysis([parsedResponse]);
-          setWordAnalysisPage(currentPage); // Track which page this data is for
-        }
-        
-        setWordBatch(batchNumber);
-        console.log(`Successfully analyzed ${parsedResponse.words.length} new words (batch ${batchNumber})`);
-
-        // 💾 SAVE FIRST BATCH TO CACHE ONLY
-        if (!isLoadMore && pdfId && currentPage) {
-          await saveCachedData(pdfId, currentPage, 'wordAnalysis', parsedResponse);
-          console.log('💾 Saved to cache: Word Analysis (batch 1)');
-        }
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        console.error('Response was:', response);
-        setError(`Failed to parse word analysis: ${parseError.message}`);
-      }
-    } catch (error) {
-      console.error('Error in Word Analysis:', error);
-      setError(error.message || 'Failed to analyze words');
-    } finally {
-      setAnalyzingWords(false);
-    }
-  };
+  // v10.5.6: Removed handleWordByWordAnalysis function - Read tab removed
 
   // Stop all speech
   const handleStopSpeech = () => {
@@ -2007,7 +1831,6 @@ YOUR ${detectedLanguage} RESPONSE:` :
       
       // Clear all state
       setCurrentSpeakingId(null);
-      setSpeakingWordIndex(null);
       setSpeakingSection(null);
       setIsSpeaking(false);
       
@@ -2141,9 +1964,6 @@ YOUR ${detectedLanguage} RESPONSE:` :
       utterance.onstart = () => {
         console.log('▶️ [SpeakText] Started playing');
         setCurrentSpeakingId(id);
-        if (id !== undefined) {
-          setSpeakingWordIndex(id);
-        }
         // Show volume notice on first use
         if (!localStorage.getItem('volumeNoticeShown')) {
           setShowVolumeNotice(true);
@@ -2154,14 +1974,12 @@ YOUR ${detectedLanguage} RESPONSE:` :
       utterance.onend = () => {
         console.log('⏹️ [SpeakText] Ended normally');
         setCurrentSpeakingId(null);
-        setSpeakingWordIndex(null);
         speechLockRef.current = false; // Release lock
       };
       
       utterance.onerror = (event) => {
         console.error('❌ [SpeakText] Error:', event.error);
         setCurrentSpeakingId(null);
-        setSpeakingWordIndex(null);
         speechLockRef.current = false; // Release lock
       };
       
@@ -2181,14 +1999,10 @@ YOUR ${detectedLanguage} RESPONSE:` :
       console.error('❌ [SpeakText] Exception:', error);
       speechLockRef.current = false; // Release lock on error
       setCurrentSpeakingId(null);
-      setSpeakingWordIndex(null);
     }
   };
 
-  // Helper specifically for word pronunciation
-  const handleSpeakWord = (word, language, index) => {
-    handleSpeakText(word, language, index);
-  };
+  // v10.5.6: Removed handleSpeakWord - Read tab removed
 
   // Removed Read Text and Explain features - user requested to remove these functions
 
@@ -3463,19 +3277,12 @@ Return ONLY this valid JSON:
     ? languageOptions[manualLanguage] 
     : autoDetectedLang;
   const isEnglish = detectedLang.isEnglish;
-  // v10.1.2: Read tab is always enabled - users may want word analysis even for English
-  const readTabDisabled = false;
-  const readTabTooltip = "Word-by-word analysis with pronunciation and meaning";
   
   // Check tab visibility from admin config
   const showTeacherMode = isTabEnabled(adminConfig, 'teacherMode');
-  const showMultilingual = isTabEnabled(adminConfig, 'multilingual');
   const showExplain = isTabEnabled(adminConfig, 'explain');
   const showActivities = isTabEnabled(adminConfig, 'activities');
   const showExamPrep = isTabEnabled(adminConfig, 'examPrep');
-  
-  // V8.0.3: EXTREME DEBUG - Log tab visibility
-  console.log('🔥🔥🔥 [READ TAB DEBUG] showMultilingual:', showMultilingual, 'adminConfig:', adminConfig?.tabs?.multilingual);
   const showNotes = isTabEnabled(adminConfig, 'notes');
   const showProTools = isTabEnabled(adminConfig, 'proTools'); // v7.2.28: Tools tab
   const showVyonn = isTabEnabled(adminConfig, 'vyonn'); // v7.2.30: Vyonn AI tab (always enabled by default)
@@ -3484,7 +3291,6 @@ Return ONLY this valid JSON:
   const tabIndices = {};
   let currentIndex = 0;
   if (showTeacherMode) { tabIndices.teacher = currentIndex++; }
-  if (showMultilingual) { tabIndices.multilingual = currentIndex++; }
   if (showExplain) { tabIndices.explain = currentIndex++; }
   if (showActivities) { tabIndices.activities = currentIndex++; }
   if (showExamPrep) { tabIndices.examPrep = currentIndex++; }
@@ -3492,8 +3298,8 @@ Return ONLY this valid JSON:
   if (showVyonn) { tabIndices.vyonn = currentIndex++; }
   if (showNotes) { tabIndices.notes = currentIndex++; }
 
-  // v10.1.2: Debug logging for language detection and tab state
-  console.log('🔍 [Language Detection & Tab State]', {
+  // v10.5.6: Debug logging for language detection
+  console.log('🔍 [Language Detection]', {
     mode: manualLanguage ? 'Manual' : 'Auto',
     manualLanguage: manualLanguage || 'none',
     autoDetected: autoDetectedLang.language,
@@ -3501,10 +3307,7 @@ Return ONLY this valid JSON:
     script: detectedLang.script,
     pageTextLength: pageText?.length || 0,
     isEnglish,
-    readTabDisabled,
     currentPage,
-    showMultilingual,
-    multilingual: tabIndices.multilingual,
     activeTab
   });
 
@@ -3640,21 +3443,6 @@ Return ONLY this valid JSON:
           }}
         >
           {showTeacherMode && <Tab icon={<LearnIcon />} label="Learn" />}
-          {showMultilingual && (
-            <Tooltip 
-              title={readTabTooltip} 
-              arrow
-              componentsProps={{
-                tooltip: {
-                  sx: { maxWidth: 300 }
-                }
-              }}
-            >
-              <span style={{ display: 'inline-flex' }}>
-                <Tab icon={<ReadIcon />} label="Read" disabled={readTabDisabled} />
-              </span>
-            </Tooltip>
-          )}
           {showExplain && <Tab icon={<ExplainIcon />} label="Explain" />}
           {showActivities && <Tab icon={<ActivitiesIcon />} label="Activities" />}
           {showExamPrep && <Tab icon={<ExamIcon />} label="Exam" />}
@@ -4440,177 +4228,6 @@ Return ONLY this valid JSON:
                   <Box>{formatMarkdown(typeof teacherResponse === 'string' ? teacherResponse : JSON.stringify(teacherResponse))}</Box>
                 )}
               </Paper>
-            )}
-          </Box>
-        </TabPanel>}
-
-        {/* Read & Understand Tab */}
-        {showMultilingual && <TabPanel value={activeTab} index={tabIndices.multilingual}>
-          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* V8.0.3: EXTREME DEBUG */}
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              🔥 READ TAB IS RENDERING! activeTab={activeTab}, tabIndex={tabIndices.multilingual}, showMultilingual={showMultilingual ? 'true' : 'false'}
-            </Alert>
-            <Alert severity="success" sx={{ mb: 2 }}>
-              ✅ YOU ARE IN THE READ TAB! The content should be visible now!
-            </Alert>
-            {/* v10.1.2: Better UI feedback for Read tab */}
-            <Alert severity="info" sx={{ mb: 2 }}>
-              📚 <strong>Word-by-Word Analysis:</strong> Get pronunciation guide and English meanings for key words in this page.
-            </Alert>
-
-            {!pageText && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                ⚠️ Page text is loading... Please wait a moment and try again.
-              </Alert>
-            )}
-
-            <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                startIcon={<ReadIcon />}
-                onClick={() => handleWordByWordAnalysis(false)}
-                disabled={analyzingWords || !pageText}
-                sx={{ flex: 1, minWidth: '200px' }}
-              >
-                {analyzingWords && wordBatch === 1 ? 'Analyzing...' : 'Start Analysis'}
-              </Button>
-              {wordAnalysis.length > 0 && wordAnalysisPage === currentPage && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  size="large"
-                  onClick={clearWordAnalysis}
-                  disabled={analyzingWords}
-                >
-                  Clear
-                </Button>
-              )}
-              
-              {wordAnalysis.length > 0 && wordAnalysis[0]?.words?.length > 0 && (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  size="large"
-                  onClick={() => handleWordByWordAnalysis(true)}
-                  disabled={analyzingWords}
-                  sx={{ flex: 1, minWidth: '200px' }}
-                >
-                  {analyzingWords ? 'Loading...' : `Load More Words (Batch ${wordBatch + 1})`}
-                </Button>
-              )}
-            </Box>
-
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-            {/* Word Analysis Display */}
-            {wordAnalysis.length > 0 && (
-              <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  Word-by-Word Analysis
-                </Typography>
-                
-                {wordAnalysis[0] && (
-                  <Box>
-                    {/* Page Summary */}
-                    {wordAnalysis[0].summary && (
-                      <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'action.hover' }}>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
-                          Page Summary:
-                        </Typography>
-                        <Typography variant="body2">
-                          {wordAnalysis[0].summary}
-                        </Typography>
-                      </Paper>
-                    )}
-                    
-                    {/* Language Badge */}
-                    {wordAnalysis[0].language && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Language: {wordAnalysis[0].language}
-                      </Typography>
-                    )}
-
-                    {/* Words */}
-                    {wordAnalysis[0].words && Array.isArray(wordAnalysis[0].words) && wordAnalysis[0].words.length > 0 ? (
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {wordAnalysis[0].words.map((word, idx) => (
-                        <Paper 
-                          key={idx}
-                          variant="outlined" 
-                          sx={{ 
-                            p: 2,
-                            bgcolor: speakingWordIndex === idx ? 'primary.light' : 'background.default',
-                            borderLeft: '4px solid',
-                            borderColor: speakingWordIndex === idx ? 'secondary.main' : 'primary.main',
-                            transition: 'all 0.3s ease'
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {/* Word in Original Language with Listen Button */}
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <Box>
-                                <Typography variant="h6" fontWeight={700} color="primary">
-                                  {word.word}
-                                </Typography>
-                                {word.partOfSpeech && (
-                                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                                    ({word.partOfSpeech})
-                                  </Typography>
-                                )}
-                              </Box>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                color={speakingWordIndex === idx ? "error" : "default"}
-                                startIcon={speakingWordIndex === idx ? <Stop /> : <VolumeUp />}
-                                onClick={() => handleSpeakWord(word.word, wordAnalysis[0].language, idx)}
-                                sx={{ minWidth: 100 }}
-                              >
-                                {speakingWordIndex === idx ? 'Stop' : 'Listen'}
-                              </Button>
-                            </Box>
-
-                            {/* Pronunciation Guide */}
-                            <Box sx={{ bgcolor: 'background.paper', p: 1.5, borderRadius: 1 }}>
-                              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
-                                Pronunciation:
-                              </Typography>
-                              <Typography variant="body2" fontStyle="italic" color="text.secondary">
-                                {word.pronunciation}
-                              </Typography>
-                            </Box>
-
-                            {/* English Meaning */}
-                            <Box sx={{ bgcolor: 'action.hover', p: 1.5, borderRadius: 1 }}>
-                              <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" gutterBottom>
-                                English Meaning:
-                              </Typography>
-                              <Typography variant="body1" fontWeight={500}>
-                                {word.meaning}
-                              </Typography>
-                            </Box>
-
-                          </Box>
-                        </Paper>
-                        ))}
-                      </Box>
-                    ) : (
-                      <Alert severity="info">
-                        No words were found in the analysis. The page might be empty or the analysis failed. Please try again.
-                      </Alert>
-                    )}
-                  </Box>
-                )}
-              </Paper>
-            )}
-
-            {analyzingWords && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                <CircularProgress />
-              </Box>
             )}
           </Box>
         </TabPanel>}
