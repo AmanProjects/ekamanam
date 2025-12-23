@@ -24,7 +24,8 @@ import {
   Science as ChemistryIcon,
   Bolt as PhysicsIcon,
   Code as CodeIcon,
-  Public as GlobeIcon
+  Public as GlobeIcon,
+  Psychology as VyonnIconMui
 } from '@mui/icons-material';
 import AdminOTPDialog from './AdminOTPDialog';
 import { isAuthorizedAdmin } from '../services/otpService';
@@ -265,14 +266,14 @@ function Dashboard({
             mb: 3 
           }}>
             {[
-              { key: 'vyonn', icon: '🤖', label: 'Vyonn AI', color: '#6366f1', onClick: () => onOpenLibrary(0) },
-              { key: 'flashcards', icon: '📇', label: 'Flashcards', color: '#6366f1', onClick: onOpenFlashcards, badge: dueCardCount > 0 ? `${dueCardCount}` : null },
-              { key: 'journey', icon: '📈', label: 'Journey', color: '#0ea5e9', onClick: onOpenTimeline },
-              { key: 'math', icon: '📐', label: 'Math', color: '#1976d2', onClick: () => openToolWithApiCheck(setShowMathTools) },
-              { key: 'chemistry', icon: '🧪', label: 'Chemistry', color: '#4caf50', onClick: () => openToolWithApiCheck(setShowChemistryTools) },
-              { key: 'physics', icon: '⚡', label: 'Physics', color: '#6c5ce7', onClick: () => openToolWithApiCheck(setShowPhysicsSimulator) },
-              { key: 'code', icon: '💻', label: 'Code', color: '#2d3436', onClick: () => openToolWithApiCheck(setShowCodeEditor) },
-              { key: 'globe', icon: '🌍', label: 'Globe', color: '#0984e3', onClick: () => openToolWithApiCheck(setShowGlobeViewer) }
+              { key: 'vyonn', icon: <VyonnIconMui />, label: 'Vyonn AI', color: '#6366f1', onClick: () => onOpenLibrary(0), isImage: true },
+              { key: 'flashcards', icon: <FlashcardIcon />, label: 'Flashcards', color: '#6366f1', onClick: onOpenFlashcards, badge: dueCardCount > 0 ? `${dueCardCount}` : null },
+              { key: 'journey', icon: <TimelineIcon />, label: 'Journey', color: '#0ea5e9', onClick: onOpenTimeline },
+              { key: 'math', icon: <MathIcon />, label: 'Math', color: '#1976d2', onClick: () => openToolWithApiCheck(setShowMathTools) },
+              { key: 'chemistry', icon: <ChemistryIcon />, label: 'Chemistry', color: '#4caf50', onClick: () => openToolWithApiCheck(setShowChemistryTools) },
+              { key: 'physics', icon: <PhysicsIcon />, label: 'Physics', color: '#6c5ce7', onClick: () => openToolWithApiCheck(setShowPhysicsSimulator) },
+              { key: 'code', icon: <CodeIcon />, label: 'Code', color: '#2d3436', onClick: () => openToolWithApiCheck(setShowCodeEditor) },
+              { key: 'globe', icon: <GlobeIcon />, label: 'Globe', color: '#0984e3', onClick: () => openToolWithApiCheck(setShowGlobeViewer) }
             ].map((tool) => (
               <Paper
                 key={tool.key}
@@ -311,9 +312,37 @@ function Dashboard({
                     }}
                   />
                 )}
-                <Typography fontSize="1.8rem" sx={{ mb: 0.5, lineHeight: 1 }}>
-                  {tool.icon}
-                </Typography>
+                {tool.isImage ? (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center',
+                    mb: 0.5,
+                    height: '2rem'
+                  }}>
+                    <img 
+                      src="/vyonn.png" 
+                      alt="Vyonn AI" 
+                      style={{ 
+                        height: '32px', 
+                        width: 'auto',
+                        filter: 'brightness(0.2) saturate(1.5) contrast(1.2)',
+                        objectFit: 'contain'
+                      }} 
+                    />
+                  </Box>
+                ) : (
+                  <Box sx={{ 
+                    color: tool.color,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    mb: 0.5,
+                    '& svg': { fontSize: 32 }
+                  }}>
+                    {tool.icon}
+                  </Box>
+                )}
                 <Typography 
                   variant="caption" 
                   fontWeight={600} 
@@ -376,27 +405,42 @@ function Dashboard({
                 mb: 2 
               }}>
                 {[
-                  { icon: '🤖', text: 'Vyonn AI Assistant' },
-                  { icon: '📇', text: 'Flashcards & Spaced Repetition' },
-                  { icon: '📈', text: 'Learning Journey Tracker' },
-                  { icon: '📐', text: 'Math Lab (Class 1-12)' },
-                  { icon: '🧪', text: 'Chemistry Lab' },
-                  { icon: '⚡', text: 'Physics & Circuit Simulator' },
-                  { icon: '💻', text: 'Code Editor with AI' },
-                  { icon: '🌍', text: 'Interactive Globe Explorer' },
+                  { icon: <VyonnIconMui />, text: 'Vyonn AI Assistant', isImage: true, color: '#6366f1' },
+                  { icon: <FlashcardIcon />, text: 'Flashcards & Spaced Repetition', color: '#6366f1' },
+                  { icon: <TimelineIcon />, text: 'Learning Journey Tracker', color: '#0ea5e9' },
+                  { icon: <MathIcon />, text: 'Math Lab (Class 1-12)', color: '#1976d2' },
+                  { icon: <ChemistryIcon />, text: 'Chemistry Lab', color: '#4caf50' },
+                  { icon: <PhysicsIcon />, text: 'Physics & Circuit Simulator', color: '#6c5ce7' },
+                  { icon: <CodeIcon />, text: 'Code Editor with AI', color: '#2d3436' },
+                  { icon: <GlobeIcon />, text: 'Interactive Globe Explorer', color: '#0984e3' },
                 ].map((item, i) => (
                   <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Box sx={{ 
-                      width: 24, 
-                      height: 24, 
+                      width: 28, 
+                      height: 28, 
                       borderRadius: '50%', 
-                      bgcolor: '#e3f2fd',
+                      bgcolor: `${item.color}15`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '0.8rem'
+                      overflow: 'hidden',
+                      color: item.color,
+                      '& svg': { fontSize: 16 }
                     }}>
-                      {item.icon}
+                      {item.isImage ? (
+                        <img 
+                          src="/vyonn.png" 
+                          alt="Vyonn" 
+                          style={{ 
+                            height: '18px', 
+                            width: 'auto',
+                            filter: 'brightness(0.2) saturate(1.5) contrast(1.2)',
+                            objectFit: 'contain'
+                          }} 
+                        />
+                      ) : (
+                        item.icon
+                      )}
                     </Box>
                     <Typography variant="caption" color="text.primary" fontWeight={500}>
                       {item.text}
