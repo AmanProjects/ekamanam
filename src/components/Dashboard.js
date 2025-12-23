@@ -19,9 +19,6 @@ import {
   Style as FlashcardIcon,
   Timeline as TimelineIcon,
   PlayArrow as PlayIcon,
-  MenuBook as BookIcon,
-  LocalFireDepartment as StreakIcon,
-  ArrowForward as ArrowIcon,
   Construction as ToolIcon,
   Calculate as MathIcon,
   Science as ChemistryIcon,
@@ -38,13 +35,13 @@ import { Snackbar, Alert } from '@mui/material';
 import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer } from './tools';
 
 /**
- * Dashboard Component - v7.2.28
+ * Dashboard Component - v10.5.5
  * 
  * Clean, organized layout with:
- * - Welcome header with subscription status
- * - Quick stats row (PDFs, Cards Due, Streak)
+ * - Welcome header with voice-powered tagline
  * - Primary CTA for Library
  * - Learning Tools in clean 3-column grid
+ * - Educational Tools (5 interactive labs)
  * - Pro Tools control (OTP protected)
  */
 function Dashboard({
@@ -240,46 +237,31 @@ function Dashboard({
               )
             )}
           </Box>
-          <Typography variant="body2" color="text.secondary">
-            Ready to learn something new?
-          </Typography>
-        </Box>
-
-        {/* Quick Stats */}
-        <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
-          {[
-            { icon: <BookIcon />, value: pdfCount, label: 'PDFs', color: '#1976d2', onClick: () => onOpenLibrary(subscription?.isFree ? 1 : 0) },
-            { icon: <FlashcardIcon />, value: dueCardCount, label: 'Due', color: dueCardCount > 0 ? '#f59e0b' : '#6366f1', onClick: onOpenFlashcards, highlight: dueCardCount > 0 },
-            { icon: <StreakIcon />, value: currentStreak, label: 'Streak', color: currentStreak > 0 ? '#ef4444' : '#9ca3af' }
-          ].map((stat, i) => (
-            <Paper
-              key={i}
-              elevation={0}
-              onClick={stat.onClick}
-                  sx={{
-                flex: 1,
-                p: 1.5,
-                borderRadius: 2,
-                border: '1px solid',
-                borderColor: stat.highlight ? 'warning.light' : 'divider',
-                bgcolor: stat.highlight ? 'warning.lighter' : 'background.paper',
-                textAlign: 'center',
-                cursor: stat.onClick ? 'pointer' : 'default',
-                transition: 'all 0.2s',
-                '&:hover': stat.onClick ? { borderColor: 'primary.light', bgcolor: 'action.hover' } : {}
+          <Box sx={{ mt: 1 }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 700, 
+                background: 'linear-gradient(135deg, #1976d2 0%, #6366f1 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                lineHeight: 1.3,
+                mb: 0.5
               }}
             >
-              <Box sx={{ color: stat.color, mb: 0.5, '& svg': { fontSize: 22 } }}>
-                {stat.icon}
-            </Box>
-              <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1 }}>
-                {stat.value}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {stat.label}
-              </Typography>
-          </Paper>
-          ))}
+              See. Hear. Speak. Learn.
+            </Typography>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: 'text.secondary',
+                fontWeight: 500
+              }}
+            >
+              Your Voice-Powered AI Tutor
+            </Typography>
+          </Box>
         </Box>
 
         {/* Primary CTA - My Library */}
