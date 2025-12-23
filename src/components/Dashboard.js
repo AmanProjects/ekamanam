@@ -272,7 +272,7 @@ function Dashboard({
           }}>
             {[
               { key: 'vyonn', icon: <VyonnIconMui />, label: 'Vyonn AI', color: '#6366f1', onClick: () => openToolWithApiCheck(setShowVyonnAI), isImage: true },
-              { key: 'flashcards', icon: <FlashcardIcon />, label: 'Flashcards', color: '#6366f1', onClick: onOpenFlashcards, badge: dueCardCount > 0 ? `${dueCardCount}` : null },
+              { key: 'flashcards', icon: <FlashcardIcon />, label: 'Flashcards', color: '#6366f1', onClick: onOpenFlashcards },
               { key: 'journey', icon: <TimelineIcon />, label: 'Journey', color: '#0ea5e9', onClick: onOpenTimeline },
               { key: 'math', icon: <MathIcon />, label: 'Math', color: '#1976d2', onClick: () => openToolWithApiCheck(setShowMathTools) },
               { key: 'chemistry', icon: <ChemistryIcon />, label: 'Chemistry', color: '#4caf50', onClick: () => openToolWithApiCheck(setShowChemistryTools) },
