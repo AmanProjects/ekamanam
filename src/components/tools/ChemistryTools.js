@@ -2282,7 +2282,7 @@ function VyonnChemistryIcon({ size = 40 }) {
   );
 }
 
-function ChemistryTools({ open, onClose, user }) {
+function ChemistryTools({ open, onClose, user, vyonnContext }) {
   const [activeTab, setActiveTab] = useState(0);
   const [moleculeName, setMoleculeName] = useState('caffeine');
   const [loading, setLoading] = useState(false);
@@ -2299,6 +2299,22 @@ function ChemistryTools({ open, onClose, user }) {
   const [aiLoading, setAiLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [currentDiagram, setCurrentDiagram] = useState(null);
+  
+  // v10.5.6: Handle context from Vyonn AI
+  useEffect(() => {
+    if (vyonnContext && open) {
+      // Pre-load question from Vyonn AI
+      setQuestion(vyonnContext.question);
+      setActiveTab(1); // Switch to AI Chat tab
+      
+      // Add welcome message showing seamless transition
+      setChatHistory([{
+        role: 'assistant',
+        content: `👋 Welcome from Vyonn AI! I see you're interested in:\n\n"${vyonnContext.question}"\n\nLet me help you with that chemistry question!${vyonnContext.vyonnResponse ? '\n\n💡 Vyonn mentioned: ' + vyonnContext.vyonnResponse.substring(0, 200) + (vyonnContext.vyonnResponse.length > 200 ? '...' : '') : ''}`,
+        timestamp: Date.now()
+      }]);
+    }
+  }, [vyonnContext, open]);
   
   // Experiments State
   const [selectedExperiment, setSelectedExperiment] = useState(null);

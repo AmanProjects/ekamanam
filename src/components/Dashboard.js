@@ -74,6 +74,9 @@ function Dashboard({
   const [showGlobeViewer, setShowGlobeViewer] = useState(false);
   const [showVyonnAI, setShowVyonnAI] = useState(false);
   
+  // v10.5.6: Context passing from Vyonn AI to other labs
+  const [toolContext, setToolContext] = useState(null);
+  
   // v10.1: API key configuration alert
   const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
 
@@ -507,9 +510,11 @@ function Dashboard({
           open={showVyonnAI} 
           onClose={() => setShowVyonnAI(false)} 
           user={user}
-          onOpenTool={(tool) => {
-            // Close Vyonn AI and open the requested tool
+          onOpenTool={(tool, context) => {
+            // Close Vyonn AI, save context, and open the requested tool
             setShowVyonnAI(false);
+            setToolContext(context); // Store context for the lab to use
+            
             switch(tool) {
               case 'math':
                 openToolWithApiCheck(setShowMathTools);
@@ -531,11 +536,36 @@ function Dashboard({
             }
           }}
         />
-        <MathTools open={showMathTools} onClose={() => setShowMathTools(false)} user={user} />
-        <ChemistryTools open={showChemistryTools} onClose={() => setShowChemistryTools(false)} user={user} />
-        <PhysicsSimulator open={showPhysicsSimulator} onClose={() => setShowPhysicsSimulator(false)} user={user} />
-        <CodeEditor open={showCodeEditor} onClose={() => setShowCodeEditor(false)} user={user} />
-        <GlobeViewer open={showGlobeViewer} onClose={() => setShowGlobeViewer(false)} user={user} />
+        <MathTools 
+          open={showMathTools} 
+          onClose={() => { setShowMathTools(false); setToolContext(null); }} 
+          user={user}
+          vyonnContext={toolContext}
+        />
+        <ChemistryTools 
+          open={showChemistryTools} 
+          onClose={() => { setShowChemistryTools(false); setToolContext(null); }} 
+          user={user}
+          vyonnContext={toolContext}
+        />
+        <PhysicsSimulator 
+          open={showPhysicsSimulator} 
+          onClose={() => { setShowPhysicsSimulator(false); setToolContext(null); }} 
+          user={user}
+          vyonnContext={toolContext}
+        />
+        <CodeEditor 
+          open={showCodeEditor} 
+          onClose={() => { setShowCodeEditor(false); setToolContext(null); }} 
+          user={user}
+          vyonnContext={toolContext}
+        />
+        <GlobeViewer 
+          open={showGlobeViewer} 
+          onClose={() => { setShowGlobeViewer(false); setToolContext(null); }} 
+          user={user}
+          vyonnContext={toolContext}
+        />
 
         {/* Pro Tools Toggle - Admin Only (moved to footer) */}
         {subscription && subscription.isPaid && (

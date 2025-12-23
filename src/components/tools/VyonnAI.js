@@ -170,6 +170,11 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
         role: 'assistant',
         content: cleanResponse.trim(),
         toolSuggestions,
+        contextForTool: {
+          question: userQuestion,
+          vyonnResponse: cleanResponse.trim(),
+          conversationHistory: newHistory.slice(-3) // Last 3 messages for context
+        },
         timestamp: Date.now()
       }]);
     } catch (error) {
@@ -294,7 +299,7 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
                         label="Open Math Lab"
                         onClick={() => {
                           onClose();
-                          if (onOpenTool) onOpenTool('math');
+                          if (onOpenTool) onOpenTool('math', msg.contextForTool);
                         }}
                         clickable
                         size="small"
@@ -307,7 +312,7 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
                         label="Open Chemistry Lab"
                         onClick={() => {
                           onClose();
-                          if (onOpenTool) onOpenTool('chemistry');
+                          if (onOpenTool) onOpenTool('chemistry', msg.contextForTool);
                         }}
                         clickable
                         size="small"
@@ -320,7 +325,7 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
                         label="Open Physics Lab"
                         onClick={() => {
                           onClose();
-                          if (onOpenTool) onOpenTool('physics');
+                          if (onOpenTool) onOpenTool('physics', msg.contextForTool);
                         }}
                         clickable
                         size="small"
@@ -333,7 +338,7 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
                         label="Open Code Editor"
                         onClick={() => {
                           onClose();
-                          if (onOpenTool) onOpenTool('code');
+                          if (onOpenTool) onOpenTool('code', msg.contextForTool);
                         }}
                         clickable
                         size="small"
@@ -346,7 +351,7 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
                         label="Open Globe Explorer"
                         onClick={() => {
                           onClose();
-                          if (onOpenTool) onOpenTool('globe');
+                          if (onOpenTool) onOpenTool('globe', msg.contextForTool);
                         }}
                         clickable
                         size="small"
