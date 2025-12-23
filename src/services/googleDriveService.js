@@ -230,16 +230,12 @@ async function executeWithTokenRefresh(requestFn, retryCount = 0) {
     const is401 = error?.status === 401 || error?.result?.error?.code === 401;
     
     if (is401 && retryCount < 1) {
-      console.log('🔄 Token expired (401), attempting automatic refresh...');
-      try {
-        await requestFreshToken();
-        // Retry the request with new token
-        console.log('✅ Token refreshed, retrying request...');
-        return executeWithTokenRefresh(requestFn, retryCount + 1);
-      } catch (refreshError) {
-        console.error('❌ Failed to refresh token:', refreshError);
-        throw new Error('Google Drive authentication expired. Please sign out and sign back in to restore Drive sync.');
-      }
+      // v10.5.3: DON'T automatically show OAuth popup - it's annoying!
+      // Just log the error and fall back to IndexedDB silently
+      console.log('⚠️ Drive token expired (401) - Drive sync disabled, using local storage');
+      console.log('ℹ️ To re-enable Drive sync, sign out and sign back in');
+      // Throw error to trigger fallback to IndexedDB
+      throw new Error('Drive authentication expired - using local storage');
     }
     throw error;
   }
