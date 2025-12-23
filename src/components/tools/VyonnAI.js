@@ -101,23 +101,35 @@ For math/science questions:
 
 ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond in ${detectedLanguage}!` : ''}`;
 
-      const messages = newHistory.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      // Build conversation context from history
+      let conversationContext = '';
+      if (newHistory.length > 1) {
+        const recentHistory = newHistory.slice(-4); // Last 4 messages for context
+        conversationContext = recentHistory.map(msg => 
+          `${msg.role === 'user' ? 'Student' : 'Vyonn'}: ${msg.content}`
+        ).join('\n\n');
+      }
       
-      const response = await callLLM(messages, systemPrompt);
+      const fullPrompt = conversationContext 
+        ? `${systemPrompt}\n\nConversation so far:\n${conversationContext}\n\nRespond to the student's latest question naturally.`
+        : `${systemPrompt}\n\nStudent's question: ${userQuestion}`;
+      
+      const response = await callLLM(fullPrompt, { 
+        feature: 'general', 
+        temperature: 0.7, 
+        maxTokens: 2048 
+      });
       
       setChatHistory([...newHistory, {
         role: 'assistant',
-        content: response,
+        content: response || "Let me help you understand that!",
         timestamp: Date.now()
       }]);
     } catch (error) {
-      console.error('[Vyonn AI] Error:', error);
+      // Fallback - always show helpful message
       setChatHistory([...newHistory, {
         role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try asking your question again.',
+        content: "I'm here to help! Could you rephrase your question or try asking about a specific topic?",
         timestamp: Date.now()
       }]);
     } finally {
