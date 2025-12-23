@@ -25,7 +25,8 @@ import {
   Bolt as PhysicsIcon,
   Code as CodeIcon,
   Public as GlobeIcon,
-  Psychology as VyonnIconMui
+  Psychology as VyonnIconMui,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import AdminOTPDialog from './AdminOTPDialog';
 import { isAuthorizedAdmin } from '../services/otpService';
@@ -33,7 +34,7 @@ import llmService, { PROVIDERS } from '../services/llmService';
 import { Snackbar, Alert } from '@mui/material';
 
 // Import educational tools
-import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer } from './tools';
+import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer, VyonnAI } from './tools';
 
 /**
  * Dashboard Component - v10.5.6
@@ -71,6 +72,7 @@ function Dashboard({
   const [showPhysicsSimulator, setShowPhysicsSimulator] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showGlobeViewer, setShowGlobeViewer] = useState(false);
+  const [showVyonnAI, setShowVyonnAI] = useState(false);
   
   // v10.1: API key configuration alert
   const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
@@ -266,7 +268,7 @@ function Dashboard({
             mb: 3 
           }}>
             {[
-              { key: 'vyonn', icon: <VyonnIconMui />, label: 'Vyonn AI', color: '#6366f1', onClick: () => onOpenLibrary(0), isImage: true },
+              { key: 'vyonn', icon: <VyonnIconMui />, label: 'Vyonn AI', color: '#6366f1', onClick: () => openToolWithApiCheck(setShowVyonnAI), isImage: true },
               { key: 'flashcards', icon: <FlashcardIcon />, label: 'Flashcards', color: '#6366f1', onClick: onOpenFlashcards, badge: dueCardCount > 0 ? `${dueCardCount}` : null },
               { key: 'journey', icon: <TimelineIcon />, label: 'Journey', color: '#0ea5e9', onClick: onOpenTimeline },
               { key: 'math', icon: <MathIcon />, label: 'Math', color: '#1976d2', onClick: () => openToolWithApiCheck(setShowMathTools) },
@@ -500,7 +502,8 @@ function Dashboard({
           onSuccess={handleOTPSuccess}
         />
 
-        {/* Educational Tool Dialogs */}
+        {/* Tool Dialogs - All consistent with Chemistry AI structure */}
+        <VyonnAI open={showVyonnAI} onClose={() => setShowVyonnAI(false)} user={user} />
         <MathTools open={showMathTools} onClose={() => setShowMathTools(false)} user={user} />
         <ChemistryTools open={showChemistryTools} onClose={() => setShowChemistryTools(false)} user={user} />
         <PhysicsSimulator open={showPhysicsSimulator} onClose={() => setShowPhysicsSimulator(false)} user={user} />

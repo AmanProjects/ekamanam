@@ -1,8 +1,10 @@
 /**
  * Educational Tools - Index
  * Central export for all educational tool components
+ * v10.5.6: Added VyonnAI
  */
 
+export { default as VyonnAI } from './VyonnAI';
 export { default as MathTools } from './MathLabV2';
 export { default as ChemistryTools } from './ChemistryTools';
 export { default as PhysicsSimulator } from './PhysicsSimulator';
