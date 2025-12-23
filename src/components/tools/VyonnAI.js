@@ -136,9 +136,10 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
     <Dialog 
       open={open} 
       onClose={onClose}
-      fullScreen
+      maxWidth="lg"
+      fullWidth
       PaperProps={{
-        sx: { bgcolor: '#f5f5f5' }
+        sx: { height: '90vh', bgcolor: '#f5f5f5' }
       }}
     >
       {/* Header */}
@@ -174,7 +175,6 @@ ${isRegionalLanguage ? `Remember: Student used ${detectedLanguage}, so respond i
         flex: 1, 
         display: 'flex', 
         flexDirection: 'column',
-        height: 'calc(100vh - 140px)',
         overflow: 'hidden'
       }}>
         {/* Messages */}
