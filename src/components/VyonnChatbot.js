@@ -71,8 +71,18 @@ function cleanJsonArtifacts(text) {
  * - Fascinated by novelty or anomalies
  * - No fixed self - always changing
  */
-function VyonnChatbot({ pdfContext, currentPage, pdfDocument, onSwitchTab, onAIQuery }) {
+function VyonnChatbot({ pdfContext, currentPage, pdfDocument, onSwitchTab, onAIQuery, externalOpen, onExternalClose }) {
   const [open, setOpen] = useState(false);
+  
+  // v10.5.6: Support external open control (from Dashboard)
+  const isOpen = externalOpen !== undefined ? externalOpen : open;
+  const handleClose = () => {
+    if (onExternalClose) {
+      onExternalClose();
+    } else {
+      setOpen(false);
+    }
+  };
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -494,8 +504,8 @@ YOUR RESPONSE:`
 
   return (
     <>
-      {/* Floating Action Button */}
-      {!open && (
+      {/* Floating Action Button - Hidden when externally controlled */}
+      {!isOpen && !externalOpen && (
         <Tooltip title="Speak to Vyonn — The Pattern-Seeker" placement="left">
           <Fab
             aria-label="chat with Vyonn"
@@ -538,8 +548,8 @@ YOUR RESPONSE:`
       {/* Chat Drawer */}
       <Drawer
         anchor="right"
-        open={open}
-        onClose={() => setOpen(false)}
+        open={isOpen}
+        onClose={handleClose}
         PaperProps={{
           sx: {
             width: { xs: '100%', sm: 400 },
