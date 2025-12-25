@@ -1244,7 +1244,7 @@ YOUR ${detectedLanguage} RESPONSE:` :
           }
         }
       } else {
-        // 📚 ENTIRE CHAPTER
+        // 📚 ENTIRE CHAPTER - v10.5.8: Process in chunks
         console.log('📖 Extracting full chapter text for comprehensive explanation...');
         contentToAnalyze = await extractFullPdfText(pdfDocument);
         
@@ -1257,14 +1257,92 @@ YOUR ${detectedLanguage} RESPONSE:` :
           isEnglish: detectedLang.isEnglish
         });
         
-        // Limit to first 30,000 characters to avoid token issues
-        if (contentToAnalyze.length > 30000) {
-          contentToAnalyze = contentToAnalyze.substring(0, 30000);
-          console.log('⚠️ Chapter text truncated to 30,000 characters for processing');
+        // v10.5.8: Split text into chunks for processing (client-side chunking)
+        const CHUNK_SIZE = 4000; // Characters per chunk
+        const textChunks = [];
+        for (let i = 0; i < contentToAnalyze.length; i += CHUNK_SIZE) {
+          textChunks.push(contentToAnalyze.substring(i, i + CHUNK_SIZE));
         }
         
-        cacheKey = 'teacherMode_chapter';
-        console.log(`📊 Generating Teacher Mode for entire chapter (${contentToAnalyze.length} chars)...`);
+        console.log(`📊 Split PDF into ${textChunks.length} chunks for processing`);
+        
+        // Update progress tracking with actual chunk count
+        setChapterProgress({ current: 0, total: textChunks.length, tipIndex: 0 });
+        
+        // Process each chunk and combine responses
+        const chunkResponses = [];
+        const finalLanguage = manualLanguage || detectedLang.language || 'English';
+        const subject = pdfMetadata?.subject || 'General';
+        const chapterName = pdfMetadata?.name || pdfMetadata?.chapter || 'Full Document';
+        
+        for (let i = 0; i < textChunks.length; i++) {
+          console.log(`📖 Processing chunk ${i + 1}/${textChunks.length}...`);
+          setChapterProgress(prev => ({ ...prev, current: i + 1 }));
+          
+          try {
+            const chunkResponse = await generateTeacherMode(
+              textChunks[i], 
+              null, 
+              finalLanguage, 
+              subject, 
+              `${chapterName} - Part ${i + 1}/${textChunks.length}`
+            );
+            chunkResponses.push(chunkResponse);
+          } catch (chunkError) {
+            console.error(`❌ Error processing chunk ${i + 1}:`, chunkError);
+            chunkResponses.push(`[Error processing section ${i + 1}]`);
+          }
+        }
+        
+        // Combine all chunk responses
+        console.log(`✅ All ${textChunks.length} chunks processed, combining responses...`);
+        
+        // Parse and combine responses intelligently
+        const combinedSections = [];
+        for (let i = 0; i < chunkResponses.length; i++) {
+          try {
+            let cleanResponse = chunkResponses[i]
+              .replace(/```json\s*/gi, '')
+              .replace(/```\s*/g, '')
+              .trim();
+            
+            const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              if (parsed.sections && Array.isArray(parsed.sections)) {
+                // Add section numbers to distinguish chunks
+                parsed.sections.forEach(section => {
+                  section.title = `Part ${i + 1}: ${section.title}`;
+                });
+                combinedSections.push(...parsed.sections);
+              }
+            }
+          } catch (parseError) {
+            console.warn(`⚠️ Could not parse chunk ${i + 1}, including as plain text`);
+            combinedSections.push({
+              title: `Part ${i + 1}`,
+              content: chunkResponses[i]
+            });
+          }
+        }
+        
+        // Create final combined response
+        const combinedResponse = {
+          sections: combinedSections,
+          summary: `Complete analysis of entire document (${textChunks.length} sections processed)`
+        };
+        
+        setTeacherResponse(JSON.stringify(combinedResponse));
+        setTeacherResponsePage(currentPage);
+        
+        // Cache the combined result
+        if (pdfId && currentPage) {
+          await saveCachedData(pdfId, currentPage, 'teacherMode_chapter', JSON.stringify(combinedResponse));
+          console.log('💾 Saved combined chapter analysis to cache');
+        }
+        
+        setLoading(false);
+        return;
       }
 
       // 📡 GENERATE NEW EXPLANATION
