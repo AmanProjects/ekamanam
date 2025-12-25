@@ -3284,7 +3284,7 @@ Return ONLY this valid JSON:
   const showActivities = isTabEnabled(adminConfig, 'activities');
   const showExamPrep = isTabEnabled(adminConfig, 'examPrep');
   const showNotes = isTabEnabled(adminConfig, 'notes');
-  const showProTools = isTabEnabled(adminConfig, 'proTools'); // v7.2.28: Tools tab
+  // v10.5.7: Removed showProTools - Tools only accessible from Dashboard
   const showVyonn = isTabEnabled(adminConfig, 'vyonn'); // v7.2.30: Vyonn AI tab (always enabled by default)
 
   // Calculate dynamic tab indices based on which tabs are enabled
@@ -3294,7 +3294,7 @@ Return ONLY this valid JSON:
   if (showExplain) { tabIndices.explain = currentIndex++; }
   if (showActivities) { tabIndices.activities = currentIndex++; }
   if (showExamPrep) { tabIndices.examPrep = currentIndex++; }
-  if (showProTools) { tabIndices.proTools = currentIndex++; }
+  // v10.5.7: Removed proTools from tabIndices - Tools only from Dashboard
   if (showVyonn) { tabIndices.vyonn = currentIndex++; }
   if (showNotes) { tabIndices.notes = currentIndex++; }
 
@@ -3446,7 +3446,6 @@ Return ONLY this valid JSON:
           {showExplain && <Tab icon={<ExplainIcon />} label="Explain" />}
           {showActivities && <Tab icon={<ActivitiesIcon />} label="Activities" />}
           {showExamPrep && <Tab icon={<ExamIcon />} label="Exam" />}
-          {showProTools && <Tab icon={<ToolIcon />} label="Tools" />}
           {showVyonn && <Tab icon={
             <Box
               component="img"
@@ -6234,185 +6233,7 @@ Return ONLY this valid JSON:
           </Box>
         </TabPanel>}
 
-        {/* v7.2.32: Tools Tab - Full Educational Toolkit */}
-        {showProTools && <TabPanel value={activeTab} index={tabIndices.proTools}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Tool Grid */}
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
-              gap: 1.5
-            }}>
-              {/* Math Tools */}
-              <Paper 
-                elevation={0}
-                onClick={() => setShowMathTools(true)}
-                sx={{ 
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: '#1976d2',
-                  borderRadius: 2,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  bgcolor: 'rgba(25, 118, 210, 0.04)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(25, 118, 210, 0.1)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 2
-                  }
-                }}
-              >
-                <Typography fontSize="1.5rem" mb={0.5}>📐</Typography>
-                <Typography variant="body2" fontWeight={700}>Math Tools</Typography>
-                <Typography variant="caption" color="text.secondary">LaTeX · Graphing</Typography>
-              </Paper>
-
-              {/* Chemistry */}
-              <Paper 
-                elevation={0}
-                onClick={() => setShowChemistryTools(true)}
-                sx={{ 
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: '#4caf50',
-                  borderRadius: 2,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  bgcolor: 'rgba(76, 175, 80, 0.04)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(76, 175, 80, 0.1)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 2
-                  }
-                }}
-              >
-                <Typography fontSize="1.5rem" mb={0.5}>🧪</Typography>
-                <Typography variant="body2" fontWeight={700}>Chemistry</Typography>
-                <Typography variant="caption" color="text.secondary">3D Molecules</Typography>
-              </Paper>
-
-              {/* Physics */}
-              <Paper 
-                elevation={0}
-                onClick={() => setShowPhysicsSimulator(true)}
-                sx={{ 
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: '#6c5ce7',
-                  borderRadius: 2,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  bgcolor: 'rgba(108, 92, 231, 0.04)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(108, 92, 231, 0.1)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 2
-                  }
-                }}
-              >
-                <Typography fontSize="1.5rem" mb={0.5}>⚡</Typography>
-                <Typography variant="body2" fontWeight={700}>Physics Lab</Typography>
-                <Typography variant="caption" color="text.secondary">Simulations</Typography>
-              </Paper>
-
-              {/* Code Editor */}
-              <Paper 
-                elevation={0}
-                onClick={() => setShowCodeEditor(true)}
-                sx={{ 
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: '#2d3436',
-                  borderRadius: 2,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  bgcolor: 'rgba(45, 52, 54, 0.04)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(45, 52, 54, 0.1)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 2
-                  }
-                }}
-              >
-                <Typography fontSize="1.5rem" mb={0.5}>💻</Typography>
-                <Typography variant="body2" fontWeight={700}>Code Editor</Typography>
-                <Typography variant="caption" color="text.secondary">JS · Python · Java</Typography>
-              </Paper>
-
-              {/* Globe */}
-              <Paper 
-                elevation={0}
-                onClick={() => setShowGlobeViewer(true)}
-                sx={{ 
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: '#0984e3',
-                  borderRadius: 2,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  bgcolor: 'rgba(9, 132, 227, 0.04)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(9, 132, 227, 0.1)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 2
-                  }
-                }}
-              >
-                <Typography fontSize="1.5rem" mb={0.5}>🌍</Typography>
-                <Typography variant="body2" fontWeight={700}>Globe Explorer</Typography>
-                <Typography variant="caption" color="text.secondary">3D Geography</Typography>
-              </Paper>
-
-              {/* Circuit Builder */}
-              <Paper 
-                elevation={0}
-                onClick={() => setShowCircuitBuilder(true)}
-                sx={{ 
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: '#00b894',
-                  borderRadius: 2,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  bgcolor: 'rgba(0, 184, 148, 0.04)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(0, 184, 148, 0.1)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 2
-                  }
-                }}
-              >
-                <Typography fontSize="1.5rem" mb={0.5}>🔌</Typography>
-                <Typography variant="body2" fontWeight={700}>Circuit Builder</Typography>
-                <Typography variant="caption" color="text.secondary">Logic Gates</Typography>
-              </Paper>
-
-              {/* Circuit Simulator */}
-              <Paper 
-                elevation={0}
-                onClick={() => setShowCircuitSimulator(true)}
-                sx={{ 
-                  p: 2,
-                  border: '2px solid',
-                  borderColor: '#fdcb6e',
-                  borderRadius: 2,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  bgcolor: 'rgba(253, 203, 110, 0.04)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(253, 203, 110, 0.1)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 2
-                  }
-                }}
-              >
-                <Typography fontSize="1.5rem" mb={0.5}>⚙️</Typography>
-                <Typography variant="body2" fontWeight={700}>Simulator</Typography>
-                <Typography variant="caption" color="text.secondary">CircuitJS</Typography>
-              </Paper>
-            </Box>
-          </Box>
-        </TabPanel>}
+        {/* v10.5.7: Removed Tools Tab - Tools only accessible from Dashboard */}
 
         {/* v7.2.30: Vyonn AI Chat Tab */}
         {showVyonn && <TabPanel value={activeTab} index={tabIndices.vyonn}>
