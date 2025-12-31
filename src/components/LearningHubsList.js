@@ -34,7 +34,9 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   FolderOpen as FolderIcon,
-  ArrowBack as BackIcon
+  ArrowBack as BackIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService from '../services/libraryService';
@@ -279,13 +281,19 @@ function LearningHubsList({ onBack, onOpenPdf }) {
                               </Typography>
                             )}
                           </Box>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => handleMenuOpen(e, hub)}
-                            sx={{ ml: 1 }}
-                          >
-                            <MoreIcon />
-                          </IconButton>
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            {expandedHub === hub.id ? (
+                              <ExpandLessIcon sx={{ color: 'action.active' }} />
+                            ) : (
+                              <ExpandMoreIcon sx={{ color: 'action.active' }} />
+                            )}
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleMenuOpen(e, hub)}
+                            >
+                              <MoreIcon />
+                            </IconButton>
+                          </Box>
                         </Box>
 
                         {/* Stats */}
@@ -324,53 +332,77 @@ function LearningHubsList({ onBack, onOpenPdf }) {
                     </CardActionArea>
                     
                     {/* v10.6.2: Expanded PDFs list */}
-                    {expandedHub === hub.id && stats.pdfs.length > 0 && (
+                    {expandedHub === hub.id && (
                       <Box sx={{ p: 2, pt: 0, borderTop: '1px solid #f0f0f0' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                          Click a PDF to start learning:
-                        </Typography>
-                        {stats.pdfs.map((pdf) => (
-                          <Paper
-                            key={pdf.id}
-                            elevation={0}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenPdf(pdf, hub);
-                            }}
-                            sx={{
-                              p: 1.5,
-                              mb: 1,
-                              cursor: 'pointer',
-                              border: '1px solid #e0e0e0',
-                              borderRadius: 1,
-                              transition: 'all 0.2s',
-                              '&:hover': {
-                                bgcolor: '#f5f5f5',
-                                transform: 'translateX(4px)'
-                              }
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body2">📄</Typography>
-                              <Box sx={{ flex: 1, minWidth: 0 }}>
-                                <Typography
-                                  variant="body2"
-                                  fontWeight={500}
-                                  sx={{
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  {pdf.name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {pdf.totalPages} pages • {pdf.progress}% complete
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Paper>
-                        ))}
+                        {stats.pdfs.length > 0 ? (
+                          <>
+                            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                              Click a PDF to start learning:
+                            </Typography>
+                            {stats.pdfs.map((pdf) => (
+                              <Paper
+                                key={pdf.id}
+                                elevation={0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onOpenPdf(pdf, hub);
+                                }}
+                                sx={{
+                                  p: 1.5,
+                                  mb: 1,
+                                  cursor: 'pointer',
+                                  border: '1px solid #e0e0e0',
+                                  borderRadius: 1,
+                                  transition: 'all 0.2s',
+                                  '&:hover': {
+                                    bgcolor: '#f5f5f5',
+                                    transform: 'translateX(4px)'
+                                  }
+                                }}
+                              >
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography variant="body2">📄</Typography>
+                                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography
+                                      variant="body2"
+                                      fontWeight={500}
+                                      sx={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                      }}
+                                    >
+                                      {pdf.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      {pdf.totalPages} pages • {pdf.progress}% complete
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </Paper>
+                            ))}
+                          </>
+                        ) : (
+                          <Box sx={{ textAlign: 'center', py: 3 }}>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                              📭 This hub is empty
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                              Add PDFs to this hub from My Library
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<AddIcon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                alert('To add PDFs to this hub:\n\n1. Go back to Dashboard\n2. Click "My Library"\n3. Open any PDF\n4. The PDF will automatically be available to add to hubs\n\nFull "Add PDFs to Hub" feature coming in next update!');
+                              }}
+                            >
+                              How to Add PDFs
+                            </Button>
+                          </Box>
+                        )}
                       </Box>
                     )}
                   </Card>
