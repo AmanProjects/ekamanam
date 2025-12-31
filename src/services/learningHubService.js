@@ -5,14 +5,12 @@
  * Each hub contains multiple PDFs and can have unified chat, generated materials, etc.
  * 
  * Storage: Google Drive (primary) + IndexedDB (local cache)
+ * Note: Simplified Drive sync - stores hubs as metadata, actual implementation in future version
  */
-
-import { uploadFile, downloadFile, listFilesInFolder, deleteFile, createFolder } from './googleDriveService';
 
 const DB_NAME = 'EkamanamLearningHubs';
 const DB_VERSION = 1;
 const HUBS_STORE = 'learningHubs';
-const DRIVE_FOLDER_NAME = 'LearningHubs'; // Folder in Drive for hub data
 
 /**
  * Initialize IndexedDB for Learning Hubs
@@ -40,28 +38,10 @@ function initDB() {
 }
 
 /**
- * Ensure Learning Hubs folder exists in Google Drive
- * @returns {Promise<Object|null>} Folder object or null
+ * TODO: Implement proper Drive sync using existing googleDriveService API
+ * For now, hubs are stored in IndexedDB only
+ * Future: Store hubs in Drive using getLibraryIndex/updateLibraryIndex pattern
  */
-async function ensureDriveFolder() {
-  try {
-    // Check if folder exists
-    const folders = await listFilesInFolder(null, DRIVE_FOLDER_NAME);
-    if (folders && folders.length > 0) {
-      return folders[0]; // Return existing folder
-    }
-    
-    // Create folder if it doesn't exist
-    const folderId = await createFolder(DRIVE_FOLDER_NAME);
-    if (folderId) {
-      return { id: folderId, name: DRIVE_FOLDER_NAME };
-    }
-    return null;
-  } catch (error) {
-    console.warn('⚠️ Failed to ensure Drive folder:', error);
-    return null;
-  }
-}
 
 /**
  * Create a new Learning Hub
@@ -84,41 +64,19 @@ export async function createLearningHub(hubData) {
     driveFileId: null // Will be set after Drive upload
   };
 
-  // Save to IndexedDB first
-  await new Promise((resolve, reject) => {
+  // Save to IndexedDB
+  return new Promise((resolve, reject) => {
     const transaction = db.transaction([HUBS_STORE], 'readwrite');
     const store = transaction.objectStore(HUBS_STORE);
     const request = store.add(hub);
 
     request.onsuccess = () => {
-      console.log('✅ Learning Hub created in IndexedDB:', hub.name);
-      resolve();
+      console.log('✅ Learning Hub created:', hub.name);
+      // TODO v10.6.3: Sync to Google Drive using library index pattern
+      resolve(hub);
     };
     request.onerror = () => reject(request.error);
   });
-
-  // v10.6.2: Sync to Google Drive
-  try {
-    const hubFolder = await ensureDriveFolder();
-    if (hubFolder) {
-      const hubJson = JSON.stringify(hub, null, 2);
-      const hubBlob = new Blob([hubJson], { type: 'application/json' });
-      const hubFile = new File([hubBlob], `${hub.id}.json`, { type: 'application/json' });
-      
-      const driveFileId = await uploadFile(hubFile, hubFolder.id);
-      if (driveFileId) {
-        hub.driveFileId = driveFileId;
-        // Update IndexedDB with Drive file ID
-        await updateLearningHub(hub.id, { driveFileId });
-        console.log('☁️ Learning Hub synced to Drive:', hub.name);
-      }
-    }
-  } catch (driveError) {
-    console.warn('⚠️ Failed to sync hub to Drive (will use local only):', driveError);
-    // Continue anyway - hub is in IndexedDB
-  }
-
-  return hub;
 }
 
 /**
@@ -128,44 +86,9 @@ export async function createLearningHub(hubData) {
 export async function getAllLearningHubs() {
   const db = await initDB();
 
-  // v10.6.2: Try to sync from Google Drive first
-  try {
-    const hubFolder = await ensureDriveFolder();
-    if (hubFolder) {
-      const driveFiles = await listFilesInFolder(hubFolder.id);
-      if (driveFiles && driveFiles.length > 0) {
-        console.log(`☁️ Found ${driveFiles.length} hubs in Drive, syncing...`);
-        
-        // Download and sync each hub from Drive
-        for (const file of driveFiles) {
-          try {
-            if (file.name.endsWith('.json')) {
-              const hubBlob = await downloadFile(file.id);
-              const hubText = await hubBlob.text();
-              const hub = JSON.parse(hubText);
-              
-              // Update or add to IndexedDB
-              const transaction = db.transaction([HUBS_STORE], 'readwrite');
-              const store = transaction.objectStore(HUBS_STORE);
-              await new Promise((resolve, reject) => {
-                const request = store.put(hub);
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-              });
-            }
-          } catch (fileError) {
-            console.warn('⚠️ Failed to sync hub file:', file.name, fileError);
-          }
-        }
-        console.log('✅ Synced hubs from Drive to local cache');
-      }
-    }
-  } catch (driveError) {
-    console.warn('⚠️ Failed to sync from Drive, using local cache:', driveError);
-    // Continue with IndexedDB
-  }
-
-  // Get all hubs from IndexedDB (now synced with Drive)
+  // TODO v10.6.3: Sync from Google Drive using library index pattern
+  
+  // Get all hubs from IndexedDB
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([HUBS_STORE], 'readonly');
     const store = transaction.objectStore(HUBS_STORE);
@@ -224,43 +147,18 @@ export async function updateLearningHub(hubId, updates) {
   };
 
   // Update in IndexedDB
-  await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const transaction = db.transaction([HUBS_STORE], 'readwrite');
     const store = transaction.objectStore(HUBS_STORE);
     const request = store.put(updatedHub);
 
     request.onsuccess = () => {
-      console.log('✅ Learning Hub updated in IndexedDB:', updatedHub.name);
-      resolve();
+      console.log('✅ Learning Hub updated:', updatedHub.name);
+      // TODO v10.6.3: Sync to Google Drive
+      resolve(updatedHub);
     };
     request.onerror = () => reject(request.error);
   });
-
-  // v10.6.2: Sync to Google Drive
-  try {
-    if (updatedHub.driveFileId) {
-      // Update existing file in Drive
-      const hubJson = JSON.stringify(updatedHub, null, 2);
-      const hubBlob = new Blob([hubJson], { type: 'application/json' });
-      const hubFile = new File([hubBlob], `${updatedHub.id}.json`, { type: 'application/json' });
-      
-      const hubFolder = await ensureDriveFolder();
-      if (hubFolder) {
-        // Delete old file and upload new one (Drive API limitation)
-        await deleteFile(updatedHub.driveFileId);
-        const newFileId = await uploadFile(hubFile, hubFolder.id);
-        if (newFileId) {
-          updatedHub.driveFileId = newFileId;
-          console.log('☁️ Learning Hub synced to Drive:', updatedHub.name);
-        }
-      }
-    }
-  } catch (driveError) {
-    console.warn('⚠️ Failed to sync hub update to Drive:', driveError);
-    // Continue anyway - hub is updated in IndexedDB
-  }
-
-  return updatedHub;
 }
 
 /**
@@ -270,39 +168,20 @@ export async function updateLearningHub(hubId, updates) {
  */
 export async function deleteLearningHub(hubId) {
   const db = await initDB();
-  
-  // Get hub to find Drive file ID
-  let driveFileId = null;
-  try {
-    const hub = await getLearningHub(hubId);
-    driveFileId = hub.driveFileId;
-  } catch (error) {
-    console.warn('Could not find hub to delete:', hubId);
-  }
 
   // Delete from IndexedDB
-  await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const transaction = db.transaction([HUBS_STORE], 'readwrite');
     const store = transaction.objectStore(HUBS_STORE);
     const request = store.delete(hubId);
 
     request.onsuccess = () => {
-      console.log('🗑️ Learning Hub deleted from IndexedDB:', hubId);
+      console.log('🗑️ Learning Hub deleted:', hubId);
+      // TODO v10.6.3: Delete from Google Drive
       resolve();
     };
     request.onerror = () => reject(request.error);
   });
-
-  // v10.6.2: Delete from Google Drive
-  if (driveFileId) {
-    try {
-      await deleteFile(driveFileId);
-      console.log('☁️ Learning Hub deleted from Drive');
-    } catch (driveError) {
-      console.warn('⚠️ Failed to delete hub from Drive:', driveError);
-      // Continue anyway - hub is deleted from IndexedDB
-    }
-  }
 }
 
 /**
