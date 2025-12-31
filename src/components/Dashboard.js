@@ -28,7 +28,8 @@ import {
   Code as CodeIcon,
   Public as GlobeIcon,
   Psychology as VyonnIconMui,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Science as ExperimentIcon
 } from '@mui/icons-material';
 import AdminOTPDialog from './AdminOTPDialog';
 import { isAuthorizedAdmin } from '../services/otpService';
@@ -37,6 +38,7 @@ import { Snackbar, Alert } from '@mui/material';
 
 // Import educational tools
 import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer, VyonnAI } from './tools';
+import ExperimentLibrary from './ExperimentLibrary';
 
 /**
  * Dashboard Component - v10.6.0
@@ -79,6 +81,9 @@ function Dashboard({
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showGlobeViewer, setShowGlobeViewer] = useState(false);
   const [showVyonnAI, setShowVyonnAI] = useState(false);
+  
+  // v11.1: Experiment Library
+  const [showExperimentLibrary, setShowExperimentLibrary] = useState(false);
   
   // v10.5.6: Context passing from Vyonn AI to other labs
   const [toolContext, setToolContext] = useState(null);
@@ -247,6 +252,41 @@ function Dashboard({
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem' }}>
                 Organize and explore your study materials
           </Typography>
+            </Box>
+            <IconButton sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>
+              <PlayIcon />
+            </IconButton>
+          </Box>
+        </Paper>
+
+        {/* Secondary CTA - My Experiments (v11.1) */}
+        <Paper 
+          elevation={0}
+          onClick={() => setShowExperimentLibrary(true)}
+          sx={{ 
+            p: 2.5,
+            mb: 3,
+            borderRadius: 3,
+            cursor: 'pointer',
+            background: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 24px rgba(156, 39, 176, 0.25)'
+            }
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ width: 48, height: 48, bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}>
+              <ExperimentIcon sx={{ fontSize: 26 }} />
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" fontWeight={700} color="white">
+                My Experiments
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem' }}>
+                Browse, share, and import AI-generated experiments
+              </Typography>
             </Box>
             <IconButton sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>
               <PlayIcon />
@@ -577,6 +617,42 @@ function Dashboard({
           user={user}
           vyonnContext={toolContext}
           fullScreen={isMobile}
+        />
+
+        {/* Experiment Library - v11.1 */}
+        <ExperimentLibrary
+          open={showExperimentLibrary}
+          onClose={() => setShowExperimentLibrary(false)}
+          user={user}
+          onOpenExperiment={(experiment) => {
+            // Open experiment in respective lab
+            console.log('Opening experiment:', experiment.metadata.title, 'in', experiment.metadata.lab);
+            
+            switch (experiment.metadata.lab) {
+              case 'physics':
+                setToolContext({ experiment });
+                openToolWithApiCheck(setShowPhysicsSimulator);
+                break;
+              case 'chemistry':
+                setToolContext({ experiment });
+                openToolWithApiCheck(setShowChemistryTools);
+                break;
+              case 'math':
+                setToolContext({ experiment });
+                openToolWithApiCheck(setShowMathTools);
+                break;
+              case 'code':
+                setToolContext({ experiment });
+                openToolWithApiCheck(setShowCodeEditor);
+                break;
+              case 'globe':
+                setToolContext({ experiment });
+                openToolWithApiCheck(setShowGlobeViewer);
+                break;
+              default:
+                console.warn('Unknown lab type:', experiment.metadata.lab);
+            }
+          }}
         />
 
         {/* v10.5.6: Pro Tools Toggle - Hidden per user request (tools only from Dashboard) */}
