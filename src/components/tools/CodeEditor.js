@@ -246,7 +246,7 @@ ${isRegional ? `Write explanations in ${lang}, but code examples can remain in p
               Start a conversation
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Ask questions about code
+              Get coding help with JavaScript, Python, Java, and more
             </Typography>
           </Box>
         ) : (

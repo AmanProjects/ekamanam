@@ -709,7 +709,7 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
                     Start a conversation
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Ask questions about physics
+                    Learn about motion, forces, energy, and physical laws
                   </Typography>
                 </Box>
               ) : (

@@ -2716,7 +2716,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
                     Start a conversation
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Ask questions about chemistry
+                    Explore elements, reactions, molecules, and chemical concepts
                   </Typography>
                 </Box>
               )}

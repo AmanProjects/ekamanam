@@ -249,7 +249,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
               Start a conversation
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Ask questions about geography
+              Discover countries, cities, landmarks, and world geography
             </Typography>
           </Box>
         ) : (
@@ -613,7 +613,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
                     Start a conversation
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Ask questions about geography
+                    Discover countries, cities, landmarks, and world geography
                   </Typography>
                 </Box>
               ) : (

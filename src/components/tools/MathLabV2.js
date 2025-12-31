@@ -3306,7 +3306,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
               Start a conversation
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Ask questions about math
+              Get help with algebra, geometry, calculus, and more
             </Typography>
           </Box>
         ) : (
@@ -5376,7 +5376,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
                     Start a conversation
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Ask questions about math
+                    Get help with algebra, geometry, calculus, and more
                   </Typography>
                 </Box>
               ) : (
