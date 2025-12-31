@@ -8,7 +8,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Button,
   IconButton,
@@ -22,10 +21,6 @@ import {
   ListItemText,
   ListItemAvatar,
   Divider,
-  Chip,
-  LinearProgress,
-  Card,
-  CardContent,
   Menu,
   MenuItem,
   Dialog,
@@ -33,7 +28,7 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
-  Grid
+  Tooltip
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -42,25 +37,19 @@ import {
   MoreVert as MoreIcon,
   Delete as DeleteIcon,
   PictureAsPdf as PdfIcon,
-  Style as FlashcardIcon,
-  Timeline as TimelineIcon,
-  QuestionAnswer as FaqIcon,
-  Calculate as MathIcon,
-  Science as ChemistryIcon,
-  Bolt as PhysicsIcon,
-  Code as CodeIcon,
-  Public as GlobeIcon,
   Psychology as VyonnIcon,
-  Edit as EditIcon
+  School as LearnIcon,
+  Psychology as ExplainIcon,
+  SportsEsports as ActivitiesIcon,
+  Quiz as ExamIcon,
+  Chat as ChatIcon,
+  Notes as NotesIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService from '../services/libraryService';
-import llmService, { PROVIDERS } from '../services/llmService';
+import llmService from '../services/llmService';
 import { markdownToHtml } from '../utils/markdownRenderer';
-import { Snackbar, Alert } from '@mui/material';
-
-// Import educational tools
-import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer } from './tools';
+import { extractFullPdfText } from '../services/pdfExtractor';
 
 function LearningHubView({ 
   hub, 
@@ -71,8 +60,6 @@ function LearningHubView({
 }) {
   const [hubData, setHubData] = useState(hub);
   const [hubPdfs, setHubPdfs] = useState([]);
-  const [allPdfs, setAllPdfs] = useState([]);
-  const [loading, setLoading] = useState(true);
   
   // Chat state
   const [messages, setMessages] = useState([]);
@@ -88,54 +75,73 @@ function LearningHubView({
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedPdf, setSelectedPdf] = useState(null);
   
-  // v10.6.1: Lab dialogs
-  const [showMathTools, setShowMathTools] = useState(false);
-  const [showChemistryTools, setShowChemistryTools] = useState(false);
-  const [showPhysicsSimulator, setShowPhysicsSimulator] = useState(false);
-  const [showCodeEditor, setShowCodeEditor] = useState(false);
-  const [showGlobeViewer, setShowGlobeViewer] = useState(false);
-  const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
+  // Study Materials tab state
+  const [studyTab, setStudyTab] = useState(0);
+  
+  // Resizable panels state
+  const [rightPanelWidth, setRightPanelWidth] = useState(400);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
+  
+  // Tool states for Learn tab
+  const [learnInput, setLearnInput] = useState('');
+  const [learnResponse, setLearnResponse] = useState('');
+  const [learnLoading, setLearnLoading] = useState(false);
+  
+  // Tool states for Explain tab
+  const [explainInput, setExplainInput] = useState('');
+  const [explainResponse, setExplainResponse] = useState('');
+  const [explainLoading, setExplainLoading] = useState(false);
+  
+  // Tool states for Exam tab
+  const [examResponse, setExamResponse] = useState('');
+  const [examLoading, setExamLoading] = useState(false);
 
   useEffect(() => {
     loadHubData();
     // Mark hub as accessed
     learningHubService.markHubAccessed(hub.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hub.id]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-  
-  // v10.6.1: Check if API keys are configured
-  const hasAnyApiKey = () => {
-    return llmService.hasApiKey(PROVIDERS.GEMINI) || llmService.hasApiKey(PROVIDERS.GROQ);
+
+  // Handle panel resizing
+  const handleMouseDown = () => {
+    setIsDragging(true);
   };
 
-  // v10.6.1: Wrapper to check API keys before opening AI-powered tools
-  const openToolWithApiCheck = (toolSetter) => {
-    if (!hasAnyApiKey()) {
-      setShowApiKeyAlert(true);
-      return;
-    }
-    toolSetter(true);
-  };
-  
-  // v10.6.1: Open specific lab
-  const handleOpenLab = (labType) => {
-    const labMap = {
-      math: () => openToolWithApiCheck(setShowMathTools),
-      chemistry: () => openToolWithApiCheck(setShowChemistryTools),
-      physics: () => openToolWithApiCheck(setShowPhysicsSimulator),
-      code: () => openToolWithApiCheck(setShowCodeEditor),
-      globe: () => openToolWithApiCheck(setShowGlobeViewer)
-    };
-    if (labMap[labType]) {
-      labMap[labType]();
+  const handleMouseMove = (e) => {
+    if (!isDragging || !containerRef.current) return;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const newWidth = containerRect.right - e.clientX - 60; // 60 for icon band width
+    
+    // Constrain between 300px and 600px
+    if (newWidth >= 300 && newWidth <= 600) {
+      setRightPanelWidth(newWidth);
     }
   };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging]);
 
   const loadHubData = async () => {
-    setLoading(true);
     try {
       const [updatedHub, allLibraryPdfs] = await Promise.all([
         learningHubService.getLearningHub(hub.id),
@@ -143,7 +149,6 @@ function LearningHubView({
       ]);
       
       setHubData(updatedHub);
-      setAllPdfs(allLibraryPdfs);
       
       // Filter PDFs that belong to this hub
       const pdfsInHub = allLibraryPdfs.filter(pdf => 
@@ -159,8 +164,6 @@ function LearningHubView({
       
     } catch (error) {
       console.error('❌ Failed to load hub data:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -258,61 +261,143 @@ Provide a helpful, clear, and educational response.`;
     setSelectedPdf(null);
   };
 
-  // Calculate hub statistics
-  const totalPages = hubPdfs.reduce((sum, pdf) => sum + (pdf.totalPages || 0), 0);
-  const avgProgress = hubPdfs.length > 0
-    ? Math.round(hubPdfs.reduce((sum, pdf) => sum + (pdf.progress || 0), 0) / hubPdfs.length)
-    : 0;
+  // LEARN TOOL HANDLER
+  const handleLearnQuery = async () => {
+    if (!learnInput.trim() || !selectedPdf) {
+      alert('Please select a PDF and enter a question');
+      return;
+    }
+
+    setLearnLoading(true);
+    setLearnResponse('');
+
+    try {
+      // Extract PDF content
+      const pdfText = await extractFullPdfText(selectedPdf.pdfUrl);
+      
+      const prompt = `You are an expert tutor. Based on the following PDF content, answer the student's question in a clear, educational manner.
+
+PDF Content (Summary):
+${pdfText.substring(0, 5000)}...
+
+Student Question: ${learnInput}
+
+Provide a comprehensive, easy-to-understand explanation.`;
+
+      const response = await llmService.callLLM(prompt);
+      setLearnResponse(response);
+    } catch (error) {
+      console.error('Learn error:', error);
+      setLearnResponse('Sorry, I encountered an error. Please make sure your API keys are configured in Settings.');
+    } finally {
+      setLearnLoading(false);
+    }
+  };
+
+  // EXPLAIN TOOL HANDLER
+  const handleExplainQuery = async () => {
+    if (!explainInput.trim() || !selectedPdf) {
+      alert('Please select a PDF and enter text to explain');
+      return;
+    }
+
+    setExplainLoading(true);
+    setExplainResponse('');
+
+    try {
+      const pdfText = await extractFullPdfText(selectedPdf.pdfUrl);
+      
+      const prompt = `You are an expert educator. Based on the PDF content below, provide a detailed explanation of the following concept or text.
+
+PDF Content (Context):
+${pdfText.substring(0, 5000)}...
+
+Text/Concept to Explain: ${explainInput}
+
+Provide a clear, detailed explanation with examples if relevant.`;
+
+      const response = await llmService.callLLM(prompt);
+      setExplainResponse(response);
+    } catch (error) {
+      console.error('Explain error:', error);
+      setExplainResponse('Sorry, I encountered an error. Please make sure your API keys are configured in Settings.');
+    } finally {
+      setExplainLoading(false);
+    }
+  };
+
+  // EXAM PREP TOOL HANDLER
+  const handleGenerateExam = async () => {
+    if (!selectedPdf) {
+      alert('Please select a PDF first');
+      return;
+    }
+
+    setExamLoading(true);
+    setExamResponse('');
+
+    try {
+      const pdfText = await extractFullPdfText(selectedPdf.pdfUrl);
+      
+      const prompt = `You are an exam preparation expert. Based on the PDF content below, generate:
+
+1. 5 multiple choice questions
+2. 3 short answer questions
+3. 1 essay question
+
+Format each question clearly with answers/marking schemes.
+
+PDF Content:
+${pdfText.substring(0, 5000)}...
+
+Generate comprehensive exam questions covering key concepts.`;
+
+      const response = await llmService.callLLM(prompt);
+      setExamResponse(response);
+    } catch (error) {
+      console.error('Exam error:', error);
+      setExamResponse('Sorry, I encountered an error. Please make sure your API keys are configured in Settings.');
+    } finally {
+      setExamLoading(false);
+    }
+  };
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#fafafa' }}>
-      {/* Header */}
-      <Paper elevation={0} sx={{ borderBottom: '1px solid #e0e0e0', zIndex: 10 }}>
-        <Container maxWidth="xl">
-          <Box sx={{ display: 'flex', alignItems: 'center', py: 2 }}>
-            <IconButton onClick={onBack} sx={{ mr: 2 }}>
-              <BackIcon />
-            </IconButton>
-            <Avatar sx={{ bgcolor: hubData.color, mr: 2 }}>
-              {hubData.icon}
-            </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" fontWeight={600}>
-                {hubData.name}
-              </Typography>
-              {hubData.description && (
-                <Typography variant="body2" color="text.secondary">
-                  {hubData.description}
-                </Typography>
-              )}
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Chip label={`${hubPdfs.length} PDFs`} />
-              <Chip label={`${totalPages} pages`} />
-              <Chip label={`${avgProgress}% complete`} color="primary" />
-            </Box>
-          </Box>
-        </Container>
-      </Paper>
-
-      {/* Main Content - 3 Column Layout */}
-      <Container maxWidth="xl" sx={{ flex: 1, display: 'flex', gap: 2, py: 3, overflow: 'hidden' }}>
-        {/* LEFT: Sources Panel */}
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
+      {/* Main Content - 4 Panel Layout */}
+      <Box ref={containerRef} sx={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden' }}>
+        {/* LEFT PANEL: Hub Info & PDFs */}
         <Paper
           elevation={0}
           sx={{
             width: 280,
             display: 'flex',
             flexDirection: 'column',
-            border: '1px solid #e0e0e0',
-            borderRadius: 2,
+            borderRadius: 0,
+            borderRight: '1px solid #e0e0e0',
             overflow: 'hidden'
           }}
         >
-          <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-              Sources ({hubPdfs.length})
-            </Typography>
+          {/* Hub Header */}
+          <Box sx={{ p: 2, bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <IconButton size="small" onClick={onBack} sx={{ mr: 1 }}>
+                <BackIcon />
+              </IconButton>
+              <Avatar sx={{ bgcolor: hubData.color, mr: 1.5, width: 32, height: 32 }}>
+                {hubData.icon}
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {hubData.name} ({hubPdfs.length})
+                </Typography>
+              </Box>
+            </Box>
+            {hubData.description && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+                {hubData.description}
+              </Typography>
+            )}
             <Button
               size="small"
               startIcon={<AddIcon />}
@@ -320,36 +405,51 @@ Provide a helpful, clear, and educational response.`;
               fullWidth
               variant="outlined"
             >
-              Add PDF
+              Add PDF or Zip file
             </Button>
           </Box>
           
-          <List sx={{ flex: 1, overflow: 'auto', p: 0 }}>
+          {/* PDF List */}
+          <List sx={{ flex: 1, overflow: 'auto', bgcolor: 'white' }}>
             {hubPdfs.length === 0 && (
               <Box sx={{ p: 3, textAlign: 'center' }}>
+                <PdfIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
                 <Typography variant="body2" color="text.secondary">
-                  No PDFs yet. Click "Add PDF" to get started.
+                  No PDFs yet
                 </Typography>
               </Box>
             )}
             {hubPdfs.map((pdf) => (
               <React.Fragment key={pdf.id}>
-                <ListItem disablePadding secondaryAction={
-                  <IconButton size="small" onClick={(e) => handleMenuOpen(e, pdf)}>
-                    <MoreIcon fontSize="small" />
-                  </IconButton>
-                }>
-                  <ListItemButton onClick={() => onOpenPdf(pdf)}>
+                <ListItem 
+                  disablePadding 
+                  secondaryAction={
+                    <IconButton size="small" onClick={(e) => handleMenuOpen(e, pdf)}>
+                      <MoreIcon fontSize="small" />
+                    </IconButton>
+                  }
+                >
+                  <ListItemButton 
+                    onClick={() => setSelectedPdf(pdf)}
+                    selected={selectedPdf?.id === pdf.id}
+                    sx={{
+                      '&.Mui-selected': {
+                        bgcolor: hubData.color + '20',
+                        borderLeft: `3px solid ${hubData.color}`,
+                      }
+                    }}
+                  >
                     <ListItemAvatar>
-                      <Avatar variant="rounded" sx={{ bgcolor: '#f5f5f5' }}>
-                        <PdfIcon color="error" />
+                      <Avatar variant="rounded" sx={{ bgcolor: '#fef3f2', width: 36, height: 36 }}>
+                        <PdfIcon color="error" fontSize="small" />
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       primary={pdf.name}
-                      secondary={`${pdf.totalPages} pages • ${pdf.progress}%`}
+                      secondary={`${pdf.totalPages || 0} pages`}
                       primaryTypographyProps={{
                         variant: 'body2',
+                        fontWeight: 500,
                         sx: {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -360,244 +460,424 @@ Provide a helpful, clear, and educational response.`;
                     />
                   </ListItemButton>
                 </ListItem>
-                <Divider component="li" />
+                <Divider />
               </React.Fragment>
             ))}
           </List>
         </Paper>
 
-        {/* CENTER: Chat Panel */}
-        <Paper
-          elevation={0}
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            border: '1px solid #e0e0e0',
-            borderRadius: 2,
-            overflow: 'hidden'
-          }}
-        >
-          <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
-            <Typography variant="subtitle2" fontWeight={600}>
-              Hub Chat
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Ask questions about any PDFs in this hub
-            </Typography>
-          </Box>
-
-          {/* Messages */}
-          <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
-            {messages.length === 0 && (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <VyonnIcon sx={{ fontSize: 60, color: '#bdbdbd', mb: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  Ready to help you learn!
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Ask me anything about your materials in this hub
-                </Typography>
-              </Box>
-            )}
-            
-            {messages.map((msg, idx) => (
-              <Box
-                key={idx}
-                sx={{
-                  display: 'flex',
-                  justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  mb: 2
-                }}
-              >
-                {msg.role === 'assistant' && (
-                  <Avatar sx={{ bgcolor: '#616161', mr: 1, width: 32, height: 32 }}>
-                    <VyonnIcon fontSize="small" />
-                  </Avatar>
-                )}
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    maxWidth: '70%',
-                    bgcolor: msg.role === 'user' ? '#2196F3' : '#f5f5f5',
-                    color: msg.role === 'user' ? 'white' : 'text.primary',
-                    borderRadius: 2
-                  }}
-                >
-                  {msg.role === 'user' ? (
-                    <Typography variant="body2">{msg.content}</Typography>
-                  ) : (
-                    <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
-                  )}
-                </Paper>
-                {msg.role === 'user' && (
-                  <Avatar sx={{ bgcolor: '#2196F3', ml: 1, width: 32, height: 32 }}>U</Avatar>
-                )}
-              </Box>
-            ))}
-            
-            {chatLoading && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Avatar sx={{ bgcolor: '#616161', width: 32, height: 32 }}>
-                  <VyonnIcon fontSize="small" />
-                </Avatar>
-                <CircularProgress size={20} />
-              </Box>
-            )}
-            
-            <div ref={chatEndRef} />
-          </Box>
-
-          {/* Input */}
-          <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
-            <TextField
-              fullWidth
-              placeholder="Ask a question about your materials..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-              disabled={chatLoading}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={handleSendMessage}
-                      disabled={!input.trim() || chatLoading}
-                      color="primary"
-                    >
-                      <SendIcon />
-                    </IconButton>
-                  </InputAdornment>
-                )
+        {/* CENTER PANEL: PDF Viewer */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#525659', position: 'relative' }}>
+          {selectedPdf ? (
+            <iframe
+              src={selectedPdf.pdfUrl}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
               }}
+              title={selectedPdf.name}
             />
-          </Box>
-        </Paper>
+          ) : (
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '100%',
+              color: 'white'
+            }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <PdfIcon sx={{ fontSize: 80, mb: 2, opacity: 0.3 }} />
+                <Typography variant="h6" gutterBottom sx={{ opacity: 0.7 }}>
+                  Select a PDF
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.5 }}>
+                  Choose a document from the left panel
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </Box>
 
-        {/* RIGHT: Materials & Labs Panel */}
+        {/* ICON BAND: Study Material Tools */}
         <Paper
           elevation={0}
           sx={{
-            width: 280,
+            width: 60,
             display: 'flex',
             flexDirection: 'column',
-            border: '1px solid #e0e0e0',
-            borderRadius: 2,
-            overflow: 'auto',
-            p: 2,
-            gap: 2
+            alignItems: 'center',
+            gap: 1,
+            py: 2,
+            bgcolor: '#f5f5f5',
+            borderLeft: '1px solid #e0e0e0',
+            borderRight: '1px solid #e0e0e0'
           }}
         >
-          {/* Study Materials */}
-          <Box>
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-              Study Materials
-            </Typography>
-            <Grid container spacing={1}>
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<FlashcardIcon />}
-                  onClick={onOpenFlashcards}
-                  sx={{ justifyContent: 'flex-start' }}
-                >
-                  Flashcards
-                </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<TimelineIcon />}
-                  onClick={onOpenTimeline}
-                  sx={{ justifyContent: 'flex-start' }}
-                >
-                  Timeline
-                </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<FaqIcon />}
-                  sx={{ justifyContent: 'flex-start' }}
-                  disabled
-                >
-                  FAQ (Coming Soon)
-                </Button>
-              </Grid>
-            </Grid>
-          </Box>
+          <Tooltip title="Learn" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(0)}
+              sx={{
+                bgcolor: studyTab === 0 ? 'primary.main' : 'transparent',
+                color: studyTab === 0 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 0 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <LearnIcon />
+            </IconButton>
+          </Tooltip>
 
-          <Divider />
+          <Tooltip title="Explain" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(1)}
+              sx={{
+                bgcolor: studyTab === 1 ? 'primary.main' : 'transparent',
+                color: studyTab === 1 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 1 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <ExplainIcon />
+            </IconButton>
+          </Tooltip>
 
-          {/* Interactive Labs */}
-          <Box>
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-              Interactive Labs
-            </Typography>
-            <Grid container spacing={1}>
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<MathIcon />}
-                  onClick={() => handleOpenLab('math')}
-                  sx={{ justifyContent: 'flex-start' }}
-                >
-                  Math Lab
-                </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<ChemistryIcon />}
-                  onClick={() => handleOpenLab('chemistry')}
-                  sx={{ justifyContent: 'flex-start' }}
-                >
-                  Chemistry
-                </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<PhysicsIcon />}
-                  onClick={() => handleOpenLab('physics')}
-                  sx={{ justifyContent: 'flex-start' }}
-                >
-                  Physics
-                </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<CodeIcon />}
-                  onClick={() => handleOpenLab('code')}
-                  sx={{ justifyContent: 'flex-start' }}
-                >
-                  Code Editor
-                </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<GlobeIcon />}
-                  onClick={() => handleOpenLab('globe')}
-                  sx={{ justifyContent: 'flex-start' }}
-                >
-                  Globe Viewer
-                </Button>
-              </Grid>
-            </Grid>
+          <Tooltip title="Activities" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(2)}
+              sx={{
+                bgcolor: studyTab === 2 ? 'primary.main' : 'transparent',
+                color: studyTab === 2 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 2 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <ActivitiesIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Exam" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(3)}
+              sx={{
+                bgcolor: studyTab === 3 ? 'primary.main' : 'transparent',
+                color: studyTab === 3 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 3 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <ExamIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Hub Chat" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(4)}
+              sx={{
+                bgcolor: studyTab === 4 ? 'primary.main' : 'transparent',
+                color: studyTab === 4 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 4 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <ChatIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Notes" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(5)}
+              sx={{
+                bgcolor: studyTab === 5 ? 'primary.main' : 'transparent',
+                color: studyTab === 5 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 5 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <NotesIcon />
+            </IconButton>
+          </Tooltip>
+        </Paper>
+
+        {/* RESIZE HANDLE */}
+        <Box
+          onMouseDown={handleMouseDown}
+          sx={{
+            width: '4px',
+            bgcolor: isDragging ? 'primary.main' : '#e0e0e0',
+            cursor: 'col-resize',
+            '&:hover': {
+              bgcolor: 'primary.light',
+            },
+            transition: 'background-color 0.2s',
+          }}
+        />
+
+        {/* RIGHT PANEL: Results/Output Area */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: rightPanelWidth,
+            minWidth: 300,
+            maxWidth: 600,
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: 0,
+            overflow: 'hidden',
+            bgcolor: 'white'
+          }}
+        >
+          {/* Content based on selected tool */}
+          <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+            {/* Learn */}
+            {studyTab === 0 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Typography variant="h6" gutterBottom>Learn</Typography>
+                {!selectedPdf ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Select a PDF to start learning
+                  </Typography>
+                ) : (
+                  <>
+                    <Typography variant="caption" color="text.secondary" gutterBottom>
+                      Selected: {selectedPdf.name}
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={3}
+                      placeholder="Ask a question about the PDF content..."
+                      value={learnInput}
+                      onChange={(e) => setLearnInput(e.target.value)}
+                      sx={{ mt: 2, mb: 2 }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleLearnQuery}
+                      disabled={learnLoading || !learnInput.trim()}
+                      sx={{ mb: 2 }}
+                    >
+                      {learnLoading ? <CircularProgress size={24} /> : 'Ask Question'}
+                    </Button>
+                    {learnResponse && (
+                      <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50', flex: 1, overflow: 'auto' }}>
+                        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(learnResponse) }} />
+                      </Paper>
+                    )}
+                  </>
+                )}
+              </Box>
+            )}
+
+            {/* Explain */}
+            {studyTab === 1 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Typography variant="h6" gutterBottom>Explain</Typography>
+                {!selectedPdf ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Select a PDF to get explanations
+                  </Typography>
+                ) : (
+                  <>
+                    <Typography variant="caption" color="text.secondary" gutterBottom>
+                      Selected: {selectedPdf.name}
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={3}
+                      placeholder="Enter text or concept to explain..."
+                      value={explainInput}
+                      onChange={(e) => setExplainInput(e.target.value)}
+                      sx={{ mt: 2, mb: 2 }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleExplainQuery}
+                      disabled={explainLoading || !explainInput.trim()}
+                      sx={{ mb: 2 }}
+                    >
+                      {explainLoading ? <CircularProgress size={24} /> : 'Explain'}
+                    </Button>
+                    {explainResponse && (
+                      <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50', flex: 1, overflow: 'auto' }}>
+                        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(explainResponse) }} />
+                      </Paper>
+                    )}
+                  </>
+                )}
+              </Box>
+            )}
+
+            {/* Activities */}
+            {studyTab === 2 && (
+              <Box>
+                <Typography variant="h6" gutterBottom>Activities</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Interactive learning activities (Coming soon)
+                </Typography>
+              </Box>
+            )}
+
+            {/* Exam */}
+            {studyTab === 3 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Typography variant="h6" gutterBottom>Exam Prep</Typography>
+                {!selectedPdf ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Select a PDF to generate exam questions
+                  </Typography>
+                ) : (
+                  <>
+                    <Typography variant="caption" color="text.secondary" gutterBottom>
+                      Selected: {selectedPdf.name}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={handleGenerateExam}
+                      disabled={examLoading}
+                      sx={{ mt: 2, mb: 2 }}
+                    >
+                      {examLoading ? <CircularProgress size={24} /> : 'Generate Exam Questions'}
+                    </Button>
+                    {examResponse && (
+                      <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50', flex: 1, overflow: 'auto' }}>
+                        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(examResponse) }} />
+                      </Paper>
+                    )}
+                  </>
+                )}
+              </Box>
+            )}
+
+            {/* Hub Chat */}
+            {studyTab === 4 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Typography variant="h6" gutterBottom>Hub Chat</Typography>
+                
+                {/* Chat Messages */}
+                <Box sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
+                  {messages.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', mt: 4 }}>
+                      <VyonnIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Chat with your hub
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Ask questions about all materials
+                      </Typography>
+                    </Box>
+                  ) : (
+                    messages.map((msg, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                          mb: 2,
+                        }}
+                      >
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 1.5,
+                            maxWidth: '85%',
+                            bgcolor: msg.role === 'user' ? 'primary.main' : 'grey.100',
+                            color: msg.role === 'user' ? 'white' : 'text.primary',
+                            fontSize: '0.875rem',
+                            borderRadius: 2
+                          }}
+                        >
+                          {msg.role === 'user' ? (
+                            <Typography variant="body2">{msg.content}</Typography>
+                          ) : (
+                            <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
+                          )}
+                        </Paper>
+                      </Box>
+                    ))
+                  )}
+                  {chatLoading && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={20} />
+                      <Typography variant="caption" color="text.secondary">
+                        Thinking...
+                      </Typography>
+                    </Box>
+                  )}
+                  <div ref={chatEndRef} />
+                </Box>
+
+                {/* Chat Input */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    multiline
+                    maxRows={3}
+                    placeholder="Ask about hub materials..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    disabled={chatLoading}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={handleSendMessage}
+                            disabled={!input.trim() || chatLoading}
+                          >
+                            {chatLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
+
+            {/* Notes */}
+            {studyTab === 5 && (
+              <Box>
+                <Typography variant="h6" gutterBottom>Notes</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Your personal notes and annotations
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Paper>
-      </Container>
+      </Box>
+
+      {/* DISCLAIMER FOOTER */}
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 1, 
+          bgcolor: '#f5f5f5', 
+          borderTop: '1px solid #e0e0e0',
+          textAlign: 'center'
+        }}
+      >
+        <Typography variant="caption" color="text.secondary">
+          AI-generated content may contain errors. Please verify important information.
+        </Typography>
+      </Paper>
 
       {/* PDF Context Menu */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
@@ -656,50 +936,6 @@ Provide a helpful, clear, and educational response.`;
           <Button onClick={() => setAddPdfDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
-
-      {/* v10.6.1: Educational Tool Dialogs */}
-      {showMathTools && (
-        <MathTools
-          open={showMathTools}
-          onClose={() => setShowMathTools(false)}
-        />
-      )}
-      {showChemistryTools && (
-        <ChemistryTools
-          open={showChemistryTools}
-          onClose={() => setShowChemistryTools(false)}
-        />
-      )}
-      {showPhysicsSimulator && (
-        <PhysicsSimulator
-          open={showPhysicsSimulator}
-          onClose={() => setShowPhysicsSimulator(false)}
-        />
-      )}
-      {showCodeEditor && (
-        <CodeEditor
-          open={showCodeEditor}
-          onClose={() => setShowCodeEditor(false)}
-        />
-      )}
-      {showGlobeViewer && (
-        <GlobeViewer
-          open={showGlobeViewer}
-          onClose={() => setShowGlobeViewer(false)}
-        />
-      )}
-
-      {/* API Key Alert */}
-      <Snackbar
-        open={showApiKeyAlert}
-        autoHideDuration={6000}
-        onClose={() => setShowApiKeyAlert(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity="warning" onClose={() => setShowApiKeyAlert(false)}>
-          Please configure your API keys in Settings to use AI-powered tools
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }
