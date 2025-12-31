@@ -1671,7 +1671,7 @@ Provide a helpful, clear, and educational response.`;
                       name: hubData.name,
                       pdfs: hubPdfs
                     }}
-                    initialTab={studyTab}
+                    activeTab={studyTab}
                   />
                 )
               ) : (
