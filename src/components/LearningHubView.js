@@ -997,20 +997,26 @@ Provide a helpful, clear, and educational response.`;
             variant="outlined"
             sx={{
               p: 3,
-              mb: 3,
+              mb: 2,
               textAlign: 'center',
-              bgcolor: 'primary.50',
+              bgcolor: 'rgba(25, 118, 210, 0.04)',
+              border: '2px dashed',
               borderColor: 'primary.main',
+              borderRadius: 2,
               cursor: 'pointer',
-              '&:hover': { bgcolor: 'primary.100' }
+              transition: 'all 0.2s',
+              '&:hover': { 
+                bgcolor: 'rgba(25, 118, 210, 0.08)',
+                borderColor: 'primary.dark'
+              }
             }}
             component="label"
           >
             <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: 'text.primary' }}>
               Upload New PDF or ZIP File
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" display="block">
               Add files directly to this hub
             </Typography>
             <input
