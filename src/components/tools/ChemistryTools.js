@@ -2595,7 +2595,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}>
+    <Dialog open={open} onClose={onClose} maxWidth={fullScreen ? false : "lg"} fullWidth fullScreen={fullScreen} PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}>
       <DialogTitle sx={{ 
         display: 'flex', 
         alignItems: 'center', 

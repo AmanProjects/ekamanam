@@ -381,7 +381,7 @@ function CodeEditor({ open, onClose, user, fullScreen = false }) {
     <Dialog 
       open={open} 
       onClose={onClose} 
-      maxWidth="lg" 
+      maxWidth={fullScreen ? false : "lg"} 
       fullWidth
       fullScreen={fullScreen}
       PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}

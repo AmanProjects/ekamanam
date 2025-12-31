@@ -181,7 +181,7 @@ Accuracy: ${Math.round(((sessionStats.correct + 1) / (sessionStats.reviewed + 1)
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth={fullScreen ? false : "md"}
       fullWidth
       fullScreen={fullScreen}
       PaperProps={{

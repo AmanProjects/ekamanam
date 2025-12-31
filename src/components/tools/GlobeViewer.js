@@ -500,7 +500,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
     <Dialog 
       open={open} 
       onClose={onClose} 
-      maxWidth="lg" 
+      maxWidth={fullScreen ? false : "lg"} 
       fullWidth
       fullScreen={fullScreen}
       PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}

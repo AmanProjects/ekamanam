@@ -3071,7 +3071,7 @@ function MathTools({ open, onClose, fullScreen = false }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}>
+    <Dialog open={open} onClose={onClose} maxWidth={fullScreen ? false : "md"} fullWidth fullScreen={fullScreen} PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}>
       <DialogTitle sx={{ 
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         bgcolor: currentClass?.color || '#1976d2', color: 'white', py: 1.5

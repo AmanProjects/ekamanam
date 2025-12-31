@@ -293,7 +293,7 @@ function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage, fullScreen = 
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="lg"
+      maxWidth={fullScreen ? false : "lg"}
       fullWidth
       fullScreen={fullScreen}
       PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh', maxHeight: fullScreen ? '100%' : '90vh' } }}
