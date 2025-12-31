@@ -46,12 +46,12 @@ import { markdownToHtml } from '../../utils/markdownRenderer';  // v10.4.18: Pro
 
 // Physics experiments database
 const PHYSICS_EXPERIMENTS = {
-  projectile: { name: 'Projectile Motion', category: 'Mechanics', description: 'Motion of objects launched at an angle', formulas: ['R = (v₀² sin2θ)/g'], concepts: ['Parabolic trajectory'], keywords: ['projectile', 'throw', 'launch', 'cannon'], color: '#ef4444' },
-  freefall: { name: 'Free Fall', category: 'Mechanics', description: 'Objects falling under gravity', formulas: ['s = ½gt²'], concepts: ['Constant acceleration'], keywords: ['fall', 'drop', 'gravity', 'freefall'], color: '#f59e0b' },
-  pendulum: { name: 'Simple Pendulum', category: 'Oscillations', description: 'Simple harmonic motion', formulas: ['T = 2π√(L/g)'], concepts: ['Period depends on length'], keywords: ['pendulum', 'swing', 'oscillation'], color: '#8b5cf6' },
-  spring: { name: 'Spring Oscillation', category: 'Oscillations', description: "Hooke's Law", formulas: ['F = -kx'], concepts: ['Elastic potential energy'], keywords: ['spring', 'hooke', 'elastic'], color: '#10b981' },
-  collision: { name: 'Elastic Collision', category: 'Momentum', description: 'Conservation of momentum', formulas: ['m₁v₁ + m₂v₂ = m₁v₁\' + m₂v₂\''], concepts: ['Momentum conservation'], keywords: ['collision', 'momentum', 'billiard'], color: '#06b6d4' },
-  inclinedPlane: { name: 'Inclined Plane', category: 'Mechanics', description: 'Motion on a slope', formulas: ['a = g sinθ'], concepts: ['Component of gravity'], keywords: ['incline', 'slope', 'ramp', 'friction'], color: '#f97316' },
+  projectile: { name: 'Projectile Motion', category: 'Mechanics', description: 'Motion of objects launched at an angle', formulas: ['R = (v₀² sin2θ)/g'], concepts: ['Parabolic trajectory'], keywords: ['projectile', 'throw', 'launch', 'cannon', 'motion', 'parabolic', 'trajectory'], color: '#ef4444' },
+  freefall: { name: 'Free Fall', category: 'Mechanics', description: 'Objects falling under gravity', formulas: ['s = ½gt²'], concepts: ['Constant acceleration'], keywords: ['fall', 'drop', 'gravity', 'freefall', 'motion', 'acceleration'], color: '#f59e0b' },
+  pendulum: { name: 'Simple Pendulum', category: 'Oscillations', description: 'Simple harmonic motion', formulas: ['T = 2π√(L/g)'], concepts: ['Period depends on length'], keywords: ['pendulum', 'swing', 'oscillation', 'motion', 'harmonic'], color: '#8b5cf6' },
+  spring: { name: 'Spring Oscillation', category: 'Oscillations', description: "Hooke's Law", formulas: ['F = -kx'], concepts: ['Elastic potential energy'], keywords: ['spring', 'hooke', 'elastic', 'motion', 'oscillation'], color: '#10b981' },
+  collision: { name: 'Elastic Collision', category: 'Momentum', description: 'Conservation of momentum', formulas: ['m₁v₁ + m₂v₂ = m₁v₁\' + m₂v₂\''], concepts: ['Momentum conservation'], keywords: ['collision', 'momentum', 'billiard', 'motion'], color: '#06b6d4' },
+  inclinedPlane: { name: 'Inclined Plane', category: 'Mechanics', description: 'Motion on a slope', formulas: ['a = g sinθ'], concepts: ['Component of gravity'], keywords: ['incline', 'slope', 'ramp', 'friction', 'motion'], color: '#f97316' },
   newtonCradle: { name: "Newton's Cradle", category: 'Momentum', description: 'Momentum transfer', formulas: ['p = mv'], concepts: ['Energy conservation'], keywords: ['newton cradle', 'cradle'], color: '#eab308' },
   pulley: { name: 'Pulley System', category: 'Mechanics', description: 'Atwood machine', formulas: ['a = (m₁-m₂)g/(m₁+m₂)'], concepts: ['Tension'], keywords: ['pulley', 'atwood', 'rope'], color: '#6366f1' },
   lever: { name: 'Lever & Torque', category: 'Rotational', description: 'Mechanical advantage', formulas: ['τ = r × F'], concepts: ['Torque', 'Fulcrum'], keywords: ['lever', 'torque', 'seesaw'], color: '#ec4899' },
@@ -403,12 +403,22 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
       console.log('🎯 Physics: Matched experiment:', matchedExp.name);
       setCurrentExperiment(matchedExp);
       setCurrentDiagram(null);
-      setTimeout(() => setActiveTab(1), 1500);
+      console.log('⏱️ Physics: Switching to Visualize tab in 1.5 seconds...');
+      setTimeout(() => {
+        console.log('🎬 Physics: Switching to Visualize tab NOW!');
+        setActiveTab(1);
+      }, 1500);
     } else if (matchedDiagram) {
       console.log('📊 Physics: Matched diagram:', matchedDiagram.title);
       setCurrentDiagram(matchedDiagram);
       setCurrentExperiment(null);
-      setTimeout(() => setActiveTab(1), 1500);
+      console.log('⏱️ Physics: Switching to Visualize tab in 1.5 seconds...');
+      setTimeout(() => {
+        console.log('🎬 Physics: Switching to Visualize tab NOW!');
+        setActiveTab(1);
+      }, 1500);
+    } else {
+      console.log('ℹ️ Physics: No simulation or diagram matched for this question');
     }
     
     // Continue with the rest of askPhysicsAI logic...
@@ -536,14 +546,25 @@ Cover ${isRegional ? `(in ${lang})` : ''}:
     for (const [key, exp] of Object.entries(PHYSICS_EXPERIMENTS)) {
       let score = 0;
       for (const keyword of exp.keywords) {
-        if (lowerQuery.includes(keyword)) score += keyword.length;
+        if (lowerQuery.includes(keyword)) {
+          // Give extra points for longer, more specific keywords
+          score += keyword.length * (keyword.length > 5 ? 2 : 1);
+        }
       }
       if (score > bestScore) {
         bestScore = score;
         bestMatch = { key, ...exp };
       }
     }
-    return bestMatch;
+    
+    // Only return match if we have a reasonable score (at least one keyword matched)
+    if (bestMatch && bestScore >= 4) {
+      console.log(`🎯 Matched experiment: ${bestMatch.name} (score: ${bestScore})`);
+      return bestMatch;
+    }
+    
+    console.log('ℹ️ No simulation matched for this question');
+    return null;
   }, []);
 
   // Ask AI
