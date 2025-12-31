@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Box, AppBar, Toolbar, IconButton, Fab, Tooltip, Chip, Badge, ThemeProvider, CssBaseline, useMediaQuery, BottomNavigation, BottomNavigationAction, List, ListItem, ListItemIcon, ListItemText, Divider, SwipeableDrawer, Paper, Avatar, Typography, Button } from '@mui/material';
 import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon, AdminPanelSettings, HelpOutline as HelpIcon, Menu as MenuIcon, PictureAsPdf as PdfIcon, Psychology as AiIcon, Close as CloseIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import packageJson from '../package.json';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from './firebase/config';
+import { auth, db, googleProvider, isFirebaseConfigured } from './firebase/config';
 import PDFViewer from './components/PDFViewer';
 import AIModePanel from './components/AIModePanel';
 import Dashboard from './components/Dashboard';
+import LandingDashboard from './components/LandingDashboard';  // v10.7.38: Merged landing + dashboard
 import LearningHubsList from './components/LearningHubsList';  // v10.6.2: Hub management
 import LearningHubView from './components/LearningHubView';    // v10.6.3: 3-panel hub interface
 import EnhancedSettingsDialog from './components/EnhancedSettingsDialog';
@@ -164,6 +165,51 @@ function App() {
   // Handle theme change from settings
   const handleThemeChange = (newMode) => {
     setThemeMode(newMode);
+  };
+
+  // v10.7.38: Handle sign-in from landing page
+  const handleSignIn = async () => {
+    if (!isFirebaseConfigured) {
+      alert(
+        "🔧 Firebase Not Configured\n\n" +
+        "Google Sign-In requires Firebase setup. You have two options:\n\n" +
+        "1. Continue WITHOUT Sign-In (Recommended for quick start)\n" +
+        "   - App works fully\n" +
+        "   - Store API key locally\n" +
+        "   - Notes saved in browser\n\n" +
+        "2. Set up Firebase (For cloud sync)\n" +
+        "   - Enable Google Sign-In\n" +
+        "   - Sync across devices\n\n" +
+        "Click OK to continue without sign-in."
+      );
+      return;
+    }
+
+    if (!auth || !googleProvider) {
+      alert("Firebase initialization failed. Please check your Firebase configuration.");
+      return;
+    }
+
+    try {
+      googleProvider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('✅ Firebase authentication successful');
+
+      // Extract OAuth access token from credential
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        localStorage.setItem('google_access_token', credential.accessToken);
+        console.log('✅ OAuth access token stored from Firebase credential');
+      }
+    } catch (error) {
+      console.error('❌ Sign-in error:', error);
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+        alert(`Sign-in failed: ${error.message}`);
+      }
+    }
   };
 
   // Handle divider resize
@@ -1092,7 +1138,8 @@ function App() {
       {/* Main Content */}
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
         {view === 'dashboard' ? (
-          <Dashboard
+          <LandingDashboard
+            user={user}
             onOpenHubs={() => setView('hubs')}  // v10.7.27: Consolidated into Learning Hubs only
             subscription={subscription}
             onUpgrade={() => setShowSubscriptionDialog(true)}
@@ -1100,10 +1147,10 @@ function App() {
             onOpenTimeline={() => setShowTimeline(true)}
             onOpenDoubtLibrary={() => setShowDoubtLibrary(true)}
             dueCardCount={dueCardCount}
-            user={user}
             pdfCount={libraryCount}
             currentStreak={streakInfo.currentStreak}
             onOpenSettings={() => setShowSettings(true)}
+            onSignIn={handleSignIn}  // v10.7.38: Sign-in callback for landing page
           />
         ) : view === 'hubs' ? (
           // v10.7.27: Learning Hubs List (Consolidated from My Library + Hubs)
