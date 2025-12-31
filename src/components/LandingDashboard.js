@@ -345,43 +345,50 @@ function LandingDashboard({
         </Container>
       </Box>
 
-      {/* Merged: Story + Why Ekamanam Section */}
+      {/* Why Ekamanam Section - Personal Story with Professional Design */}
       <Box
         id="story"
         sx={{
           py: { xs: 6, md: 10 },
-          background: 'linear-gradient(135deg, rgba(255, 237, 213, 0.3) 0%, rgba(255, 224, 178, 0.3) 100%)',
+          bgcolor: 'grey.50',
         }}
       >
         <Container maxWidth="md">
           <Typography variant="h4" fontWeight={700} textAlign="center" gutterBottom>
             Why Ekamanam?
           </Typography>
+          <Typography 
+            variant="subtitle1" 
+            color="text.secondary" 
+            textAlign="center" 
+            sx={{ mb: 6, maxWidth: 600, mx: 'auto' }}
+          >
+            Born from a father's quest to help his child truly understand, not just read
+          </Typography>
 
-          {/* The Challenge */}
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              mt: 4,
-              mb: 3,
+          {/* Personal Story - The Moment */}
+          <Paper 
+            elevation={1}
+            sx={{ 
+              p: { xs: 3, md: 4 }, 
+              mb: 4,
               borderLeft: '4px solid',
-              borderColor: 'warning.main',
-              bgcolor: 'rgba(255, 255, 255, 0.7)',
+              borderColor: 'primary.main',
+              bgcolor: 'white',
             }}
           >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              The Learning Challenge
-            </Typography>
-            <Typography variant="body1" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+            <Typography variant="body1" sx={{ fontStyle: 'italic', color: 'text.secondary', lineHeight: 1.8 }}>
               "Papa, I can read the words, but I don't really <em>understand</em> it.
               Can you show me what a cube actually looks like? Where is Hyderabad on a map?
               Can I hear this in my language? I want to <em>see</em> it, not just read about it..."
             </Typography>
+            <Typography variant="caption" sx={{ display: 'block', mt: 2, color: 'text.secondary', textAlign: 'right' }}>
+              — My child, struggling with static textbooks
+            </Typography>
           </Paper>
 
-          {/* The Problem */}
-          <Paper elevation={3} sx={{ p: { xs: 3, md: 5 }, borderRadius: 3 }}>
+          {/* The Challenge */}
+          <Paper elevation={1} sx={{ p: { xs: 3, md: 4 }, mb: 4, bgcolor: 'white' }}>
             <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.8 }}>
               We all have that stack of textbooks, PDFs, and study materials we swear we're going to master.
               But let's be honest—<strong>staring at static pages doesn't equal learning</strong>.
@@ -394,54 +401,69 @@ function LandingDashboard({
             </Typography>
 
             <Typography variant="body1" color="text.secondary" sx={{ mb: 2, lineHeight: 1.8 }}>
-              Learning needs to:
+              Modern learning needs to:
             </Typography>
 
-            <Box component="ul" sx={{ pl: 4, mb: 3, '& li': { mb: 1 } }}>
+            <Box component="ul" sx={{ pl: 3, mb: 0, '& li': { mb: 1.5 } }}>
               <li>
                 <Typography variant="body1" color="text.secondary">
-                  <strong>Speak their language</strong> - Not just English, but Telugu, Hindi, Tamil, and more
+                  <strong>Speak their language</strong> — Not just English, but Telugu, Hindi, Tamil, and more
                 </Typography>
               </li>
               <li>
                 <Typography variant="body1" color="text.secondary">
-                  <strong>Show, not just tell</strong> - 3D models you can rotate, molecules you can explore
+                  <strong>Show, not just tell</strong> — 3D models you can rotate, molecules you can explore
                 </Typography>
               </li>
               <li>
                 <Typography variant="body1" color="text.secondary">
-                  <strong>Sound natural</strong> - Voice explanations that help auditory learners
+                  <strong>Sound natural</strong> — Voice explanations that help auditory learners
                 </Typography>
               </li>
               <li>
                 <Typography variant="body1" color="text.secondary">
-                  <strong>Respond instantly</strong> - An AI that's always ready to explain, never judges
+                  <strong>Respond instantly</strong> — An AI that's always ready to explain, never judges
                 </Typography>
               </li>
               <li>
                 <Typography variant="body1" color="text.secondary">
-                  <strong>Make connections</strong> - From textbook concepts to real-world understanding
+                  <strong>Make connections</strong> — From textbook concepts to real-world understanding
                 </Typography>
               </li>
             </Box>
+          </Paper>
 
-            {/* The Solution */}
-            <Box sx={{ my: 3, p: 3, bgcolor: 'primary.50', borderRadius: 2 }}>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                That's where Ekamanam comes in
-              </Typography>
-              <Typography variant="body1" sx={{ lineHeight: 1.8, mb: 2 }}>
-                Ekamanam (ఏకమనం - "One Mind") isn't just a document reader; it's a <strong>complete learning workspace</strong>.
-              </Typography>
-              <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
-                Upload any PDF, and Ekamanam transforms it. Don't just read—<strong>apply</strong>.
-                Jump into our Labs to practice concepts hands-on, and use our suite of smart Tools
-                to break down complex data instantly. With our AI Tutor and Spaced Repetition,
-                you go from passive reading to active mastering in one seamless flow.
-              </Typography>
-            </Box>
-
-            <Typography variant="h6" fontWeight={600} color="primary" textAlign="center" sx={{ mt: 4 }}>
+          {/* The Solution */}
+          <Paper 
+            elevation={1}
+            sx={{ 
+              p: { xs: 3, md: 4 }, 
+              bgcolor: 'primary.50',
+              border: '1px solid',
+              borderColor: 'primary.100',
+            }}
+          >
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              That's where Ekamanam comes in
+            </Typography>
+            <Typography variant="body1" sx={{ lineHeight: 1.8, mb: 2 }}>
+              Ekamanam (ఏకమనం - "One Mind") isn't just a document reader; it's a <strong>complete learning workspace</strong> 
+              built for students who need more than words on a page.
+            </Typography>
+            <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+              Upload any PDF, and Ekamanam transforms it. Don't just read—<strong>apply</strong>.
+              Jump into our Labs to practice concepts hands-on, and use our suite of smart Tools
+              to break down complex data instantly. With our AI Tutor and Spaced Repetition,
+              you go from passive reading to active mastering in one seamless flow.
+            </Typography>
+            
+            <Typography 
+              variant="h6" 
+              fontWeight={600} 
+              color="primary" 
+              textAlign="center" 
+              sx={{ mt: 3, mb: 0 }}
+            >
               Stop just consuming information. Start building skills.
             </Typography>
           </Paper>
@@ -507,6 +529,70 @@ function LandingDashboard({
               Sign In with Google
             </Button>
           )}
+        </Container>
+      </Box>
+
+      {/* Professional Footer */}
+      <Box
+        component="footer"
+        sx={{
+          py: 6,
+          bgcolor: 'grey.900',
+          color: 'white',
+        }}
+      >
+        <Container maxWidth="lg">
+          <Grid container spacing={4}>
+            {/* Ekamanam Info */}
+            <Grid item xs={12} sm={6} md={4}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Ekamanam
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2, opacity: 0.8, lineHeight: 1.7 }}>
+                Transform your learning with AI-powered tools, multilingual support, and interactive visualizations. 
+                Ekamanam (ఏకమనం - "One Mind") helps students master any subject through voice, visuals, and practice.
+              </Typography>
+            </Grid>
+
+            {/* AI Features */}
+            <Grid item xs={12} sm={6} md={4}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                AI Features
+              </Typography>
+              <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Vyonn AI Tutor</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Voice Input & Output</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Smart Flashcards</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Spaced Repetition</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Exam Generation</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Interactive Labs</Typography></li>
+              </Box>
+            </Grid>
+
+            {/* Resources */}
+            <Grid item xs={12} sm={6} md={4}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Resources
+              </Typography>
+              <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Math Lab</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Chemistry 3D</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Physics Simulator</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Code Editor</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Globe Viewer</Typography></li>
+                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Circuit Designer</Typography></li>
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Box sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', mt: 4, pt: 4 }}>
+            <Typography variant="body2" textAlign="center" sx={{ opacity: 0.7 }}>
+              © 2025 Amandeep Talwar. All rights reserved.
+            </Typography>
+            <Typography variant="caption" textAlign="center" display="block" sx={{ mt: 1, opacity: 0.6 }}>
+              AI-generated content may contain errors. Please verify important information.
+            </Typography>
+          </Box>
         </Container>
       </Box>
 
