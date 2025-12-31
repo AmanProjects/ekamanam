@@ -1514,14 +1514,20 @@ Provide a helpful, clear, and educational response.`;
               <IconButton edge="start" color="inherit" onClick={() => setMobileToolsOpen(false)}>
                 <CloseIcon />
               </IconButton>
-              <StudyIcon sx={{ ml: 1, mr: 1 }} />
-              <Typography variant="h6" sx={{ flex: 1 }}>
-                Study Materials
-              </Typography>
+              {studyTab === 0 && <><LearnIcon sx={{ ml: 1, mr: 1 }} /><Typography variant="h6" sx={{ flex: 1 }}>Learn</Typography></>}
+              {studyTab === 1 && <><ExplainIcon sx={{ ml: 1, mr: 1 }} /><Typography variant="h6" sx={{ flex: 1 }}>Explain</Typography></>}
+              {studyTab === 2 && <><ActivitiesIcon sx={{ ml: 1, mr: 1 }} /><Typography variant="h6" sx={{ flex: 1 }}>Activities</Typography></>}
+              {studyTab === 3 && <><ExamIcon sx={{ ml: 1, mr: 1 }} /><Typography variant="h6" sx={{ flex: 1 }}>Exam</Typography></>}
+              {studyTab === 5 && <><NotesIcon sx={{ ml: 1, mr: 1 }} /><Typography variant="h6" sx={{ flex: 1 }}>Notes</Typography></>}
+              {studyTab === 10 && <><ChatIcon sx={{ ml: 1, mr: 1 }} /><Typography variant="h6" sx={{ flex: 1 }}>Hub Chat</Typography></>}
             </Box>
 
             {/* Dialog Content */}
-            <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#f5f5f5' }}>
+            <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#f5f5f5', 
+              // v11.0.20: Hide tab headers to show only selected tool content
+              '& .MuiTabs-root': { display: 'none' },
+              '& .MuiPaper-root:has(.MuiTabs-root)': { display: 'none' }
+            }}>
               {pdfFile && pdfDocument ? (
                 studyTab === 10 ? (
                   // Hub Chat (Custom Implementation - Compact & Voice-Enabled)
