@@ -92,6 +92,7 @@ function App() {
   // Library state
   const [currentLibraryItem, setCurrentLibraryItem] = useState(null);
   const [libraryCount, setLibraryCount] = useState(0);
+  const [hubCount, setHubCount] = useState(0);
   const autoSaveIntervalRef = useRef(null);
   const lastSavedPageRef = useRef(null);
 
@@ -219,6 +220,30 @@ function App() {
     const interval = setInterval(() => {
       if (view === 'dashboard' || view === 'library') {
         loadLibraryCount();
+      }
+    }, 30000); // Check every 30 seconds when on relevant views
+    
+    return () => clearInterval(interval);
+  }, [view]);
+
+  // Load hub count
+  useEffect(() => {
+    const loadHubCount = async () => {
+      try {
+        const { default: learningHubService } = await import('./services/learningHubService');
+        const hubs = await learningHubService.getAllLearningHubs();
+        setHubCount(hubs.length);
+      } catch (error) {
+        console.error('Failed to load hub count:', error);
+      }
+    };
+    
+    loadHubCount();
+    
+    // Reload periodically when on dashboard or hubs views
+    const interval = setInterval(() => {
+      if (view === 'dashboard' || view === 'hubs' || view === 'hub-view') {
+        loadHubCount();
       }
     }, 30000); // Check every 30 seconds when on relevant views
     
@@ -897,14 +922,14 @@ function App() {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={`My Library${libraryCount > 0 ? ` (${libraryCount} PDFs)` : ''}`}>
+            <Tooltip title={`Learning Hubs${hubCount > 0 ? ` (${hubCount} Hubs)` : ''}`}>
               <IconButton 
                 id="library-button"
-                onClick={() => setView('library')}
+                onClick={() => setView('hubs')}
                 color="default"
                 data-tour="library-button"
               >
-                <Badge badgeContent={libraryCount} color="error">
+                <Badge badgeContent={hubCount} color="primary">
                   <LibraryIcon />
                 </Badge>
               </IconButton>
@@ -983,13 +1008,13 @@ function App() {
               <ListItemText primary="Home" />
             </ListItem>
             
-            <ListItem button onClick={() => { setView('library'); setMobileMenuOpen(false); }}>
+            <ListItem button onClick={() => { setView('hubs'); setMobileMenuOpen(false); }}>
               <ListItemIcon>
-                <Badge badgeContent={libraryCount} color="error">
+                <Badge badgeContent={hubCount} color="primary">
                   <LibraryIcon />
                 </Badge>
               </ListItemIcon>
-              <ListItemText primary="My Library" secondary={libraryCount > 0 ? `${libraryCount} PDFs` : null} />
+              <ListItemText primary="Learning Hubs" secondary={hubCount > 0 ? `${hubCount} Hubs` : null} />
             </ListItem>
           </List>
           
