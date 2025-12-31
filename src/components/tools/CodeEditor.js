@@ -94,10 +94,25 @@ function VyonnCodeIcon({ size = 40 }) {
 }
 
 // AI Chat Component
-function CodeAIChat({ user, onInsertCode }) {
+function CodeAIChat({ user, onInsertCode, vyonnContext }) {
   const [question, setQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Handle context from Hub Chat
+  useEffect(() => {
+    if (vyonnContext) {
+      // Pre-load question from Hub Chat
+      setQuestion(vyonnContext.question);
+      
+      // Add welcome message showing seamless transition
+      setChatHistory([{
+        role: 'assistant',
+        content: `👋 Welcome from Hub Chat! I see you're interested in:\n\n"${vyonnContext.question}"\n\nLet me help you with that coding question!${vyonnContext.vyonnResponse ? '\n\n💡 Previous discussion: ' + vyonnContext.vyonnResponse.substring(0, 200) + (vyonnContext.vyonnResponse.length > 200 ? '...' : '') : ''}`,
+        timestamp: Date.now()
+      }]);
+    }
+  }, [vyonnContext]);
   
   const userName = user?.displayName?.split(' ')[0] || 'You';
   const userPhoto = user?.photoURL;
@@ -325,7 +340,7 @@ ${isRegional ? `Write explanations in ${lang}, but code examples can remain in p
   );
 }
 
-function CodeEditor({ open, onClose, user, fullScreen = false }) {
+function CodeEditor({ open, onClose, user, vyonnContext, fullScreen = false }) {
   const [activeTab, setActiveTab] = useState(0);
   const [language, setLanguage] = useState('javascript');
   const [code, setCode] = useState(codeTemplates.javascript);
@@ -438,7 +453,7 @@ function CodeEditor({ open, onClose, user, fullScreen = false }) {
       </Box>
 
       <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {activeTab === 0 && <CodeAIChat user={user} onInsertCode={(codeContent, lang) => {
+        {activeTab === 0 && <CodeAIChat user={user} vyonnContext={vyonnContext} onInsertCode={(codeContent, lang) => {
           setCode(codeContent);
           if (lang && languages.find(l => l.id === lang.toLowerCase())) {
             setLanguage(lang.toLowerCase());

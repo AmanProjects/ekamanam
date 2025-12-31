@@ -339,7 +339,7 @@ function VyonnScienceIcon({ size = 40 }) {
   );
 }
 
-function PhysicsSimulator({ open, onClose, user, fullScreen = false }) {
+function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = false }) {
   const canvasRef = useRef(null);
   const engineRef = useRef(null);
   const renderRef = useRef(null);
@@ -355,6 +355,22 @@ function PhysicsSimulator({ open, onClose, user, fullScreen = false }) {
   const [question, setQuestion] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
+
+  // Handle context from Hub Chat
+  useEffect(() => {
+    if (vyonnContext && open) {
+      // Pre-load question from Hub Chat
+      setQuestion(vyonnContext.question);
+      setActiveTab(1); // Switch to AI Chat tab
+      
+      // Add welcome message showing seamless transition
+      setChatHistory([{
+        role: 'assistant',
+        content: `👋 Welcome from Hub Chat! I see you're interested in:\n\n"${vyonnContext.question}"\n\nLet me help you with that physics question!${vyonnContext.vyonnResponse ? '\n\n💡 Previous discussion: ' + vyonnContext.vyonnResponse.substring(0, 200) + (vyonnContext.vyonnResponse.length > 200 ? '...' : '') : ''}`,
+        timestamp: Date.now()
+      }]);
+    }
+  }, [vyonnContext, open]);
 
   // Get user display name
   const userName = user?.displayName?.split(' ')[0] || 'You';

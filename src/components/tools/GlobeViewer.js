@@ -343,7 +343,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
   );
 }
 
-function GlobeViewer({ open, onClose, user, fullScreen = false }) {
+function GlobeViewer({ open, onClose, user, vyonnContext, fullScreen = false }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md')); // v10.4.13: Mobile detection
   
@@ -358,6 +358,22 @@ function GlobeViewer({ open, onClose, user, fullScreen = false }) {
   const [question, setQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Handle context from Hub Chat
+  useEffect(() => {
+    if (vyonnContext && open) {
+      // Pre-load question from Hub Chat
+      setQuestion(vyonnContext.question);
+      setActiveTab(1); // Switch to AI Chat tab
+      
+      // Add welcome message showing seamless transition
+      setChatHistory([{
+        role: 'assistant',
+        content: `👋 Welcome from Hub Chat! I see you're interested in:\n\n"${vyonnContext.question}"\n\nLet me help you with that geography question!${vyonnContext.vyonnResponse ? '\n\n💡 Previous discussion: ' + vyonnContext.vyonnResponse.substring(0, 200) + (vyonnContext.vyonnResponse.length > 200 ? '...' : '') : ''}`,
+        timestamp: Date.now()
+      }]);
+    }
+  }, [vyonnContext, open]);
   
   // Get user info (like Chemistry)
   const userName = user?.displayName?.split(' ')[0] || 'You';

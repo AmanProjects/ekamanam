@@ -134,6 +134,7 @@ function LearningHubView({
   const [showPhysics, setShowPhysics] = useState(false);
   const [showCode, setShowCode] = useState(false);
   const [showGlobe, setShowGlobe] = useState(false);
+  const [toolContext, setToolContext] = useState(null);
   
   // Resizable panels state
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
@@ -339,15 +340,53 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
     }
   };
 
+  // Build context from Hub Chat conversation to pass to tools
+  const buildToolContext = () => {
+    if (messages.length === 0) return null;
+    
+    // Get the last user question and AI response
+    const recentMessages = messages.slice(-4); // Last 2 exchanges
+    const lastUserMessage = recentMessages.filter(m => m.role === 'user').pop();
+    const lastAssistantMessage = recentMessages.filter(m => m.role === 'assistant').pop();
+    
+    return {
+      question: lastUserMessage?.content || '',
+      vyonnResponse: lastAssistantMessage?.content || '',
+      conversationHistory: recentMessages.map(m => 
+        `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
+      ).join('\n\n')
+    };
+  };
+
   // Function to render message content with clickable tool links
   const renderMessageWithTools = (content) => {
     // Define tool names and their handlers
     const tools = [
-      { name: 'Math Lab', icon: <MathIcon />, handler: () => setShowMathLab(true) },
-      { name: 'Chemistry Tools', icon: <ChemistryIcon />, handler: () => setShowChemistry(true) },
-      { name: 'Physics Simulator', icon: <PhysicsIcon />, handler: () => setShowPhysics(true) },
-      { name: 'Code Editor', icon: <CodeIcon />, handler: () => setShowCode(true) },
-      { name: 'Globe Viewer', icon: <GlobeIcon />, handler: () => setShowGlobe(true) }
+      { name: 'Math Lab', icon: <MathIcon />, handler: () => {
+        const context = buildToolContext();
+        setToolContext(context);
+        setShowMathLab(true);
+      }},
+      { name: 'Chemistry Tools', icon: <ChemistryIcon />, handler: () => {
+        const context = buildToolContext();
+        setToolContext(context);
+        setShowChemistry(true);
+      }},
+      { name: 'Physics Simulator', icon: <PhysicsIcon />, handler: () => {
+        const context = buildToolContext();
+        setToolContext(context);
+        setShowPhysics(true);
+      }},
+      { name: 'Code Editor', icon: <CodeIcon />, handler: () => {
+        const context = buildToolContext();
+        setToolContext(context);
+        setShowCode(true);
+      }},
+      { name: 'Globe Viewer', icon: <GlobeIcon />, handler: () => {
+        const context = buildToolContext();
+        setToolContext(context);
+        setShowGlobe(true);
+      }}
     ];
     
     // Step 1: Replace tool names with unique placeholders and track them
@@ -1530,40 +1569,60 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
       {/* Math Lab Dialog */}
       <MathTools
         open={showMathLab}
-        onClose={() => setShowMathLab(false)}
+        onClose={() => {
+          setShowMathLab(false);
+          setToolContext(null);
+        }}
         user={user}
+        vyonnContext={toolContext}
         fullScreen={isMobile}
       />
 
       {/* Chemistry Dialog */}
       <ChemistryTools
         open={showChemistry}
-        onClose={() => setShowChemistry(false)}
+        onClose={() => {
+          setShowChemistry(false);
+          setToolContext(null);
+        }}
         user={user}
+        vyonnContext={toolContext}
         fullScreen={isMobile}
       />
 
       {/* Physics Dialog */}
       <PhysicsSimulator
         open={showPhysics}
-        onClose={() => setShowPhysics(false)}
+        onClose={() => {
+          setShowPhysics(false);
+          setToolContext(null);
+        }}
         user={user}
+        vyonnContext={toolContext}
         fullScreen={isMobile}
       />
 
       {/* Code Editor Dialog */}
       <CodeEditor
         open={showCode}
-        onClose={() => setShowCode(false)}
+        onClose={() => {
+          setShowCode(false);
+          setToolContext(null);
+        }}
         user={user}
+        vyonnContext={toolContext}
         fullScreen={isMobile}
       />
 
       {/* Globe Viewer Dialog */}
       <GlobeViewer
         open={showGlobe}
-        onClose={() => setShowGlobe(false)}
+        onClose={() => {
+          setShowGlobe(false);
+          setToolContext(null);
+        }}
         user={user}
+        vyonnContext={toolContext}
         fullScreen={isMobile}
       />
 
