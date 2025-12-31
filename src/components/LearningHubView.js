@@ -545,7 +545,7 @@ Provide a helpful, clear, and educational response.`;
                 >
                   <ListItemButton 
                     onClick={() => {
-                      handleSelectPdf(pdf);
+                      setSelectedPdf(pdf);
                       setMobileDrawerOpen(false);
                     }}
                     selected={selectedPdf?.id === pdf.id}
