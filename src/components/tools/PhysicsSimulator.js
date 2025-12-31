@@ -432,33 +432,33 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
                    hasKannada ? 'Kannada (ಕನ್ನಡ)' :
                    hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
       
-      const prompt = `You are Vyonn AI, a brilliant and friendly physics tutor.
+      const prompt = `You are Vyonn AI, a brilliant physics tutor.
 
-${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
+${isRegional ? `🚨 IMPORTANT: Respond in ${lang}!` : ''}
 
 Student asked: "${userQuestion}"
 
 ${topicContext}
 
-${matchedExp ? `🎯 IMPORTANT: I am generating an INTERACTIVE PHYSICS SIMULATION for "${matchedExp.name}"! 
-The simulation will appear automatically in 1.5 seconds. Make sure to:
-1. Start with: "🎮 I've created an interactive simulation for you!"
-2. Briefly explain the concept (100-150 words)
-3. End with: "⚡ The simulation is loading! You can adjust parameters and see how they affect the motion in real-time. Try different values and observe the changes!"` : 
-matchedDiagram ? `📊 I am showing a detailed labeled diagram for "${matchedDiagram.title}". Explain the diagram's key components.` : 
-`Provide a comprehensive physics explanation (200-250 words)`}
+${matchedExp ? `🎯 I am generating an INTERACTIVE SIMULATION for "${matchedExp.name}"!
 
-${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Use bullet points for clarity. Be engaging and encouraging!'}
+Instructions:
+1. Start: "🎮 I've created an interactive simulation for you!"
+2. Explain the concept in 100-120 words (keep it concise!)
+3. End: "⚡ The simulation is loading! You can adjust parameters and observe changes in real-time."` : 
+matchedDiagram ? `📊 I am showing a diagram for "${matchedDiagram.title}". Explain key components (150-200 words).` : 
+`Provide a concise physics explanation (150-200 words).`}
 
-Key points to cover ${isRegional ? `(in ${lang})` : ''}:
-1. Clear concept explanation
-2. ${matchedExp ? 'How to use the simulation' : 'Key physics principles'}
-3. Important formulas (use proper notation like v₀, θ, g, etc.)
-4. Real-world applications
-5. ${matchedExp ? 'What to observe in the simulation' : 'An interesting fact'}`;
+${isRegional ? `Write in ${lang}!` : 'Use bullet points. Be clear and engaging.'}
+
+Cover ${isRegional ? `(in ${lang})` : ''}:
+1. Core concept
+2. ${matchedExp ? 'How to use simulation' : 'Key principles'}
+3. Important formulas (v₀, θ, g notation)
+4. ${matchedExp ? 'What to observe' : 'Real-world example'}`;
 
       console.log('🧪 Physics: Calling LLM with prompt length:', prompt.length);
-      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });
+      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 4096 });  // Increased from 2048 to handle longer responses
       console.log('🧪 Physics: Received response:', response ? `${response.length} chars` : 'null/undefined');
       
       if (!response || response.trim().length === 0) {
@@ -485,6 +485,9 @@ Key points to cover ${isRegional ? `(in ${lang})` : ''}:
         errorMessage += "Please make sure you have configured your API keys in Settings. ";
       } else if (error.message && error.message.includes('Empty response')) {
         errorMessage += "The AI returned an empty response. Please try rephrasing your question or check your API configuration in Settings. ";
+      } else if (error.message && (error.message.includes('truncated') || error.message.includes('too long') || error.message.includes('maxOutputTokens'))) {
+        errorMessage += "The response was too long. I'll try again with a more concise explanation. ";
+        // Don't add simulation text - let it fail gracefully
       } else {
         errorMessage += "Please try again or check your API configuration in Settings. ";
       }
