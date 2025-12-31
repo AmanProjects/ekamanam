@@ -46,7 +46,7 @@ import {
   Notes as NotesIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
-import libraryService from '../services/libraryService';
+import libraryService, { loadPDFData } from '../services/libraryService';
 import llmService from '../services/llmService';
 import { markdownToHtml } from '../utils/markdownRenderer';
 import { extractFullPdfText } from '../services/pdfExtractor';
@@ -74,6 +74,8 @@ function LearningHubView({
   // PDF context menu
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedPdf, setSelectedPdf] = useState(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
   
   // Study Materials tab state
   const [studyTab, setStudyTab] = useState(0);
@@ -107,6 +109,58 @@ function LearningHubView({
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Load PDF when selected
+  useEffect(() => {
+    const loadPdf = async () => {
+      if (!selectedPdf) {
+        // Clean up previous blob URL
+        if (pdfBlobUrl) {
+          URL.revokeObjectURL(pdfBlobUrl);
+          setPdfBlobUrl(null);
+        }
+        return;
+      }
+
+      setPdfLoading(true);
+      try {
+        // Load PDF data from IndexedDB
+        const pdfData = await loadPDFData(selectedPdf.id);
+        
+        if (!pdfData) {
+          console.error('PDF data not found for:', selectedPdf.id);
+          alert('PDF data not found. Please try re-uploading the file.');
+          setPdfLoading(false);
+          return;
+        }
+
+        // Clean up previous blob URL
+        if (pdfBlobUrl) {
+          URL.revokeObjectURL(pdfBlobUrl);
+        }
+
+        // Create new blob URL
+        const blob = new Blob([pdfData], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        setPdfBlobUrl(url);
+      } catch (error) {
+        console.error('Error loading PDF:', error);
+        alert('Failed to load PDF. Please try again.');
+      } finally {
+        setPdfLoading(false);
+      }
+    };
+
+    loadPdf();
+
+    // Cleanup on unmount
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPdf]);
 
   // Handle panel resizing
   const handleMouseDown = () => {
@@ -263,7 +317,7 @@ Provide a helpful, clear, and educational response.`;
 
   // LEARN TOOL HANDLER
   const handleLearnQuery = async () => {
-    if (!learnInput.trim() || !selectedPdf) {
+    if (!learnInput.trim() || !selectedPdf || !pdfBlobUrl) {
       alert('Please select a PDF and enter a question');
       return;
     }
@@ -273,7 +327,7 @@ Provide a helpful, clear, and educational response.`;
 
     try {
       // Extract PDF content
-      const pdfText = await extractFullPdfText(selectedPdf.pdfUrl);
+      const pdfText = await extractFullPdfText(pdfBlobUrl);
       
       const prompt = `You are an expert tutor. Based on the following PDF content, answer the student's question in a clear, educational manner.
 
@@ -296,7 +350,7 @@ Provide a comprehensive, easy-to-understand explanation.`;
 
   // EXPLAIN TOOL HANDLER
   const handleExplainQuery = async () => {
-    if (!explainInput.trim() || !selectedPdf) {
+    if (!explainInput.trim() || !selectedPdf || !pdfBlobUrl) {
       alert('Please select a PDF and enter text to explain');
       return;
     }
@@ -305,7 +359,7 @@ Provide a comprehensive, easy-to-understand explanation.`;
     setExplainResponse('');
 
     try {
-      const pdfText = await extractFullPdfText(selectedPdf.pdfUrl);
+      const pdfText = await extractFullPdfText(pdfBlobUrl);
       
       const prompt = `You are an expert educator. Based on the PDF content below, provide a detailed explanation of the following concept or text.
 
@@ -328,7 +382,7 @@ Provide a clear, detailed explanation with examples if relevant.`;
 
   // EXAM PREP TOOL HANDLER
   const handleGenerateExam = async () => {
-    if (!selectedPdf) {
+    if (!selectedPdf || !pdfBlobUrl) {
       alert('Please select a PDF first');
       return;
     }
@@ -337,7 +391,7 @@ Provide a clear, detailed explanation with examples if relevant.`;
     setExamResponse('');
 
     try {
-      const pdfText = await extractFullPdfText(selectedPdf.pdfUrl);
+      const pdfText = await extractFullPdfText(pdfBlobUrl);
       
       const prompt = `You are an exam preparation expert. Based on the PDF content below, generate:
 
@@ -468,15 +522,29 @@ Generate comprehensive exam questions covering key concepts.`;
 
         {/* CENTER PANEL: PDF Viewer */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#525659', position: 'relative' }}>
-          {selectedPdf ? (
+          {pdfLoading ? (
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '100%',
+              color: 'white'
+            }}>
+              <CircularProgress sx={{ color: 'white', mb: 2 }} />
+              <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                Loading PDF...
+              </Typography>
+            </Box>
+          ) : pdfBlobUrl ? (
             <iframe
-              src={selectedPdf.pdfUrl}
+              src={pdfBlobUrl}
               style={{
                 width: '100%',
                 height: '100%',
                 border: 'none',
               }}
-              title={selectedPdf.name}
+              title={selectedPdf?.name}
             />
           ) : (
             <Box sx={{ 
