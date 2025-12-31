@@ -45,7 +45,8 @@ import {
   Quiz as ExamIcon,
   Chat as ChatIcon,
   Notes as NotesIcon,
-  MenuBook as StudyIcon
+  MenuBook as StudyIcon,
+  ChatBubbleOutline as ChatBubbleIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService, { loadPDFData } from '../services/libraryService';
@@ -53,6 +54,7 @@ import llmService from '../services/llmService';
 import { markdownToHtml } from '../utils/markdownRenderer';
 import PDFViewer from './PDFViewer';
 import AIModePanel from './AIModePanel';
+import VoiceInputButton from './VoiceInputButton';
 
 function LearningHubView({ 
   hub, 
@@ -693,13 +695,15 @@ Provide a helpful, clear, and educational response.`;
 
           {pdfFile && pdfDocument ? (
             studyTab === 10 ? (
-              // Hub Chat (Custom Implementation - Input at Top)
-              <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 3, overflow: 'auto', minHeight: 0 }}>
-                {/* Header with Clear Button */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              // Hub Chat (Custom Implementation - Compact & Voice-Enabled)
+              <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 2, overflow: 'auto', minHeight: 0 }}>
+                {/* Compact Header with Clear Button */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
                   <Box>
-                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>Hub Chat</Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    <Typography variant="subtitle1" fontWeight={600} sx={{ lineHeight: 1.2, mb: 0.5 }}>
+                      Hub Chat
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
                       Chat with all PDFs in this hub
                     </Typography>
                   </Box>
@@ -716,46 +720,91 @@ Provide a helpful, clear, and educational response.`;
                   )}
                 </Box>
                 
-                {/* Chat Input - Moved to Top */}
-                <Box sx={{ mb: 2 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    multiline
-                    maxRows={3}
-                    placeholder="Ask about hub materials..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    disabled={chatLoading}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={handleSendMessage}
-                            disabled={!input.trim() || chatLoading}
-                          >
-                            {chatLoading ? <CircularProgress size={20} /> : <SendIcon />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Box>
+                {/* Prominent Chat Input with Voice */}
+                <Paper elevation={3} sx={{ mb: 1.5, borderRadius: 2 }}>
+                  <Box sx={{ display: 'flex', gap: 0.5, p: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      multiline
+                      maxRows={3}
+                      placeholder="Ask about hub materials..."
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      disabled={chatLoading}
+                      variant="outlined"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'primary.main',
+                            borderWidth: 2,
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'primary.dark',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                        },
+                      }}
+                    />
+                    <VoiceInputButton
+                      onTranscript={(text) => setInput(text)}
+                      size="medium"
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleSendMessage}
+                      disabled={!input.trim() || chatLoading}
+                      sx={{ 
+                        minWidth: 48,
+                        height: 40,
+                        px: 2,
+                        boxShadow: 3
+                      }}
+                    >
+                      {chatLoading ? <CircularProgress size={20} sx={{ color: 'white' }} /> : <SendIcon />}
+                    </Button>
+                  </Box>
+                </Paper>
 
                 {/* Chat Messages - Below Input */}
                 <Box sx={{ flex: 1, overflow: 'auto' }}>
                   {messages.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', mt: 4 }}>
-                      <VyonnIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      mt: 3,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center'
+                    }}>
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          display: 'inline-flex',
+                          mb: 1.5,
+                          '@keyframes pulse': {
+                            '0%, 100%': {
+                              transform: 'scale(1)',
+                              opacity: 1,
+                            },
+                            '50%': {
+                              transform: 'scale(1.1)',
+                              opacity: 0.8,
+                            },
+                          },
+                          animation: 'pulse 2s ease-in-out infinite',
+                        }}
+                      >
+                        <ChatBubbleIcon sx={{ fontSize: 56, color: 'primary.main' }} />
+                      </Box>
+                      <Typography variant="subtitle2" fontWeight={600} color="text.primary" gutterBottom>
                         Start a conversation
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -770,32 +819,39 @@ Provide a helpful, clear, and educational response.`;
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                          mb: 2,
+                          mb: 1.5,
                         }}
                       >
                         <Paper
-                          elevation={0}
+                          elevation={msg.role === 'user' ? 2 : 1}
                           sx={{
-                            p: 1.5,
+                            p: 1.25,
                             maxWidth: '85%',
                             bgcolor: msg.role === 'user' ? 'primary.main' : 'grey.100',
                             color: msg.role === 'user' ? 'white' : 'text.primary',
-                            fontSize: '0.875rem',
                             borderRadius: 2
                           }}
                         >
                           {msg.role === 'user' ? (
-                            <Typography variant="body2">{msg.content}</Typography>
+                            <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                              {msg.content}
+                            </Typography>
                           ) : (
-                            <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
+                            <Box sx={{ 
+                              fontSize: '0.875rem',
+                              '& p': { mb: 0.5 },
+                              '& ul, & ol': { pl: 2, mb: 0.5 }
+                            }}>
+                              <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
+                            </Box>
                           )}
                         </Paper>
                       </Box>
                     ))
                   )}
                   {chatLoading && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
-                      <CircularProgress size={20} />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
+                      <CircularProgress size={18} />
                       <Typography variant="caption" color="text.secondary">
                         Thinking...
                       </Typography>
