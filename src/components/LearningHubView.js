@@ -991,13 +991,15 @@ Provide a helpful, clear, and educational response.`;
         fullWidth
       >
         <DialogTitle>Add PDF to Hub</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pt: 3 }}>
           {/* Upload Option */}
-          <Paper
-            variant="outlined"
+          <Box
+            component="label"
             sx={{
-              p: 3,
-              mb: 2,
+              display: 'block',
+              width: '100%',
+              p: 4,
+              mb: 3,
               textAlign: 'center',
               bgcolor: 'rgba(25, 118, 210, 0.04)',
               border: '2px dashed',
@@ -1007,16 +1009,16 @@ Provide a helpful, clear, and educational response.`;
               transition: 'all 0.2s',
               '&:hover': { 
                 bgcolor: 'rgba(25, 118, 210, 0.08)',
-                borderColor: 'primary.dark'
+                borderColor: 'primary.dark',
+                transform: 'scale(1.01)'
               }
             }}
-            component="label"
           >
-            <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: 'text.primary' }}>
+            <UploadIcon sx={{ fontSize: 56, color: 'primary.main', mb: 2 }} />
+            <Typography variant="h6" fontWeight={600} gutterBottom>
               Upload New PDF or ZIP File
             </Typography>
-            <Typography variant="caption" color="text.secondary" display="block">
+            <Typography variant="body2" color="text.secondary">
               Add files directly to this hub
             </Typography>
             <input
@@ -1025,13 +1027,13 @@ Provide a helpful, clear, and educational response.`;
               accept=".pdf,.zip"
               onChange={handleFileUpload}
             />
-          </Paper>
+          </Box>
 
           {/* OR Divider */}
           {availablePdfs.length > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 3 }}>
               <Divider sx={{ flex: 1 }} />
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>
                 OR SELECT FROM LIBRARY
               </Typography>
               <Divider sx={{ flex: 1 }} />
