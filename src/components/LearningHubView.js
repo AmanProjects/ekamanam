@@ -115,7 +115,7 @@ function LearningHubView({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Load PDF file when selected (reusing existing code pattern from App.js)
+  // Load PDF file when selected (EXACT SAME CODE as App.js handleOpenFromLibrary)
   useEffect(() => {
     const loadPdfFile = async () => {
       if (!selectedPdf) {
@@ -126,22 +126,45 @@ function LearningHubView({
 
       setPdfLoading(true);
       try {
-        // Load PDF data from IndexedDB (same as App.js does)
-        const pdfData = await loadPDFData(selectedPdf.id);
+        console.log('📖 Opening PDF:', selectedPdf.name);
+        
+        // Load PDF data from IndexedDB first (same as App.js)
+        let pdfData = await loadPDFData(selectedPdf.id);
+        console.log('📦 PDF data from IndexedDB:', pdfData ? `${pdfData.byteLength} bytes` : 'null');
+        
+        // If not in IndexedDB, try to download from Google Drive (same as App.js)
+        if (!pdfData && selectedPdf.driveFileId) {
+          console.log('☁️ PDF not in IndexedDB, downloading from Google Drive...');
+          try {
+            const { downloadFile } = await import('../services/googleDriveService');
+            const driveBlob = await downloadFile(selectedPdf.driveFileId);
+            pdfData = await driveBlob.arrayBuffer();
+            console.log('✅ Downloaded from Drive:', pdfData.byteLength, 'bytes');
+            
+            // Cache in IndexedDB for future use (same as App.js)
+            const { openDB } = await import('idb');
+            const db = await openDB('ekamanam_library', 2);
+            await db.put('pdf_data', { id: selectedPdf.id, data: pdfData });
+            console.log('💾 Cached PDF in IndexedDB for faster access next time');
+          } catch (driveError) {
+            console.error('❌ Failed to download from Drive:', driveError);
+            throw new Error(`PDF not found locally and failed to download from Google Drive: ${driveError.message}`);
+          }
+        }
         
         if (!pdfData) {
-          console.error('PDF data not found for:', selectedPdf.id);
-          alert('PDF data not found. Please open this PDF from "My Library" first.');
-          setSelectedPdf(null);
-          setPdfLoading(false);
-          return;
+          throw new Error('PDF data not found. Please re-upload the file.');
         }
-
-        // Convert to File object (same as what App.js uses)
-        const file = new File([pdfData], selectedPdf.name, { type: 'application/pdf' });
+        
+        // Convert ArrayBuffer to File object (same as App.js)
+        const blob = new Blob([pdfData], { type: 'application/pdf' });
+        const fileName = selectedPdf.originalFileName || `${selectedPdf.name}.pdf`;
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        
+        console.log('📄 File created:', file.name, file.size, 'bytes');
         setPdfFile(file);
       } catch (error) {
-        console.error('Error loading PDF:', error);
+        console.error('❌ Error loading PDF:', error);
         alert(`Failed to load PDF: ${error.message}`);
         setSelectedPdf(null);
       } finally {
