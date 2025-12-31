@@ -50,6 +50,7 @@ import libraryService, { loadPDFData } from '../services/libraryService';
 import llmService from '../services/llmService';
 import { markdownToHtml } from '../utils/markdownRenderer';
 import { extractFullPdfText } from '../services/pdfExtractor';
+import PDFViewer from './PDFViewer';
 
 function LearningHubView({ 
   hub, 
@@ -74,7 +75,11 @@ function LearningHubView({
   // PDF context menu
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedPdf, setSelectedPdf] = useState(null);
-  const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+  
+  // PDF Viewer states (reusing existing PDFViewer component)
+  const [pdfFile, setPdfFile] = useState(null);
+  const [pdfDocument, setPdfDocument] = useState(null);
+  const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
   const [pdfLoading, setPdfLoading] = useState(false);
   
   // Study Materials tab state
@@ -110,56 +115,41 @@ function LearningHubView({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Load PDF when selected
+  // Load PDF file when selected (reusing existing code pattern from App.js)
   useEffect(() => {
-    const loadPdf = async () => {
+    const loadPdfFile = async () => {
       if (!selectedPdf) {
-        // Clean up previous blob URL
-        if (pdfBlobUrl) {
-          URL.revokeObjectURL(pdfBlobUrl);
-          setPdfBlobUrl(null);
-        }
+        setPdfFile(null);
+        setPdfDocument(null);
         return;
       }
 
       setPdfLoading(true);
       try {
-        // Load PDF data from IndexedDB
+        // Load PDF data from IndexedDB (same as App.js does)
         const pdfData = await loadPDFData(selectedPdf.id);
         
         if (!pdfData) {
           console.error('PDF data not found for:', selectedPdf.id);
-          alert('PDF data not found. Please try re-uploading the file.');
+          alert('PDF data not found. Please open this PDF from "My Library" first.');
+          setSelectedPdf(null);
           setPdfLoading(false);
           return;
         }
 
-        // Clean up previous blob URL
-        if (pdfBlobUrl) {
-          URL.revokeObjectURL(pdfBlobUrl);
-        }
-
-        // Create new blob URL
-        const blob = new Blob([pdfData], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        setPdfBlobUrl(url);
+        // Convert to File object (same as what App.js uses)
+        const file = new File([pdfData], selectedPdf.name, { type: 'application/pdf' });
+        setPdfFile(file);
       } catch (error) {
         console.error('Error loading PDF:', error);
-        alert('Failed to load PDF. Please try again.');
+        alert(`Failed to load PDF: ${error.message}`);
+        setSelectedPdf(null);
       } finally {
         setPdfLoading(false);
       }
     };
 
-    loadPdf();
-
-    // Cleanup on unmount
-    return () => {
-      if (pdfBlobUrl) {
-        URL.revokeObjectURL(pdfBlobUrl);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadPdfFile();
   }, [selectedPdf]);
 
   // Handle panel resizing
@@ -520,7 +510,7 @@ Generate comprehensive exam questions covering key concepts.`;
           </List>
         </Paper>
 
-        {/* CENTER PANEL: PDF Viewer */}
+        {/* CENTER PANEL: PDF Viewer (reusing existing PDFViewer component) */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#525659', position: 'relative' }}>
           {pdfLoading ? (
             <Box sx={{ 
@@ -536,15 +526,15 @@ Generate comprehensive exam questions covering key concepts.`;
                 Loading PDF...
               </Typography>
             </Box>
-          ) : pdfBlobUrl ? (
-            <iframe
-              src={pdfBlobUrl}
-              style={{
-                width: '100%',
-                height: '100%',
-                border: 'none',
-              }}
-              title={selectedPdf?.name}
+          ) : pdfFile ? (
+            <PDFViewer
+              selectedFile={pdfFile}
+              pdfDocument={pdfDocument}
+              setPdfDocument={setPdfDocument}
+              currentPage={pdfCurrentPage}
+              setCurrentPage={setPdfCurrentPage}
+              onTextSelect={() => {}}
+              onPageTextExtract={() => {}}
             />
           ) : (
             <Box sx={{ 
