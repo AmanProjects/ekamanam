@@ -341,43 +341,65 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
 
   // Function to render message content with clickable tool links
   const renderMessageWithTools = (content) => {
-    // Split content by [TOOL:ToolName] pattern
-    const parts = content.split(/(\[TOOL:[^\]]+\])/g);
+    // Define tool names and their handlers
+    const tools = [
+      { name: 'Math Lab', icon: <MathIcon />, handler: () => setShowMathLab(true) },
+      { name: 'Chemistry Tools', icon: <ChemistryIcon />, handler: () => setShowChemistry(true) },
+      { name: 'Physics Simulator', icon: <PhysicsIcon />, handler: () => setShowPhysics(true) },
+      { name: 'Code Editor', icon: <CodeIcon />, handler: () => setShowCode(true) },
+      { name: 'Globe Viewer', icon: <GlobeIcon />, handler: () => setShowGlobe(true) }
+    ];
     
-    return parts.map((part, index) => {
-      // Check if this part is a tool link
-      const toolMatch = part.match(/\[TOOL:([^\]]+)\]/);
-      if (toolMatch) {
-        const toolName = toolMatch[1];
-        return (
+    // Build regex pattern to match [TOOL:ToolName] OR just "ToolName"
+    // Match explicit format: [TOOL:Math Lab]
+    // OR natural mentions: "Math Lab", "Physics Simulator", etc.
+    const toolNamesPattern = tools.map(t => t.name).join('|');
+    const pattern = new RegExp(`(\\[TOOL:(${toolNamesPattern})\\]|\\b(${toolNamesPattern})\\b)`, 'gi');
+    
+    const parts = content.split(pattern);
+    const elements = [];
+    
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (!part) continue;
+      
+      // Check if this matches a tool
+      const tool = tools.find(t => 
+        part === `[TOOL:${t.name}]` || 
+        part.toLowerCase() === t.name.toLowerCase()
+      );
+      
+      if (tool) {
+        // Render as clickable chip
+        elements.push(
           <Chip
-            key={index}
-            label={toolName}
+            key={`chip-${i}`}
+            label={tool.name}
             color="primary"
             size="small"
             clickable
-            icon={
-              toolName === 'Math Lab' ? <MathIcon /> :
-              toolName === 'Chemistry Tools' ? <ChemistryIcon /> :
-              toolName === 'Physics Simulator' ? <PhysicsIcon /> :
-              toolName === 'Code Editor' ? <CodeIcon /> :
-              toolName === 'Globe Viewer' ? <GlobeIcon /> :
-              null
-            }
-            onClick={() => {
-              if (toolName === 'Math Lab') setShowMathLab(true);
-              else if (toolName === 'Chemistry Tools') setShowChemistry(true);
-              else if (toolName === 'Physics Simulator') setShowPhysics(true);
-              else if (toolName === 'Code Editor') setShowCode(true);
-              else if (toolName === 'Globe Viewer') setShowGlobe(true);
+            icon={tool.icon}
+            onClick={tool.handler}
+            sx={{ 
+              mx: 0.5, 
+              cursor: 'pointer', 
+              fontWeight: 600,
+              verticalAlign: 'middle'
             }}
-            sx={{ mx: 0.5, cursor: 'pointer', fontWeight: 600 }}
+          />
+        );
+      } else if (part.trim()) {
+        // Regular text - convert markdown to HTML
+        elements.push(
+          <span 
+            key={`text-${i}`} 
+            dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} 
           />
         );
       }
-      // Regular text - convert markdown to HTML
-      return <span key={index} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
-    });
+    }
+    
+    return elements;
   };
 
   const handleAddPdf = async (pdfId) => {
