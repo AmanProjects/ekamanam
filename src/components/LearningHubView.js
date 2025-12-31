@@ -532,7 +532,7 @@ Provide a helpful, clear, and educational response.`;
           {/* Icon Band Header - Empty spacer to match other panel heights */}
           <Box sx={{ 
             width: '100%',
-            py: 1.5, 
+            height: '46px',
             bgcolor: '#e0e0e0', 
             borderBottom: '1px solid #bdbdbd'
           }} />
