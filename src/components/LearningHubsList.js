@@ -37,8 +37,6 @@ import {
   Delete as DeleteIcon,
   FolderOpen as FolderIcon,
   ArrowBack as BackIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
   CheckBox as CheckBoxIcon,
   CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon
 } from '@mui/icons-material';
@@ -49,11 +47,10 @@ import libraryService from '../services/libraryService';
 const HUB_ICONS = ['📚', '🎓', '🔬', '📖', '💡', '🎯', '🚀', '⚡', '🌟', '🧠'];
 const HUB_COLORS = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#FF5722', '#3F51B5'];
 
-function LearningHubsList({ onBack, onOpenPdf }) {
+function LearningHubsList({ onBack, onOpenHub }) {
   const [hubs, setHubs] = useState([]);
   const [allPdfs, setAllPdfs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedHub, setExpandedHub] = useState(null); // v10.6.2: Track expanded hub
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingHub, setEditingHub] = useState(null);
@@ -252,174 +249,104 @@ function LearningHubsList({ onBack, onOpenPdf }) {
                       }
                     }}
                   >
-                    <CardActionArea onClick={() => setExpandedHub(expandedHub === hub.id ? null : hub.id)}>
-                      <CardContent sx={{ p: 3 }}>
-                        {/* Hub Header */}
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                          <Avatar
+                    <CardContent sx={{ p: 3 }}>
+                      {/* Hub Header */}
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: hub.color,
+                            width: 56,
+                            height: 56,
+                            fontSize: '2rem',
+                            mr: 2
+                          }}
+                        >
+                          {hub.icon}
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography
+                            variant="h6"
+                            fontWeight={600}
                             sx={{
-                              bgcolor: hub.color,
-                              width: 56,
-                              height: 56,
-                              fontSize: '2rem',
-                              mr: 2
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            {hub.icon}
-                          </Avatar>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            {hub.name}
+                          </Typography>
+                          {hub.description && (
                             <Typography
-                              variant="h6"
-                              fontWeight={600}
+                              variant="body2"
+                              color="text.secondary"
                               sx={{
+                                mt: 0.5,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical'
                               }}
                             >
-                              {hub.name}
+                              {hub.description}
                             </Typography>
-                            {hub.description && (
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  mt: 0.5,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical'
-                                }}
-                              >
-                                {hub.description}
-                              </Typography>
-                            )}
-                          </Box>
-                          <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            {expandedHub === hub.id ? (
-                              <ExpandLessIcon sx={{ color: 'action.active' }} />
-                            ) : (
-                              <ExpandMoreIcon sx={{ color: 'action.active' }} />
-                            )}
-                            <IconButton
-                              size="small"
-                              onClick={(e) => handleMenuOpen(e, hub)}
-                            >
-                              <MoreIcon />
-                            </IconButton>
-                          </Box>
-                        </Box>
-
-                        {/* Stats */}
-                        <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #f0f0f0' }}>
-                          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                            <Chip
-                              label={`${stats.pdfCount} ${stats.pdfCount === 1 ? 'PDF' : 'PDFs'}`}
-                              size="small"
-                              sx={{ bgcolor: '#f5f5f5' }}
-                            />
-                            <Chip
-                              label={`${stats.totalPages} pages`}
-                              size="small"
-                              sx={{ bgcolor: '#f5f5f5' }}
-                            />
-                          </Box>
-                          {stats.pdfCount > 0 && (
-                            <Box>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                <Typography variant="caption" color="text.secondary">
-                                  Progress
-                                </Typography>
-                                <Typography variant="caption" fontWeight={600}>
-                                  {stats.avgProgress}%
-                                </Typography>
-                              </Box>
-                              <LinearProgress
-                                variant="determinate"
-                                value={stats.avgProgress}
-                                sx={{ height: 6, borderRadius: 1 }}
-                              />
-                            </Box>
                           )}
                         </Box>
-                      </CardContent>
-                    </CardActionArea>
-                    
-                    {/* v10.6.2: Expanded PDFs list */}
-                    {expandedHub === hub.id && (
-                      <Box sx={{ p: 2, pt: 0, borderTop: '1px solid #f0f0f0' }}>
-                        {stats.pdfs.length > 0 ? (
-                          <>
-                            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                              Click a PDF to start learning:
-                            </Typography>
-                            {stats.pdfs.map((pdf) => (
-                              <Paper
-                                key={pdf.id}
-                                elevation={0}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenPdf(pdf, hub);
-                                }}
-                                sx={{
-                                  p: 1.5,
-                                  mb: 1,
-                                  cursor: 'pointer',
-                                  border: '1px solid #e0e0e0',
-                                  borderRadius: 1,
-                                  transition: 'all 0.2s',
-                                  '&:hover': {
-                                    bgcolor: '#f5f5f5',
-                                    transform: 'translateX(4px)'
-                                  }
-                                }}
-                              >
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Typography variant="body2">📄</Typography>
-                                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Typography
-                                      variant="body2"
-                                      fontWeight={500}
-                                      sx={{
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
-                                      }}
-                                    >
-                                      {pdf.name}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {pdf.totalPages} pages • {pdf.progress}% complete
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              </Paper>
-                            ))}
-                          </>
-                        ) : (
-                          <Box sx={{ textAlign: 'center', py: 3 }}>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              📭 This hub is empty
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                              Add PDFs to this hub from My Library
-                            </Typography>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<AddIcon />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                alert('To add PDFs to this hub:\n\n1. Go back to Dashboard\n2. Click "My Library"\n3. Open any PDF\n4. The PDF will automatically be available to add to hubs\n\nFull "Add PDFs to Hub" feature coming in next update!');
-                              }}
-                            >
-                              How to Add PDFs
-                            </Button>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleMenuOpen(e, hub)}
+                        >
+                          <MoreIcon />
+                        </IconButton>
+                      </Box>
+
+                      {/* Stats */}
+                      <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                          <Chip
+                            label={`${stats.pdfCount} ${stats.pdfCount === 1 ? 'PDF' : 'PDFs'}`}
+                            size="small"
+                            sx={{ bgcolor: '#f5f5f5' }}
+                          />
+                          <Chip
+                            label={`${stats.totalPages} pages`}
+                            size="small"
+                            sx={{ bgcolor: '#f5f5f5' }}
+                          />
+                        </Box>
+                        {stats.pdfCount > 0 && (
+                          <Box sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                Progress
+                              </Typography>
+                              <Typography variant="caption" fontWeight={600}>
+                                {stats.avgProgress}%
+                              </Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={stats.avgProgress}
+                              sx={{ height: 6, borderRadius: 1 }}
+                            />
                           </Box>
                         )}
+                        
+                        {/* v10.6.3: Open Hub Button */}
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={() => onOpenHub(hub)}
+                          sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600
+                          }}
+                        >
+                          Open Hub
+                        </Button>
                       </Box>
-                    )}
+                    </CardContent>
                   </Card>
                 </Grid>
               );

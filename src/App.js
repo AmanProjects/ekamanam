@@ -9,7 +9,8 @@ import PDFViewer from './components/PDFViewer';
 import AIModePanel from './components/AIModePanel';
 import Dashboard from './components/Dashboard';
 import StudentLibrary from './components/StudentLibrary';
-import LearningHubsList from './components/LearningHubsList';  // v10.6.2: Consolidated hub interface
+import LearningHubsList from './components/LearningHubsList';  // v10.6.2: Hub management
+import LearningHubView from './components/LearningHubView';    // v10.6.3: 3-panel hub interface
 import EnhancedSettingsDialog from './components/EnhancedSettingsDialog';
 import AdminDashboard from './components/AdminDashboard';
 import AdminOTPDialog from './components/AdminOTPDialog';
@@ -1067,10 +1068,19 @@ function App() {
             onOpenSettings={() => setShowSettings(true)}
           />
         ) : view === 'hubs' ? (
-          // v10.6.2: Learning Hubs List (consolidated interface)
+          // v10.6.3: Learning Hubs List
           <LearningHubsList
             onBack={() => setView('dashboard')}
-            onOpenPdf={(pdf, hub) => handleOpenFromLibrary(pdf, hub)}
+            onOpenHub={(hub) => { setCurrentHub(hub); setView('hub-view'); }}
+          />
+        ) : view === 'hub-view' ? (
+          // v10.6.3: 3-Panel Hub View (Sources | Hub Chat | Materials)
+          <LearningHubView
+            hub={currentHub}
+            onBack={() => setView('hubs')}
+            onOpenPdf={(pdf) => handleOpenFromLibrary(pdf, currentHub)}
+            onOpenFlashcards={() => setShowFlashcards(true)}
+            onOpenTimeline={() => setShowTimeline(true)}
           />
         ) : view === 'library' ? (
           <StudentLibrary
