@@ -1083,7 +1083,7 @@ function App() {
             onOpenTimeline={() => setShowTimeline(true)}
             user={user}
             subscription={subscription}
-            onUpgrade={handleUpgrade}
+            onUpgrade={() => setShowSubscriptionDialog(true)}
           />
         ) : view === 'library' ? (
           <StudentLibrary

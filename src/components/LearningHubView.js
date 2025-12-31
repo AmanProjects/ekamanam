@@ -37,7 +37,13 @@ import {
   MoreVert as MoreIcon,
   Delete as DeleteIcon,
   PictureAsPdf as PdfIcon,
-  Psychology as VyonnIcon
+  Psychology as VyonnIcon,
+  School as LearnIcon,
+  Psychology as ExplainIcon,
+  SportsEsports as ActivitiesIcon,
+  Quiz as ExamIcon,
+  Chat as ChatIcon,
+  Notes as NotesIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService, { loadPDFData } from '../services/libraryService';
@@ -462,6 +468,112 @@ Provide a helpful, clear, and educational response.`;
           )}
         </Box>
 
+        {/* ICON BAND: Study Material Tools */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: 60,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 1,
+            py: 2,
+            bgcolor: '#f5f5f5',
+            borderLeft: '1px solid #e0e0e0',
+            borderRight: '1px solid #e0e0e0'
+          }}
+        >
+          <Tooltip title="Learn" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(0)}
+              sx={{
+                bgcolor: studyTab === 0 ? 'primary.main' : 'transparent',
+                color: studyTab === 0 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 0 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <LearnIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Explain" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(1)}
+              sx={{
+                bgcolor: studyTab === 1 ? 'primary.main' : 'transparent',
+                color: studyTab === 1 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 1 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <ExplainIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Activities" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(2)}
+              sx={{
+                bgcolor: studyTab === 2 ? 'primary.main' : 'transparent',
+                color: studyTab === 2 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 2 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <ActivitiesIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Exam" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(3)}
+              sx={{
+                bgcolor: studyTab === 3 ? 'primary.main' : 'transparent',
+                color: studyTab === 3 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 3 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <ExamIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Hub Chat" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(4)}
+              sx={{
+                bgcolor: studyTab === 4 ? 'primary.main' : 'transparent',
+                color: studyTab === 4 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 4 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <ChatIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Notes" placement="right">
+            <IconButton
+              onClick={() => setStudyTab(5)}
+              sx={{
+                bgcolor: studyTab === 5 ? 'primary.main' : 'transparent',
+                color: studyTab === 5 ? 'white' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: studyTab === 5 ? 'primary.dark' : 'action.hover',
+                }
+              }}
+            >
+              <NotesIcon />
+            </IconButton>
+          </Tooltip>
+        </Paper>
+
         {/* RESIZE HANDLE */}
         <Box
           onMouseDown={handleMouseDown}
@@ -476,7 +588,7 @@ Provide a helpful, clear, and educational response.`;
           }}
         />
 
-        {/* RIGHT PANEL: AI Mode Panel (REUSED EXISTING COMPONENT) */}
+        {/* RIGHT PANEL: AI Mode Panel Content (NO TABS, JUST CONTENT) */}
         <Box
           sx={{
             width: rightPanelWidth,
@@ -486,7 +598,11 @@ Provide a helpful, clear, and educational response.`;
             flexDirection: 'column',
             borderRadius: 0,
             overflow: 'hidden',
-            bgcolor: 'white'
+            bgcolor: 'white',
+            // Hide the tab headers from AIModePanel (we use icons instead)
+            '& .MuiPaper-root:has(.MuiTabs-root)': {
+              display: 'none'
+            }
           }}
         >
           {pdfFile && pdfDocument ? (
