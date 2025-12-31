@@ -1656,6 +1656,7 @@ Provide a helpful, clear, and educational response.`;
                 ) : (
                   // Use AIModePanel for other tools
                   <AIModePanel
+                    key={`mobile-study-${studyTab}`}
                     currentPage={pdfCurrentPage}
                     totalPages={pdfDocument?.numPages || 0}
                     pdfId={selectedPdf?.id}
