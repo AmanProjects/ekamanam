@@ -1014,8 +1014,8 @@ function App() {
         </Toolbar>
       </AppBar>
 
-      {/* v11.0.4: Mobile Subscription Banner */}
-      {isMobile && user && (
+      {/* v11.0.4: Mobile Subscription Banner - Only show on non-dashboard views */}
+      {isMobile && user && view !== 'dashboard' && (
         <SubscriptionBanner 
           subscription={subscription} 
           onUpgrade={() => setShowSubscriptionDialog(true)}
