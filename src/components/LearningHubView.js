@@ -37,27 +37,24 @@ import {
   MoreVert as MoreIcon,
   Delete as DeleteIcon,
   PictureAsPdf as PdfIcon,
-  Psychology as VyonnIcon,
-  School as LearnIcon,
-  Psychology as ExplainIcon,
-  SportsEsports as ActivitiesIcon,
-  Quiz as ExamIcon,
-  Chat as ChatIcon,
-  Notes as NotesIcon
+  Psychology as VyonnIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService, { loadPDFData } from '../services/libraryService';
 import llmService from '../services/llmService';
 import { markdownToHtml } from '../utils/markdownRenderer';
-import { extractFullPdfText } from '../services/pdfExtractor';
 import PDFViewer from './PDFViewer';
+import AIModePanel from './AIModePanel';
 
 function LearningHubView({ 
   hub, 
   onBack, 
   onOpenPdf, 
   onOpenFlashcards,
-  onOpenTimeline
+  onOpenTimeline,
+  user,
+  subscription,
+  onUpgrade
 }) {
   const [hubData, setHubData] = useState(hub);
   const [hubPdfs, setHubPdfs] = useState([]);
@@ -82,27 +79,13 @@ function LearningHubView({
   const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
   const [pdfLoading, setPdfLoading] = useState(false);
   
-  // Study Materials tab state
+  // Study Materials tab state (for AIModePanel)
   const [studyTab, setStudyTab] = useState(0);
   
   // Resizable panels state
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
-  
-  // Tool states for Learn tab
-  const [learnInput, setLearnInput] = useState('');
-  const [learnResponse, setLearnResponse] = useState('');
-  const [learnLoading, setLearnLoading] = useState(false);
-  
-  // Tool states for Explain tab
-  const [explainInput, setExplainInput] = useState('');
-  const [explainResponse, setExplainResponse] = useState('');
-  const [explainLoading, setExplainLoading] = useState(false);
-  
-  // Tool states for Exam tab
-  const [examResponse, setExamResponse] = useState('');
-  const [examLoading, setExamLoading] = useState(false);
 
   useEffect(() => {
     loadHubData();
@@ -328,107 +311,6 @@ Provide a helpful, clear, and educational response.`;
     setSelectedPdf(null);
   };
 
-  // LEARN TOOL HANDLER
-  const handleLearnQuery = async () => {
-    if (!learnInput.trim() || !selectedPdf || !pdfFile) {
-      alert('Please select a PDF and enter a question');
-      return;
-    }
-
-    setLearnLoading(true);
-    setLearnResponse('');
-
-    try {
-      // Extract PDF content from the loaded file
-      const pdfText = await extractFullPdfText(pdfFile);
-      
-      const prompt = `You are an expert tutor. Based on the following PDF content, answer the student's question in a clear, educational manner.
-
-PDF Content (Summary):
-${pdfText.substring(0, 5000)}...
-
-Student Question: ${learnInput}
-
-Provide a comprehensive, easy-to-understand explanation.`;
-
-      const response = await llmService.callLLM(prompt);
-      setLearnResponse(response);
-    } catch (error) {
-      console.error('Learn error:', error);
-      setLearnResponse('Sorry, I encountered an error. Please make sure your API keys are configured in Settings.');
-    } finally {
-      setLearnLoading(false);
-    }
-  };
-
-  // EXPLAIN TOOL HANDLER
-  const handleExplainQuery = async () => {
-    if (!explainInput.trim() || !selectedPdf || !pdfFile) {
-      alert('Please select a PDF and enter text to explain');
-      return;
-    }
-
-    setExplainLoading(true);
-    setExplainResponse('');
-
-    try {
-      const pdfText = await extractFullPdfText(pdfFile);
-      
-      const prompt = `You are an expert educator. Based on the PDF content below, provide a detailed explanation of the following concept or text.
-
-PDF Content (Context):
-${pdfText.substring(0, 5000)}...
-
-Text/Concept to Explain: ${explainInput}
-
-Provide a clear, detailed explanation with examples if relevant.`;
-
-      const response = await llmService.callLLM(prompt);
-      setExplainResponse(response);
-    } catch (error) {
-      console.error('Explain error:', error);
-      setExplainResponse('Sorry, I encountered an error. Please make sure your API keys are configured in Settings.');
-    } finally {
-      setExplainLoading(false);
-    }
-  };
-
-  // EXAM PREP TOOL HANDLER
-  const handleGenerateExam = async () => {
-    if (!selectedPdf || !pdfFile) {
-      alert('Please select a PDF first');
-      return;
-    }
-
-    setExamLoading(true);
-    setExamResponse('');
-
-    try {
-      const pdfText = await extractFullPdfText(pdfFile);
-      
-      const prompt = `You are an exam preparation expert. Based on the PDF content below, generate:
-
-1. 5 multiple choice questions
-2. 3 short answer questions
-3. 1 essay question
-
-Format each question clearly with answers/marking schemes.
-
-PDF Content:
-${pdfText.substring(0, 5000)}...
-
-Generate comprehensive exam questions covering key concepts.`;
-
-      const response = await llmService.callLLM(prompt);
-      setExamResponse(response);
-    } catch (error) {
-      console.error('Exam error:', error);
-      setExamResponse('Sorry, I encountered an error. Please make sure your API keys are configured in Settings.');
-    } finally {
-      setExamLoading(false);
-    }
-  };
-
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
       {/* Main Content - 4 Panel Layout */}
@@ -580,112 +462,6 @@ Generate comprehensive exam questions covering key concepts.`;
           )}
         </Box>
 
-        {/* ICON BAND: Study Material Tools */}
-        <Paper
-          elevation={0}
-          sx={{
-            width: 60,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 1,
-            py: 2,
-            bgcolor: '#f5f5f5',
-            borderLeft: '1px solid #e0e0e0',
-            borderRight: '1px solid #e0e0e0'
-          }}
-        >
-          <Tooltip title="Learn" placement="right">
-            <IconButton
-              onClick={() => setStudyTab(0)}
-              sx={{
-                bgcolor: studyTab === 0 ? 'primary.main' : 'transparent',
-                color: studyTab === 0 ? 'white' : 'text.secondary',
-                '&:hover': {
-                  bgcolor: studyTab === 0 ? 'primary.dark' : 'action.hover',
-                }
-              }}
-            >
-              <LearnIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Explain" placement="right">
-            <IconButton
-              onClick={() => setStudyTab(1)}
-              sx={{
-                bgcolor: studyTab === 1 ? 'primary.main' : 'transparent',
-                color: studyTab === 1 ? 'white' : 'text.secondary',
-                '&:hover': {
-                  bgcolor: studyTab === 1 ? 'primary.dark' : 'action.hover',
-                }
-              }}
-            >
-              <ExplainIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Activities" placement="right">
-            <IconButton
-              onClick={() => setStudyTab(2)}
-              sx={{
-                bgcolor: studyTab === 2 ? 'primary.main' : 'transparent',
-                color: studyTab === 2 ? 'white' : 'text.secondary',
-                '&:hover': {
-                  bgcolor: studyTab === 2 ? 'primary.dark' : 'action.hover',
-                }
-              }}
-            >
-              <ActivitiesIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Exam" placement="right">
-            <IconButton
-              onClick={() => setStudyTab(3)}
-              sx={{
-                bgcolor: studyTab === 3 ? 'primary.main' : 'transparent',
-                color: studyTab === 3 ? 'white' : 'text.secondary',
-                '&:hover': {
-                  bgcolor: studyTab === 3 ? 'primary.dark' : 'action.hover',
-                }
-              }}
-            >
-              <ExamIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Hub Chat" placement="right">
-            <IconButton
-              onClick={() => setStudyTab(4)}
-              sx={{
-                bgcolor: studyTab === 4 ? 'primary.main' : 'transparent',
-                color: studyTab === 4 ? 'white' : 'text.secondary',
-                '&:hover': {
-                  bgcolor: studyTab === 4 ? 'primary.dark' : 'action.hover',
-                }
-              }}
-            >
-              <ChatIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Notes" placement="right">
-            <IconButton
-              onClick={() => setStudyTab(5)}
-              sx={{
-                bgcolor: studyTab === 5 ? 'primary.main' : 'transparent',
-                color: studyTab === 5 ? 'white' : 'text.secondary',
-                '&:hover': {
-                  bgcolor: studyTab === 5 ? 'primary.dark' : 'action.hover',
-                }
-              }}
-            >
-              <NotesIcon />
-            </IconButton>
-          </Tooltip>
-        </Paper>
-
         {/* RESIZE HANDLE */}
         <Box
           onMouseDown={handleMouseDown}
@@ -700,9 +476,8 @@ Generate comprehensive exam questions covering key concepts.`;
           }}
         />
 
-        {/* RIGHT PANEL: Results/Output Area */}
-        <Paper
-          elevation={0}
+        {/* RIGHT PANEL: AI Mode Panel (REUSED EXISTING COMPONENT) */}
+        <Box
           sx={{
             width: rightPanelWidth,
             minWidth: 300,
@@ -714,235 +489,47 @@ Generate comprehensive exam questions covering key concepts.`;
             bgcolor: 'white'
           }}
         >
-          {/* Content based on selected tool */}
-          <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
-            {/* Learn */}
-            {studyTab === 0 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <Typography variant="h6" gutterBottom>Learn</Typography>
-                {!selectedPdf ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Select a PDF to start learning
-                  </Typography>
-                ) : (
-                  <>
-                    <Typography variant="caption" color="text.secondary" gutterBottom>
-                      Selected: {selectedPdf.name}
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={3}
-                      placeholder="Ask a question about the PDF content..."
-                      value={learnInput}
-                      onChange={(e) => setLearnInput(e.target.value)}
-                      sx={{ mt: 2, mb: 2 }}
-                    />
-                    <Button
-                      variant="contained"
-                      onClick={handleLearnQuery}
-                      disabled={learnLoading || !learnInput.trim()}
-                      sx={{ mb: 2 }}
-                    >
-                      {learnLoading ? <CircularProgress size={24} /> : 'Ask Question'}
-                    </Button>
-                    {learnResponse && (
-                      <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50', flex: 1, overflow: 'auto' }}>
-                        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(learnResponse) }} />
-                      </Paper>
-                    )}
-                  </>
-                )}
-              </Box>
-            )}
-
-            {/* Explain */}
-            {studyTab === 1 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <Typography variant="h6" gutterBottom>Explain</Typography>
-                {!selectedPdf ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Select a PDF to get explanations
-                  </Typography>
-                ) : (
-                  <>
-                    <Typography variant="caption" color="text.secondary" gutterBottom>
-                      Selected: {selectedPdf.name}
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={3}
-                      placeholder="Enter text or concept to explain..."
-                      value={explainInput}
-                      onChange={(e) => setExplainInput(e.target.value)}
-                      sx={{ mt: 2, mb: 2 }}
-                    />
-                    <Button
-                      variant="contained"
-                      onClick={handleExplainQuery}
-                      disabled={explainLoading || !explainInput.trim()}
-                      sx={{ mb: 2 }}
-                    >
-                      {explainLoading ? <CircularProgress size={24} /> : 'Explain'}
-                    </Button>
-                    {explainResponse && (
-                      <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50', flex: 1, overflow: 'auto' }}>
-                        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(explainResponse) }} />
-                      </Paper>
-                    )}
-                  </>
-                )}
-              </Box>
-            )}
-
-            {/* Activities */}
-            {studyTab === 2 && (
-              <Box>
-                <Typography variant="h6" gutterBottom>Activities</Typography>
+          {pdfFile && pdfDocument ? (
+            <AIModePanel
+              currentPage={pdfCurrentPage}
+              totalPages={pdfDocument?.numPages || 0}
+              pdfId={selectedPdf?.id}
+              selectedText=""
+              pageText=""
+              user={user}
+              pdfDocument={pdfDocument}
+              activeTab={studyTab}
+              onTabChange={setStudyTab}
+              vyonnQuery={null}
+              onVyonnQueryUsed={() => {}}
+              subscription={subscription}
+              onUpgrade={onUpgrade}
+              isMobile={false}
+              onAIQuery={() => {}}
+              pdfMetadata={selectedPdf}
+              onOpenSettings={() => {}}
+              sourceHub={hubData}
+            />
+          ) : (
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '100%',
+              p: 4
+            }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <PdfIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  Select a PDF
+                </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Interactive learning activities (Coming soon)
+                  Choose a document from the left to access AI tools
                 </Typography>
               </Box>
-            )}
-
-            {/* Exam */}
-            {studyTab === 3 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <Typography variant="h6" gutterBottom>Exam Prep</Typography>
-                {!selectedPdf ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Select a PDF to generate exam questions
-                  </Typography>
-                ) : (
-                  <>
-                    <Typography variant="caption" color="text.secondary" gutterBottom>
-                      Selected: {selectedPdf.name}
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={handleGenerateExam}
-                      disabled={examLoading}
-                      sx={{ mt: 2, mb: 2 }}
-                    >
-                      {examLoading ? <CircularProgress size={24} /> : 'Generate Exam Questions'}
-                    </Button>
-                    {examResponse && (
-                      <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50', flex: 1, overflow: 'auto' }}>
-                        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(examResponse) }} />
-                      </Paper>
-                    )}
-                  </>
-                )}
-              </Box>
-            )}
-
-            {/* Hub Chat */}
-            {studyTab === 4 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <Typography variant="h6" gutterBottom>Hub Chat</Typography>
-                
-                {/* Chat Messages */}
-                <Box sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
-                  {messages.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', mt: 4 }}>
-                      <VyonnIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Chat with your hub
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Ask questions about all materials
-                      </Typography>
-                    </Box>
-                  ) : (
-                    messages.map((msg, idx) => (
-                      <Box
-                        key={idx}
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                          mb: 2,
-                        }}
-                      >
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 1.5,
-                            maxWidth: '85%',
-                            bgcolor: msg.role === 'user' ? 'primary.main' : 'grey.100',
-                            color: msg.role === 'user' ? 'white' : 'text.primary',
-                            fontSize: '0.875rem',
-                            borderRadius: 2
-                          }}
-                        >
-                          {msg.role === 'user' ? (
-                            <Typography variant="body2">{msg.content}</Typography>
-                          ) : (
-                            <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
-                          )}
-                        </Paper>
-                      </Box>
-                    ))
-                  )}
-                  {chatLoading && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CircularProgress size={20} />
-                      <Typography variant="caption" color="text.secondary">
-                        Thinking...
-                      </Typography>
-                    </Box>
-                  )}
-                  <div ref={chatEndRef} />
-                </Box>
-
-                {/* Chat Input */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    multiline
-                    maxRows={3}
-                    placeholder="Ask about hub materials..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    disabled={chatLoading}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={handleSendMessage}
-                            disabled={!input.trim() || chatLoading}
-                          >
-                            {chatLoading ? <CircularProgress size={20} /> : <SendIcon />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Box>
-              </Box>
-            )}
-
-            {/* Notes */}
-            {studyTab === 5 && (
-              <Box>
-                <Typography variant="h6" gutterBottom>Notes</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Your personal notes and annotations
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </Paper>
+            </Box>
+          )}
+        </Box>
       </Box>
 
       {/* DISCLAIMER FOOTER */}

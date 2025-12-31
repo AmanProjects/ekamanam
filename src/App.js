@@ -1081,6 +1081,9 @@ function App() {
             onOpenPdf={(pdf) => handleOpenFromLibrary(pdf, currentHub)}
             onOpenFlashcards={() => setShowFlashcards(true)}
             onOpenTimeline={() => setShowTimeline(true)}
+            user={user}
+            subscription={subscription}
+            onUpgrade={handleUpgrade}
           />
         ) : view === 'library' ? (
           <StudentLibrary
