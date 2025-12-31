@@ -17,6 +17,7 @@ import AdminOTPDialog from './components/AdminOTPDialog';
 import AuthButton from './components/AuthButton';
 // VyonnChatbot is now integrated into AIModePanel as a tab (v7.2.30)
 import SubscriptionDialog from './components/SubscriptionDialog';
+import SubscriptionBanner from './components/SubscriptionBanner';  // v11.0.4: Subscription status banner
 import { lightTheme, darkTheme, getThemePreference } from './theme.js';
 import {
   addPDFToLibrary,
@@ -894,26 +895,12 @@ function App() {
                     }
                   }}
                 />
-                {/* Subscription Badge - Moved to left under Beta */}
-                {subscription.isFree && (
-                  <Chip
-                    label={`Free (${subscription.remainingQueries || 0}/${subscription.usage?.limit || 3} left)`}
-                    size="small"
-                    onClick={() => setShowSubscriptionDialog(true)}
-                    sx={{
-                      height: 18,
-                      fontSize: '0.6rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      bgcolor: subscription.remainingQueries === 0 ? '#ffebee' : '#e3f2fd',
-                      color: subscription.remainingQueries === 0 ? '#c62828' : '#1565c0',
-                      border: '1px solid',
-                      borderColor: subscription.remainingQueries === 0 ? '#ef5350' : '#42a5f5',
-                      '& .MuiChip-label': { px: 0.8 },
-                      '&:hover': { opacity: 0.8 }
-                    }}
-                  />
-                )}
+                {/* Subscription Badge - Desktop */}
+                <SubscriptionBanner 
+                  subscription={subscription} 
+                  onUpgrade={() => setShowSubscriptionDialog(true)}
+                  isMobile={false}
+                />
               </Box>
               <Box component="span" sx={{ fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1.4 }}>
                 One Focus, Limitless Learning
@@ -1026,6 +1013,15 @@ function App() {
           </Box>
         </Toolbar>
       </AppBar>
+
+      {/* v11.0.4: Mobile Subscription Banner */}
+      {isMobile && user && (
+        <SubscriptionBanner 
+          subscription={subscription} 
+          onUpgrade={() => setShowSubscriptionDialog(true)}
+          isMobile={true}
+        />
+      )}
 
       {/* v7.2.10: Mobile Navigation Drawer */}
       <SwipeableDrawer
