@@ -842,6 +842,20 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
           </Box>
         )}
       </DialogContent>
+      
+      {/* Footer */}
+      <Box sx={{ 
+        py: 1, 
+        px: 2,
+        borderTop: '1px solid',
+        borderColor: 'divider',
+        textAlign: 'center',
+        bgcolor: 'grey.50'
+      }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', lineHeight: 1.4 }}>
+          © 2025 Amandeep Singh Talwar | PDF copyrights belong to respective owners | For personal educational use only
+        </Typography>
+      </Box>
     </Dialog>
   );
 }

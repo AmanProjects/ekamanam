@@ -1686,6 +1686,21 @@ Provide a helpful, clear, and educational response.`;
                 </Box>
               )}
             </Box>
+
+            {/* Mobile Dialog Footer */}
+            <Box sx={{ 
+              py: 1, 
+              px: 2,
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              textAlign: 'center',
+              bgcolor: 'white',
+              flexShrink: 0
+            }}>
+              <Box component="span" sx={{ fontSize: '0.65rem', color: 'text.secondary', display: 'block', lineHeight: 1.4 }}>
+                © 2025 Amandeep Singh Talwar | PDF copyrights belong to respective owners | For personal educational use only
+              </Box>
+            </Box>
           </Box>
         </Dialog>
       )}
