@@ -695,10 +695,26 @@ Provide a helpful, clear, and educational response.`;
             studyTab === 10 ? (
               // Hub Chat (Custom Implementation - Input at Top)
               <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 3, overflow: 'auto', minHeight: 0 }}>
-                <Typography variant="h6" gutterBottom>Hub Chat</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Chat with all PDFs in this hub
-                </Typography>
+                {/* Header with Clear Button */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>Hub Chat</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      Chat with all PDFs in this hub
+                    </Typography>
+                  </Box>
+                  {messages.length > 0 && (
+                    <Tooltip title="Clear conversation">
+                      <IconButton 
+                        size="small"
+                        onClick={() => setMessages([])}
+                        sx={{ color: 'text.secondary' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
                 
                 {/* Chat Input - Moved to Top */}
                 <Box sx={{ mb: 2 }}>
