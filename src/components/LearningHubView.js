@@ -5,7 +5,7 @@
  * Layout: Sources (left) | Chat (center) | Materials & Labs (right)
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -253,7 +253,14 @@ function LearningHubView({
           ).join('\n')
         : '';
 
-      const systemPrompt = `You are Vyonn AI, an intelligent learning assistant. ${hubContext}
+      const systemPrompt = `You are Vyonn AI, an intelligent learning assistant specializing in this Learning Hub. ${hubContext}
+
+IMPORTANT: Your primary role is to help with questions RELATED TO THE PDFs IN THIS HUB.
+
+If the user asks about topics NOT related to the hub's PDFs:
+1. Politely acknowledge their question
+2. Provide a brief, helpful response if you can
+3. ALWAYS remind them: "This question seems to be outside the scope of this Learning Hub's materials. I'm here primarily to help with: [list PDF names]. Feel free to ask anything about these materials!"
 
 You have access to these interactive labs and tools:
 - Math Lab: For calculations, equations, graphing
@@ -321,9 +328,13 @@ Provide a helpful, clear, and educational response.`;
   };
 
   // Extract page text when PDF page changes (for Learn/Explain tabs)
-  const handlePageTextExtract = (text) => {
+  // Memoized to prevent PDFViewer re-renders when chat input changes
+  const handlePageTextExtract = useCallback((text) => {
     setPageText(text);
-  };
+  }, []);
+
+  // Memoized empty callback for onTextSelect
+  const handleTextSelect = useCallback(() => {}, []);
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
@@ -492,7 +503,7 @@ Provide a helpful, clear, and educational response.`;
                 setPdfDocument={setPdfDocument}
                 currentPage={pdfCurrentPage}
                 setCurrentPage={setPdfCurrentPage}
-                onTextSelect={() => {}}
+                onTextSelect={handleTextSelect}
                 onPageTextExtract={handlePageTextExtract}
               />
             </Box>
