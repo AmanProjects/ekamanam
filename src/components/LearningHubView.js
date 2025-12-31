@@ -538,17 +538,18 @@ Provide a helpful, clear, and educational response.`;
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            bgcolor: '#f5f5f5',
-            borderLeft: '1px solid #e0e0e0',
-            borderRight: '1px solid #e0e0e0'
+            bgcolor: 'primary.main',
+            borderLeft: '1px solid',
+            borderColor: 'primary.dark'
           }}
         >
           {/* Icon Band Header - Empty spacer to match other panel heights */}
           <Box sx={{ 
             width: '100%',
             height: '46px',
-            bgcolor: '#e0e0e0', 
-            borderBottom: '1px solid #bdbdbd'
+            bgcolor: 'primary.main', 
+            borderBottom: '1px solid',
+            borderColor: 'primary.dark'
           }} />
 
           {/* Tool Icons */}
@@ -557,10 +558,10 @@ Provide a helpful, clear, and educational response.`;
             <IconButton
               onClick={() => setStudyTab(0)}
               sx={{
-                bgcolor: studyTab === 0 ? 'primary.main' : 'transparent',
-                color: studyTab === 0 ? 'white' : 'text.secondary',
+                bgcolor: studyTab === 0 ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                color: 'white',
                 '&:hover': {
-                  bgcolor: studyTab === 0 ? 'primary.dark' : 'action.hover',
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
                 }
               }}
             >
@@ -572,10 +573,10 @@ Provide a helpful, clear, and educational response.`;
             <IconButton
               onClick={() => setStudyTab(1)}
               sx={{
-                bgcolor: studyTab === 1 ? 'primary.main' : 'transparent',
-                color: studyTab === 1 ? 'white' : 'text.secondary',
+                bgcolor: studyTab === 1 ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                color: 'white',
                 '&:hover': {
-                  bgcolor: studyTab === 1 ? 'primary.dark' : 'action.hover',
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
                 }
               }}
             >
@@ -587,10 +588,10 @@ Provide a helpful, clear, and educational response.`;
             <IconButton
               onClick={() => setStudyTab(2)}
               sx={{
-                bgcolor: studyTab === 2 ? 'primary.main' : 'transparent',
-                color: studyTab === 2 ? 'white' : 'text.secondary',
+                bgcolor: studyTab === 2 ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                color: 'white',
                 '&:hover': {
-                  bgcolor: studyTab === 2 ? 'primary.dark' : 'action.hover',
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
                 }
               }}
             >
@@ -602,10 +603,10 @@ Provide a helpful, clear, and educational response.`;
             <IconButton
               onClick={() => setStudyTab(3)}
               sx={{
-                bgcolor: studyTab === 3 ? 'primary.main' : 'transparent',
-                color: studyTab === 3 ? 'white' : 'text.secondary',
+                bgcolor: studyTab === 3 ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                color: 'white',
                 '&:hover': {
-                  bgcolor: studyTab === 3 ? 'primary.dark' : 'action.hover',
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
                 }
               }}
             >
@@ -617,10 +618,10 @@ Provide a helpful, clear, and educational response.`;
             <IconButton
               onClick={() => setStudyTab(10)}
               sx={{
-                bgcolor: studyTab === 10 ? 'primary.main' : 'transparent',
-                color: studyTab === 10 ? 'white' : 'text.secondary',
+                bgcolor: studyTab === 10 ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                color: 'white',
                 '&:hover': {
-                  bgcolor: studyTab === 10 ? 'primary.dark' : 'action.hover',
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
                 }
               }}
             >
@@ -632,10 +633,10 @@ Provide a helpful, clear, and educational response.`;
             <IconButton
               onClick={() => setStudyTab(5)}
               sx={{
-                bgcolor: studyTab === 5 ? 'primary.main' : 'transparent',
-                color: studyTab === 5 ? 'white' : 'text.secondary',
+                bgcolor: studyTab === 5 ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                color: 'white',
                 '&:hover': {
-                  bgcolor: studyTab === 5 ? 'primary.dark' : 'action.hover',
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
                 }
               }}
             >
