@@ -8,7 +8,6 @@ import { auth, db } from './firebase/config';
 import PDFViewer from './components/PDFViewer';
 import AIModePanel from './components/AIModePanel';
 import Dashboard from './components/Dashboard';
-import StudentLibrary from './components/StudentLibrary';
 import LearningHubsList from './components/LearningHubsList';  // v10.6.2: Hub management
 import LearningHubView from './components/LearningHubView';    // v10.6.3: 3-panel hub interface
 import EnhancedSettingsDialog from './components/EnhancedSettingsDialog';
@@ -57,8 +56,7 @@ import DrivePermissionDialog from './components/DrivePermissionDialog';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('dashboard'); // 'dashboard', 'library', 'hubs', 'hub-view', or 'reader'
-  const [libraryInitialTab, setLibraryInitialTab] = useState(0); // 0 = My PDFs, 1 = Samples
+  const [view, setView] = useState('dashboard'); // 'dashboard', 'hubs', 'hub-view', or 'reader'
   const [currentHub, setCurrentHub] = useState(null); // v10.6.0: Currently viewing hub
   const [pdfSourceHub, setPdfSourceHub] = useState(null); // v10.6.1: Hub context when viewing PDF from hub
   const [showSettings, setShowSettings] = useState(false);
@@ -749,7 +747,7 @@ function App() {
           {isMobile && view === 'reader' && (
             <IconButton 
               edge="start" 
-              onClick={() => setView('library')}
+              onClick={() => pdfSourceHub ? setView('hub-view') : setView('hubs')}
               sx={{ mr: 1 }}
             >
               <BackIcon />
@@ -1054,8 +1052,7 @@ function App() {
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
         {view === 'dashboard' ? (
           <Dashboard
-            onOpenLibrary={(tab = 0) => { setLibraryInitialTab(tab); setView('library'); }}
-            onOpenHubs={() => setView('hubs')}  // v10.6.0: Learning Hubs
+            onOpenHubs={() => setView('hubs')}  // v10.7.27: Consolidated into Learning Hubs only
             subscription={subscription}
             onUpgrade={() => setShowSubscriptionDialog(true)}
             onOpenFlashcards={() => setShowFlashcards(true)}
@@ -1068,7 +1065,7 @@ function App() {
             onOpenSettings={() => setShowSettings(true)}
           />
         ) : view === 'hubs' ? (
-          // v10.6.3: Learning Hubs List
+          // v10.7.27: Learning Hubs List (Consolidated from My Library + Hubs)
           <LearningHubsList
             onBack={() => setView('dashboard')}
             onOpenHub={(hub) => { setCurrentHub(hub); setView('hub-view'); }}
@@ -1084,13 +1081,6 @@ function App() {
             user={user}
             subscription={subscription}
             onUpgrade={() => setShowSubscriptionDialog(true)}
-          />
-        ) : view === 'library' ? (
-          <StudentLibrary
-            onBack={() => setView('dashboard')}
-            onOpenPdf={handleOpenFromLibrary}
-            onOpenSamplePDF={handleOpenSamplePDF}
-            initialTab={libraryInitialTab}
           />
         ) : (
           /* v7.2.10: Reader View - Desktop: side-by-side, Mobile: toggle with bottom nav */

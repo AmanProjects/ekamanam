@@ -48,8 +48,7 @@ import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer, V
  * - Upgrade CTA for free users
  */
 function Dashboard({
-  onOpenLibrary,
-  onOpenHubs,  // v10.6.0: New Learning Hubs interface
+  onOpenHubs,  // v10.7.27: Consolidated Learning Hubs interface (was My Library + Hubs)
   subscription,
   onUpgrade,
   onOpenFlashcards,
