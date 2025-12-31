@@ -97,11 +97,13 @@ function LandingDashboard({
   return (
     <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', width: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
       {/* Subscription Banner - Mobile */}
-      {isMobile && isLoggedIn && subscription && (
+      {isMobile && (
         <SubscriptionBanner 
           subscription={subscription} 
           onUpgrade={onUpgrade}
           isMobile={true}
+          isLoggedIn={isLoggedIn}
+          onSignIn={onSignIn}
         />
       )}
       

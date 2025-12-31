@@ -21,8 +21,75 @@ import {
   ShoppingCart as CartIcon
 } from '@mui/icons-material';
 
-function SubscriptionBanner({ subscription, onUpgrade, isMobile }) {
-  if (subscription.loading) return null;
+function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, onSignIn }) {
+  if (subscription?.loading) return null;
+
+  // Not logged in state
+  if (!isLoggedIn) {
+    // Desktop version - Compact chip
+    if (!isMobile) {
+      return (
+        <Chip
+          label="Try Free"
+          size="small"
+          onClick={onSignIn}
+          sx={{
+            height: 24,
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            bgcolor: '#2196f3',
+            color: 'white',
+            '& .MuiChip-label': { px: 1 },
+            '&:hover': { bgcolor: '#1976d2' }
+          }}
+        />
+      );
+    }
+
+    // Mobile version - Full banner
+    return (
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: 0,
+          borderBottom: '1px solid #e0e0e0',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          px: 2,
+          py: 1.5
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box>
+            <Typography variant="caption" fontWeight={600} color="white" display="block">
+              Start Learning Today
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.9)' }}>
+              Sign in to access 3 free AI queries daily
+            </Typography>
+          </Box>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={onSignIn}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.75rem',
+              py: 0.5,
+              px: 1.5,
+              bgcolor: 'white',
+              color: '#667eea',
+              '&:hover': {
+                bgcolor: 'rgba(255,255,255,0.9)'
+              }
+            }}
+          >
+            Sign In
+          </Button>
+        </Box>
+      </Paper>
+    );
+  }
 
   const { isPaid, isFree, daysRemaining, remainingQueries, usage, tier } = subscription;
 
