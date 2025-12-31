@@ -420,11 +420,25 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
     const matchedDiagram = findMatchingDiagram(userQuestion);
     const matchedExp = matchedDiagram ? null : findMatchingExperiment(userQuestion);
     
+    // ✨ AUTO-ACTIVATE SIMULATION when matched
+    if (matchedExp) {
+      console.log('🎯 Physics: Matched experiment:', matchedExp.name);
+      setCurrentExperiment(matchedExp);
+      setCurrentDiagram(null);
+      // Switch to Visualize tab after a brief delay so user sees the response first
+      setTimeout(() => setActiveTab(1), 1500);
+    } else if (matchedDiagram) {
+      console.log('📊 Physics: Matched diagram:', matchedDiagram.title);
+      setCurrentDiagram(matchedDiagram);
+      setCurrentExperiment(null);
+      setTimeout(() => setActiveTab(1), 1500);
+    }
+    
     try {
       const topicContext = matchedDiagram 
         ? `Topic: "${matchedDiagram.title}" - I'm showing a detailed diagram.`
         : matchedExp 
-          ? `Topic: "${matchedExp.name}" - ${matchedExp.description}`
+          ? `Topic: "${matchedExp.name}" - I'm generating an INTERACTIVE SIMULATION for this.`
           : '';
           
       // v10.3: Detect language and respond in same language
@@ -441,7 +455,7 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
                    hasKannada ? 'Kannada (ಕನ್ನಡ)' :
                    hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
       
-      const prompt = `You are Vyonn AI, a brilliant and friendly science tutor.
+      const prompt = `You are Vyonn AI, a brilliant and friendly physics tutor.
 
 ${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
 
@@ -449,51 +463,70 @@ Student asked: "${userQuestion}"
 
 ${topicContext}
 
-Provide a comprehensive, educational response (200-250 words) ${isRegional ? `in ${lang}` : ''}:
-1. Clear explanation of the concept ${isRegional ? `(in ${lang})` : ''}
-2. Key components and their functions ${isRegional ? `(in ${lang})` : ''}
-3. Important formulas or principles (formulas can use standard symbols)
-4. Real-world applications ${isRegional ? `(in ${lang})` : ''}
-5. One interesting fact ${isRegional ? `(in ${lang})` : ''}
+${matchedExp ? `🎯 IMPORTANT: I am generating an INTERACTIVE PHYSICS SIMULATION for "${matchedExp.name}"! 
+The simulation will appear automatically in 1.5 seconds. Make sure to:
+1. Start with: "🎮 I've created an interactive simulation for you!"
+2. Briefly explain the concept (100-150 words)
+3. End with: "⚡ The simulation is loading! You can adjust parameters and see how they affect the motion in real-time. Try different values and observe the changes!"` : 
+matchedDiagram ? `📊 I am showing a detailed labeled diagram for "${matchedDiagram.title}". Explain the diagram's key components.` : 
+`Provide a comprehensive physics explanation (200-250 words)`}
 
-${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Use bullet points. Be engaging and encouraging!'}
-${matchedDiagram ? 'I am showing them a detailed labeled diagram.' : ''}
-${matchedExp ? 'I will run a physics simulation.' : ''}`;
+${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Use bullet points for clarity. Be engaging and encouraging!'}
 
+Key points to cover ${isRegional ? `(in ${lang})` : ''}:
+1. Clear concept explanation
+2. ${matchedExp ? 'How to use the simulation' : 'Key physics principles'}
+3. Important formulas (use proper notation like v₀, θ, g, etc.)
+4. Real-world applications
+5. ${matchedExp ? 'What to observe in the simulation' : 'An interesting fact'}`;
+
+      console.log('🧪 Physics: Calling LLM with prompt length:', prompt.length);
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Increased for detailed physics explanations
+      console.log('🧪 Physics: Received response:', response ? `${response.length} chars` : 'null/undefined');
       
-      setChatHistory(prev => [{ 
-        role: 'assistant', 
-        content: response || "Let me show you this concept!",
-        experiment: matchedExp,
-        diagram: matchedDiagram,
-        timestamp: Date.now()
-      }, ...prev]);
-      
-      if (matchedDiagram) {
-        setCurrentDiagram(matchedDiagram);
-        setCurrentExperiment(null);
-        setActiveTab(1);
-      } else if (matchedExp) {
-        setCurrentExperiment(matchedExp);
-        setCurrentDiagram(null);
-        setActiveTab(1);
+      // Check if we got a valid response
+      if (!response || response.trim().length === 0) {
+        console.error('❌ Physics: Empty or null response from LLM');
+        throw new Error('Empty response from AI');
       }
       
-    } catch (error) {
+      console.log('✅ Physics: Valid response received');
+      
       setChatHistory(prev => [{ 
         role: 'assistant', 
-        content: matchedDiagram 
-          ? `Here's a detailed diagram of ${matchedDiagram.title}!`
-          : matchedExp 
-            ? `Let me demonstrate ${matchedExp.name}!`
-            : "I'll help you understand this!",
+        content: response,
         experiment: matchedExp,
         diagram: matchedDiagram,
         timestamp: Date.now()
       }, ...prev]);
-      if (matchedDiagram) { setCurrentDiagram(matchedDiagram); setActiveTab(1); }
-      else if (matchedExp) { setCurrentExperiment(matchedExp); setActiveTab(1); }
+      
+    } catch (error) {
+      console.error('❌ Physics error:', error);
+      
+      // Provide helpful error message
+      let errorMessage = "I apologize, but I encountered an error. ";
+      
+      if (error.message && error.message.includes('API key')) {
+        errorMessage += "Please make sure you have configured your API keys in Settings. ";
+      } else if (error.message && error.message.includes('Empty response')) {
+        errorMessage += "The AI returned an empty response. Please try rephrasing your question or check your API configuration in Settings. ";
+      } else {
+        errorMessage += "Please try again or check your API configuration in Settings. ";
+      }
+      
+      if (matchedExp) {
+        errorMessage += `\n\n🎮 However, I've loaded the "${matchedExp.name}" simulation for you! The interactive visualization will help you understand the concept. Try adjusting the parameters!`;
+      } else if (matchedDiagram) {
+        errorMessage += `\n\n📊 However, I've loaded a diagram of "${matchedDiagram.title}" that shows the key components visually.`;
+      }
+      
+      setChatHistory(prev => [{ 
+        role: 'assistant', 
+        content: errorMessage,
+        experiment: matchedExp,
+        diagram: matchedDiagram,
+        timestamp: Date.now()
+      }, ...prev]);
     } finally {
       setAiLoading(false);
     }
