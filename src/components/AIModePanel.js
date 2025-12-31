@@ -3558,57 +3558,67 @@ Return ONLY this valid JSON:
         {/* Teacher Mode Tab */}
         {showTeacherMode && <TabPanel value={activeTab} index={tabIndices.teacher}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
+            <Box sx={{ mb: 1.5 }}>
               {!teacherResponse ? (
                 <>
-                  <FormControl fullWidth sx={{ mb: 2 }}>
-                    <Select
-                      value={teacherScope}
-                      onChange={(e) => setTeacherScope(e.target.value)}
-                      size="medium"
-                      sx={{
-                        '& .MuiSelect-select': {
-                          display: 'flex',
-                          alignItems: 'center',
-                          py: 1.5
-                        }
-                      }}
+                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    <FormControl sx={{ flex: 1, minWidth: 160 }}>
+                      <Select
+                        value={teacherScope}
+                        onChange={(e) => setTeacherScope(e.target.value)}
+                        size="small"
+                        displayEmpty
+                        renderValue={(value) => (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            {value === 'page' ? (
+                              <>
+                                <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
+                                <Typography variant="body2">This Page</Typography>
+                              </>
+                            ) : (
+                              <>
+                                <ReadIcon fontSize="small" sx={{ mr: 1 }} />
+                                <Typography variant="body2">Entire Chapter</Typography>
+                              </>
+                            )}
+                          </Box>
+                        )}
+                      >
+                        <MenuItem value="page">
+                          <DescriptionIcon fontSize="small" sx={{ mr: 1.5 }} />
+                          <Box>
+                            <Typography variant="body2" fontWeight={500}>This Page</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Current page only
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="chapter">
+                          <ReadIcon fontSize="small" sx={{ mr: 1.5 }} />
+                          <Box>
+                            <Typography variant="body2" fontWeight={500}>Entire Chapter</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Full PDF explanation
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<LearnIcon />}
+                      onClick={() => handleTeacherMode(teacherScope)}
+                      disabled={loading || !pageText || isAIFeatureDisabled()}
+                      sx={{ whiteSpace: 'nowrap' }}
                     >
-                      <MenuItem value="page">
-                        <DescriptionIcon fontSize="small" sx={{ mr: 1.5 }} />
-                        <Box>
-                          <Typography variant="body2" fontWeight={500}>This Page</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Generate explanation for the current page only
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                      <MenuItem value="chapter">
-                        <ReadIcon fontSize="small" sx={{ mr: 1.5 }} />
-                        <Box>
-                          <Typography variant="body2" fontWeight={500}>Entire Chapter</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Generate explanation for the full PDF
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    size="large"
-                    startIcon={<LearnIcon />}
-                    onClick={() => handleTeacherMode(teacherScope)}
-                    disabled={loading || !pageText || isAIFeatureDisabled()}
-                    sx={{ mb: 1 }}
-                  >
-                    {loading ? 'Generating...' :
-                     isAIFeatureDisabled() ? 'Upgrade to Continue' :
-                     'Generate Explanation'}
-                  </Button>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-                    AI-powered teacher-style explanation
+                      {loading ? 'Generating...' :
+                       isAIFeatureDisabled() ? 'Upgrade' :
+                       'Generate'}
+                    </Button>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    Get AI-powered teacher-style explanations with examples and visual aids
                   </Typography>
                 </>
               ) : (
