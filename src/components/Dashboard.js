@@ -37,11 +37,11 @@ import { Snackbar, Alert } from '@mui/material';
 import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer, VyonnAI } from './tools';
 
 /**
- * Dashboard Component - v10.5.6
+ * Dashboard Component - v10.6.0
  * 
  * Clean, organized layout with:
  * - Welcome header with subscription status
- * - Primary CTA for Library
+ * - Primary CTA for Learning Hubs (NotebookLM-style)
  * - Unified Tools section (8 tools in 4-column grid):
  *   * Vyonn AI, Flashcards, Journey, Math, Chemistry, Physics, Code, Globe
  * - Pro Tools toggle (moved to footer, OTP protected)
@@ -49,6 +49,7 @@ import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer, V
  */
 function Dashboard({
   onOpenLibrary,
+  onOpenHubs,  // v10.6.0: New Learning Hubs interface
   subscription,
   onUpgrade,
   onOpenFlashcards,
@@ -213,10 +214,10 @@ function Dashboard({
           </Box>
         </Box>
 
-        {/* Primary CTA - My Library */}
+        {/* Primary CTA - Learning Hubs (v10.6.0) */}
         <Paper 
           elevation={0}
-          onClick={() => onOpenLibrary(subscription?.isFree ? 1 : 0)}
+          onClick={onOpenHubs}
           sx={{ 
             p: 2.5,
             mb: 3,
@@ -236,10 +237,10 @@ function Dashboard({
             </Avatar>
             <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle1" fontWeight={700} color="white">
-                {pdfCount > 0 ? 'Continue Learning' : 'Start Learning'}
+                My Learning Hubs
           </Typography>
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem' }}>
-                {pdfCount > 0 ? `${pdfCount} PDF${pdfCount !== 1 ? 's' : ''} in library` : 'Add PDFs to begin'}
+                Organize and explore your study materials
           </Typography>
             </Box>
             <IconButton sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>

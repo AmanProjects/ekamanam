@@ -9,6 +9,8 @@ import PDFViewer from './components/PDFViewer';
 import AIModePanel from './components/AIModePanel';
 import Dashboard from './components/Dashboard';
 import StudentLibrary from './components/StudentLibrary';
+import LearningHubsList from './components/LearningHubsList';  // v10.6.0
+import LearningHubView from './components/LearningHubView';    // v10.6.0
 import EnhancedSettingsDialog from './components/EnhancedSettingsDialog';
 import AdminDashboard from './components/AdminDashboard';
 import AdminOTPDialog from './components/AdminOTPDialog';
@@ -55,8 +57,9 @@ import DrivePermissionDialog from './components/DrivePermissionDialog';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('dashboard'); // 'dashboard', 'library', or 'reader'
+  const [view, setView] = useState('dashboard'); // 'dashboard', 'library', 'hubs', 'hub-view', or 'reader'
   const [libraryInitialTab, setLibraryInitialTab] = useState(0); // 0 = My PDFs, 1 = Samples
+  const [currentHub, setCurrentHub] = useState(null); // v10.6.0: Currently viewing hub
   const [showSettings, setShowSettings] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showOTPDialog, setShowOTPDialog] = useState(false);
@@ -1047,6 +1050,7 @@ function App() {
         {view === 'dashboard' ? (
           <Dashboard
             onOpenLibrary={(tab = 0) => { setLibraryInitialTab(tab); setView('library'); }}
+            onOpenHubs={() => setView('hubs')}  // v10.6.0: Learning Hubs
             subscription={subscription}
             onUpgrade={() => setShowSubscriptionDialog(true)}
             onOpenFlashcards={() => setShowFlashcards(true)}
@@ -1057,6 +1061,26 @@ function App() {
             pdfCount={libraryCount}
             currentStreak={streakInfo.currentStreak}
             onOpenSettings={() => setShowSettings(true)}
+          />
+        ) : view === 'hubs' ? (
+          // v10.6.0: Learning Hubs List
+          <LearningHubsList
+            onBack={() => setView('dashboard')}
+            onOpenHub={(hub) => { setCurrentHub(hub); setView('hub-view'); }}
+            onOpenPdf={handleOpenFromLibrary}
+          />
+        ) : view === 'hub-view' ? (
+          // v10.6.0: Single Hub View
+          <LearningHubView
+            hub={currentHub}
+            onBack={() => setView('hubs')}
+            onOpenPdf={handleOpenFromLibrary}
+            onOpenFlashcards={() => setShowFlashcards(true)}
+            onOpenTimeline={() => setShowTimeline(true)}
+            onOpenLab={(labType) => {
+              // Open specific lab - can be enhanced later
+              console.log('Opening lab:', labType);
+            }}
           />
         ) : view === 'library' ? (
           <StudentLibrary
