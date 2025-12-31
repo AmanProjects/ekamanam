@@ -236,33 +236,11 @@ function LandingDashboard({
                 Read Our Story
               </Button>
             </Box>
-
-            {/* Key Stats */}
-            <Grid container spacing={2} sx={{ mt: 8, maxWidth: 1000, mx: 'auto' }}>
-              {[
-                { icon: <MicIcon />, text: '🎤', label: 'Voice Input', color: 'primary' },
-                { icon: <LanguageIcon />, text: '10+', label: 'Languages', color: 'success' },
-                { icon: <ThreeDIcon />, text: '50+', label: 'Interactive Tools', color: 'secondary' },
-                { icon: <ThreeDIcon />, text: '3D', label: 'Visualizations', color: 'info' },
-                { icon: <PhoneIcon />, text: '📱', label: 'Mobile Ready', color: 'warning' },
-              ].map((stat, index) => (
-                <Grid item xs={6} md={2.4} key={index}>
-                  <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h4" fontWeight={700} sx={{ color: `${stat.color}.main`, mb: 0.5 }}>
-                      {stat.text}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600} color="text.secondary">
-                      {stat.label}
-                    </Typography>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
           </Box>
         </Container>
       </Box>
 
-      {/* Powerful Features Section - Moved to Main Section */}
+      {/* Powerful Features Section - Merged with Key Stats */}
       <Box id="features" sx={{ py: { xs: 6, md: 10 }, bgcolor: 'white' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" fontWeight={700} textAlign="center" gutterBottom>
@@ -272,11 +250,34 @@ function LandingDashboard({
             variant="body1"
             color="text.secondary"
             textAlign="center"
-            sx={{ mb: 6, maxWidth: 600, mx: 'auto' }}
+            sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}
           >
             Everything you need for an immersive, effective learning experience
           </Typography>
 
+          {/* Key Stats - Quick Highlights */}
+          <Grid container spacing={2} sx={{ mb: 6, maxWidth: 1000, mx: 'auto' }}>
+            {[
+              { icon: <MicIcon />, text: '🎤', label: 'Voice Input', color: 'primary' },
+              { icon: <LanguageIcon />, text: '10+', label: 'Languages', color: 'success' },
+              { icon: <ThreeDIcon />, text: '50+', label: 'Interactive Tools', color: 'secondary' },
+              { icon: <ThreeDIcon />, text: '3D', label: 'Visualizations', color: 'info' },
+              { icon: <PhoneIcon />, text: '📱', label: 'Mobile Ready', color: 'warning' },
+            ].map((stat, index) => (
+              <Grid item xs={6} md={2.4} key={index}>
+                <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: `${stat.color}.main`, mb: 0.5 }}>
+                    {stat.text}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600} color="text.secondary">
+                    {stat.label}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* Detailed Feature Cards */}
           <Grid container spacing={4}>
             {[
               {
