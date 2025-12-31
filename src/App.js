@@ -1136,7 +1136,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+      <Box sx={{ flexGrow: 1, overflow: view === 'dashboard' ? 'auto' : 'hidden' }}>
         {view === 'dashboard' ? (
           <LandingDashboard
             user={user}

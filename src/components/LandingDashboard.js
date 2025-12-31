@@ -70,7 +70,7 @@ function LandingDashboard({
   const isLoggedIn = !!user;
 
   return (
-    <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh' }}>
+    <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', width: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
       {/* Hero Section */}
       <Box
         sx={{
@@ -211,18 +211,19 @@ function LandingDashboard({
             </Box>
 
             {/* Key Stats */}
-            <Grid container spacing={2} sx={{ mt: 8, maxWidth: 900, mx: 'auto' }}>
+            <Grid container spacing={2} sx={{ mt: 8, maxWidth: 1000, mx: 'auto' }}>
               {[
-                { icon: <MicIcon />, label: 'Voice Input', color: 'primary' },
-                { icon: <LanguageIcon />, label: '10+ Languages', color: 'success' },
-                { icon: <ThreeDIcon />, label: '3D Visualizations', color: 'secondary' },
-                { icon: <PhoneIcon />, label: 'Mobile Ready', color: 'warning' },
+                { icon: <MicIcon />, text: '🎤', label: 'Voice Input', color: 'primary' },
+                { icon: <LanguageIcon />, text: '10+', label: 'Languages', color: 'success' },
+                { icon: <ThreeDIcon />, text: '50+', label: 'Interactive Tools', color: 'secondary' },
+                { icon: <ThreeDIcon />, text: '3D', label: 'Visualizations', color: 'info' },
+                { icon: <PhoneIcon />, text: '📱', label: 'Mobile Ready', color: 'warning' },
               ].map((stat, index) => (
-                <Grid item xs={6} md={3} key={index}>
+                <Grid item xs={6} md={2.4} key={index}>
                   <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
-                    <Box sx={{ color: `${stat.color}.main`, mb: 1 }}>
-                      {React.cloneElement(stat.icon, { fontSize: 'large' })}
-                    </Box>
+                    <Typography variant="h4" fontWeight={700} sx={{ color: `${stat.color}.main`, mb: 0.5 }}>
+                      {stat.text}
+                    </Typography>
                     <Typography variant="body2" fontWeight={600} color="text.secondary">
                       {stat.label}
                     </Typography>
