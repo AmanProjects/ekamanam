@@ -358,19 +358,154 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
 
   // Handle context from Hub Chat
   useEffect(() => {
-    if (vyonnContext && open) {
-      // Pre-load question from Hub Chat
-      setQuestion(vyonnContext.question);
-      setActiveTab(1); // Switch to AI Chat tab
+    if (vyonnContext && open && vyonnContext.question) {
+      console.log('🎯 Physics: Received context from Hub Chat:', vyonnContext.question);
       
-      // Add welcome message showing seamless transition
-      setChatHistory([{
-        role: 'assistant',
-        content: `👋 Welcome from Hub Chat! I see you're interested in:\n\n"${vyonnContext.question}"\n\nLet me help you with that physics question!${vyonnContext.vyonnResponse ? '\n\n💡 Previous discussion: ' + vyonnContext.vyonnResponse.substring(0, 200) + (vyonnContext.vyonnResponse.length > 200 ? '...' : '') : ''}`,
-        timestamp: Date.now()
-      }]);
+      // Set question and process it automatically
+      setQuestion(vyonnContext.question);
+      setActiveTab(0); // Stay on Ask Vyonn AI tab
+      
+      // Auto-submit the question after a brief delay to ensure state is set
+      setTimeout(() => {
+        console.log('🚀 Physics: Auto-submitting question from Hub Chat');
+        // Manually trigger the AI call with the context question
+        askPhysicsAIWithQuestion(vyonnContext.question);
+      }, 300);
     }
-  }, [vyonnContext, open]);
+  }, [vyonnContext, open]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Helper function to ask AI with a specific question (for auto-submit)
+  const askPhysicsAIWithQuestion = async (userQuestion) => {
+    if (!userQuestion || !userQuestion.trim()) return;
+    
+    setAiLoading(true);
+    setQuestion(''); // Clear input
+    setChatHistory(prev => [{ 
+      role: 'user', 
+      content: userQuestion, 
+      timestamp: Date.now() 
+    }, ...prev]);
+    
+    // Add welcome message if from Hub Chat
+    if (vyonnContext) {
+      setChatHistory(prev => [{
+        role: 'assistant',
+        content: `👋 Welcome from Hub Chat! I see you're interested in: "${userQuestion}"\n\nLet me analyze this and create an interactive visualization for you!`,
+        timestamp: Date.now()
+      }, ...prev]);
+    }
+    
+    const matchedDiagram = findMatchingDiagram(userQuestion);
+    const matchedExp = matchedDiagram ? null : findMatchingExperiment(userQuestion);
+    
+    // ✨ AUTO-ACTIVATE SIMULATION when matched
+    if (matchedExp) {
+      console.log('🎯 Physics: Matched experiment:', matchedExp.name);
+      setCurrentExperiment(matchedExp);
+      setCurrentDiagram(null);
+      setTimeout(() => setActiveTab(1), 1500);
+    } else if (matchedDiagram) {
+      console.log('📊 Physics: Matched diagram:', matchedDiagram.title);
+      setCurrentDiagram(matchedDiagram);
+      setCurrentExperiment(null);
+      setTimeout(() => setActiveTab(1), 1500);
+    }
+    
+    // Continue with the rest of askPhysicsAI logic...
+    try {
+      const topicContext = matchedDiagram 
+        ? `Topic: "${matchedDiagram.title}" - I'm showing a detailed diagram.`
+        : matchedExp 
+          ? `Topic: "${matchedExp.name}" - I'm generating an INTERACTIVE SIMULATION for this.`
+          : '';
+          
+      const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
+      const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
+      const hasTamil = /[\u0B80-\u0BFF]/.test(userQuestion);
+      const hasKannada = /[\u0C80-\u0CFF]/.test(userQuestion);
+      const hasMalayalam = /[\u0D00-\u0D7F]/.test(userQuestion);
+      
+      const isRegional = hasDevanagari || hasTelugu || hasTamil || hasKannada || hasMalayalam;
+      const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
+                   hasDevanagari ? 'Hindi (हिंदी)' :
+                   hasTamil ? 'Tamil (தமிழ்)' :
+                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
+                   hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
+      
+      const prompt = `You are Vyonn AI, a brilliant and friendly physics tutor.
+
+${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
+
+Student asked: "${userQuestion}"
+
+${topicContext}
+
+${matchedExp ? `🎯 IMPORTANT: I am generating an INTERACTIVE PHYSICS SIMULATION for "${matchedExp.name}"! 
+The simulation will appear automatically in 1.5 seconds. Make sure to:
+1. Start with: "🎮 I've created an interactive simulation for you!"
+2. Briefly explain the concept (100-150 words)
+3. End with: "⚡ The simulation is loading! You can adjust parameters and see how they affect the motion in real-time. Try different values and observe the changes!"` : 
+matchedDiagram ? `📊 I am showing a detailed labeled diagram for "${matchedDiagram.title}". Explain the diagram's key components.` : 
+`Provide a comprehensive physics explanation (200-250 words)`}
+
+${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Use bullet points for clarity. Be engaging and encouraging!'}
+
+Key points to cover ${isRegional ? `(in ${lang})` : ''}:
+1. Clear concept explanation
+2. ${matchedExp ? 'How to use the simulation' : 'Key physics principles'}
+3. Important formulas (use proper notation like v₀, θ, g, etc.)
+4. Real-world applications
+5. ${matchedExp ? 'What to observe in the simulation' : 'An interesting fact'}`;
+
+      console.log('🧪 Physics: Calling LLM with prompt length:', prompt.length);
+      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });
+      console.log('🧪 Physics: Received response:', response ? `${response.length} chars` : 'null/undefined');
+      
+      if (!response || response.trim().length === 0) {
+        console.error('❌ Physics: Empty or null response from LLM');
+        throw new Error('Empty response from AI');
+      }
+      
+      console.log('✅ Physics: Valid response received');
+      
+      setChatHistory(prev => [{ 
+        role: 'assistant', 
+        content: response,
+        experiment: matchedExp,
+        diagram: matchedDiagram,
+        timestamp: Date.now()
+      }, ...prev]);
+      
+    } catch (error) {
+      console.error('❌ Physics error:', error);
+      
+      let errorMessage = "I apologize, but I encountered an error. ";
+      
+      if (error.message && error.message.includes('API key')) {
+        errorMessage += "Please make sure you have configured your API keys in Settings. ";
+      } else if (error.message && error.message.includes('Empty response')) {
+        errorMessage += "The AI returned an empty response. Please try rephrasing your question or check your API configuration in Settings. ";
+      } else {
+        errorMessage += "Please try again or check your API configuration in Settings. ";
+      }
+      
+      if (matchedExp) {
+        errorMessage += `\n\n🎮 However, I've loaded the "${matchedExp.name}" simulation for you! The interactive visualization will help you understand the concept. Try adjusting the parameters!`;
+      } else if (matchedDiagram) {
+        errorMessage += `\n\n📊 However, I've loaded a diagram of "${matchedDiagram.title}" that shows the key components visually.`;
+      }
+      
+      setChatHistory(prev => [{ 
+        role: 'assistant', 
+        content: errorMessage,
+        experiment: matchedExp,
+        diagram: matchedDiagram,
+        timestamp: Date.now()
+      }, ...prev]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Get user display name
   const userName = user?.displayName?.split(' ')[0] || 'You';
@@ -411,125 +546,7 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
   // Ask AI
   const askPhysicsAI = async () => {
     if (!question.trim()) return;
-    
-    setAiLoading(true);
-    const userQuestion = question;
-    setQuestion('');
-    setChatHistory(prev => [{ role: 'user', content: userQuestion, timestamp: Date.now() }, ...prev]);
-    
-    const matchedDiagram = findMatchingDiagram(userQuestion);
-    const matchedExp = matchedDiagram ? null : findMatchingExperiment(userQuestion);
-    
-    // ✨ AUTO-ACTIVATE SIMULATION when matched
-    if (matchedExp) {
-      console.log('🎯 Physics: Matched experiment:', matchedExp.name);
-      setCurrentExperiment(matchedExp);
-      setCurrentDiagram(null);
-      // Switch to Visualize tab after a brief delay so user sees the response first
-      setTimeout(() => setActiveTab(1), 1500);
-    } else if (matchedDiagram) {
-      console.log('📊 Physics: Matched diagram:', matchedDiagram.title);
-      setCurrentDiagram(matchedDiagram);
-      setCurrentExperiment(null);
-      setTimeout(() => setActiveTab(1), 1500);
-    }
-    
-    try {
-      const topicContext = matchedDiagram 
-        ? `Topic: "${matchedDiagram.title}" - I'm showing a detailed diagram.`
-        : matchedExp 
-          ? `Topic: "${matchedExp.name}" - I'm generating an INTERACTIVE SIMULATION for this.`
-          : '';
-          
-      // v10.3: Detect language and respond in same language
-      const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
-      const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
-      const hasTamil = /[\u0B80-\u0BFF]/.test(userQuestion);
-      const hasKannada = /[\u0C80-\u0CFF]/.test(userQuestion);
-      const hasMalayalam = /[\u0D00-\u0D7F]/.test(userQuestion);
-      
-      const isRegional = hasDevanagari || hasTelugu || hasTamil || hasKannada || hasMalayalam;
-      const lang = hasTelugu ? 'Telugu (తెలుగు)' : 
-                   hasDevanagari ? 'Hindi (हिंदी)' :
-                   hasTamil ? 'Tamil (தமிழ்)' :
-                   hasKannada ? 'Kannada (ಕನ್ನಡ)' :
-                   hasMalayalam ? 'Malayalam (മലയാളം)' : 'English';
-      
-      const prompt = `You are Vyonn AI, a brilliant and friendly physics tutor.
-
-${isRegional ? `🚨 IMPORTANT: Student asked in ${lang}. You MUST respond in ${lang}!` : ''}
-
-Student asked: "${userQuestion}"
-
-${topicContext}
-
-${matchedExp ? `🎯 IMPORTANT: I am generating an INTERACTIVE PHYSICS SIMULATION for "${matchedExp.name}"! 
-The simulation will appear automatically in 1.5 seconds. Make sure to:
-1. Start with: "🎮 I've created an interactive simulation for you!"
-2. Briefly explain the concept (100-150 words)
-3. End with: "⚡ The simulation is loading! You can adjust parameters and see how they affect the motion in real-time. Try different values and observe the changes!"` : 
-matchedDiagram ? `📊 I am showing a detailed labeled diagram for "${matchedDiagram.title}". Explain the diagram's key components.` : 
-`Provide a comprehensive physics explanation (200-250 words)`}
-
-${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : 'Use bullet points for clarity. Be engaging and encouraging!'}
-
-Key points to cover ${isRegional ? `(in ${lang})` : ''}:
-1. Clear concept explanation
-2. ${matchedExp ? 'How to use the simulation' : 'Key physics principles'}
-3. Important formulas (use proper notation like v₀, θ, g, etc.)
-4. Real-world applications
-5. ${matchedExp ? 'What to observe in the simulation' : 'An interesting fact'}`;
-
-      console.log('🧪 Physics: Calling LLM with prompt length:', prompt.length);
-      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Increased for detailed physics explanations
-      console.log('🧪 Physics: Received response:', response ? `${response.length} chars` : 'null/undefined');
-      
-      // Check if we got a valid response
-      if (!response || response.trim().length === 0) {
-        console.error('❌ Physics: Empty or null response from LLM');
-        throw new Error('Empty response from AI');
-      }
-      
-      console.log('✅ Physics: Valid response received');
-      
-      setChatHistory(prev => [{ 
-        role: 'assistant', 
-        content: response,
-        experiment: matchedExp,
-        diagram: matchedDiagram,
-        timestamp: Date.now()
-      }, ...prev]);
-      
-    } catch (error) {
-      console.error('❌ Physics error:', error);
-      
-      // Provide helpful error message
-      let errorMessage = "I apologize, but I encountered an error. ";
-      
-      if (error.message && error.message.includes('API key')) {
-        errorMessage += "Please make sure you have configured your API keys in Settings. ";
-      } else if (error.message && error.message.includes('Empty response')) {
-        errorMessage += "The AI returned an empty response. Please try rephrasing your question or check your API configuration in Settings. ";
-      } else {
-        errorMessage += "Please try again or check your API configuration in Settings. ";
-      }
-      
-      if (matchedExp) {
-        errorMessage += `\n\n🎮 However, I've loaded the "${matchedExp.name}" simulation for you! The interactive visualization will help you understand the concept. Try adjusting the parameters!`;
-      } else if (matchedDiagram) {
-        errorMessage += `\n\n📊 However, I've loaded a diagram of "${matchedDiagram.title}" that shows the key components visually.`;
-      }
-      
-      setChatHistory(prev => [{ 
-        role: 'assistant', 
-        content: errorMessage,
-        experiment: matchedExp,
-        diagram: matchedDiagram,
-        timestamp: Date.now()
-      }, ...prev]);
-    } finally {
-      setAiLoading(false);
-    }
+    await askPhysicsAIWithQuestion(question);
   };
 
   // Initialize Matter.js
