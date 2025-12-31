@@ -687,24 +687,31 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
             <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
               {chatHistory.length === 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
-                  <PhysicsIcon 
-                    sx={{ 
-                      fontSize: 64, 
-                      color: '#1976d2', 
-                      mb: 2,
-                      animation: 'pulse 2s ease-in-out infinite',
-                      '@keyframes pulse': {
-                        '0%, 100%': {
-                          opacity: 1,
-                          transform: 'scale(1)',
-                        },
-                        '50%': {
-                          opacity: 0.6,
-                          transform: 'scale(1.05)',
-                        }
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    width: 100, 
+                    height: 100, 
+                    borderRadius: '50%', 
+                    bgcolor: '#e3f2fd',
+                    border: '3px solid',
+                    borderColor: '#1976d2',
+                    mb: 2,
+                    animation: 'pulse 2s ease-in-out infinite',
+                    '@keyframes pulse': {
+                      '0%, 100%': {
+                        opacity: 1,
+                        transform: 'scale(1)',
+                      },
+                      '50%': {
+                        opacity: 0.8,
+                        transform: 'scale(1.05)',
                       }
-                    }} 
-                  />
+                    }
+                  }}>
+                    <PhysicsIcon sx={{ fontSize: 56, color: '#1976d2' }} />
+                  </Box>
                   <Typography variant="h6" color="text.secondary" gutterBottom>
                     Start a conversation
                   </Typography>

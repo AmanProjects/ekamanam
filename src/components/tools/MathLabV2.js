@@ -3284,24 +3284,31 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {chatHistory.length === 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
-            <MathIcon 
-              sx={{ 
-                fontSize: 64, 
-                color: 'primary.main', 
-                mb: 2,
-                animation: 'pulse 2s ease-in-out infinite',
-                '@keyframes pulse': {
-                  '0%, 100%': {
-                    opacity: 1,
-                    transform: 'scale(1)',
-                  },
-                  '50%': {
-                    opacity: 0.6,
-                    transform: 'scale(1.05)',
-                  }
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              width: 100, 
+              height: 100, 
+              borderRadius: '50%', 
+              bgcolor: 'primary.50',
+              border: '3px solid',
+              borderColor: 'primary.main',
+              mb: 2,
+              animation: 'pulse 2s ease-in-out infinite',
+              '@keyframes pulse': {
+                '0%, 100%': {
+                  opacity: 1,
+                  transform: 'scale(1)',
+                },
+                '50%': {
+                  opacity: 0.8,
+                  transform: 'scale(1.05)',
                 }
-              }} 
-            />
+              }
+            }}>
+              <MathIcon sx={{ fontSize: 56, color: 'primary.main' }} />
+            </Box>
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Start a conversation
             </Typography>
@@ -5354,24 +5361,31 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
             <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
               {chatHistory.length === 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
-                  <MathIcon 
-                    sx={{ 
-                      fontSize: 64, 
-                      color: 'primary.main', 
-                      mb: 2,
-                      animation: 'pulse 2s ease-in-out infinite',
-                      '@keyframes pulse': {
-                        '0%, 100%': {
-                          opacity: 1,
-                          transform: 'scale(1)',
-                        },
-                        '50%': {
-                          opacity: 0.6,
-                          transform: 'scale(1.05)',
-                        }
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    width: 100, 
+                    height: 100, 
+                    borderRadius: '50%', 
+                    bgcolor: 'primary.50',
+                    border: '3px solid',
+                    borderColor: 'primary.main',
+                    mb: 2,
+                    animation: 'pulse 2s ease-in-out infinite',
+                    '@keyframes pulse': {
+                      '0%, 100%': {
+                        opacity: 1,
+                        transform: 'scale(1)',
+                      },
+                      '50%': {
+                        opacity: 0.8,
+                        transform: 'scale(1.05)',
                       }
-                    }} 
-                  />
+                    }
+                  }}>
+                    <MathIcon sx={{ fontSize: 56, color: 'primary.main' }} />
+                  </Box>
                   <Typography variant="h6" color="text.secondary" gutterBottom>
                     Start a conversation
                   </Typography>

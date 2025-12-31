@@ -224,24 +224,31 @@ ${isRegional ? `Write explanations in ${lang}, but code examples can remain in p
       <Box sx={{ flex: 1, overflow: 'auto', p: 2, bgcolor: '#fafafa' }}>
         {chatHistory.length === 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
-            <CodeIcon 
-              sx={{ 
-                fontSize: 64, 
-                color: '#2d3436', 
-                mb: 2,
-                animation: 'pulse 2s ease-in-out infinite',
-                '@keyframes pulse': {
-                  '0%, 100%': {
-                    opacity: 1,
-                    transform: 'scale(1)',
-                  },
-                  '50%': {
-                    opacity: 0.6,
-                    transform: 'scale(1.05)',
-                  }
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              width: 100, 
+              height: 100, 
+              borderRadius: '50%', 
+              bgcolor: '#f5f5f5',
+              border: '3px solid',
+              borderColor: '#2d3436',
+              mb: 2,
+              animation: 'pulse 2s ease-in-out infinite',
+              '@keyframes pulse': {
+                '0%, 100%': {
+                  opacity: 1,
+                  transform: 'scale(1)',
+                },
+                '50%': {
+                  opacity: 0.8,
+                  transform: 'scale(1.05)',
                 }
-              }} 
-            />
+              }
+            }}>
+              <CodeIcon sx={{ fontSize: 56, color: '#2d3436' }} />
+            </Box>
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Start a conversation
             </Typography>
