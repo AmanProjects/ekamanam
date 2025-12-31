@@ -908,10 +908,12 @@ function App() {
             )}
 
             {/* v10.1: First-Time Users Tour Button - First in list */}
+            {/* HIDDEN: Getting Started Button - Commented out per user request v10.7.37
             <FirstTimeUserButton onClick={() => {
               setRunTour(true);
               setTourStepIndex(0);
             }} />
+            */}
 
             <Tooltip title="Home">
               <IconButton 
@@ -954,11 +956,13 @@ function App() {
               </IconButton>
             </Tooltip>
 
+            {/* HIDDEN: Admin Dashboard Button - Commented out per user request v10.7.37
             <Tooltip title="Admin Dashboard">
               <IconButton onClick={() => setShowOTPDialog(true)} color="secondary">
                 <AdminPanelSettings />
               </IconButton>
             </Tooltip>
+            */}
 
             <AuthButton user={user} />
           </Box>
@@ -1031,10 +1035,12 @@ function App() {
               <ListItemText primary="Help & Guide" />
             </ListItem>
             
+            {/* HIDDEN: Admin Dashboard Button - Commented out per user request v10.7.37
             <ListItem button onClick={() => { setShowOTPDialog(true); setMobileMenuOpen(false); }}>
               <ListItemIcon><AdminPanelSettings /></ListItemIcon>
               <ListItemText primary="Admin Dashboard" />
             </ListItem>
+            */}
           </List>
 
           <Divider />
