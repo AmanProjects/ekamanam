@@ -26,7 +26,9 @@ import {
   Menu,
   MenuItem,
   Avatar,
-  LinearProgress
+  LinearProgress,
+  List,
+  ListItem
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,7 +38,9 @@ import {
   FolderOpen as FolderIcon,
   ArrowBack as BackIcon,
   ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon
+  ExpandLess as ExpandLessIcon,
+  CheckBox as CheckBoxIcon,
+  CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService from '../services/libraryService';
@@ -53,9 +57,10 @@ function LearningHubsList({ onBack, onOpenPdf }) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingHub, setEditingHub] = useState(null);
-  const [hubForm, setHubForm] = useState({ name: '', description: '', icon: '📚', color: '#2196F3' });
+  const [hubForm, setHubForm] = useState({ name: '', description: '', icon: '📚', color: '#2196F3', pdfIds: [] });
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedHub, setSelectedHub] = useState(null);
+  const [showPdfSelector, setShowPdfSelector] = useState(false); // v10.6.2: PDF selection dialog
 
   useEffect(() => {
     loadData();
@@ -86,7 +91,7 @@ function LearningHubsList({ onBack, onOpenPdf }) {
     try {
       await learningHubService.createLearningHub(hubForm);
       setCreateDialogOpen(false);
-      setHubForm({ name: '', description: '', icon: '📚', color: '#2196F3' });
+      setHubForm({ name: '', description: '', icon: '📚', color: '#2196F3', pdfIds: [] });
       loadData();
     } catch (error) {
       console.error('❌ Failed to create hub:', error);
@@ -104,7 +109,7 @@ function LearningHubsList({ onBack, onOpenPdf }) {
       await learningHubService.updateLearningHub(editingHub.id, hubForm);
       setEditDialogOpen(false);
       setEditingHub(null);
-      setHubForm({ name: '', description: '', icon: '📚', color: '#2196F3' });
+      setHubForm({ name: '', description: '', icon: '📚', color: '#2196F3', pdfIds: [] });
       loadData();
     } catch (error) {
       console.error('❌ Failed to update hub:', error);
@@ -130,10 +135,20 @@ function LearningHubsList({ onBack, onOpenPdf }) {
       name: hub.name,
       description: hub.description,
       icon: hub.icon,
-      color: hub.color
+      color: hub.color,
+      pdfIds: hub.pdfIds || []
     });
     setEditDialogOpen(true);
     setMenuAnchor(null);
+  };
+  
+  const togglePdfSelection = (pdfId) => {
+    setHubForm(prev => ({
+      ...prev,
+      pdfIds: prev.pdfIds.includes(pdfId)
+        ? prev.pdfIds.filter(id => id !== pdfId)
+        : [...prev.pdfIds, pdfId]
+    }));
   };
 
   const handleMenuOpen = (event, hub) => {
@@ -496,7 +511,7 @@ function LearningHubsList({ onBack, onOpenPdf }) {
           <Typography variant="subtitle2" gutterBottom>
             Choose a Color
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
             {HUB_COLORS.map((color) => (
               <IconButton
                 key={color}
@@ -513,6 +528,52 @@ function LearningHubsList({ onBack, onOpenPdf }) {
               </IconButton>
             ))}
           </Box>
+
+          {/* PDF Selection */}
+          <Typography variant="subtitle2" gutterBottom>
+            Add PDFs to Hub (optional)
+          </Typography>
+          <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto', mb: 2 }}>
+            {allPdfs.length > 0 ? (
+              <List dense>
+                {allPdfs.map((pdf) => (
+                  <ListItem
+                    key={pdf.id}
+                    button
+                    onClick={() => togglePdfSelection(pdf.id)}
+                    sx={{ py: 1 }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1 }}>
+                      <IconButton size="small" sx={{ pointerEvents: 'none' }}>
+                        {hubForm.pdfIds.includes(pdf.id) ? (
+                          <CheckBoxIcon color="primary" />
+                        ) : (
+                          <CheckBoxOutlineBlankIcon />
+                        )}
+                      </IconButton>
+                      <Typography variant="body2" sx={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {pdf.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {pdf.totalPages} pages
+                      </Typography>
+                    </Box>
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  No PDFs in library yet. Add some from My Library first!
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+          {hubForm.pdfIds.length > 0 && (
+            <Typography variant="caption" color="primary" sx={{ display: 'block', mb: 1 }}>
+              ✓ {hubForm.pdfIds.length} PDF{hubForm.pdfIds.length !== 1 ? 's' : ''} selected
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
@@ -574,7 +635,7 @@ function LearningHubsList({ onBack, onOpenPdf }) {
           <Typography variant="subtitle2" gutterBottom>
             Choose a Color
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
             {HUB_COLORS.map((color) => (
               <IconButton
                 key={color}
@@ -591,6 +652,52 @@ function LearningHubsList({ onBack, onOpenPdf }) {
               </IconButton>
             ))}
           </Box>
+
+          {/* PDF Selection */}
+          <Typography variant="subtitle2" gutterBottom>
+            Manage PDFs in Hub
+          </Typography>
+          <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto', mb: 2 }}>
+            {allPdfs.length > 0 ? (
+              <List dense>
+                {allPdfs.map((pdf) => (
+                  <ListItem
+                    key={pdf.id}
+                    button
+                    onClick={() => togglePdfSelection(pdf.id)}
+                    sx={{ py: 1 }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1 }}>
+                      <IconButton size="small" sx={{ pointerEvents: 'none' }}>
+                        {hubForm.pdfIds.includes(pdf.id) ? (
+                          <CheckBoxIcon color="primary" />
+                        ) : (
+                          <CheckBoxOutlineBlankIcon />
+                        )}
+                      </IconButton>
+                      <Typography variant="body2" sx={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {pdf.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {pdf.totalPages} pages
+                      </Typography>
+                    </Box>
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  No PDFs in library yet
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+          {hubForm.pdfIds.length > 0 && (
+            <Typography variant="caption" color="primary" sx={{ display: 'block', mb: 1 }}>
+              ✓ {hubForm.pdfIds.length} PDF{hubForm.pdfIds.length !== 1 ? 's' : ''} selected
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
