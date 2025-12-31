@@ -710,19 +710,37 @@ Provide a helpful, clear, and educational response.`;
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center', 
-            px: 2, 
-            py: 1.5, 
+            px: isMobile ? 1.5 : 2, 
+            py: isMobile ? 1 : 1.5, 
             bgcolor: '#424242', 
-            borderBottom: '1px solid #616161' 
+            borderBottom: '1px solid #616161',
+            gap: 1
           }}>
-            <PdfIcon sx={{ mr: 1, color: 'white', fontSize: 20 }} />
-            <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
-              PDF Viewer
+            <PdfIcon sx={{ mr: isMobile ? 0.5 : 1, color: 'white', fontSize: isMobile ? 18 : 20 }} />
+            <Typography variant={isMobile ? 'caption' : 'subtitle2'} sx={{ color: 'white', fontWeight: 600 }}>
+              {isMobile ? 'PDF' : 'PDF Viewer'}
             </Typography>
-            {selectedPdf && (
+            {selectedPdf && !isMobile && (
               <Typography variant="caption" sx={{ ml: 2, color: 'rgba(255,255,255,0.7)' }}>
                 {selectedPdf.name}
               </Typography>
+            )}
+            {/* Page Navigation - Mobile & Desktop */}
+            {pdfDocument && (
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1, 
+                ml: 'auto',
+                bgcolor: 'rgba(255,255,255,0.1)',
+                px: isMobile ? 1 : 1.5,
+                py: 0.5,
+                borderRadius: 1
+              }}>
+                <Typography variant="caption" sx={{ color: 'white', fontWeight: 500 }}>
+                  Page {pdfCurrentPage} / {pdfDocument.numPages}
+                </Typography>
+              </Box>
             )}
           </Box>
 
