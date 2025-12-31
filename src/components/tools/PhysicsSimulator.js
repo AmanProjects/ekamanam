@@ -21,7 +21,8 @@ import {
   Divider,
   Avatar,
   InputAdornment,
-  Badge
+  Badge,
+  Tooltip
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -49,12 +50,12 @@ import { markdownToHtml } from '../../utils/markdownRenderer';  // v10.4.18: Pro
 
 // Physics experiments database
 const PHYSICS_EXPERIMENTS = {
-  projectile: { name: 'Projectile Motion', category: 'Mechanics', description: 'Motion of objects launched at an angle', formulas: ['R = (v₀² sin2θ)/g'], concepts: ['Parabolic trajectory'], keywords: ['projectile', 'throw', 'launch', 'cannon', 'motion', 'parabolic', 'trajectory'], color: '#ef4444' },
-  freefall: { name: 'Free Fall', category: 'Mechanics', description: 'Objects falling under gravity', formulas: ['s = ½gt²'], concepts: ['Constant acceleration'], keywords: ['fall', 'drop', 'gravity', 'freefall', 'motion', 'acceleration'], color: '#f59e0b' },
-  pendulum: { name: 'Simple Pendulum', category: 'Oscillations', description: 'Simple harmonic motion', formulas: ['T = 2π√(L/g)'], concepts: ['Period depends on length'], keywords: ['pendulum', 'swing', 'oscillation', 'motion', 'harmonic'], color: '#8b5cf6' },
-  spring: { name: 'Spring Oscillation', category: 'Oscillations', description: "Hooke's Law", formulas: ['F = -kx'], concepts: ['Elastic potential energy'], keywords: ['spring', 'hooke', 'elastic', 'motion', 'oscillation'], color: '#10b981' },
-  collision: { name: 'Elastic Collision', category: 'Momentum', description: 'Conservation of momentum', formulas: ['m₁v₁ + m₂v₂ = m₁v₁\' + m₂v₂\''], concepts: ['Momentum conservation'], keywords: ['collision', 'momentum', 'billiard', 'motion'], color: '#06b6d4' },
-  inclinedPlane: { name: 'Inclined Plane', category: 'Mechanics', description: 'Motion on a slope', formulas: ['a = g sinθ'], concepts: ['Component of gravity'], keywords: ['incline', 'slope', 'ramp', 'friction', 'motion'], color: '#f97316' },
+  projectile: { name: 'Projectile Motion', category: 'Mechanics', description: 'Motion of objects launched at an angle', formulas: ['R = (v₀² sin2θ)/g'], concepts: ['Parabolic trajectory'], keywords: ['projectile', 'throw', 'launch', 'cannon', 'parabolic', 'trajectory'], color: '#ef4444' },
+  freefall: { name: 'Free Fall', category: 'Mechanics', description: 'Objects falling under gravity', formulas: ['s = ½gt²'], concepts: ['Constant acceleration'], keywords: ['fall', 'drop', 'gravity', 'freefall', 'falling'], color: '#f59e0b' },
+  pendulum: { name: 'Simple Pendulum', category: 'Oscillations', description: 'Simple harmonic motion', formulas: ['T = 2π√(L/g)'], concepts: ['Period depends on length'], keywords: ['pendulum', 'swing', 'oscillation', 'harmonic'], color: '#8b5cf6' },
+  spring: { name: 'Spring Oscillation', category: 'Oscillations', description: "Hooke's Law", formulas: ['F = -kx'], concepts: ['Elastic potential energy'], keywords: ['spring', 'hooke', 'elastic', 'oscillation'], color: '#10b981' },
+  collision: { name: 'Elastic Collision', category: 'Momentum', description: 'Conservation of momentum', formulas: ['m₁v₁ + m₂v₂ = m₁v₁\' + m₂v₂\''], concepts: ['Momentum conservation'], keywords: ['collision', 'momentum', 'billiard', 'impact'], color: '#06b6d4' },
+  inclinedPlane: { name: 'Inclined Plane', category: 'Mechanics', description: 'Motion on a slope', formulas: ['a = g sinθ'], concepts: ['Component of gravity'], keywords: ['incline', 'slope', 'ramp', 'friction'], color: '#f97316' },
   newtonCradle: { name: "Newton's Cradle", category: 'Momentum', description: 'Momentum transfer', formulas: ['p = mv'], concepts: ['Energy conservation'], keywords: ['newton cradle', 'cradle'], color: '#eab308' },
   pulley: { name: 'Pulley System', category: 'Mechanics', description: 'Atwood machine', formulas: ['a = (m₁-m₂)g/(m₁+m₂)'], concepts: ['Tension'], keywords: ['pulley', 'atwood', 'rope'], color: '#6366f1' },
   lever: { name: 'Lever & Torque', category: 'Rotational', description: 'Mechanical advantage', formulas: ['τ = r × F'], concepts: ['Torque', 'Fulcrum'], keywords: ['lever', 'torque', 'seesaw'], color: '#ec4899' },
@@ -711,6 +712,73 @@ Cover ${isRegional ? `(in ${lang})` : ''}:
     setTimeout(() => setCurrentExperiment(current), 10);
   };
 
+  // Save experiment to library
+  const handleSaveExperiment = async () => {
+    if (!currentExperiment) {
+      alert('⚠️ No simulation to save. Please select or generate a simulation first.');
+      return;
+    }
+
+    try {
+      const experiment = createExperiment({
+        title: currentExperiment.name,
+        description: `${currentExperiment.description}${currentExperiment.formulas ? ` - ${currentExperiment.formulas[0]}` : ''}`,
+        lab: 'physics',
+        experimentType: currentExperiment.key || 'custom',
+        parameters: {
+          experimentKey: currentExperiment.key,
+          gravity: gravity,
+          name: currentExperiment.name,
+          category: currentExperiment.category,
+          formulas: currentExperiment.formulas,
+          concepts: currentExperiment.concepts
+        },
+        config: {
+          showGrid: true,
+          interactive: true
+        },
+        tags: ['physics', currentExperiment.category?.toLowerCase(), ...currentExperiment.concepts?.map(c => c.toLowerCase()) || []],
+        pdfContext: vyonnContext?.pdfContext || null
+      });
+
+      const result = await experimentService.saveExperiment(experiment, user?.uid);
+      
+      if (result.success) {
+        alert('✅ Experiment saved to My Experiments!\n\nYou can now:\n• Download it as JSON\n• Share with friends\n• Access from any device');
+      } else {
+        alert(`❌ Failed to save: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error saving experiment:', error);
+      alert(`❌ Error: ${error.message}`);
+    }
+  };
+
+  // Load experiment from library
+  useEffect(() => {
+    if (vyonnContext?.experiment && open) {
+      const exp = vyonnContext.experiment;
+      console.log('📥 Loading experiment from library:', exp.metadata.title);
+      
+      if (exp.metadata.lab === 'physics' && exp.experiment.parameters?.experimentKey) {
+        const key = exp.experiment.parameters.experimentKey;
+        const physicsExp = PHYSICS_EXPERIMENTS[key];
+        
+        if (physicsExp) {
+          setCurrentExperiment({ key, ...physicsExp });
+          setActiveTab(1); // Switch to Visualize tab
+          
+          // Restore parameters
+          if (exp.experiment.parameters.gravity) {
+            setGravity(exp.experiment.parameters.gravity);
+          }
+          
+          console.log('✅ Experiment loaded:', physicsExp.name);
+        }
+      }
+    }
+  }, [vyonnContext, open]);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth={fullScreen ? false : "md"} fullWidth fullScreen={fullScreen} PaperProps={{ sx: { height: fullScreen ? '100%' : '92vh', borderRadius: fullScreen ? 0 : 3 } }}>
       {/* Header */}
@@ -722,7 +790,25 @@ Cover ${isRegional ? `(in ${lang})` : ''}:
             <Typography variant="caption" sx={{ opacity: 0.85 }}>Diagrams + Simulations</Typography>
           </Box>
         </Box>
-        <IconButton onClick={onClose} sx={{ color: 'white' }}><CloseIcon /></IconButton>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {currentExperiment && (
+            <Tooltip title="Save to My Experiments">
+              <IconButton 
+                onClick={handleSaveExperiment} 
+                sx={{ 
+                  color: 'white', 
+                  bgcolor: 'rgba(255,255,255,0.15)', 
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } 
+                }}
+              >
+                <SaveIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          <IconButton onClick={onClose} sx={{ color: 'white' }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       {/* Tabs */}
