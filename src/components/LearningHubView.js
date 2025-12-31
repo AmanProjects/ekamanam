@@ -29,7 +29,9 @@ import {
   DialogActions,
   CircularProgress,
   Tooltip,
-  LinearProgress
+  LinearProgress,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -80,6 +82,10 @@ function LearningHubView({
   subscription,
   onUpgrade
 }) {
+  // Mobile detection
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [hubData, setHubData] = useState(hub);
   const [hubPdfs, setHubPdfs] = useState([]);
   
@@ -435,7 +441,7 @@ Provide a helpful, clear, and educational response.`;
           elevation={0}
           sx={{
             width: 280,
-            display: 'flex',
+            display: isMobile ? 'none' : 'flex',
             flexDirection: 'column',
             borderRadius: 0,
             borderRight: '1px solid #e0e0e0',
@@ -623,7 +629,7 @@ Provide a helpful, clear, and educational response.`;
           elevation={0}
           sx={{
             width: 60,
-            display: 'flex',
+            display: isMobile ? 'none' : 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             bgcolor: 'primary.main',
@@ -837,26 +843,29 @@ Provide a helpful, clear, and educational response.`;
         </Paper>
 
         {/* RESIZE HANDLE */}
-        <Box
-          onMouseDown={handleMouseDown}
-          sx={{
-            width: '4px',
-            bgcolor: isDragging ? '#9e9e9e' : 'primary.main',
-            cursor: 'col-resize',
-            '&:hover': {
-              bgcolor: '#9e9e9e',
-            },
-            transition: 'background-color 0.2s',
-          }}
-        />
+        {/* Draggable resize handle - Desktop only */}
+        {!isMobile && (
+          <Box
+            onMouseDown={handleMouseDown}
+            sx={{
+              width: '4px',
+              bgcolor: isDragging ? '#9e9e9e' : 'primary.main',
+              cursor: 'col-resize',
+              '&:hover': {
+                bgcolor: '#9e9e9e',
+              },
+              transition: 'background-color 0.2s',
+            }}
+          />
+        )}
 
         {/* RIGHT PANEL: AI Mode Panel Content OR Hub Chat + Footer */}
         <Box
           sx={{
-            width: rightPanelWidth,
-            minWidth: 300,
-            maxWidth: 600,
-            display: 'flex',
+            width: isMobile ? 0 : rightPanelWidth,
+            minWidth: isMobile ? 0 : 300,
+            maxWidth: isMobile ? 0 : 600,
+            display: isMobile ? 'none' : 'flex',
             flexDirection: 'column',
             borderRadius: 0,
             overflow: 'hidden',
