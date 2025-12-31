@@ -240,8 +240,8 @@ function LandingDashboard({
         </Container>
       </Box>
 
-      {/* Powerful Features Section - Enhanced Visual Design */}
-      <Box id="features" sx={{ py: { xs: 6, md: 10 }, bgcolor: 'white' }}>
+      {/* Powerful Features Section - Professional EdTech Design */}
+      <Box id="features" sx={{ py: { xs: 6, md: 10 }, bgcolor: 'grey.50' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" fontWeight={700} textAlign="center" gutterBottom>
             Powerful Features
@@ -255,99 +255,87 @@ function LandingDashboard({
             Everything you need for an immersive, effective learning experience
           </Typography>
 
-          {/* Enhanced Feature Cards with Stats */}
+          {/* Clean Professional Feature Cards */}
           <Grid container spacing={3}>
             {[
               {
-                icon: <MicIcon sx={{ fontSize: 60 }} />,
+                icon: <MicIcon sx={{ fontSize: 48 }} />,
                 title: 'Voice-Powered Learning',
-                stat: '🎤 Voice Input',
+                stat: 'Voice Input',
                 description:
                   'Speak your questions naturally. Ekamanam listens, understands, and responds in your language.',
-                color: 'primary',
-                gradient: 'linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(25, 118, 210, 0.05) 100%)',
               },
               {
-                icon: <LanguageIcon sx={{ fontSize: 60 }} />,
+                icon: <LanguageIcon sx={{ fontSize: 48 }} />,
                 title: 'Multilingual Support',
                 stat: '10+ Languages',
                 description:
                   'Learn in Telugu, Hindi, Tamil, or any language you prefer. AI explanations adapt to your chosen language.',
-                color: 'success',
-                gradient: 'linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(46, 125, 50, 0.05) 100%)',
               },
               {
-                icon: <ThreeDIcon sx={{ fontSize: 60 }} />,
+                icon: <ThreeDIcon sx={{ fontSize: 48 }} />,
                 title: '3D Visualizations',
                 stat: '3D Interactive',
                 description:
                   'Explore molecules, geometric shapes, and concepts in interactive 3D. Rotate, zoom, and understand.',
-                color: 'secondary',
-                gradient: 'linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(156, 39, 176, 0.05) 100%)',
               },
               {
-                icon: <VyonnIconMui sx={{ fontSize: 60 }} />,
-                title: 'Vyonn AI Assistant',
-                stat: 'Smart AI Tutor',
+                icon: <VyonnIconMui sx={{ fontSize: 48 }} />,
+                title: 'AI Tutor',
+                stat: 'Smart Assistant',
                 description:
                   'Your personal AI tutor that understands context, suggests the right tools, and guides your learning journey.',
-                color: 'info',
-                gradient: 'linear-gradient(135deg, rgba(2, 136, 209, 0.1) 0%, rgba(2, 136, 209, 0.05) 100%)',
               },
               {
-                icon: <FlashcardIcon sx={{ fontSize: 60 }} />,
+                icon: <FlashcardIcon sx={{ fontSize: 48 }} />,
                 title: 'Spaced Repetition',
                 stat: '50+ Tools',
                 description:
-                  'Smart flashcards and interactive tools that adapt to your learning pace. Review at optimal intervals for maximum retention.',
-                color: 'error',
-                gradient: 'linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(211, 47, 47, 0.05) 100%)',
+                  'Smart flashcards and interactive tools that adapt to your learning pace for maximum retention.',
               },
               {
-                icon: <PhoneIcon sx={{ fontSize: 60 }} />,
-                title: 'Mobile Ready',
-                stat: '📱 Anywhere',
+                icon: <CheckIcon sx={{ fontSize: 48 }} />,
+                title: 'Progress Tracking',
+                stat: 'Mobile Ready',
                 description:
-                  'Learn on any device with progress tracking, analytics, and personalized insights. Your learning journey, always with you.',
-                color: 'warning',
-                gradient: 'linear-gradient(135deg, rgba(237, 108, 2, 0.1) 0%, rgba(237, 108, 2, 0.05) 100%)',
+                  'Monitor your learning journey with detailed analytics, streaks, and personalized insights on any device.',
               },
             ].map((feature, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
                 <Paper
-                  elevation={0}
+                  elevation={1}
                   sx={{
-                    p: 4,
+                    p: 3,
                     height: '100%',
-                    background: feature.gradient,
-                    border: '2px solid',
-                    borderColor: `${feature.color}.light`,
-                    borderRadius: 3,
-                    transition: 'all 0.3s ease',
+                    bgcolor: 'white',
+                    borderRadius: 2,
+                    transition: 'all 0.2s ease',
                     '&:hover': {
-                      transform: 'translateY(-12px)',
-                      boxShadow: 8,
-                      borderColor: `${feature.color}.main`,
+                      elevation: 4,
+                      transform: 'translateY(-4px)',
                     },
                   }}
                 >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Box sx={{ color: `${feature.color}.main` }}>{feature.icon}</Box>
+                  <Box sx={{ color: 'primary.main', mb: 2 }}>
+                    {feature.icon}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <Typography variant="h6" fontWeight={600}>
+                      {feature.title}
+                    </Typography>
                     <Chip
                       label={feature.stat}
                       size="small"
+                      variant="outlined"
                       sx={{
-                        bgcolor: `${feature.color}.main`,
-                        color: 'white',
-                        fontWeight: 600,
-                        fontSize: '0.75rem',
+                        fontSize: '0.7rem',
+                        height: 20,
+                        borderColor: 'primary.main',
+                        color: 'primary.main',
                       }}
                     />
                   </Box>
-                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: 'text.primary' }}>
-                    {feature.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
                     {feature.description}
                   </Typography>
                 </Paper>
