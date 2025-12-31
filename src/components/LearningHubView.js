@@ -1067,11 +1067,8 @@ Provide a helpful, clear, and educational response.`;
                 {/* Compact Header with Clear Button */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
                   <Box>
-                    <Typography variant="subtitle1" fontWeight={600} sx={{ lineHeight: 1.2, mb: 0.5 }}>
+                    <Typography variant="subtitle1" fontWeight={600} sx={{ lineHeight: 1.2 }}>
                       Hub Chat
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Chat with all PDFs in this hub
                     </Typography>
                   </Box>
                   {messages.length > 0 && (
@@ -1539,21 +1536,16 @@ Provide a helpful, clear, and educational response.`;
                 studyTab === 10 ? (
                   // Hub Chat (Custom Implementation - Compact & Voice-Enabled)
                   <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 2 }}>
-                    {/* Compact Header with Clear Button */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          Chat with all PDFs in this hub
-                        </Typography>
-                      </Box>
-                      {messages.length > 0 && (
+                    {/* Clear Button (when messages exist) */}
+                    {messages.length > 0 && (
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.5 }}>
                         <Tooltip title="Clear conversation">
                           <IconButton size="small" onClick={() => setMessages([])}>
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                      )}
-                    </Box>
+                      </Box>
+                    )}
 
                     {/* Chat Input with Voice */}
                     <Paper elevation={3} sx={{ mb: 2, border: '2px solid', borderColor: 'primary.main', borderRadius: 2, p: 1 }}>
