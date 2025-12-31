@@ -363,6 +363,9 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
   const [question, setQuestion] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
+  
+  // AI-generated visualization
+  const [aiVisualization, setAiVisualization] = useState(null);
 
   // Handle context from Hub Chat
   useEffect(() => {
@@ -426,7 +429,19 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
         setActiveTab(1);
       }, 1500);
     } else {
-      console.log('ℹ️ Physics: No simulation or diagram matched for this question');
+      console.log('ℹ️ Physics: No pre-coded simulation matched - generating AI visualization...');
+      // 🎨 Generate AI visualization when no pre-coded match
+      const aiViz = await generateAIVisualization(userQuestion);
+      if (aiViz) {
+        setAiVisualization(aiViz);
+        setCurrentExperiment(null);
+        setCurrentDiagram(null);
+        console.log('✨ AI-generated visualization ready:', aiViz.type);
+        setTimeout(() => {
+          console.log('🎬 Switching to Visualize tab for AI-generated content');
+          setActiveTab(1);
+        }, 1500);
+      }
     }
     
     // Continue with the rest of askPhysicsAI logic...
@@ -435,7 +450,9 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
         ? `Topic: "${matchedDiagram.title}" - I'm showing a detailed diagram.`
         : matchedExp 
           ? `Topic: "${matchedExp.name}" - I'm generating an INTERACTIVE SIMULATION for this.`
-          : '';
+          : aiVisualization
+            ? `I'm generating a custom ${aiVisualization.type === 'diagram' ? 'DIAGRAM' : 'SIMULATION'} for your question!`
+            : '';
           
       const hasDevanagari = /[\u0900-\u097F]/.test(userQuestion);
       const hasTelugu = /[\u0C00-\u0C7F]/.test(userQuestion);
@@ -589,6 +606,78 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
     return null;
   }, []);
 
+  // Generate AI simulation/diagram from JSON
+  const generateAIVisualization = async (question) => {
+    try {
+      const prompt = `You are a physics simulation generator. Analyze: "${question}"
+
+DECIDE: Should this be a STATIC DIAGRAM or INTERACTIVE SIMULATION?
+- Use DIAGRAM for: circuits, ray diagrams, free body diagrams, vector diagrams
+- Use SIMULATION for: motion, collisions, fields, oscillations, forces
+
+OUTPUT EXACTLY ONE JSON OBJECT (no markdown, no explanation):
+
+For DIAGRAM:
+{
+  "type": "diagram",
+  "title": "Circuit Diagram",
+  "svg": "<svg width='400' height='300'>...</svg>"
+}
+
+For SIMULATION:
+{
+  "type": "simulation",
+  "title": "Projectile Motion",
+  "objects": [
+    {"id": "ball", "shape": "circle", "x": 100, "y": 300, "radius": 15, "color": "#ef4444", "dynamic": true, "velocityX": 8, "velocityY": -10},
+    {"id": "ground", "shape": "rectangle", "x": 250, "y": 380, "width": 500, "height": 20, "color": "#64748b", "static": true}
+  ],
+  "description": "Ball follows parabolic path"
+}
+
+SIMULATION OBJECT PROPERTIES:
+- shape: "circle" or "rectangle"
+- x, y: position (center for circle, top-left for rect)
+- radius: for circles
+- width, height: for rectangles
+- color: hex color
+- static: true/false (does it move?)
+- dynamic: true for objects that should fall/move
+- velocityX, velocityY: initial velocity (optional)
+- restitution: bounciness 0-1 (optional)
+- friction: 0-1 (optional)
+- angle: rotation in radians (optional)
+
+EXAMPLES:
+
+"Draw a free body diagram":
+{"type": "diagram", "title": "Free Body Diagram", "svg": "<svg width='400' height='300'><circle cx='200' cy='150' r='30' fill='#3b82f6'/><line x1='200' y1='120' x2='200' y2='50' stroke='red' stroke-width='3' marker-end='url(#arrowhead)'/><text x='210' y='80' fill='red'>F_N</text></svg>"}
+
+"Simulate double pendulum":
+{"type": "simulation", "title": "Double Pendulum", "objects": [{"id": "pivot", "shape": "circle", "x": 250, "y": 50, "radius": 5, "color": "#64748b", "static": true}, {"id": "bob1", "shape": "circle", "x": 300, "y": 150, "radius": 15, "color": "#ef4444", "dynamic": true}, {"id": "bob2", "shape": "circle", "x": 350, "y": 250, "radius": 12, "color": "#3b82f6", "dynamic": true}], "constraints": [{"from": "pivot", "to": "bob1", "length": 100}, {"from": "bob1", "to": "bob2", "length": 100}]}
+
+NOW GENERATE FOR: "${question}"`;
+
+      const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });
+      
+      // Extract JSON from response (handle markdown code blocks)
+      let jsonStr = response.trim();
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.split('```')[1];
+        if (jsonStr.startsWith('json')) jsonStr = jsonStr.substring(4);
+        jsonStr = jsonStr.trim();
+      }
+      
+      const vizData = JSON.parse(jsonStr);
+      console.log('🎨 Generated visualization:', vizData);
+      
+      return vizData;
+    } catch (error) {
+      console.error('❌ Visualization generation error:', error);
+      return null;
+    }
+  };
+
   // Ask AI
   const askPhysicsAI = async () => {
     if (!question.trim()) return;
@@ -598,6 +687,7 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
   // Initialize Matter.js
   useEffect(() => {
     if (!open || !canvasRef.current || activeTab !== 1 || currentDiagram) return;
+    if (!currentExperiment && !aiVisualization) return; // Need either pre-coded or AI-generated simulation
 
     const { Engine, Render, Runner, Bodies, Composite, Mouse, MouseConstraint, Constraint, Body } = Matter;
 
@@ -624,8 +714,59 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
 
     Composite.add(engine.world, [ground, leftWall, rightWall]);
 
-    const expKey = currentExperiment?.key || 'freefall';
-    setupExperiment(expKey, engine, containerWidth, containerHeight, Bodies, Composite, Constraint, Body, Matter);
+    // 🤖 AI-Generated Simulation
+    if (aiVisualization && aiVisualization.type === 'simulation' && aiVisualization.objects) {
+      console.log('🎨 Rendering AI-generated simulation:', aiVisualization.title);
+      aiVisualization.objects.forEach(obj => {
+        let body;
+        const options = {
+          isStatic: obj.static || false,
+          restitution: obj.restitution || 0.6,
+          friction: obj.friction || 0.3,
+          render: { fillStyle: obj.color || '#6366f1' }
+        };
+        
+        if (obj.shape === 'circle') {
+          body = Bodies.circle(obj.x, obj.y, obj.radius || 20, options);
+        } else if (obj.shape === 'rectangle') {
+          body = Bodies.rectangle(obj.x, obj.y, obj.width || 50, obj.height || 50, options);
+          if (obj.angle) Body.setAngle(body, obj.angle);
+        }
+        
+        if (body) {
+          // Set initial velocity if specified
+          if (obj.velocityX || obj.velocityY) {
+            Body.setVelocity(body, { x: obj.velocityX || 0, y: obj.velocityY || 0 });
+          }
+          Composite.add(engine.world, body);
+        }
+      });
+      
+      // Add constraints if specified
+      if (aiVisualization.constraints) {
+        aiVisualization.constraints.forEach(constraint => {
+          // Find bodies by ID
+          const allBodies = Composite.allBodies(engine.world);
+          const fromBody = allBodies.find((b, idx) => idx === constraint.from);
+          const toBody = allBodies.find((b, idx) => idx === constraint.to);
+          
+          if (fromBody && toBody) {
+            const c = Constraint.create({
+              bodyA: fromBody,
+              bodyB: toBody,
+              length: constraint.length || 100,
+              stiffness: constraint.stiffness || 0.9,
+              render: { strokeStyle: '#94a3b8', lineWidth: 2 }
+            });
+            Composite.add(engine.world, c);
+          }
+        });
+      }
+    } else if (currentExperiment) {
+      // Pre-coded simulation
+      const expKey = currentExperiment.key || 'freefall';
+      setupExperiment(expKey, engine, containerWidth, containerHeight, Bodies, Composite, Constraint, Body, Matter);
+    }
 
     const mouse = Mouse.create(render.canvas);
     const mouseConstraint = MouseConstraint.create(engine, { mouse, constraint: { stiffness: 0.2, render: { visible: false }}});
@@ -649,7 +790,7 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
         render.textures = {};
       } catch (e) { /* cleanup */ }
     };
-  }, [open, currentExperiment, activeTab, gravity, currentDiagram]);
+  }, [open, currentExperiment, activeTab, gravity, currentDiagram, aiVisualization]);
 
   // Setup experiments (condensed)
   const setupExperiment = (expKey, engine, width, height, Bodies, Composite, Constraint, Body, Matter) => {
@@ -870,6 +1011,45 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
     }
   };
 
+  // Save AI-generated visualization
+  const handleSaveAIVisualization = async () => {
+    if (!aiVisualization) {
+      alert('⚠️ No AI visualization to save.');
+      return;
+    }
+
+    try {
+      const experiment = createExperiment({
+        title: aiVisualization.title || 'AI-Generated Visualization',
+        description: aiVisualization.description || `AI-generated ${aiVisualization.type}`,
+        lab: 'physics',
+        experimentType: 'ai-generated',
+        parameters: {
+          visualizationType: aiVisualization.type,
+          gravity: gravity,
+          aiData: aiVisualization // Store entire AI-generated data
+        },
+        config: {
+          showGrid: true,
+          interactive: aiVisualization.type === 'simulation'
+        },
+        tags: ['physics', 'ai-generated', aiVisualization.type],
+        pdfContext: vyonnContext?.pdfContext || null
+      });
+
+      const result = await experimentService.saveExperiment(experiment, user?.uid);
+      
+      if (result.success) {
+        alert('🤖 AI Visualization saved to My Experiments!\n\nYou can now:\n• Download it as JSON\n• Share with friends\n• Access from any device');
+      } else {
+        alert(`❌ Failed to save: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error saving AI visualization:', error);
+      alert(`❌ Error: ${error.message}`);
+    }
+  };
+
   // Load experiment from library
   useEffect(() => {
     if (vyonnContext?.experiment && open) {
@@ -907,8 +1087,8 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {(currentExperiment || (chatHistory.length > 0 && chatHistory[0].experiment)) && (
-            <Tooltip title="Save Simulation to My Experiments">
+          {(currentExperiment || aiVisualization || (chatHistory.length > 0 && chatHistory[0].experiment)) && (
+            <Tooltip title="Save to My Experiments">
               <IconButton 
                 onClick={() => {
                   // If currentExperiment exists, use it; otherwise get from chat history
@@ -919,6 +1099,9 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
                       setCurrentExperiment(expToSave);
                     }
                     handleSaveExperiment();
+                  } else if (aiVisualization) {
+                    // Save AI-generated visualization
+                    handleSaveAIVisualization();
                   }
                 }}
                 sx={{ 
@@ -1079,7 +1262,53 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
         {/* Tab 1: Visualize */}
         {activeTab === 1 && (
           <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>
-            {currentDiagram && (
+            {/* AI-Generated Diagram */}
+            {aiVisualization && aiVisualization.type === 'diagram' && (
+              <Box>
+                <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', borderLeft: '4px solid #9c27b0' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Chip label="AI-Generated Diagram" size="small" sx={{ bgcolor: '#f3e5f5', color: '#9c27b0', fontWeight: 600 }} />
+                    <Typography variant="subtitle1" fontWeight={700}>{aiVisualization.title}</Typography>
+                  </Box>
+                  {aiVisualization.description && (
+                    <Typography variant="body2" color="text.secondary">{aiVisualization.description}</Typography>
+                  )}
+                </Paper>
+                <Paper elevation={0} sx={{ p: 3, borderRadius: 2, bgcolor: 'white', border: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'center' }}>
+                  <Box sx={{ maxWidth: 450, width: '100%' }} dangerouslySetInnerHTML={{ __html: aiVisualization.svg }} />
+                </Paper>
+                <Button variant="outlined" onClick={() => setAiVisualization(null)} sx={{ mt: 2, textTransform: 'none', borderRadius: 2 }}>Clear</Button>
+              </Box>
+            )}
+
+            {/* AI-Generated Simulation */}
+            {aiVisualization && aiVisualization.type === 'simulation' && (
+              <>
+                <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', borderLeft: '4px solid #9c27b0' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Chip label="AI-Generated Simulation" size="small" sx={{ bgcolor: '#f3e5f5', color: '#9c27b0', fontWeight: 600 }} />
+                    <Typography variant="subtitle1" fontWeight={700}>{aiVisualization.title}</Typography>
+                  </Box>
+                  {aiVisualization.description && (
+                    <Typography variant="body2" color="text.secondary">{aiVisualization.description}</Typography>
+                  )}
+                </Paper>
+                <Box sx={{ display: 'flex', gap: 1.5, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Button variant="contained" onClick={toggleSimulation} startIcon={isRunning ? <PauseIcon /> : <PlayIcon />} sx={{ bgcolor: isRunning ? '#ef4444' : '#22c55e', '&:hover': { bgcolor: isRunning ? '#dc2626' : '#16a34a' }, textTransform: 'none', borderRadius: 2 }}>{isRunning ? 'Pause' : 'Play'}</Button>
+                  <Button variant="outlined" onClick={() => setAiVisualization({...aiVisualization})} startIcon={<ResetIcon />} sx={{ textTransform: 'none', borderRadius: 2 }}>Reset</Button>
+                  <Box sx={{ flex: 1, minWidth: 150, mx: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}><GravityIcon sx={{ fontSize: 16, color: 'text.secondary' }} /><Typography variant="caption" fontWeight={600} color="text.secondary">Gravity: {gravity.toFixed(1)}g</Typography></Box>
+                    <Slider value={gravity} onChange={(e, v) => setGravity(v)} min={0} max={3} step={0.1} size="small" sx={{ color: '#9c27b0' }} />
+                  </Box>
+                </Box>
+                <Paper elevation={0} sx={{ flex: 1, borderRadius: 2, overflow: 'hidden', bgcolor: '#1e293b', border: '1px solid', borderColor: 'divider' }}>
+                  <Box ref={canvasRef} sx={{ width: '100%', minHeight: 350 }} />
+                </Paper>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>🤖 AI-generated physics simulation • 🖱️ Drag to interact</Typography>
+              </>
+            )}
+
+            {currentDiagram && !aiVisualization && (
               <Box>
                 <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', borderLeft: '4px solid #1976d2' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -1097,7 +1326,7 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
               </Box>
             )}
             
-            {currentExperiment && !currentDiagram && (
+            {currentExperiment && !currentDiagram && !aiVisualization && (
               <>
                 <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', borderLeft: `4px solid ${currentExperiment.color}` }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -1130,7 +1359,7 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
               </>
             )}
             
-            {!currentDiagram && !currentExperiment && (
+            {!currentDiagram && !currentExperiment && !aiVisualization && (
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
                 <DiagramIcon sx={{ fontSize: 64, opacity: 0.2, mb: 2 }} />
                 <Typography variant="h6">No visualization selected</Typography>
