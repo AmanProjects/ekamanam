@@ -66,13 +66,9 @@ import PDFViewer from './PDFViewer';
 import AIModePanel from './AIModePanel';
 import VoiceInputButton from './VoiceInputButton';
 import zipHandler from '../services/zipHandler';
-import FlashcardManager from './FlashcardManager';
-import TimelineViewer from './TimelineViewer';
-import MathLabV2 from './tools/MathLabV2';
-import ChemistryTools from './tools/ChemistryTools';
-import PhysicsSimulator from './tools/PhysicsSimulator';
-import CodeEditor from './tools/CodeEditor';
-import GlobeViewer from './tools/GlobeViewer';
+import FlashcardReview from './FlashcardReview';
+import SessionTimeline from './SessionTimeline';
+import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer } from './tools';
 
 function LearningHubView({ 
   hub, 
@@ -1249,113 +1245,59 @@ Provide a helpful, clear, and educational response.`;
       </Dialog>
 
       {/* Flashcards Dialog */}
-      <Dialog
+      <FlashcardReview
         open={showFlashcards}
         onClose={() => setShowFlashcards(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <FlashcardManager
-          user={user}
-          pdfId={selectedPdf?.id}
-          pdfMetadata={selectedPdf}
-          subscription={subscription}
-          onUpgrade={onUpgrade}
-          onClose={() => setShowFlashcards(false)}
-        />
-      </Dialog>
+        userId={user?.uid}
+      />
 
       {/* Timeline Dialog */}
-      <Dialog
+      <SessionTimeline
         open={showTimeline}
         onClose={() => setShowTimeline(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <TimelineViewer
-          user={user}
-          pdfId={selectedPdf?.id}
-          pdfMetadata={selectedPdf}
-          subscription={subscription}
-          onUpgrade={onUpgrade}
-          onClose={() => setShowTimeline(false)}
-        />
-      </Dialog>
+        userId={user?.uid}
+        onOpenPdfAtPage={(pdf, page) => {
+          setShowTimeline(false);
+          if (onOpenPdf) {
+            onOpenPdf(pdf);
+          }
+        }}
+      />
 
       {/* Math Lab Dialog */}
-      <Dialog
+      <MathTools
         open={showMathLab}
         onClose={() => setShowMathLab(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <MathLabV2
-          onClose={() => setShowMathLab(false)}
-          user={user}
-          subscription={subscription}
-          onUpgrade={onUpgrade}
-        />
-      </Dialog>
+        user={user}
+      />
 
       {/* Chemistry Dialog */}
-      <Dialog
+      <ChemistryTools
         open={showChemistry}
         onClose={() => setShowChemistry(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <ChemistryTools
-          onClose={() => setShowChemistry(false)}
-          user={user}
-          subscription={subscription}
-          onUpgrade={onUpgrade}
-        />
-      </Dialog>
+        user={user}
+      />
 
       {/* Physics Dialog */}
-      <Dialog
+      <PhysicsSimulator
         open={showPhysics}
         onClose={() => setShowPhysics(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <PhysicsSimulator
-          onClose={() => setShowPhysics(false)}
-          user={user}
-          subscription={subscription}
-          onUpgrade={onUpgrade}
-        />
-      </Dialog>
+        user={user}
+      />
 
       {/* Code Editor Dialog */}
-      <Dialog
+      <CodeEditor
         open={showCode}
         onClose={() => setShowCode(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <CodeEditor
-          onClose={() => setShowCode(false)}
-          user={user}
-          subscription={subscription}
-          onUpgrade={onUpgrade}
-        />
-      </Dialog>
+        user={user}
+      />
 
       {/* Globe Viewer Dialog */}
-      <Dialog
+      <GlobeViewer
         open={showGlobe}
         onClose={() => setShowGlobe(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <GlobeViewer
-          onClose={() => setShowGlobe(false)}
-          user={user}
-          subscription={subscription}
-          onUpgrade={onUpgrade}
-        />
-      </Dialog>
+        user={user}
+      />
     </Box>
   );
 }
