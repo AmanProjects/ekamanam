@@ -1542,9 +1542,6 @@ Provide a helpful, clear, and educational response.`;
                     {/* Compact Header with Clear Button */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
                       <Box>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                          Hub Chat
-                        </Typography>
                         <Typography variant="caption" color="text.secondary">
                           Chat with all PDFs in this hub
                         </Typography>
@@ -1558,8 +1555,55 @@ Provide a helpful, clear, and educational response.`;
                       )}
                     </Box>
 
+                    {/* Chat Input with Voice */}
+                    <Paper elevation={3} sx={{ mb: 2, border: '2px solid', borderColor: 'primary.main', borderRadius: 2, p: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                        <TextField
+                          fullWidth
+                          multiline
+                          maxRows={3}
+                          placeholder="Ask about your PDFs..."
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                            }
+                          }}
+                          InputProps={{
+                            disableUnderline: true,
+                          }}
+                          sx={{ 
+                            '& .MuiInputBase-input': { 
+                              fontSize: '0.9rem',
+                              py: 0.5
+                            }
+                          }}
+                        />
+                        <VoiceInputButton
+                          onTranscript={(text) => setInput((prev) => prev + ' ' + text)}
+                          disabled={chatLoading}
+                        />
+                        <Button
+                          variant="contained"
+                          onClick={handleSendMessage}
+                          disabled={!input.trim() || chatLoading}
+                          sx={{ 
+                            minWidth: 'auto',
+                            px: 2,
+                            py: 1,
+                            height: 40,
+                            boxShadow: 3
+                          }}
+                        >
+                          {chatLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                        </Button>
+                      </Box>
+                    </Paper>
+
                     {/* Chat Messages */}
-                    <Box sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
+                    <Box sx={{ flex: 1, overflow: 'auto' }}>
                       {messages.length === 0 ? (
                         <Box sx={{ textAlign: 'center', py: 8 }}>
                           <ChatBubbleIcon 
@@ -1616,55 +1660,6 @@ Provide a helpful, clear, and educational response.`;
                       )}
                       <div ref={chatEndRef} />
                     </Box>
-
-                    {/* Chat Input with Voice */}
-                    <Paper elevation={3} sx={{ border: '2px solid', borderColor: 'primary.main', borderRadius: 2, p: 1 }}>
-                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-                        <TextField
-                          fullWidth
-                          multiline
-                          maxRows={4}
-                          value={input}
-                          onChange={(e) => setInput(e.target.value)}
-                          placeholder="Ask about your PDFs..."
-                          variant="standard"
-                          disabled={chatLoading}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSendMessage();
-                            }
-                          }}
-                          InputProps={{
-                            disableUnderline: true,
-                          }}
-                          sx={{ 
-                            '& .MuiInputBase-input': { 
-                              fontSize: '0.9rem',
-                              py: 0.5
-                            }
-                          }}
-                        />
-                        <VoiceInputButton
-                          onTranscript={(text) => setInput((prev) => prev + ' ' + text)}
-                          disabled={chatLoading}
-                        />
-                        <Button
-                          variant="contained"
-                          onClick={handleSendMessage}
-                          disabled={!input.trim() || chatLoading}
-                          sx={{ 
-                            minWidth: 'auto',
-                            px: 2,
-                            py: 1,
-                            height: 40,
-                            boxShadow: 3
-                          }}
-                        >
-                          {chatLoading ? <CircularProgress size={20} /> : <SendIcon />}
-                        </Button>
-                      </Box>
-                    </Paper>
                   </Box>
                 ) : (
                   // Use AIModePanel for other tools
