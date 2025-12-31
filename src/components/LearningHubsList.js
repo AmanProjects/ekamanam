@@ -43,10 +43,11 @@ import libraryService from '../services/libraryService';
 const HUB_ICONS = ['📚', '🎓', '🔬', '📖', '💡', '🎯', '🚀', '⚡', '🌟', '🧠'];
 const HUB_COLORS = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#FF5722', '#3F51B5'];
 
-function LearningHubsList({ onBack, onOpenHub, onOpenPdf }) {
+function LearningHubsList({ onBack, onOpenPdf }) {
   const [hubs, setHubs] = useState([]);
   const [allPdfs, setAllPdfs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedHub, setExpandedHub] = useState(null); // v10.6.2: Track expanded hub
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingHub, setEditingHub] = useState(null);
@@ -234,7 +235,7 @@ function LearningHubsList({ onBack, onOpenHub, onOpenPdf }) {
                       }
                     }}
                   >
-                    <CardActionArea onClick={() => onOpenHub(hub)}>
+                    <CardActionArea onClick={() => setExpandedHub(expandedHub === hub.id ? null : hub.id)}>
                       <CardContent sx={{ p: 3 }}>
                         {/* Hub Header */}
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
@@ -321,6 +322,57 @@ function LearningHubsList({ onBack, onOpenHub, onOpenPdf }) {
                         </Box>
                       </CardContent>
                     </CardActionArea>
+                    
+                    {/* v10.6.2: Expanded PDFs list */}
+                    {expandedHub === hub.id && stats.pdfs.length > 0 && (
+                      <Box sx={{ p: 2, pt: 0, borderTop: '1px solid #f0f0f0' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                          Click a PDF to start learning:
+                        </Typography>
+                        {stats.pdfs.map((pdf) => (
+                          <Paper
+                            key={pdf.id}
+                            elevation={0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenPdf(pdf, hub);
+                            }}
+                            sx={{
+                              p: 1.5,
+                              mb: 1,
+                              cursor: 'pointer',
+                              border: '1px solid #e0e0e0',
+                              borderRadius: 1,
+                              transition: 'all 0.2s',
+                              '&:hover': {
+                                bgcolor: '#f5f5f5',
+                                transform: 'translateX(4px)'
+                              }
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="body2">📄</Typography>
+                              <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={500}
+                                  sx={{
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  {pdf.name}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {pdf.totalPages} pages • {pdf.progress}% complete
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Paper>
+                        ))}
+                      </Box>
+                    )}
                   </Card>
                 </Grid>
               );
