@@ -3561,42 +3561,39 @@ Return ONLY this valid JSON:
             <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
               {!teacherResponse ? (
                 <>
-                  <ToggleButtonGroup
-                    value={teacherScope}
-                    exclusive
-                    onChange={(e, value) => value && setTeacherScope(value)}
-                    fullWidth
-                    size="medium"
-                    sx={{ 
-                      mb: 2,
-                      '& .MuiToggleButton-root': {
-                        py: 1.5,
-                        textTransform: 'none',
-                        fontWeight: 500,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        '&.Mui-selected': {
-                          bgcolor: 'primary.main',
-                          color: 'white',
-                          '&:hover': {
-                            bgcolor: 'primary.dark',
-                          }
-                        },
-                        '&:hover': {
-                          bgcolor: 'action.hover',
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <Select
+                      value={teacherScope}
+                      onChange={(e) => setTeacherScope(e.target.value)}
+                      size="medium"
+                      sx={{
+                        '& .MuiSelect-select': {
+                          display: 'flex',
+                          alignItems: 'center',
+                          py: 1.5
                         }
-                      }
-                    }}
-                  >
-                    <ToggleButton value="page">
-                      <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
-                      This Page
-                    </ToggleButton>
-                    <ToggleButton value="chapter">
-                      <ReadIcon fontSize="small" sx={{ mr: 1 }} />
-                      Entire Chapter
-                    </ToggleButton>
-                  </ToggleButtonGroup>
+                      }}
+                    >
+                      <MenuItem value="page">
+                        <DescriptionIcon fontSize="small" sx={{ mr: 1.5 }} />
+                        <Box>
+                          <Typography variant="body2" fontWeight={500}>This Page</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Generate explanation for the current page only
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                      <MenuItem value="chapter">
+                        <ReadIcon fontSize="small" sx={{ mr: 1.5 }} />
+                        <Box>
+                          <Typography variant="body2" fontWeight={500}>Entire Chapter</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Generate explanation for the full PDF
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
                   <Button
                     fullWidth
                     variant="contained"
