@@ -651,10 +651,10 @@ Provide a helpful, clear, and educational response.`;
           onMouseDown={handleMouseDown}
           sx={{
             width: '4px',
-            bgcolor: isDragging ? 'primary.main' : '#e0e0e0',
+            bgcolor: isDragging ? '#9e9e9e' : 'primary.main',
             cursor: 'col-resize',
             '&:hover': {
-              bgcolor: 'primary.light',
+              bgcolor: '#9e9e9e',
             },
             transition: 'background-color 0.2s',
           }}
