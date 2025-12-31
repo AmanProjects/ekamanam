@@ -2403,11 +2403,21 @@ ${matchedDiagram ? `Topic: "${matchedDiagram.title}" - I'm showing a detailed di
 
 ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chemical formulas can use standard notation.` : 'Use bullet points where appropriate. Be warm, encouraging, and supportive!'}`;
 
+      console.log('🧪 Chemistry AI: Calling LLM with prompt length:', prompt.length);
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 2048 });  // V3.2: Increased for detailed chemistry explanations
+      console.log('🧪 Chemistry AI: Received response:', response ? `${response.length} chars` : 'null/undefined');
+      
+      // Check if we got a valid response
+      if (!response || response.trim().length === 0) {
+        console.error('❌ Chemistry AI: Empty or null response from LLM');
+        throw new Error('Empty response from AI');
+      }
+      
+      console.log('✅ Chemistry AI: Valid response received');
       
       setChatHistory(prev => [{
         role: 'assistant',
-        content: response || "Let me show you this chemistry concept!",
+        content: response,
         diagram: matchedDiagram,
         timestamp: Date.now()
       }, ...prev]);
@@ -2417,14 +2427,30 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
       }
       
     } catch (error) {
+      console.error('❌ Chemistry AI error:', error);
+      
+      // Provide helpful error message
+      let errorMessage = "I apologize, but I encountered an error. ";
+      
+      if (error.message && error.message.includes('API key')) {
+        errorMessage += "Please make sure you have configured your API keys in Settings. ";
+      } else if (error.message && error.message.includes('Empty response')) {
+        errorMessage += "The AI returned an empty response. Please try rephrasing your question or check your API configuration in Settings. ";
+      } else {
+        errorMessage += "Please try again or check your API configuration in Settings. ";
+      }
+      
+      if (matchedDiagram) {
+        errorMessage += `\n\nHere's a detailed diagram of ${matchedDiagram.title} that might help visualize the concept.`;
+      }
+      
       setChatHistory(prev => [{
         role: 'assistant',
-        content: matchedDiagram 
-          ? `Here's a detailed diagram of ${matchedDiagram.title}! This shows the key components and processes involved.`
-          : "Let me help you understand this chemistry concept!",
+        content: errorMessage,
         diagram: matchedDiagram,
         timestamp: Date.now()
       }, ...prev]);
+      
       if (matchedDiagram) setCurrentDiagram(matchedDiagram);
     } finally {
       setAiLoading(false);
