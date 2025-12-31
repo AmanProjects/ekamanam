@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Paper, IconButton, Typography, TextField, CircularProgress } from '@mui/material';
+import { Box, Paper, IconButton, Typography, TextField, CircularProgress, useMediaQuery, useTheme } from '@mui/material';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -22,6 +22,10 @@ function PDFViewer({
   onTextSelect,
   onPageTextExtract
 }) {
+  // Mobile detection
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
   const containerRef = useRef(null);
@@ -307,52 +311,91 @@ function PDFViewer({
         square 
         elevation={1} 
         sx={{ 
-          p: 1, 
+          p: isMobile ? 0.5 : 1, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between',
-          gap: 1
+          gap: isMobile ? 0.5 : 1
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton onClick={handlePrevPage} disabled={currentPage <= 1}>
-            <ChevronLeft />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.25 : 1 }}>
+          <IconButton 
+            onClick={handlePrevPage} 
+            disabled={currentPage <= 1}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ p: isMobile ? 0.5 : 1 }}
+          >
+            <ChevronLeft fontSize={isMobile ? 'small' : 'medium'} />
           </IconButton>
           <TextField
             size="small"
             type="number"
             value={currentPage}
             onChange={handlePageInput}
-            sx={{ width: 60 }}
-            inputProps={{ min: 1, max: numPages, style: { textAlign: 'center' } }}
+            sx={{ 
+              width: isMobile ? 45 : 60,
+              '& .MuiInputBase-root': {
+                fontSize: isMobile ? '0.75rem' : '1rem',
+                height: isMobile ? 32 : 40
+              }
+            }}
+            inputProps={{ min: 1, max: numPages, style: { textAlign: 'center', padding: isMobile ? '4px' : '8px' } }}
           />
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary" sx={{ fontSize: isMobile ? '0.7rem' : '0.875rem' }}>
             / {numPages}
           </Typography>
-          <IconButton onClick={handleNextPage} disabled={currentPage >= numPages}>
-            <ChevronRight />
+          <IconButton 
+            onClick={handleNextPage} 
+            disabled={currentPage >= numPages}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ p: isMobile ? 0.5 : 1 }}
+          >
+            <ChevronRight fontSize={isMobile ? 'small' : 'medium'} />
           </IconButton>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton onClick={handleZoomOut} disabled={scale <= 0.5}>
-            <ZoomOut />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.25 : 1 }}>
+          <IconButton 
+            onClick={handleZoomOut} 
+            disabled={scale <= 0.5}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ p: isMobile ? 0.5 : 1 }}
+          >
+            <ZoomOut fontSize={isMobile ? 'small' : 'medium'} />
           </IconButton>
-          <Typography variant="body2" sx={{ minWidth: 50, textAlign: 'center' }}>
+          <Typography 
+            variant={isMobile ? 'caption' : 'body2'} 
+            sx={{ 
+              minWidth: isMobile ? 35 : 50, 
+              textAlign: 'center',
+              fontSize: isMobile ? '0.7rem' : '0.875rem'
+            }}
+          >
             {Math.round(scale * 100)}%
           </Typography>
-          <IconButton onClick={handleZoomIn}>
-            <ZoomIn />
+          <IconButton 
+            onClick={handleZoomIn}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ p: isMobile ? 0.5 : 1 }}
+          >
+            <ZoomIn fontSize={isMobile ? 'small' : 'medium'} />
           </IconButton>
           <IconButton 
             onClick={handleFitToHeight} 
             color={fitToHeight ? 'primary' : 'default'}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ p: isMobile ? 0.5 : 1 }}
             title="Fit to Height"
           >
-            <FitHeightIcon />
+            <FitHeightIcon fontSize={isMobile ? 'small' : 'medium'} />
           </IconButton>
-          <IconButton onClick={() => setShowNotes(!showNotes)} color={showNotes ? 'primary' : 'default'}>
-            <NoteIcon />
+          <IconButton 
+            onClick={() => setShowNotes(!showNotes)} 
+            color={showNotes ? 'primary' : 'default'}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ p: isMobile ? 0.5 : 1 }}
+          >
+            <NoteIcon fontSize={isMobile ? 'small' : 'medium'} />
           </IconButton>
         </Box>
       </Paper>
