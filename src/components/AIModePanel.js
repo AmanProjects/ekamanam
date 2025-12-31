@@ -4440,7 +4440,7 @@ Return ONLY this valid JSON:
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       {editableSelectedText 
                         ? 'Get detailed explanation with exercises and solutions for your selection'
-                        : 'Get AI-powered analysis with visual aids and comprehensive explanations'}
+                        : 'Get smart AI analysis with exercise detection, visual aids, and answer guidance'}
                     </Typography>
                     
                   </>
@@ -4522,11 +4522,6 @@ Return ONLY this valid JSON:
                   </Box>
                 )}
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-                {editableSelectedText 
-                  ? 'Analyzes selected text and detects exercises, notes, formulas, and important points'
-                  : 'Smart AI analysis with exercise detection and answer guidance'}
-              </Typography>
             </Box>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
