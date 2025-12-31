@@ -69,6 +69,26 @@ function LandingDashboard({
 }) {
   const isLoggedIn = !!user;
 
+  // Get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  // Get user's first name
+  const getUserFirstName = () => {
+    if (!user) return '';
+    if (user.displayName) {
+      return user.displayName.split(' ')[0].toLowerCase();
+    }
+    if (user.email) {
+      return user.email.split('@')[0].toLowerCase();
+    }
+    return '';
+  };
+
   return (
     <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', width: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
       {/* Hero Section */}
@@ -115,6 +135,23 @@ function LandingDashboard({
 
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
           <Box textAlign="center">
+            {/* Personalized Greeting */}
+            {isLoggedIn && (
+              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                  {getGreeting()}, {getUserFirstName()}!
+                </Typography>
+                {subscription?.daysRemaining && (
+                  <Chip
+                    label={`${subscription.daysRemaining}d left`}
+                    color="primary"
+                    size="small"
+                    sx={{ fontWeight: 600 }}
+                  />
+                )}
+              </Box>
+            )}
+
             <Typography
               variant="h2"
               sx={{
@@ -170,7 +207,7 @@ function LandingDashboard({
                     boxShadow: 3,
                   }}
                 >
-                  Open My Learning Hubs
+                  Open Learning Hub
                 </Button>
               ) : (
                 <Button
@@ -656,7 +693,7 @@ function LandingDashboard({
           </Typography>
           <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
             {isLoggedIn
-              ? 'Access your Learning Hubs and start your focused learning session today.'
+              ? 'Access your Learning Hub and start your focused learning session today.'
               : 'Join thousands of students who are learning smarter, not harder.'}
           </Typography>
           {isLoggedIn ? (
@@ -677,7 +714,7 @@ function LandingDashboard({
                 },
               }}
             >
-              Open My Learning Hubs
+              Open Learning Hub
             </Button>
           ) : (
             <Button
@@ -704,14 +741,120 @@ function LandingDashboard({
       </Box>
 
       {/* Footer */}
-      <Box sx={{ py: 4, bgcolor: 'grey.900', color: 'white', textAlign: 'center' }}>
-        <Container>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            © 2025 Amandeep Talwar. All rights reserved.
-          </Typography>
-          <Typography variant="caption" sx={{ opacity: 0.7 }}>
-            Ekamanam (ఏకమనం) - One Focus, Limitless Learning
-          </Typography>
+      <Box sx={{ py: 6, bgcolor: 'grey.900', color: 'grey.400' }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={4} sx={{ mb: 4 }}>
+            {/* Column 1: About */}
+            <Grid item xs={12} md={4}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 600 }}>
+                Ekamanam
+              </Typography>
+              <Typography variant="body2">
+                AI-Powered Multilingual Learning Platform
+              </Typography>
+              <Typography variant="caption" sx={{ display: 'block', mt: 2, color: 'grey.500' }}>
+                ఏకమనం - One Focus, Limitless Learning
+              </Typography>
+            </Grid>
+
+            {/* Column 2: AI Features */}
+            <Grid item xs={12} md={4}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 600 }}>
+                AI Features
+              </Typography>
+              <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, '& li': { mb: 1 } }}>
+                <li><Typography variant="body2">Learn & Explain Tabs</Typography></li>
+                <li><Typography variant="body2">Activities & Exam Tabs</Typography></li>
+                <li><Typography variant="body2">Vyonn AI (Integrated)</Typography></li>
+                <li><Typography variant="body2">Interactive Tools</Typography></li>
+                <li><Typography variant="body2">Notes & Flashcards</Typography></li>
+              </Box>
+            </Grid>
+
+            {/* Column 3: Resources */}
+            <Grid item xs={12} md={4}>
+              <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 600 }}>
+                Resources
+              </Typography>
+              <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, '& li': { mb: 1 } }}>
+                <li>
+                  <Typography
+                    variant="body2"
+                    component="a"
+                    href="#story"
+                    sx={{ color: 'grey.400', textDecoration: 'none', '&:hover': { color: 'white' } }}
+                  >
+                    Our Story
+                  </Typography>
+                </li>
+                <li>
+                  <Typography
+                    variant="body2"
+                    component="a"
+                    href="#features"
+                    sx={{ color: 'grey.400', textDecoration: 'none', '&:hover': { color: 'white' } }}
+                  >
+                    Features
+                  </Typography>
+                </li>
+                <li>
+                  <Typography
+                    variant="body2"
+                    component="a"
+                    href="#dashboard"
+                    sx={{ color: 'grey.400', textDecoration: 'none', '&:hover': { color: 'white' } }}
+                  >
+                    Learning Hub
+                  </Typography>
+                </li>
+                {isLoggedIn && (
+                  <li>
+                    <Typography
+                      variant="body2"
+                      component="button"
+                      onClick={onOpenHubs}
+                      sx={{
+                        color: 'grey.400',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        p: 0,
+                        textAlign: 'left',
+                        '&:hover': { color: 'white' },
+                      }}
+                    >
+                      Launch App
+                    </Typography>
+                  </li>
+                )}
+              </Box>
+            </Grid>
+          </Grid>
+
+          {/* Bottom Section */}
+          <Box sx={{ borderTop: '1px solid', borderColor: 'grey.800', pt: 4, textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              © 2025{' '}
+              <Typography
+                component="a"
+                href="https://www.linkedin.com/in/amantalwar/"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: 'grey.400',
+                  textDecoration: 'underline',
+                  '&:hover': { color: 'white' },
+                }}
+              >
+                Amandeep Singh Talwar
+              </Typography>
+              . All rights reserved.
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'grey.500' }}>
+              Disclaimer: This application provides AI-powered learning assistance. All PDF copyrights belong to
+              their respective owners. For personal educational use only.
+            </Typography>
+          </Box>
         </Container>
       </Box>
     </Box>
