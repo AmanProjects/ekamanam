@@ -351,29 +351,36 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
     ];
     
     // Build regex pattern to match [TOOL:ToolName] OR just "ToolName"
-    // Match explicit format: [TOOL:Math Lab]
-    // OR natural mentions: "Math Lab", "Physics Simulator", etc.
     const toolNamesPattern = tools.map(t => t.name).join('|');
-    const pattern = new RegExp(`(\\[TOOL:(${toolNamesPattern})\\]|\\b(${toolNamesPattern})\\b)`, 'gi');
+    const pattern = new RegExp(`\\[TOOL:(${toolNamesPattern})\\]|\\b(${toolNamesPattern})\\b`, 'gi');
     
-    const parts = content.split(pattern);
+    let lastIndex = 0;
     const elements = [];
+    let match;
+    let keyIndex = 0;
     
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (!part) continue;
+    // Find all tool mentions
+    while ((match = pattern.exec(content)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        const textBefore = content.substring(lastIndex, match.index);
+        elements.push(
+          <span 
+            key={`text-${keyIndex++}`} 
+            dangerouslySetInnerHTML={{ __html: markdownToHtml(textBefore) }} 
+          />
+        );
+      }
       
-      // Check if this matches a tool
-      const tool = tools.find(t => 
-        part === `[TOOL:${t.name}]` || 
-        part.toLowerCase() === t.name.toLowerCase()
-      );
+      // Find which tool was matched
+      const toolName = match[1] || match[2]; // Either from [TOOL:Name] or just Name
+      const tool = tools.find(t => t.name.toLowerCase() === toolName.toLowerCase());
       
       if (tool) {
-        // Render as clickable chip
+        // Add clickable chip
         elements.push(
           <Chip
-            key={`chip-${i}`}
+            key={`chip-${keyIndex++}`}
             label={tool.name}
             color="primary"
             size="small"
@@ -388,18 +395,23 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
             }}
           />
         );
-      } else if (part.trim()) {
-        // Regular text - convert markdown to HTML
-        elements.push(
-          <span 
-            key={`text-${i}`} 
-            dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} 
-          />
-        );
       }
+      
+      lastIndex = pattern.lastIndex;
     }
     
-    return elements;
+    // Add remaining text after last match
+    if (lastIndex < content.length) {
+      const textAfter = content.substring(lastIndex);
+      elements.push(
+        <span 
+          key={`text-${keyIndex++}`} 
+          dangerouslySetInnerHTML={{ __html: markdownToHtml(textAfter) }} 
+        />
+      );
+    }
+    
+    return elements.length > 0 ? elements : <span dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }} />;
   };
 
   const handleAddPdf = async (pdfId) => {
