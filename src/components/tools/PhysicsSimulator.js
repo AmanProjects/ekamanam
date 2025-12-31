@@ -61,7 +61,11 @@ const PHYSICS_EXPERIMENTS = {
   lever: { name: 'Lever & Torque', category: 'Rotational', description: 'Mechanical advantage', formulas: ['τ = r × F'], concepts: ['Torque', 'Fulcrum'], keywords: ['lever', 'torque', 'seesaw'], color: '#ec4899' },
   buoyancy: { name: 'Buoyancy', category: 'Fluids', description: "Archimedes' principle", formulas: ['F_b = ρVg'], concepts: ['Density comparison'], keywords: ['float', 'sink', 'buoyancy', 'archimedes'], color: '#0ea5e9' },
   stack: { name: 'Stacking Blocks', category: 'Statics', description: 'Center of mass', formulas: ['x_cm = Σm_ix_i/Σm_i'], concepts: ['Equilibrium'], keywords: ['stack', 'tower', 'block'], color: '#84cc16' },
-  bridge: { name: 'Rope Bridge', category: 'Statics', description: 'Tension in structures', formulas: ['T = W/(2sinθ)'], concepts: ['Load bearing'], keywords: ['bridge', 'rope', 'tension'], color: '#a855f7' }
+  bridge: { name: 'Rope Bridge', category: 'Statics', description: 'Tension in structures', formulas: ['T = W/(2sinθ)'], concepts: ['Load bearing'], keywords: ['bridge', 'rope', 'tension'], color: '#a855f7' },
+  magneticField: { name: 'Magnetic Field Lines', category: 'Electromagnetism', description: 'Field around a bar magnet', formulas: ['B = μ₀I/2πr'], concepts: ['Magnetic dipole', 'Field lines'], keywords: ['magnetic', 'magnet', 'field', 'magnetism', 'bar magnet', 'field lines'], color: '#dc2626' },
+  magneticForce: { name: 'Magnetic Force on Current', category: 'Electromagnetism', description: 'Force on current-carrying wire', formulas: ['F = ILB sinθ'], concepts: ['Motor effect', 'Lorentz force'], keywords: ['magnetic force', 'current', 'wire', 'motor', 'lorentz', 'fleming'], color: '#ea580c' },
+  electromagnet: { name: 'Electromagnet', category: 'Electromagnetism', description: 'Magnetic field from current', formulas: ['B = μ₀nI'], concepts: ['Solenoid', 'Right-hand rule'], keywords: ['electromagnet', 'solenoid', 'coil', 'electromagnetic'], color: '#d97706' },
+  induction: { name: 'Electromagnetic Induction', category: 'Electromagnetism', description: "Faraday's Law", formulas: ['ε = -dΦ/dt'], concepts: ['Induced EMF', "Lenz's Law"], keywords: ['induction', 'faraday', 'induced', 'generator', 'transformer'], color: '#ca8a04' }
 };
 
 // Diagram templates
@@ -706,6 +710,104 @@ ${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
         const bLinks = Array.from({length: 10}, (_, i) => Bodies.rectangle(120 + i * 50, height/2, 45, 12, { collisionFilter: { group: bGroup }, render: { fillStyle: '#78716c' }}));
         const bChain = Matter.Composites.chain(Matter.Composite.create({ bodies: bLinks }), 0.5, 0, -0.5, 0, { stiffness: 0.9, length: 5, render: { visible: false }});
         Composite.add(engine.world, [bChain, Bodies.rectangle(cx, height/2 - 50, 30, 30, { render: { fillStyle: expColor }}), Constraint.create({ pointA: { x: 100, y: height/2 }, bodyB: bLinks[0], pointB: { x: -22, y: 0 }, stiffness: 0.9 }), Constraint.create({ pointA: { x: width - 100, y: height/2 }, bodyB: bLinks[9], pointB: { x: 22, y: 0 }, stiffness: 0.9 })]);
+        break;
+      case 'magneticField':
+        // Bar magnet (red N pole, blue S pole)
+        Composite.add(engine.world, [
+          Bodies.rectangle(cx - 30, height/2, 50, 80, { isStatic: true, render: { fillStyle: '#dc2626' }}), // N pole
+          Bodies.rectangle(cx + 30, height/2, 50, 80, { isStatic: true, render: { fillStyle: '#2563eb' }}), // S pole
+        ]);
+        // Magnetic field lines (particles that curve around)
+        for (let i = 0; i < 12; i++) {
+          const angle = (i / 12) * Math.PI * 2;
+          const radius = 120;
+          const x = cx + Math.cos(angle) * radius;
+          const y = height/2 + Math.sin(angle) * radius * 0.6;
+          const particle = Bodies.circle(x, y, 4, { 
+            restitution: 0.8, 
+            frictionAir: 0.01,
+            render: { fillStyle: '#dc2626' }
+          });
+          // Give particles tangential velocity to simulate field lines
+          Body.setVelocity(particle, { 
+            x: -Math.sin(angle) * 2, 
+            y: Math.cos(angle) * 2 * 0.6 
+          });
+          Composite.add(engine.world, particle);
+        }
+        break;
+      case 'magneticForce':
+        // Current-carrying wire (horizontal)
+        Composite.add(engine.world, [
+          Bodies.rectangle(cx, height/2, 300, 10, { isStatic: true, render: { fillStyle: '#f97316' }}),
+        ]);
+        // Magnetic field region (visualized as background)
+        Composite.add(engine.world, [
+          Bodies.rectangle(cx, height/2 + 100, 320, 140, { isStatic: true, isSensor: true, render: { fillStyle: 'rgba(147, 51, 234, 0.15)' }})
+        ]);
+        // Charged particles being deflected by magnetic force (Lorentz force)
+        for (let i = 0; i < 8; i++) {
+          const particle = Bodies.circle(80 + i * 60, height/2 - 60, 8, { 
+            frictionAir: 0.02,
+            render: { fillStyle: i % 2 === 0 ? '#dc2626' : '#2563eb' }
+          });
+          // Particles move horizontally, get deflected downward (F = qvB)
+          Body.setVelocity(particle, { x: 4, y: 0 });
+          Composite.add(engine.world, particle);
+        }
+        break;
+      case 'electromagnet':
+        // Solenoid/coil (vertical stack of rectangles)
+        for (let i = 0; i < 6; i++) {
+          Composite.add(engine.world, [
+            Bodies.rectangle(cx - 60, 120 + i * 30, 100, 8, { isStatic: true, render: { fillStyle: '#d97706' }}),
+            Bodies.rectangle(cx + 60, 120 + i * 30, 100, 8, { isStatic: true, render: { fillStyle: '#d97706' }}),
+          ]);
+        }
+        // Magnetic field particles around coil
+        for (let i = 0; i < 16; i++) {
+          const angle = (i / 16) * Math.PI * 2;
+          const radius = 140;
+          const x = cx + Math.cos(angle) * radius;
+          const y = height/2 + Math.sin(angle) * radius * 0.8;
+          const particle = Bodies.circle(x, y, 5, { 
+            restitution: 0.7,
+            frictionAir: 0.015,
+            render: { fillStyle: '#ea580c' }
+          });
+          Body.setVelocity(particle, { 
+            x: -Math.sin(angle) * 2.5, 
+            y: Math.cos(angle) * 2.5 * 0.8 
+          });
+          Composite.add(engine.world, particle);
+        }
+        break;
+      case 'induction':
+        // Moving magnet (bar magnet moving up/down)
+        const movingMagnet = Bodies.rectangle(cx - 100, height/2 - 80, 40, 100, { 
+          frictionAir: 0.05,
+          render: { fillStyle: '#dc2626' }
+        });
+        Body.setVelocity(movingMagnet, { x: 0, y: 3 });
+        
+        // Stationary coil (right side)
+        for (let i = 0; i < 5; i++) {
+          Composite.add(engine.world, [
+            Bodies.rectangle(cx + 100, 140 + i * 25, 80, 6, { isStatic: true, render: { fillStyle: '#ca8a04' }})
+          ]);
+        }
+        
+        Composite.add(engine.world, movingMagnet);
+        
+        // Induced current particles (appear to flow in coil when magnet moves)
+        for (let i = 0; i < 10; i++) {
+          const particle = Bodies.circle(cx + 60 + i * 10, height/2, 4, { 
+            frictionAir: 0.02,
+            render: { fillStyle: '#fbbf24' }
+          });
+          Body.setVelocity(particle, { x: 0, y: 2 * (i % 2 === 0 ? 1 : -1) });
+          Composite.add(engine.world, particle);
+        }
         break;
       default:
         for (let i = 0; i < 5; i++) Composite.add(engine.world, Bodies.circle(100 + i * 120, 80, 25, { restitution: 0.6, render: { fillStyle: `hsl(${i * 55 + 200}, 65%, 55%)` }}));
