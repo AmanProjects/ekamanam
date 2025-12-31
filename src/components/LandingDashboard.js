@@ -103,7 +103,6 @@ function LandingDashboard({
           onUpgrade={onUpgrade}
           isMobile={true}
           isLoggedIn={isLoggedIn}
-          onSignIn={onSignIn}
         />
       )}
       

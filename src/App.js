@@ -901,7 +901,6 @@ function App() {
                   onUpgrade={() => setShowSubscriptionDialog(true)}
                   isMobile={false}
                   isLoggedIn={!!user}
-                  onSignIn={handleSignIn}
                 />
               </Box>
               <Box component="span" sx={{ fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1.4 }}>
@@ -1023,7 +1022,6 @@ function App() {
           onUpgrade={() => setShowSubscriptionDialog(true)}
           isMobile={true}
           isLoggedIn={!!user}
-          onSignIn={handleSignIn}
         />
       )}
 

@@ -21,7 +21,7 @@ import {
   ShoppingCart as CartIcon
 } from '@mui/icons-material';
 
-function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, onSignIn }) {
+function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn }) {
   if (subscription?.loading) return null;
 
   // Not logged in state
@@ -30,18 +30,18 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, onS
     if (!isMobile) {
       return (
         <Chip
-          label="Try Free"
+          label="Subscribe"
           size="small"
-          onClick={onSignIn}
+          onClick={onUpgrade}
           sx={{
             height: 24,
             fontSize: '0.7rem',
             fontWeight: 600,
             cursor: 'pointer',
-            bgcolor: '#2196f3',
+            bgcolor: '#4caf50',
             color: 'white',
             '& .MuiChip-label': { px: 1 },
-            '&:hover': { bgcolor: '#1976d2' }
+            '&:hover': { bgcolor: '#45a049' }
           }}
         />
       );
@@ -54,7 +54,7 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, onS
         sx={{
           borderRadius: 0,
           borderBottom: '1px solid #e0e0e0',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
           px: 2,
           py: 1.5
         }}
@@ -65,26 +65,27 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, onS
               Start Learning Today
             </Typography>
             <Typography variant="caption" sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.9)' }}>
-              Sign in to access 3 free AI queries daily
+              Free & Premium plans available
             </Typography>
           </Box>
           <Button
             size="small"
             variant="contained"
-            onClick={onSignIn}
+            startIcon={<CartIcon sx={{ fontSize: '0.9rem' }} />}
+            onClick={onUpgrade}
             sx={{
               textTransform: 'none',
               fontSize: '0.75rem',
               py: 0.5,
               px: 1.5,
               bgcolor: 'white',
-              color: '#667eea',
+              color: '#2e7d32',
               '&:hover': {
                 bgcolor: 'rgba(255,255,255,0.9)'
               }
             }}
           >
-            Sign In
+            Subscribe
           </Button>
         </Box>
       </Paper>
