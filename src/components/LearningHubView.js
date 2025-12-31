@@ -564,7 +564,7 @@ Provide a helpful, clear, and educational response.`;
                     </ListItemAvatar>
                     <ListItemText
                       primary={pdf.name}
-                      secondary={`${pdf.pageCount || '?'} pages`}
+                      secondary={`${pdf.totalPages || pdf.pageCount || pdf.numPages || '?'} pages`}
                       primaryTypographyProps={{
                         variant: 'body2',
                         fontWeight: selectedPdf?.id === pdf.id ? 600 : 400,
@@ -683,7 +683,7 @@ Provide a helpful, clear, and educational response.`;
                     </ListItemAvatar>
                     <ListItemText
                       primary={pdf.name}
-                      secondary={`${pdf.totalPages || 0} pages`}
+                      secondary={`${pdf.totalPages || pdf.pageCount || pdf.numPages || '?'} pages`}
                       primaryTypographyProps={{
                         variant: 'body2',
                         fontWeight: 500,
@@ -1410,7 +1410,7 @@ Provide a helpful, clear, and educational response.`;
                     </ListItemAvatar>
                     <ListItemText
                       primary={pdf.name}
-                      secondary={`${pdf.totalPages} pages`}
+                      secondary={`${pdf.totalPages || pdf.pageCount || pdf.numPages || '?'} pages`}
                     />
                   </ListItem>
                 ))}

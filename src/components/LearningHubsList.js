@@ -323,7 +323,7 @@ function LearningHubsList({ onBack, onOpenHub }) {
                             sx={{ bgcolor: '#f5f5f5', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                           />
                           <Chip
-                            label={`${stats.totalPages} pages`}
+                            label={`${stats.totalPages || 0} pages`}
                             size="small"
                             sx={{ bgcolor: '#f5f5f5', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                           />
@@ -505,7 +505,7 @@ function LearningHubsList({ onBack, onOpenHub }) {
                         {pdf.name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {pdf.totalPages} pages
+                        {pdf.totalPages || pdf.pageCount || pdf.numPages || '?'} pages
                       </Typography>
                     </Box>
                   </ListItem>
@@ -635,7 +635,7 @@ function LearningHubsList({ onBack, onOpenHub }) {
                         {pdf.name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {pdf.totalPages} pages
+                        {pdf.totalPages || pdf.pageCount || pdf.numPages || '?'} pages
                       </Typography>
                     </Box>
                   </ListItem>
