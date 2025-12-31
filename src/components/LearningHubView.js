@@ -1443,6 +1443,7 @@ Provide a helpful, clear, and educational response.`;
         open={showFlashcards}
         onClose={() => setShowFlashcards(false)}
         userId={user?.uid}
+        fullScreen={isMobile}
       />
 
       {/* Timeline Dialog */}
@@ -1450,6 +1451,7 @@ Provide a helpful, clear, and educational response.`;
         open={showTimeline}
         onClose={() => setShowTimeline(false)}
         userId={user?.uid}
+        fullScreen={isMobile}
         onOpenPdfAtPage={(pdf, page) => {
           setShowTimeline(false);
           if (onOpenPdf) {
@@ -1463,6 +1465,7 @@ Provide a helpful, clear, and educational response.`;
         open={showMathLab}
         onClose={() => setShowMathLab(false)}
         user={user}
+        fullScreen={isMobile}
       />
 
       {/* Chemistry Dialog */}
@@ -1470,6 +1473,7 @@ Provide a helpful, clear, and educational response.`;
         open={showChemistry}
         onClose={() => setShowChemistry(false)}
         user={user}
+        fullScreen={isMobile}
       />
 
       {/* Physics Dialog */}
@@ -1477,6 +1481,7 @@ Provide a helpful, clear, and educational response.`;
         open={showPhysics}
         onClose={() => setShowPhysics(false)}
         user={user}
+        fullScreen={isMobile}
       />
 
       {/* Code Editor Dialog */}
@@ -1484,6 +1489,7 @@ Provide a helpful, clear, and educational response.`;
         open={showCode}
         onClose={() => setShowCode(false)}
         user={user}
+        fullScreen={isMobile}
       />
 
       {/* Globe Viewer Dialog */}
@@ -1491,6 +1497,7 @@ Provide a helpful, clear, and educational response.`;
         open={showGlobe}
         onClose={() => setShowGlobe(false)}
         user={user}
+        fullScreen={isMobile}
       />
 
       {/* Mobile Study Tools Dialog */}

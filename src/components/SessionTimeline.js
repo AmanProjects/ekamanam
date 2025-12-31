@@ -62,7 +62,7 @@ import { getSessionHistory, getSessionDetails } from '../services/sessionHistory
  * - Insights and recommendations
  * - Clean data presentation (no 0s where data doesn't exist)
  */
-function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage }) {
+function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage, fullScreen = false }) {
   const [sessions, setSessions] = useState([]);
   const [groupedSessions, setGroupedSessions] = useState({});
   const [expandedBooks, setExpandedBooks] = useState({});
@@ -295,7 +295,8 @@ function SessionTimeline({ open, onClose, userId, onOpenPdfAtPage }) {
       onClose={onClose}
       maxWidth="lg"
       fullWidth
-      PaperProps={{ sx: { height: '90vh', maxHeight: '90vh' } }}
+      fullScreen={fullScreen}
+      PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh', maxHeight: fullScreen ? '100%' : '90vh' } }}
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -38,7 +38,7 @@ import {
  * Main interface for reviewing flashcards using spaced repetition.
  * Shows one card at a time with quality-based rating.
  */
-function FlashcardReview({ open, userId, onClose }) {
+function FlashcardReview({ open, userId, onClose, fullScreen = false }) {
   const [dueCards, setDueCards] = useState([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -183,8 +183,9 @@ Accuracy: ${Math.round(((sessionStats.correct + 1) / (sessionStats.reviewed + 1)
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      fullScreen={fullScreen}
       PaperProps={{
-        sx: { minHeight: '70vh', maxHeight: '90vh' }
+        sx: { minHeight: fullScreen ? '100%' : '70vh', maxHeight: fullScreen ? '100%' : '90vh', height: fullScreen ? '100%' : 'auto' }
       }}
     >
       <DialogContent sx={{ p: 0 }}>

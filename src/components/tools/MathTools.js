@@ -2972,7 +2972,7 @@ const APCalculator = () => {
 };
 
 // ==================== MAIN COMPONENT ====================
-function MathTools({ open, onClose }) {
+function MathTools({ open, onClose, fullScreen = false }) {
   const [selectedClass, setSelectedClass] = useState(1);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -3071,7 +3071,7 @@ function MathTools({ open, onClose }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { height: '90vh' } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}>
       <DialogTitle sx={{ 
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         bgcolor: currentClass?.color || '#1976d2', color: 'white', py: 1.5

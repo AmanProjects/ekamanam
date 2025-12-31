@@ -2282,7 +2282,7 @@ function VyonnChemistryIcon({ size = 40 }) {
   );
 }
 
-function ChemistryTools({ open, onClose, user, vyonnContext }) {
+function ChemistryTools({ open, onClose, user, vyonnContext, fullScreen = false }) {
   const [activeTab, setActiveTab] = useState(0);
   const [moleculeName, setMoleculeName] = useState('caffeine');
   const [loading, setLoading] = useState(false);
@@ -2595,7 +2595,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Chem
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { height: '90vh' } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}>
       <DialogTitle sx={{ 
         display: 'flex', 
         alignItems: 'center', 

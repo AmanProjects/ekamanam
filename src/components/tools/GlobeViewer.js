@@ -319,7 +319,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
   );
 }
 
-function GlobeViewer({ open, onClose, user }) {
+function GlobeViewer({ open, onClose, user, fullScreen = false }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md')); // v10.4.13: Mobile detection
   
@@ -502,7 +502,8 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode! Loca
       onClose={onClose} 
       maxWidth="lg" 
       fullWidth
-      PaperProps={{ sx: { height: '90vh' } }}
+      fullScreen={fullScreen}
+      PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}
     >
       <DialogTitle sx={{ 
         display: 'flex', 

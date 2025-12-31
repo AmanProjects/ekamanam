@@ -338,7 +338,7 @@ function VyonnScienceIcon({ size = 40 }) {
   );
 }
 
-function PhysicsSimulator({ open, onClose, user }) {
+function PhysicsSimulator({ open, onClose, user, fullScreen = false }) {
   const canvasRef = useRef(null);
   const engineRef = useRef(null);
   const renderRef = useRef(null);
@@ -618,7 +618,7 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { height: '92vh', borderRadius: 3 } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { height: fullScreen ? '100%' : '92vh', borderRadius: fullScreen ? 0 : 3 } }}>
       {/* Header */}
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #1976d2 0%, #0d47a1 100%)', color: 'white', py: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>

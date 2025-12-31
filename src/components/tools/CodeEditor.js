@@ -301,7 +301,7 @@ ${isRegional ? `Write explanations in ${lang}, but code examples can remain in p
   );
 }
 
-function CodeEditor({ open, onClose, user }) {
+function CodeEditor({ open, onClose, user, fullScreen = false }) {
   const [activeTab, setActiveTab] = useState(0);
   const [language, setLanguage] = useState('javascript');
   const [code, setCode] = useState(codeTemplates.javascript);
@@ -383,7 +383,8 @@ function CodeEditor({ open, onClose, user }) {
       onClose={onClose} 
       maxWidth="lg" 
       fullWidth
-      PaperProps={{ sx: { height: '90vh' } }}
+      fullScreen={fullScreen}
+      PaperProps={{ sx: { height: fullScreen ? '100%' : '90vh' } }}
     >
       <DialogTitle sx={{
         display: 'flex',
