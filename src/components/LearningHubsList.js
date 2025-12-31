@@ -166,15 +166,22 @@ function LearningHubsList({ onBack, onOpenHub }) {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa' }}>
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <IconButton onClick={onBack} sx={{ bgcolor: 'white' }}>
+        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: { xs: 'flex-start', sm: 'center' }, 
+            justifyContent: 'space-between', 
+            mb: 2,
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 2
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
+              <IconButton onClick={onBack} sx={{ bgcolor: 'white' }} size="small">
                 <BackIcon />
               </IconButton>
-              <Typography variant="h4" fontWeight={600}>
+              <Typography variant={{ xs: 'h5', sm: 'h4' }} fontWeight={600}>
                 My Learning Hubs
               </Typography>
             </Box>
@@ -182,19 +189,22 @@ function LearningHubsList({ onBack, onOpenHub }) {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setCreateDialogOpen(true)}
+              size={{ xs: 'medium', sm: 'large' }}
+              fullWidth={{ xs: true, sm: false }}
               sx={{
                 borderRadius: 2,
-                px: 3,
-                py: 1.5,
+                px: { xs: 2, sm: 3 },
+                py: { xs: 1, sm: 1.5 },
                 textTransform: 'none',
-                fontSize: '1rem',
+                fontSize: { xs: '0.9rem', sm: '1rem' },
                 boxShadow: 2
               }}
             >
-              Create New Hub
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Create New Hub</Box>
+              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>New Hub</Box>
             </Button>
           </Box>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
             Organize your PDFs into focused Learning Hubs for better learning
           </Typography>
         </Box>
@@ -204,25 +214,27 @@ function LearningHubsList({ onBack, onOpenHub }) {
           <Paper
             elevation={0}
             sx={{
-              p: 8,
+              p: { xs: 4, sm: 8 },
               textAlign: 'center',
               border: '2px dashed #e0e0e0',
               borderRadius: 3,
               bgcolor: 'white'
             }}
           >
-            <FolderIcon sx={{ fontSize: 80, color: '#bdbdbd', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
+            <FolderIcon sx={{ fontSize: { xs: 60, sm: 80 }, color: '#bdbdbd', mb: 2 }} />
+            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
               No Learning Hubs Yet
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
               Create your first Learning Hub to organize your study materials
             </Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setCreateDialogOpen(true)}
-              size="large"
+              size={{ xs: 'medium', sm: 'large' }}
+              fullWidth={{ xs: true, sm: false }}
+              sx={{ maxWidth: { xs: '100%', sm: 'auto' } }}
             >
               Create Your First Hub
             </Button>
@@ -231,7 +243,7 @@ function LearningHubsList({ onBack, onOpenHub }) {
 
         {/* Hubs Grid */}
         {!loading && hubs.length > 0 && (
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {hubs.map((hub) => {
               const stats = getHubStats(hub);
               return (
@@ -249,16 +261,16 @@ function LearningHubsList({ onBack, onOpenHub }) {
                       }
                     }}
                   >
-                    <CardContent sx={{ p: 3 }}>
+                    <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                       {/* Hub Header */}
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
                         <Avatar
                           sx={{
                             bgcolor: hub.color,
-                            width: 56,
-                            height: 56,
-                            fontSize: '2rem',
-                            mr: 2
+                            width: { xs: 48, sm: 56 },
+                            height: { xs: 48, sm: 56 },
+                            fontSize: { xs: '1.75rem', sm: '2rem' },
+                            mr: { xs: 1.5, sm: 2 }
                           }}
                         >
                           {hub.icon}
@@ -268,6 +280,7 @@ function LearningHubsList({ onBack, onOpenHub }) {
                             variant="h6"
                             fontWeight={600}
                             sx={{
+                              fontSize: { xs: '1rem', sm: '1.25rem' },
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap'
@@ -281,6 +294,7 @@ function LearningHubsList({ onBack, onOpenHub }) {
                               color="text.secondary"
                               sx={{
                                 mt: 0.5,
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 display: '-webkit-box',
@@ -296,38 +310,38 @@ function LearningHubsList({ onBack, onOpenHub }) {
                           size="small"
                           onClick={(e) => handleMenuOpen(e, hub)}
                         >
-                          <MoreIcon />
+                          <MoreIcon fontSize="small" />
                         </IconButton>
                       </Box>
 
                       {/* Stats */}
-                      <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #f0f0f0' }}>
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                      <Box sx={{ mt: { xs: 2, sm: 3 }, pt: 2, borderTop: '1px solid #f0f0f0' }}>
+                        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                           <Chip
                             label={`${stats.pdfCount} ${stats.pdfCount === 1 ? 'PDF' : 'PDFs'}`}
                             size="small"
-                            sx={{ bgcolor: '#f5f5f5' }}
+                            sx={{ bgcolor: '#f5f5f5', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                           />
                           <Chip
                             label={`${stats.totalPages} pages`}
                             size="small"
-                            sx={{ bgcolor: '#f5f5f5' }}
+                            sx={{ bgcolor: '#f5f5f5', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                           />
                         </Box>
                         {stats.pdfCount > 0 && (
                           <Box sx={{ mb: 2 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                                 Progress
                               </Typography>
-                              <Typography variant="caption" fontWeight={600}>
+                              <Typography variant="caption" fontWeight={600} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                                 {stats.avgProgress}%
                               </Typography>
                             </Box>
                             <LinearProgress
                               variant="determinate"
                               value={stats.avgProgress}
-                              sx={{ height: 6, borderRadius: 1 }}
+                              sx={{ height: { xs: 5, sm: 6 }, borderRadius: 1 }}
                             />
                           </Box>
                         )}
@@ -337,10 +351,12 @@ function LearningHubsList({ onBack, onOpenHub }) {
                           fullWidth
                           variant="contained"
                           onClick={() => onOpenHub(hub)}
+                          size={{ xs: 'small', sm: 'medium' }}
                           sx={{
                             borderRadius: 2,
                             textTransform: 'none',
-                            fontWeight: 600
+                            fontWeight: 600,
+                            fontSize: { xs: '0.8rem', sm: '0.875rem' }
                           }}
                         >
                           Open Hub
@@ -390,9 +406,15 @@ function LearningHubsList({ onBack, onOpenHub }) {
         onClose={() => setCreateDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: 0, sm: 2 },
+            maxHeight: { xs: '100%', sm: 'calc(100% - 64px)' }
+          }
+        }}
       >
-        <DialogTitle>Create New Learning Hub</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>Create New Learning Hub</DialogTitle>
+        <DialogContent sx={{ pb: { xs: 1, sm: 2 } }}>
           <TextField
             autoFocus
             label="Hub Name"
@@ -414,19 +436,19 @@ function LearningHubsList({ onBack, onOpenHub }) {
           />
           
           {/* Icon Selection */}
-          <Typography variant="subtitle2" gutterBottom>
+          <Typography variant="subtitle2" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
             Choose an Icon
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: { xs: 0.75, sm: 1 }, mb: 3, flexWrap: 'wrap' }}>
             {HUB_ICONS.map((icon) => (
               <IconButton
                 key={icon}
                 onClick={() => setHubForm({ ...hubForm, icon })}
                 sx={{
                   border: hubForm.icon === icon ? '2px solid #2196F3' : '1px solid #e0e0e0',
-                  fontSize: '1.5rem',
-                  width: 48,
-                  height: 48
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                  width: { xs: 42, sm: 48 },
+                  height: { xs: 42, sm: 48 }
                 }}
               >
                 {icon}
@@ -435,18 +457,18 @@ function LearningHubsList({ onBack, onOpenHub }) {
           </Box>
 
           {/* Color Selection */}
-          <Typography variant="subtitle2" gutterBottom>
+          <Typography variant="subtitle2" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
             Choose a Color
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+          <Box sx={{ display: 'flex', gap: { xs: 0.75, sm: 1 }, mb: 3, flexWrap: 'wrap' }}>
             {HUB_COLORS.map((color) => (
               <IconButton
                 key={color}
                 onClick={() => setHubForm({ ...hubForm, color })}
                 sx={{
                   bgcolor: color,
-                  width: 40,
-                  height: 40,
+                  width: { xs: 36, sm: 40 },
+                  height: { xs: 36, sm: 40 },
                   border: hubForm.color === color ? '3px solid black' : 'none',
                   '&:hover': { bgcolor: color, opacity: 0.8 }
                 }}
@@ -457,7 +479,7 @@ function LearningHubsList({ onBack, onOpenHub }) {
           </Box>
 
           {/* PDF Selection */}
-          <Typography variant="subtitle2" gutterBottom>
+          <Typography variant="subtitle2" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
             Add PDFs to Hub (optional)
           </Typography>
           <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto', mb: 2 }}>
@@ -516,9 +538,15 @@ function LearningHubsList({ onBack, onOpenHub }) {
         onClose={() => setEditDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: 0, sm: 2 },
+            maxHeight: { xs: '100%', sm: 'calc(100% - 64px)' }
+          }
+        }}
       >
-        <DialogTitle>Edit Learning Hub</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>Edit Learning Hub</DialogTitle>
+        <DialogContent sx={{ pb: { xs: 1, sm: 2 } }}>
           <TextField
             autoFocus
             label="Hub Name"
@@ -538,19 +566,19 @@ function LearningHubsList({ onBack, onOpenHub }) {
           />
           
           {/* Icon Selection */}
-          <Typography variant="subtitle2" gutterBottom>
+          <Typography variant="subtitle2" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
             Choose an Icon
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: { xs: 0.75, sm: 1 }, mb: 3, flexWrap: 'wrap' }}>
             {HUB_ICONS.map((icon) => (
               <IconButton
                 key={icon}
                 onClick={() => setHubForm({ ...hubForm, icon })}
                 sx={{
                   border: hubForm.icon === icon ? '2px solid #2196F3' : '1px solid #e0e0e0',
-                  fontSize: '1.5rem',
-                  width: 48,
-                  height: 48
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                  width: { xs: 42, sm: 48 },
+                  height: { xs: 42, sm: 48 }
                 }}
               >
                 {icon}
@@ -559,18 +587,18 @@ function LearningHubsList({ onBack, onOpenHub }) {
           </Box>
 
           {/* Color Selection */}
-          <Typography variant="subtitle2" gutterBottom>
+          <Typography variant="subtitle2" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
             Choose a Color
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+          <Box sx={{ display: 'flex', gap: { xs: 0.75, sm: 1 }, mb: 3, flexWrap: 'wrap' }}>
             {HUB_COLORS.map((color) => (
               <IconButton
                 key={color}
                 onClick={() => setHubForm({ ...hubForm, color })}
                 sx={{
                   bgcolor: color,
-                  width: 40,
-                  height: 40,
+                  width: { xs: 36, sm: 40 },
+                  height: { xs: 36, sm: 40 },
                   border: hubForm.color === color ? '3px solid black' : 'none',
                   '&:hover': { bgcolor: color, opacity: 0.8 }
                 }}
@@ -581,7 +609,7 @@ function LearningHubsList({ onBack, onOpenHub }) {
           </Box>
 
           {/* PDF Selection */}
-          <Typography variant="subtitle2" gutterBottom>
+          <Typography variant="subtitle2" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
             Manage PDFs in Hub
           </Typography>
           <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto', mb: 2 }}>
