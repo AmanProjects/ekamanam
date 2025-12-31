@@ -56,7 +56,7 @@ import {
 import learningHubService from '../services/learningHubService';
 import libraryService from '../services/libraryService';
 import llmService from '../services/llmService';
-import { renderMarkdown } from '../utils/markdownRenderer';
+import { markdownToHtml } from '../utils/markdownRenderer';
 
 function LearningHubView({ 
   hub, 
@@ -389,7 +389,7 @@ Provide a helpful, clear, and educational response.`;
                   {msg.role === 'user' ? (
                     <Typography variant="body2">{msg.content}</Typography>
                   ) : (
-                    <div dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
+                    <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
                   )}
                 </Paper>
                 {msg.role === 'user' && (
