@@ -84,8 +84,9 @@ function LearningHubView({
   const [pdfDocument, setPdfDocument] = useState(null);
   const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pageText, setPageText] = useState('');
   
-  // Study Materials tab state (for AIModePanel)
+  // Study Materials tab state (for AIModePanel + Hub Chat)
   const [studyTab, setStudyTab] = useState(0);
   
   // Resizable panels state
@@ -317,6 +318,11 @@ Provide a helpful, clear, and educational response.`;
     setSelectedPdf(null);
   };
 
+  // Extract page text when PDF page changes (for Learn/Explain tabs)
+  const handlePageTextExtract = (text) => {
+    setPageText(text);
+  };
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
       {/* Main Content - 4 Panel Layout */}
@@ -445,7 +451,7 @@ Provide a helpful, clear, and educational response.`;
               currentPage={pdfCurrentPage}
               setCurrentPage={setPdfCurrentPage}
               onTextSelect={() => {}}
-              onPageTextExtract={() => {}}
+              onPageTextExtract={handlePageTextExtract}
             />
           ) : (
             <Box sx={{ 
@@ -545,12 +551,12 @@ Provide a helpful, clear, and educational response.`;
 
           <Tooltip title="Hub Chat" placement="right">
             <IconButton
-              onClick={() => setStudyTab(4)}
+              onClick={() => setStudyTab(10)}
               sx={{
-                bgcolor: studyTab === 4 ? 'primary.main' : 'transparent',
-                color: studyTab === 4 ? 'white' : 'text.secondary',
+                bgcolor: studyTab === 10 ? 'primary.main' : 'transparent',
+                color: studyTab === 10 ? 'white' : 'text.secondary',
                 '&:hover': {
-                  bgcolor: studyTab === 4 ? 'primary.dark' : 'action.hover',
+                  bgcolor: studyTab === 10 ? 'primary.dark' : 'action.hover',
                 }
               }}
             >
@@ -588,7 +594,7 @@ Provide a helpful, clear, and educational response.`;
           }}
         />
 
-        {/* RIGHT PANEL: AI Mode Panel Content (NO TABS, JUST CONTENT) */}
+        {/* RIGHT PANEL: AI Mode Panel Content OR Hub Chat */}
         <Box
           sx={{
             width: rightPanelWidth,
@@ -606,26 +612,125 @@ Provide a helpful, clear, and educational response.`;
           }}
         >
           {pdfFile && pdfDocument ? (
-            <AIModePanel
-              currentPage={pdfCurrentPage}
-              totalPages={pdfDocument?.numPages || 0}
-              pdfId={selectedPdf?.id}
-              selectedText=""
-              pageText=""
-              user={user}
-              pdfDocument={pdfDocument}
-              activeTab={studyTab}
-              onTabChange={setStudyTab}
-              vyonnQuery={null}
-              onVyonnQueryUsed={() => {}}
-              subscription={subscription}
-              onUpgrade={onUpgrade}
-              isMobile={false}
-              onAIQuery={() => {}}
-              pdfMetadata={selectedPdf}
-              onOpenSettings={() => {}}
-              sourceHub={hubData}
-            />
+            studyTab === 10 ? (
+              // Hub Chat (Custom Implementation)
+              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 3 }}>
+                <Typography variant="h6" gutterBottom>Hub Chat</Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  Chat with all PDFs in this hub
+                </Typography>
+                
+                {/* Chat Messages */}
+                <Box sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
+                  {messages.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', mt: 4 }}>
+                      <VyonnIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Start a conversation
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Ask questions about the materials in this hub
+                      </Typography>
+                    </Box>
+                  ) : (
+                    messages.map((msg, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                          mb: 2,
+                        }}
+                      >
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 1.5,
+                            maxWidth: '85%',
+                            bgcolor: msg.role === 'user' ? 'primary.main' : 'grey.100',
+                            color: msg.role === 'user' ? 'white' : 'text.primary',
+                            fontSize: '0.875rem',
+                            borderRadius: 2
+                          }}
+                        >
+                          {msg.role === 'user' ? (
+                            <Typography variant="body2">{msg.content}</Typography>
+                          ) : (
+                            <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
+                          )}
+                        </Paper>
+                      </Box>
+                    ))
+                  )}
+                  {chatLoading && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={20} />
+                      <Typography variant="caption" color="text.secondary">
+                        Thinking...
+                      </Typography>
+                    </Box>
+                  )}
+                  <div ref={chatEndRef} />
+                </Box>
+
+                {/* Chat Input */}
+                <Box>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    multiline
+                    maxRows={3}
+                    placeholder="Ask about hub materials..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    disabled={chatLoading}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={handleSendMessage}
+                            disabled={!input.trim() || chatLoading}
+                          >
+                            {chatLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Box>
+              </Box>
+            ) : (
+              // AIModePanel for other tabs
+              <AIModePanel
+                currentPage={pdfCurrentPage}
+                totalPages={pdfDocument?.numPages || 0}
+                pdfId={selectedPdf?.id}
+                selectedText=""
+                pageText={pageText}
+                user={user}
+                pdfDocument={pdfDocument}
+                activeTab={studyTab}
+                onTabChange={setStudyTab}
+                vyonnQuery={null}
+                onVyonnQueryUsed={() => {}}
+                subscription={subscription}
+                onUpgrade={onUpgrade}
+                isMobile={false}
+                onAIQuery={() => {}}
+                pdfMetadata={selectedPdf}
+                onOpenSettings={() => {}}
+                sourceHub={hubData}
+              />
+            )
           ) : (
             <Box sx={{ 
               display: 'flex', 
