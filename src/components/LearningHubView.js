@@ -38,7 +38,8 @@ import {
   Fab,
   SpeedDial,
   SpeedDialAction,
-  SpeedDialIcon
+  SpeedDialIcon,
+  Chip
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -296,30 +297,33 @@ function LearningHubView({
           ).join('\n')
         : '';
 
-      const systemPrompt = `You are Vyonn AI, an intelligent learning assistant specializing in this Learning Hub. ${hubContext}
+      const systemPrompt = `You are Vyonn AI, an intelligent learning assistant for this Learning Hub. ${hubContext}
 
-IMPORTANT: Your primary role is to help with questions RELATED TO THE PDFs IN THIS HUB.
+Your role: Help students understand and learn from their study materials. Answer questions about ANY topics covered in or related to the PDF materials in this hub.
 
-If the user asks about topics NOT related to the hub's PDFs:
-1. Politely acknowledge their question
-2. Provide a brief, helpful response if you can
-3. ALWAYS remind them: "This question seems to be outside the scope of this Learning Hub's materials. I'm here primarily to help with: [list PDF names]. Feel free to ask anything about these materials!"
+IMPORTANT GUIDELINES:
+- If the question is about a topic that COULD BE in the PDFs (physics, chemistry, math, etc.), answer it helpfully
+- Students often ask conceptual questions about topics they're studying - this is NORMAL and ENCOURAGED
+- Only mention "outside scope" if the question is completely unrelated (e.g., cooking recipes when studying physics)
+- Be a helpful tutor, not a gatekeeper
 
-You have access to these interactive labs and tools:
-- Math Lab: For calculations, equations, graphing
-- Chemistry Tools: 3D molecules, periodic table, reactions
-- Physics Simulator: Circuits, mechanics, waves
-- Code Editor: Programming practice
-- Globe Viewer: Geography, maps
+INTERACTIVE TOOLS AVAILABLE:
+When a specific tool would help visualize or explore the concept, suggest it using this EXACT format:
 
-If the user's question would benefit from using a specific lab or tool, mention it naturally in your response.
+"You can use the [TOOL:Math Lab] to practice these calculations!"
+"Try the [TOOL:Physics Simulator] to see this in action!"
+"Explore this with [TOOL:Chemistry Tools] for 3D visualization!"
+"Use [TOOL:Code Editor] to write and test code!"
+"Discover more with [TOOL:Globe Viewer]!"
+
+Available tools: Math Lab, Chemistry Tools, Physics Simulator, Code Editor, Globe Viewer
 
 Recent conversation:
 ${conversationContext}
 
 User's question: ${userMessage}
 
-Provide a helpful, clear, and educational response.`;
+Provide a helpful, clear, and educational response. If relevant, suggest an interactive tool using the [TOOL:ToolName] format.`;
 
       const response = await llmService.callLLM(systemPrompt);
       
@@ -333,6 +337,47 @@ Provide a helpful, clear, and educational response.`;
     } finally {
       setChatLoading(false);
     }
+  };
+
+  // Function to render message content with clickable tool links
+  const renderMessageWithTools = (content) => {
+    // Split content by [TOOL:ToolName] pattern
+    const parts = content.split(/(\[TOOL:[^\]]+\])/g);
+    
+    return parts.map((part, index) => {
+      // Check if this part is a tool link
+      const toolMatch = part.match(/\[TOOL:([^\]]+)\]/);
+      if (toolMatch) {
+        const toolName = toolMatch[1];
+        return (
+          <Chip
+            key={index}
+            label={toolName}
+            color="primary"
+            size="small"
+            clickable
+            icon={
+              toolName === 'Math Lab' ? <MathIcon /> :
+              toolName === 'Chemistry Tools' ? <ChemistryIcon /> :
+              toolName === 'Physics Simulator' ? <PhysicsIcon /> :
+              toolName === 'Code Editor' ? <CodeIcon /> :
+              toolName === 'Globe Viewer' ? <GlobeIcon /> :
+              null
+            }
+            onClick={() => {
+              if (toolName === 'Math Lab') setShowMathLab(true);
+              else if (toolName === 'Chemistry Tools') setShowChemistry(true);
+              else if (toolName === 'Physics Simulator') setShowPhysics(true);
+              else if (toolName === 'Code Editor') setShowCode(true);
+              else if (toolName === 'Globe Viewer') setShowGlobe(true);
+            }}
+            sx={{ mx: 0.5, cursor: 'pointer', fontWeight: 600 }}
+          />
+        );
+      }
+      // Regular text - convert markdown to HTML
+      return <span key={index} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+    });
   };
 
   const handleAddPdf = async (pdfId) => {
@@ -1204,9 +1249,13 @@ Provide a helpful, clear, and educational response.`;
                             <Box sx={{ 
                               fontSize: '0.875rem',
                               '& p': { mb: 0.5 },
-                              '& ul, & ol': { pl: 2, mb: 0.5 }
+                              '& ul, & ol': { pl: 2, mb: 0.5 },
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              alignItems: 'center',
+                              gap: 0.5
                             }}>
-                              <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
+                              {renderMessageWithTools(msg.content)}
                             </Box>
                           )}
                         </Paper>
@@ -1638,14 +1687,18 @@ Provide a helpful, clear, and educational response.`;
                                 borderRadius: 2
                               }}
                             >
-                              <Typography 
-                                variant="body2" 
+                              <Box 
                                 sx={{ 
                                   whiteSpace: 'pre-wrap',
-                                  fontSize: '0.875rem'
+                                  fontSize: '0.875rem',
+                                  display: 'flex',
+                                  flexWrap: 'wrap',
+                                  alignItems: 'center',
+                                  gap: 0.5
                                 }}
-                                dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }}
-                              />
+                              >
+                                {msg.role === 'user' ? msg.content : renderMessageWithTools(msg.content)}
+                              </Box>
                             </Paper>
                           </Box>
                         ))
