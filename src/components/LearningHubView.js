@@ -47,7 +47,8 @@ import {
   Notes as NotesIcon,
   MenuBook as StudyIcon,
   ChatBubbleOutline as ChatBubbleIcon,
-  CloudUpload as UploadIcon
+  CloudUpload as UploadIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService, { loadPDFData } from '../services/libraryService';
@@ -990,7 +991,16 @@ Provide a helpful, clear, and educational response.`;
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Add PDF to Hub</DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          Add PDF to Hub
+          <IconButton
+            onClick={() => setAddPdfDialogOpen(false)}
+            size="small"
+            sx={{ color: 'text.secondary' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           {/* Upload Option */}
           <Box
