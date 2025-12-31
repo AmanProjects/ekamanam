@@ -32,7 +32,8 @@ import {
   Speed as SpeedIcon,
   Public as GravityIcon,
   Image as DiagramIcon,
-  SmartToy as VyonnIcon
+  SmartToy as VyonnIcon,
+  Bolt as PhysicsIcon
 } from '@mui/icons-material';
 import Matter from 'matter-js';
 import { callLLM } from '../../services/llmService';
@@ -686,12 +687,29 @@ ${matchedExp ? 'I will run a physics simulation.' : ''}`;
             <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
               {chatHistory.length === 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
-                  <VyonnScienceIcon size={64} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
-                    Welcome to Vyonn Science Lab! ⚛️
+                  <PhysicsIcon 
+                    sx={{ 
+                      fontSize: 64, 
+                      color: '#1976d2', 
+                      mb: 2,
+                      animation: 'pulse 2s ease-in-out infinite',
+                      '@keyframes pulse': {
+                        '0%, 100%': {
+                          opacity: 1,
+                          transform: 'scale(1)',
+                        },
+                        '50%': {
+                          opacity: 0.6,
+                          transform: 'scale(1.05)',
+                        }
+                      }
+                    }} 
+                  />
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    Start a conversation
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Ask me anything about physics - motion, forces, energy, light, electricity, magnetism, and more!
+                    Ask questions about physics
                   </Typography>
                 </Box>
               ) : (

@@ -3284,7 +3284,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {chatHistory.length === 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
-            <ChatBubbleIcon 
+            <MathIcon 
               sx={{ 
                 fontSize: 64, 
                 color: 'primary.main', 
@@ -5354,7 +5354,7 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
             <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
               {chatHistory.length === 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
-                  <ChatBubbleIcon 
+                  <MathIcon 
                     sx={{ 
                       fontSize: 64, 
                       color: 'primary.main', 
