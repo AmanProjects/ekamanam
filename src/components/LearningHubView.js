@@ -428,7 +428,7 @@ Provide a helpful, clear, and educational response.`;
         </Paper>
 
         {/* CENTER PANEL: PDF Viewer (reusing existing PDFViewer component) */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#525659', position: 'relative' }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#525659', position: 'relative', minWidth: 0, minHeight: 0 }}>
           {pdfLoading ? (
             <Box sx={{ 
               display: 'flex', 
@@ -444,15 +444,17 @@ Provide a helpful, clear, and educational response.`;
               </Typography>
             </Box>
           ) : pdfFile ? (
-            <PDFViewer
-              selectedFile={pdfFile}
-              pdfDocument={pdfDocument}
-              setPdfDocument={setPdfDocument}
-              currentPage={pdfCurrentPage}
-              setCurrentPage={setPdfCurrentPage}
-              onTextSelect={() => {}}
-              onPageTextExtract={handlePageTextExtract}
-            />
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              <PDFViewer
+                selectedFile={pdfFile}
+                pdfDocument={pdfDocument}
+                setPdfDocument={setPdfDocument}
+                currentPage={pdfCurrentPage}
+                setCurrentPage={setPdfCurrentPage}
+                onTextSelect={() => {}}
+                onPageTextExtract={handlePageTextExtract}
+              />
+            </Box>
           ) : (
             <Box sx={{ 
               display: 'flex', 
