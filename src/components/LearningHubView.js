@@ -32,7 +32,13 @@ import {
   LinearProgress,
   useMediaQuery,
   useTheme,
-  Drawer
+  Drawer,
+  BottomNavigation,
+  BottomNavigationAction,
+  Fab,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -88,6 +94,7 @@ function LearningHubView({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   
   const [hubData, setHubData] = useState(hub);
   const [hubPdfs, setHubPdfs] = useState([]);
@@ -1449,6 +1456,305 @@ Provide a helpful, clear, and educational response.`;
         onClose={() => setShowGlobe(false)}
         user={user}
       />
+
+      {/* Mobile Study Tools Dialog */}
+      {isMobile && (
+        <Dialog
+          fullScreen
+          open={mobileToolsOpen}
+          onClose={() => setMobileToolsOpen(false)}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* Dialog Header */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              px: 2, 
+              py: 1.5, 
+              bgcolor: 'primary.main', 
+              color: 'white',
+              boxShadow: 2
+            }}>
+              <IconButton edge="start" color="inherit" onClick={() => setMobileToolsOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+              <StudyIcon sx={{ ml: 1, mr: 1 }} />
+              <Typography variant="h6" sx={{ flex: 1 }}>
+                Study Materials
+              </Typography>
+            </Box>
+
+            {/* Dialog Content */}
+            <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#f5f5f5' }}>
+              {pdfFile && pdfDocument ? (
+                studyTab === 10 ? (
+                  // Hub Chat (Custom Implementation - Compact & Voice-Enabled)
+                  <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 2 }}>
+                    {/* Compact Header with Clear Button */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          Hub Chat
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Chat with all PDFs in this hub
+                        </Typography>
+                      </Box>
+                      {messages.length > 0 && (
+                        <Tooltip title="Clear conversation">
+                          <IconButton size="small" onClick={() => setMessages([])}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+
+                    {/* Chat Messages */}
+                    <Box sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
+                      {messages.length === 0 ? (
+                        <Box sx={{ textAlign: 'center', py: 8 }}>
+                          <ChatBubbleIcon 
+                            sx={{ 
+                              fontSize: 56, 
+                              color: 'primary.main', 
+                              mb: 2,
+                              animation: 'pulse 2s ease-in-out infinite',
+                              '@keyframes pulse': {
+                                '0%, 100%': {
+                                  opacity: 1,
+                                  transform: 'scale(1)',
+                                },
+                                '50%': {
+                                  opacity: 0.6,
+                                  transform: 'scale(1.05)',
+                                }
+                              }
+                            }} 
+                          />
+                          <Typography variant="body1" color="text.secondary" gutterBottom>
+                            Start a conversation
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Ask questions about your PDFs
+                          </Typography>
+                        </Box>
+                      ) : (
+                        messages.map((msg, idx) => (
+                          <Box key={idx} sx={{ mb: 2, display: 'flex', gap: 1.5 }}>
+                            <Avatar sx={{ bgcolor: msg.role === 'user' ? 'primary.main' : 'grey.400', width: 32, height: 32 }}>
+                              {msg.role === 'user' ? 'U' : <VyonnIcon fontSize="small" />}
+                            </Avatar>
+                            <Paper 
+                              elevation={0}
+                              sx={{ 
+                                flex: 1, 
+                                p: 1.5, 
+                                bgcolor: msg.role === 'user' ? 'primary.50' : 'grey.100',
+                                borderRadius: 2
+                              }}
+                            >
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  whiteSpace: 'pre-wrap',
+                                  fontSize: '0.875rem'
+                                }}
+                                dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }}
+                              />
+                            </Paper>
+                          </Box>
+                        ))
+                      )}
+                      <div ref={chatEndRef} />
+                    </Box>
+
+                    {/* Chat Input with Voice */}
+                    <Paper elevation={3} sx={{ border: '2px solid', borderColor: 'primary.main', borderRadius: 2, p: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                        <TextField
+                          fullWidth
+                          multiline
+                          maxRows={4}
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          placeholder="Ask about your PDFs..."
+                          variant="standard"
+                          disabled={chatLoading}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                            }
+                          }}
+                          InputProps={{
+                            disableUnderline: true,
+                          }}
+                          sx={{ 
+                            '& .MuiInputBase-input': { 
+                              fontSize: '0.9rem',
+                              py: 0.5
+                            }
+                          }}
+                        />
+                        <VoiceInputButton
+                          onTranscript={(text) => setInput((prev) => prev + ' ' + text)}
+                          disabled={chatLoading}
+                        />
+                        <Button
+                          variant="contained"
+                          onClick={handleSendMessage}
+                          disabled={!input.trim() || chatLoading}
+                          sx={{ 
+                            minWidth: 'auto',
+                            px: 2,
+                            py: 1,
+                            height: 40,
+                            boxShadow: 3
+                          }}
+                        >
+                          {chatLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                        </Button>
+                      </Box>
+                    </Paper>
+                  </Box>
+                ) : (
+                  // Use AIModePanel for other tools
+                  <AIModePanel
+                    currentPage={pdfCurrentPage}
+                    totalPages={pdfDocument?.numPages || 0}
+                    pdfId={selectedPdf?.id}
+                    selectedText={''}
+                    pageText={pageText}
+                    user={user}
+                    pdfDocument={pdfDocument}
+                    subscription={subscription}
+                    onUpgrade={onUpgrade}
+                    sourceHub={studyTab === 5 ? null : {
+                      id: hubData.id,
+                      name: hubData.name,
+                      pdfs: hubPdfs
+                    }}
+                    initialTab={studyTab}
+                  />
+                )
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 8, px: 3 }}>
+                  <PdfIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
+                  <Typography variant="h6" gutterBottom>
+                    No PDF Selected
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Please select a PDF from the menu to use study tools
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Dialog>
+      )}
+
+      {/* Mobile Floating Action Menu - Tools */}
+      {isMobile && pdfFile && (
+        <SpeedDial
+          ariaLabel="Study Tools"
+          sx={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+            '& .MuiFab-primary': {
+              bgcolor: 'primary.main',
+              '&:hover': {
+                bgcolor: 'primary.dark'
+              }
+            }
+          }}
+          icon={<SpeedDialIcon icon={<StudyIcon />} />}
+        >
+          <SpeedDialAction
+            icon={<LearnIcon />}
+            tooltipTitle="Learn"
+            onClick={() => {
+              setStudyTab(0);
+              setMobileToolsOpen(true);
+            }}
+          />
+          <SpeedDialAction
+            icon={<ExplainIcon />}
+            tooltipTitle="Explain"
+            onClick={() => {
+              setStudyTab(1);
+              setMobileToolsOpen(true);
+            }}
+          />
+          <SpeedDialAction
+            icon={<ActivitiesIcon />}
+            tooltipTitle="Activities"
+            onClick={() => {
+              setStudyTab(2);
+              setMobileToolsOpen(true);
+            }}
+          />
+          <SpeedDialAction
+            icon={<ExamIcon />}
+            tooltipTitle="Exam"
+            onClick={() => {
+              setStudyTab(3);
+              setMobileToolsOpen(true);
+            }}
+          />
+          <SpeedDialAction
+            icon={<ChatIcon />}
+            tooltipTitle="Hub Chat"
+            onClick={() => {
+              setStudyTab(10);
+              setMobileToolsOpen(true);
+            }}
+          />
+          <SpeedDialAction
+            icon={<NotesIcon />}
+            tooltipTitle="Notes"
+            onClick={() => {
+              setStudyTab(5);
+              setMobileToolsOpen(true);
+            }}
+          />
+          <SpeedDialAction
+            icon={<FlashcardIcon />}
+            tooltipTitle="Flashcards"
+            onClick={() => setShowFlashcards(true)}
+          />
+          <SpeedDialAction
+            icon={<TimelineIcon />}
+            tooltipTitle="Journey"
+            onClick={() => setShowTimeline(true)}
+          />
+          <SpeedDialAction
+            icon={<MathIcon />}
+            tooltipTitle="Math"
+            onClick={() => setShowMathLab(true)}
+          />
+          <SpeedDialAction
+            icon={<ChemistryIcon />}
+            tooltipTitle="Chemistry"
+            onClick={() => setShowChemistry(true)}
+          />
+          <SpeedDialAction
+            icon={<PhysicsIcon />}
+            tooltipTitle="Physics"
+            onClick={() => setShowPhysics(true)}
+          />
+          <SpeedDialAction
+            icon={<CodeIcon />}
+            tooltipTitle="Code"
+            onClick={() => setShowCode(true)}
+          />
+          <SpeedDialAction
+            icon={<GlobeIcon />}
+            tooltipTitle="Globe"
+            onClick={() => setShowGlobe(true)}
+          />
+        </SpeedDial>
+      )}
     </Box>
   );
 }
