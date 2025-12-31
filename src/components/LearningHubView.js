@@ -529,25 +529,13 @@ Provide a helpful, clear, and educational response.`;
             borderRight: '1px solid #e0e0e0'
           }}
         >
-          {/* Icon Band Header (Matches other panels) */}
+          {/* Icon Band Header - Empty spacer to match other panel heights */}
           <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
             width: '100%',
             py: 1.5, 
             bgcolor: '#e0e0e0', 
             borderBottom: '1px solid #bdbdbd'
-          }}>
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                bgcolor: 'primary.main'
-              }}
-            />
-          </Box>
+          }} />
 
           {/* Tool Icons */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 2 }}>
