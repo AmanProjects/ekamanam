@@ -292,6 +292,11 @@ export async function getExperimentStats() {
  * Sync experiment to Google Drive
  */
 async function syncExperimentToDrive(experiment) {
+  // Drive sync for experiments coming soon! Currently saved locally only.
+  console.log('ℹ️ Experiment saved locally. Drive sync coming soon!');
+  return null;
+  
+  /* Temporarily disabled until Drive functions are added
   try {
     const { createFolder, uploadFile, listFilesInFolder } = await import('./googleDriveService');
     
@@ -323,29 +328,16 @@ async function syncExperimentToDrive(experiment) {
     console.error('❌ Drive sync failed:', error);
     throw error;
   }
+  */
 }
 
 /**
  * Delete experiment from Google Drive
  */
 async function deleteExperimentFromDrive(experimentId) {
-  try {
-    const { deleteFile, listFilesInFolder } = await import('./googleDriveService');
-    
-    const folderId = await getExperimentsFolderId();
-    if (!folderId) return;
-    
-    const files = await listFilesInFolder(folderId);
-    const file = files.find(f => f.name === `${experimentId}.json`);
-    
-    if (file) {
-      await deleteFile(file.id);
-      console.log('✅ Experiment deleted from Drive:', experimentId);
-    }
-  } catch (error) {
-    console.error('❌ Drive delete failed:', error);
-    throw error;
-  }
+  // Drive sync coming soon!
+  console.log('ℹ️ Experiment deleted locally. Drive sync coming soon!');
+  return null;
 }
 
 /**
@@ -353,20 +345,18 @@ async function deleteExperimentFromDrive(experimentId) {
  */
 async function getExperimentsFolderId() {
   try {
-    const { createFolder, listFiles } = await import('./googleDriveService');
+    const driveService = await import('./googleDriveService');
     
-    // Check if folder exists
-    const files = await listFiles(`name='${EXPERIMENTS_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-    
-    if (files.length > 0) {
-      return files[0].id;
+    // Check if required functions exist
+    if (!driveService.hasDrivePermissions || !driveService.hasDrivePermissions()) {
+      console.log('ℹ️ Drive permissions not available');
+      return null;
     }
     
-    // Create folder
-    const folderId = await createFolder(EXPERIMENTS_FOLDER_NAME);
-    console.log('✅ Created Experiments folder on Drive');
-    
-    return folderId;
+    // For now, experiments use a simple folder structure
+    // We'll implement full Drive integration in a future update
+    console.log('ℹ️ Experiments Drive sync not fully implemented yet');
+    return null;
   } catch (error) {
     console.error('❌ Failed to get/create Experiments folder:', error);
     return null;
@@ -377,6 +367,11 @@ async function getExperimentsFolderId() {
  * Load all experiments from Google Drive
  */
 export async function loadExperimentsFromDrive() {
+  // Drive sync coming soon!
+  console.log('ℹ️ Experiments are currently local only. Drive sync coming soon!');
+  return { success: false, error: 'Drive sync not yet implemented' };
+  
+  /* Temporarily disabled
   try {
     const { downloadFile, listFilesInFolder } = await import('./googleDriveService');
     
@@ -425,6 +420,7 @@ export async function loadExperimentsFromDrive() {
     console.error('❌ Failed to load experiments from Drive:', error);
     return { success: false, error: error.message };
   }
+  */
 }
 
 export default {
