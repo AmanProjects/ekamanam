@@ -189,15 +189,14 @@ function LearningHubsList({ onBack, onOpenHub }) {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setCreateDialogOpen(true)}
-              size={{ xs: 'medium', sm: 'large' }}
-              fullWidth={{ xs: true, sm: false }}
               sx={{
                 borderRadius: 2,
                 px: { xs: 2, sm: 3 },
                 py: { xs: 1, sm: 1.5 },
                 textTransform: 'none',
                 fontSize: { xs: '0.9rem', sm: '1rem' },
-                boxShadow: 2
+                boxShadow: 2,
+                width: { xs: '100%', sm: 'auto' }
               }}
             >
               <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Create New Hub</Box>
@@ -232,9 +231,10 @@ function LearningHubsList({ onBack, onOpenHub }) {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setCreateDialogOpen(true)}
-              size={{ xs: 'medium', sm: 'large' }}
-              fullWidth={{ xs: true, sm: false }}
-              sx={{ maxWidth: { xs: '100%', sm: 'auto' } }}
+              sx={{ 
+                width: { xs: '100%', sm: 'auto' },
+                py: { xs: 1, sm: 1.5 }
+              }}
             >
               Create Your First Hub
             </Button>
@@ -351,12 +351,13 @@ function LearningHubsList({ onBack, onOpenHub }) {
                           fullWidth
                           variant="contained"
                           onClick={() => onOpenHub(hub)}
-                          size={{ xs: 'small', sm: 'medium' }}
+                          size="medium"
                           sx={{
                             borderRadius: 2,
                             textTransform: 'none',
                             fontWeight: 600,
-                            fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                            py: { xs: 0.75, sm: 1 }
                           }}
                         >
                           Open Hub
