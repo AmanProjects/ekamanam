@@ -324,9 +324,9 @@ Provide a helpful, clear, and educational response.`;
   };
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5', overflow: 'hidden' }}>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
       {/* Main Content - 4 Panel Layout */}
-      <Box ref={containerRef} sx={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden', minHeight: 0 }}>
+      <Box ref={containerRef} sx={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden' }}>
         {/* LEFT PANEL: Hub Info & PDFs */}
         <Paper
           elevation={0}
@@ -594,7 +594,7 @@ Provide a helpful, clear, and educational response.`;
           }}
         />
 
-        {/* RIGHT PANEL: AI Mode Panel Content OR Hub Chat */}
+        {/* RIGHT PANEL: AI Mode Panel Content OR Hub Chat + Footer */}
         <Box
           sx={{
             width: rightPanelWidth,
@@ -614,7 +614,7 @@ Provide a helpful, clear, and educational response.`;
           {pdfFile && pdfDocument ? (
             studyTab === 10 ? (
               // Hub Chat (Custom Implementation - Input at Top)
-              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 3 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 3, overflow: 'hidden' }}>
                 <Typography variant="h6" gutterBottom>Hub Chat</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Chat with all PDFs in this hub
@@ -710,7 +710,8 @@ Provide a helpful, clear, and educational response.`;
               </Box>
             ) : (
               // AIModePanel for other tabs (sourceHub=null to hide duplicate Hub Chat tab)
-              <AIModePanel
+              <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <AIModePanel
                 currentPage={pdfCurrentPage}
                 totalPages={pdfDocument?.numPages || 0}
                 pdfId={selectedPdf?.id}
@@ -730,13 +731,14 @@ Provide a helpful, clear, and educational response.`;
                 onOpenSettings={() => {}}
                 sourceHub={null}
               />
+              </Box>
             )
           ) : (
             <Box sx={{ 
+              flex: 1,
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              height: '100%',
               p: 4
             }}>
               <Box sx={{ textAlign: 'center' }}>
@@ -750,24 +752,23 @@ Provide a helpful, clear, and educational response.`;
               </Box>
             </Box>
           )}
+
+          {/* DISCLAIMER FOOTER - Inside Right Panel Only */}
+          <Box sx={{ 
+            px: 1, 
+            py: 0.3, 
+            bgcolor: 'grey.100', 
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            textAlign: 'center',
+            flexShrink: 0
+          }}>
+            <Box component="span" sx={{ fontSize: '0.55rem', color: 'text.secondary' }}>
+              © 2025 Amandeep Singh Talwar | PDF copyrights belong to respective owners | For personal educational use only
+            </Box>
+          </Box>
         </Box>
       </Box>
-
-      {/* DISCLAIMER FOOTER */}
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p: 1, 
-          bgcolor: '#f5f5f5', 
-          borderTop: '1px solid #e0e0e0',
-          textAlign: 'center',
-          flexShrink: 0
-        }}
-      >
-        <Typography variant="caption" color="text.secondary">
-          AI-generated content may contain errors. Please verify important information.
-        </Typography>
-      </Paper>
 
       {/* PDF Context Menu */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
