@@ -37,6 +37,7 @@ import {
   MoreVert as MoreIcon,
   Delete as DeleteIcon,
   PictureAsPdf as PdfIcon,
+  Folder as FolderIcon,
   Psychology as VyonnIcon,
   School as LearnIcon,
   Psychology as ExplainIcon,
@@ -340,20 +341,37 @@ Provide a helpful, clear, and educational response.`;
           }}
         >
           {/* Hub Header */}
-          <Box sx={{ p: 2, bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <IconButton size="small" onClick={onBack} sx={{ mr: 1 }}>
-                <BackIcon />
-              </IconButton>
-              <Avatar sx={{ bgcolor: hubData.color, mr: 1.5, width: 32, height: 32 }}>
-                {hubData.icon}
-              </Avatar>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {hubData.name} ({hubPdfs.length})
-                </Typography>
-              </Box>
+          <Box sx={{ bgcolor: 'white' }}>
+            {/* Panel Title */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              px: 2, 
+              py: 1.5, 
+              bgcolor: '#1976d2', 
+              borderBottom: '1px solid #1565c0' 
+            }}>
+              <FolderIcon sx={{ mr: 1, color: 'white', fontSize: 20 }} />
+              <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
+                Sources
+              </Typography>
             </Box>
+
+            {/* Hub Info */}
+            <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <IconButton size="small" onClick={onBack} sx={{ mr: 1 }}>
+                  <BackIcon />
+                </IconButton>
+                <Avatar sx={{ bgcolor: hubData.color, mr: 1.5, width: 32, height: 32 }}>
+                  {hubData.icon}
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    {hubData.name} ({hubPdfs.length} PDFs)
+                  </Typography>
+                </Box>
+              </Box>
             {hubData.description && (
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
                 {hubData.description}
@@ -429,6 +447,26 @@ Provide a helpful, clear, and educational response.`;
 
         {/* CENTER PANEL: PDF Viewer (reusing existing PDFViewer component) */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#525659', position: 'relative', minWidth: 0, minHeight: 0 }}>
+          {/* PDF Viewer Header */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            px: 2, 
+            py: 1.5, 
+            bgcolor: '#424242', 
+            borderBottom: '1px solid #616161' 
+          }}>
+            <PdfIcon sx={{ mr: 1, color: 'white', fontSize: 20 }} />
+            <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
+              PDF Viewer
+            </Typography>
+            {selectedPdf && (
+              <Typography variant="caption" sx={{ ml: 2, color: 'rgba(255,255,255,0.7)' }}>
+                {selectedPdf.name}
+              </Typography>
+            )}
+          </Box>
+
           {pdfLoading ? (
             <Box sx={{ 
               display: 'flex', 
@@ -484,14 +522,34 @@ Provide a helpful, clear, and educational response.`;
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: 1,
-            py: 2,
             bgcolor: '#f5f5f5',
             borderLeft: '1px solid #e0e0e0',
             borderRight: '1px solid #e0e0e0'
           }}
         >
-          <Tooltip title="Learn" placement="right">
+          {/* Icon Band Header (Matches other panels) */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            width: '100%',
+            py: 1.5, 
+            bgcolor: '#e0e0e0', 
+            borderBottom: '1px solid #bdbdbd'
+          }}>
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                bgcolor: 'primary.main'
+              }}
+            />
+          </Box>
+
+          {/* Tool Icons */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 2 }}>
+            <Tooltip title="Learn" placement="right">
             <IconButton
               onClick={() => setStudyTab(0)}
               sx={{
@@ -580,6 +638,7 @@ Provide a helpful, clear, and educational response.`;
               <NotesIcon />
             </IconButton>
           </Tooltip>
+          </Box>
         </Paper>
 
         {/* RESIZE HANDLE */}
@@ -613,6 +672,22 @@ Provide a helpful, clear, and educational response.`;
             }
           }}
         >
+          {/* Study Materials Header */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            px: 2, 
+            py: 1.5, 
+            bgcolor: 'primary.main', 
+            borderBottom: '1px solid',
+            borderColor: 'primary.dark'
+          }}>
+            <LearnIcon sx={{ mr: 1, color: 'white', fontSize: 20 }} />
+            <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
+              Study Materials
+            </Typography>
+          </Box>
+
           {pdfFile && pdfDocument ? (
             studyTab === 10 ? (
               // Hub Chat (Custom Implementation - Input at Top)
