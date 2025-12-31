@@ -443,6 +443,7 @@ Provide a helpful, clear, and educational response.`;
               </React.Fragment>
             ))}
           </List>
+          </Box>
         </Paper>
 
         {/* CENTER PANEL: PDF Viewer (reusing existing PDFViewer component) */}
