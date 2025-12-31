@@ -350,37 +350,37 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
       { name: 'Globe Viewer', icon: <GlobeIcon />, handler: () => setShowGlobe(true) }
     ];
     
-    // Build regex pattern to match [TOOL:ToolName] OR just "ToolName"
+    // Step 1: Replace tool names with unique placeholders and track them
     const toolNamesPattern = tools.map(t => t.name).join('|');
     const pattern = new RegExp(`\\[TOOL:(${toolNamesPattern})\\]|\\b(${toolNamesPattern})\\b`, 'gi');
     
-    let lastIndex = 0;
-    const elements = [];
-    let match;
-    let keyIndex = 0;
-    
-    // Find all tool mentions
-    while ((match = pattern.exec(content)) !== null) {
-      // Add text before the match
-      if (match.index > lastIndex) {
-        const textBefore = content.substring(lastIndex, match.index);
-        elements.push(
-          <span 
-            key={`text-${keyIndex++}`} 
-            dangerouslySetInnerHTML={{ __html: markdownToHtml(textBefore) }} 
-          />
-        );
-      }
-      
-      // Find which tool was matched
-      const toolName = match[1] || match[2]; // Either from [TOOL:Name] or just Name
+    const foundTools = [];
+    let processedContent = content.replace(pattern, (match, explicit, natural) => {
+      const toolName = explicit || natural;
       const tool = tools.find(t => t.name.toLowerCase() === toolName.toLowerCase());
-      
       if (tool) {
-        // Add clickable chip
-        elements.push(
+        const placeholder = `{{TOOL_${foundTools.length}}}`;
+        foundTools.push(tool);
+        return placeholder;
+      }
+      return match;
+    });
+    
+    // Step 2: Convert entire content to HTML (markdown preserved)
+    const htmlContent = markdownToHtml(processedContent);
+    
+    // Step 3: Split by placeholders and rebuild with chips
+    const placeholderPattern = /(\{\{TOOL_\d+\}\})/g;
+    const parts = htmlContent.split(placeholderPattern);
+    
+    return parts.map((part, index) => {
+      const placeholderMatch = part.match(/\{\{TOOL_(\d+)\}\}/);
+      if (placeholderMatch) {
+        const toolIndex = parseInt(placeholderMatch[1]);
+        const tool = foundTools[toolIndex];
+        return (
           <Chip
-            key={`chip-${keyIndex++}`}
+            key={`chip-${index}`}
             label={tool.name}
             color="primary"
             size="small"
@@ -396,22 +396,9 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
           />
         );
       }
-      
-      lastIndex = pattern.lastIndex;
-    }
-    
-    // Add remaining text after last match
-    if (lastIndex < content.length) {
-      const textAfter = content.substring(lastIndex);
-      elements.push(
-        <span 
-          key={`text-${keyIndex++}`} 
-          dangerouslySetInnerHTML={{ __html: markdownToHtml(textAfter) }} 
-        />
-      );
-    }
-    
-    return elements.length > 0 ? elements : <span dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }} />;
+      // Regular HTML content
+      return <span key={`text-${index}`} dangerouslySetInnerHTML={{ __html: part }} />;
+    });
   };
 
   const handleAddPdf = async (pdfId) => {
