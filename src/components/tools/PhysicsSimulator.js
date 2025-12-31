@@ -48,11 +48,47 @@ import { markdownToHtml } from '../../utils/markdownRenderer';  // v10.4.18: Pro
  * AI-powered diagrams + physics simulations
  */
 
-// Physics experiments database
+// Physics experiments database with adjustable parameters
 const PHYSICS_EXPERIMENTS = {
-  projectile: { name: 'Projectile Motion', category: 'Mechanics', description: 'Motion of objects launched at an angle', formulas: ['R = (v₀² sin2θ)/g'], concepts: ['Parabolic trajectory'], keywords: ['projectile', 'throw', 'launch', 'cannon', 'parabolic', 'trajectory'], color: '#ef4444' },
-  freefall: { name: 'Free Fall', category: 'Mechanics', description: 'Objects falling under gravity', formulas: ['s = ½gt²'], concepts: ['Constant acceleration'], keywords: ['fall', 'drop', 'gravity', 'freefall', 'falling'], color: '#f59e0b' },
-  pendulum: { name: 'Simple Pendulum', category: 'Oscillations', description: 'Simple harmonic motion', formulas: ['T = 2π√(L/g)'], concepts: ['Period depends on length'], keywords: ['pendulum', 'swing', 'oscillation', 'harmonic'], color: '#8b5cf6' },
+  projectile: { 
+    name: 'Projectile Motion', 
+    category: 'Mechanics', 
+    description: 'Motion of objects launched at an angle', 
+    formulas: ['R = (v₀² sin2θ)/g'], 
+    concepts: ['Parabolic trajectory'], 
+    keywords: ['projectile', 'throw', 'launch', 'cannon', 'parabolic', 'trajectory'], 
+    color: '#ef4444',
+    parameters: [
+      { name: 'velocityX', label: 'Horizontal Velocity', min: 0, max: 20, default: 12, unit: 'm/s' },
+      { name: 'velocityY', label: 'Vertical Velocity', min: -20, max: 0, default: -12, unit: 'm/s' },
+      { name: 'angle', label: 'Launch Angle', min: 0, max: 90, default: 45, unit: '°' }
+    ]
+  },
+  freefall: { 
+    name: 'Free Fall', 
+    category: 'Mechanics', 
+    description: 'Objects falling under gravity', 
+    formulas: ['s = ½gt²'], 
+    concepts: ['Constant acceleration'], 
+    keywords: ['fall', 'drop', 'gravity', 'freefall', 'falling'], 
+    color: '#f59e0b',
+    parameters: [
+      { name: 'objectCount', label: 'Number of Objects', min: 1, max: 10, default: 5, unit: '' }
+    ]
+  },
+  pendulum: { 
+    name: 'Simple Pendulum', 
+    category: 'Oscillations', 
+    description: 'Simple harmonic motion', 
+    formulas: ['T = 2π√(L/g)'], 
+    concepts: ['Period depends on length'], 
+    keywords: ['pendulum', 'swing', 'oscillation', 'harmonic'], 
+    color: '#8b5cf6',
+    parameters: [
+      { name: 'length', label: 'Pendulum Length', min: 50, max: 250, default: 180, unit: 'cm' },
+      { name: 'mass', label: 'Bob Mass', min: 10, max: 50, default: 35, unit: 'kg' }
+    ]
+  },
   spring: { name: 'Spring Oscillation', category: 'Oscillations', description: "Hooke's Law", formulas: ['F = -kx'], concepts: ['Elastic potential energy'], keywords: ['spring', 'hooke', 'elastic', 'oscillation'], color: '#10b981' },
   collision: { name: 'Elastic Collision', category: 'Momentum', description: 'Conservation of momentum', formulas: ['m₁v₁ + m₂v₂ = m₁v₁\' + m₂v₂\''], concepts: ['Momentum conservation'], keywords: ['collision', 'momentum', 'billiard', 'impact'], color: '#06b6d4' },
   inclinedPlane: { name: 'Inclined Plane', category: 'Mechanics', description: 'Motion on a slope', formulas: ['a = g sinθ'], concepts: ['Component of gravity'], keywords: ['incline', 'slope', 'ramp', 'friction'], color: '#f97316' },
@@ -359,6 +395,9 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
   const [currentDiagram, setCurrentDiagram] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   
+  // Dynamic parameters for simulations
+  const [parameters, setParameters] = useState({});
+  
   // AI Chat
   const [question, setQuestion] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -366,6 +405,25 @@ function PhysicsSimulator({ open, onClose, user, vyonnContext, fullScreen = fals
   
   // AI-generated visualization
   const [aiVisualization, setAiVisualization] = useState(null);
+  
+  // Initialize parameters when experiment changes
+  useEffect(() => {
+    if (currentExperiment?.parameters) {
+      const defaultParams = {};
+      currentExperiment.parameters.forEach(param => {
+        defaultParams[param.name] = param.default;
+      });
+      setParameters(defaultParams);
+    } else if (aiVisualization?.parameters) {
+      const defaultParams = {};
+      Object.entries(aiVisualization.parameters).forEach(([key, config]) => {
+        defaultParams[key] = config.default || config.value || 0;
+      });
+      setParameters(defaultParams);
+    } else {
+      setParameters({});
+    }
+  }, [currentExperiment, aiVisualization]);
 
   // Handle context from Hub Chat
   useEffect(() => {
@@ -790,7 +848,7 @@ NOW GENERATE FOR: "${question}"`;
         render.textures = {};
       } catch (e) { /* cleanup */ }
     };
-  }, [open, currentExperiment, activeTab, gravity, currentDiagram, aiVisualization]);
+  }, [open, currentExperiment, activeTab, gravity, currentDiagram, aiVisualization, parameters]);
 
   // Setup experiments (condensed)
   const setupExperiment = (expKey, engine, width, height, Bodies, Composite, Constraint, Body, Matter) => {
@@ -1344,12 +1402,39 @@ NOW GENERATE FOR: "${question}"`;
                     </Box>
                   </Box>
                 </Paper>
-                <Box sx={{ display: 'flex', gap: 1.5, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <Button variant="contained" onClick={toggleSimulation} startIcon={isRunning ? <PauseIcon /> : <PlayIcon />} sx={{ bgcolor: isRunning ? '#ef4444' : '#22c55e', '&:hover': { bgcolor: isRunning ? '#dc2626' : '#16a34a' }, textTransform: 'none', borderRadius: 2 }}>{isRunning ? 'Pause' : 'Play'}</Button>
-                  <Button variant="outlined" onClick={resetSimulation} startIcon={<ResetIcon />} sx={{ textTransform: 'none', borderRadius: 2 }}>Reset</Button>
-                  <Box sx={{ flex: 1, minWidth: 150, mx: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}><GravityIcon sx={{ fontSize: 16, color: 'text.secondary' }} /><Typography variant="caption" fontWeight={600} color="text.secondary">Gravity: {gravity.toFixed(1)}g</Typography></Box>
-                    <Slider value={gravity} onChange={(e, v) => setGravity(v)} min={0} max={3} step={0.1} size="small" sx={{ color: '#1976d2' }} />
+                <Box sx={{ display: 'flex', gap: 1.5, mb: 2, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button variant="contained" onClick={toggleSimulation} startIcon={isRunning ? <PauseIcon /> : <PlayIcon />} sx={{ bgcolor: isRunning ? '#ef4444' : '#22c55e', '&:hover': { bgcolor: isRunning ? '#dc2626' : '#16a34a' }, textTransform: 'none', borderRadius: 2 }}>{isRunning ? 'Pause' : 'Play'}</Button>
+                    <Button variant="outlined" onClick={resetSimulation} startIcon={<ResetIcon />} sx={{ textTransform: 'none', borderRadius: 2 }}>Reset</Button>
+                  </Box>
+                  <Box sx={{ flex: 1, display: 'flex', gap: 2, flexWrap: 'wrap', minWidth: 200 }}>
+                    {/* Gravity (always available) */}
+                    <Box sx={{ minWidth: 150 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <GravityIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                        <Typography variant="caption" fontWeight={600} color="text.secondary">Gravity: {gravity.toFixed(1)}g</Typography>
+                      </Box>
+                      <Slider value={gravity} onChange={(e, v) => setGravity(v)} min={0} max={3} step={0.1} size="small" sx={{ color: '#1976d2' }} />
+                    </Box>
+                    {/* Dynamic Parameters */}
+                    {currentExperiment?.parameters?.map((param) => (
+                      <Box key={param.name} sx={{ minWidth: 150 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                          <Typography variant="caption" fontWeight={600} color="text.secondary">
+                            {param.label}: {parameters[param.name]?.toFixed(param.name === 'objectCount' ? 0 : 1)}{param.unit}
+                          </Typography>
+                        </Box>
+                        <Slider 
+                          value={parameters[param.name] || param.default} 
+                          onChange={(e, v) => setParameters(prev => ({...prev, [param.name]: v}))} 
+                          min={param.min} 
+                          max={param.max} 
+                          step={param.name.includes('Count') ? 1 : 0.1} 
+                          size="small" 
+                          sx={{ color: currentExperiment.color }} 
+                        />
+                      </Box>
+                    ))}
                   </Box>
                 </Box>
                 <Paper elevation={0} sx={{ flex: 1, borderRadius: 2, overflow: 'hidden', bgcolor: '#1e293b', border: '1px solid', borderColor: 'divider' }}>
