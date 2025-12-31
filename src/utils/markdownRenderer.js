@@ -4,10 +4,74 @@
  * v10.4.18: Created for consistent markdown rendering across all AI components
  */
 
+/**
+ * Convert LaTeX math to HTML
+ */
+const convertMathToHtml = (mathContent) => {
+  let html = mathContent;
+  
+  // Greek letters
+  const greekLetters = {
+    '\\alpha': 'α', '\\beta': 'β', '\\gamma': 'γ', '\\delta': 'δ', '\\epsilon': 'ε',
+    '\\theta': 'θ', '\\lambda': 'λ', '\\mu': 'μ', '\\pi': 'π', '\\sigma': 'σ',
+    '\\tau': 'τ', '\\phi': 'φ', '\\omega': 'ω', '\\Delta': 'Δ', '\\Omega': 'Ω'
+  };
+  
+  Object.entries(greekLetters).forEach(([latex, unicode]) => {
+    html = html.replace(new RegExp(latex.replace('\\', '\\\\'), 'g'), unicode);
+  });
+  
+  // Math operators
+  html = html.replace(/\\cos/g, 'cos');
+  html = html.replace(/\\sin/g, 'sin');
+  html = html.replace(/\\tan/g, 'tan');
+  html = html.replace(/\\sqrt/g, '√');
+  html = html.replace(/\\times/g, '×');
+  html = html.replace(/\\div/g, '÷');
+  html = html.replace(/\\pm/g, '±');
+  html = html.replace(/\\approx/g, '≈');
+  html = html.replace(/\\neq/g, '≠');
+  html = html.replace(/\\leq/g, '≤');
+  html = html.replace(/\\geq/g, '≥');
+  html = html.replace(/\\infty/g, '∞');
+  
+  // Subscripts: x_{abc} or x_0
+  html = html.replace(/([a-zA-Z0-9])_\{([^}]+)\}/g, (match, base, sub) => {
+    return `${base}<sub>${sub}</sub>`;
+  });
+  html = html.replace(/([a-zA-Z0-9])_([a-zA-Z0-9])/g, (match, base, sub) => {
+    return `${base}<sub>${sub}</sub>`;
+  });
+  
+  // Superscripts: x^{abc} or x^2
+  html = html.replace(/([a-zA-Z0-9])\\?\^\{([^}]+)\}/g, (match, base, sup) => {
+    return `${base}<sup>${sup}</sup>`;
+  });
+  html = html.replace(/([a-zA-Z0-9])\\?\^([a-zA-Z0-9])/g, (match, base, sup) => {
+    return `${base}<sup>${sup}</sup>`;
+  });
+  
+  // Fractions: \frac{a}{b}
+  html = html.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, (match, num, den) => {
+    return `<span style="display: inline-block; text-align: center;">
+      <span style="display: block; border-bottom: 1px solid currentColor; padding: 0 2px;">${num}</span>
+      <span style="display: block; padding: 0 2px;">${den}</span>
+    </span>`;
+  });
+  
+  return html;
+};
+
 export const markdownToHtml = (text) => {
   if (!text || typeof text !== 'string') return '';
   
   let html = text;
+  
+  // Convert LaTeX math (inline: $...$)
+  html = html.replace(/\$(.+?)\$/g, (match, math) => {
+    const converted = convertMathToHtml(math);
+    return `<span style="font-style: italic; font-family: 'Times New Roman', serif;">${converted}</span>`;
+  });
   
   // Convert headers (must be at start of line)
   html = html.replace(/^### (.*)$/gim, '<h3 style="margin: 12px 0 8px 0; font-weight: 600; font-size: 1.1em;">$1</h3>');
@@ -18,9 +82,8 @@ export const markdownToHtml = (text) => {
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
   
-  // Convert italic
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+  // Convert italic (but not underscores used in math subscripts that are already converted)
+  html = html.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
   
   // Convert inline code
   html = html.replace(/`(.+?)`/g, '<code style="background: #f3f4f6; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 0.9em;">$1</code>');

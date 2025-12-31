@@ -454,22 +454,36 @@ Student asked: "${userQuestion}"
 
 ${topicContext}
 
-${matchedExp ? `🎯 I am generating an INTERACTIVE SIMULATION for "${matchedExp.name}"!
+${matchedExp ? `🎮 I've generated an INTERACTIVE SIMULATION for "${matchedExp.name}"!` : 
+matchedDiagram ? `📊 I'm showing a diagram for "${matchedDiagram.title}".` : 
+`Explain this physics concept clearly.`}
 
-Instructions:
-1. Start: "🎮 I've created an interactive simulation for you!"
-2. Explain the concept in 100-120 words (keep it concise!)
-3. End: "⚡ The simulation is loading! You can adjust parameters and observe changes in real-time."` : 
-matchedDiagram ? `📊 I am showing a diagram for "${matchedDiagram.title}". Explain key components (150-200 words).` : 
-`Provide a concise physics explanation (150-200 words).`}
+FORMATTING RULES:
+- Use **bold** for emphasis
+- Use $...$ for all math: $v_0$, $\\theta$, $g$, $F = ma$
+- Use proper notation: $v_{0x}$ (velocity x-component), $\\cos \\theta$ (cosine theta)
+- Keep response under ${matchedExp ? '120' : '180'} words
+- Be clear and engaging
 
-${isRegional ? `Write in ${lang}!` : 'Use bullet points. Be clear and engaging.'}
+${matchedExp ? `
+Structure your response:
+1. Opening: Briefly introduce the simulation
+2. Core Concept: What's happening physically (50-60 words)
+3. Key Formulas: List 2-3 key equations with proper $...$ notation
+4. Closing: Mention they can adjust parameters and observe changes
 
-Cover ${isRegional ? `(in ${lang})` : ''}:
-1. Core concept
-2. ${matchedExp ? 'How to use simulation' : 'Key principles'}
-3. Important formulas (v₀, θ, g notation)
-4. ${matchedExp ? 'What to observe' : 'Real-world example'}`;
+Example formula format:
+- Horizontal velocity: $v_x = v_0 \\cos \\theta$
+- Vertical position: $y = v_{0y}t - \\frac{1}{2}gt^2$
+` : `
+Structure your response:
+1. Core Concept (60-80 words)
+2. Key Principles (bullet points)
+3. Important Formulas (with $...$ notation)
+4. Real-world Example (30-40 words)
+`}
+
+${isRegional ? `IMPORTANT: Write everything in ${lang}!` : ''}`;
 
       console.log('🧪 Physics: Calling LLM with prompt length:', prompt.length);
       const response = await callLLM(prompt, { feature: 'general', temperature: 0.7, maxTokens: 4096 });  // Increased from 2048 to handle longer responses
@@ -791,10 +805,20 @@ Cover ${isRegional ? `(in ${lang})` : ''}:
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {currentExperiment && (
-            <Tooltip title="Save to My Experiments">
+          {(currentExperiment || (chatHistory.length > 0 && chatHistory[0].experiment)) && (
+            <Tooltip title="Save Simulation to My Experiments">
               <IconButton 
-                onClick={handleSaveExperiment} 
+                onClick={() => {
+                  // If currentExperiment exists, use it; otherwise get from chat history
+                  const expToSave = currentExperiment || chatHistory[0].experiment;
+                  if (expToSave) {
+                    // Set it as current if not already set
+                    if (!currentExperiment) {
+                      setCurrentExperiment(expToSave);
+                    }
+                    handleSaveExperiment();
+                  }
+                }}
                 sx={{ 
                   color: 'white', 
                   bgcolor: 'rgba(255,255,255,0.15)', 
