@@ -103,6 +103,21 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
     // Read file as ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
 
+    // Extract page count from PDF using PDF.js
+    let pageCount = metadata.totalPages || 0;
+    if (!pageCount) {
+      try {
+        const pdfjsLib = await import('pdfjs-dist');
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        pageCount = pdf.numPages;
+        console.log('📄 Extracted page count:', pageCount);
+      } catch (error) {
+        console.warn('⚠️ Could not extract page count:', error);
+        pageCount = 0;
+      }
+    }
+
     // Create library item
     const libraryItem = {
       id,
@@ -112,7 +127,7 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
       size: file.size,
       dateAdded: new Date().toISOString(),
       lastOpened: new Date().toISOString(),
-      totalPages: metadata.totalPages || 0,
+      totalPages: pageCount,
       lastPage: 1,
       progress: 0,
       subject: metadata.subject || 'General',
@@ -790,6 +805,56 @@ export const repairDriveLibraryMetadata = async () => {
   }
 };
 
+/**
+ * Fix missing page counts for existing PDFs in library
+ * Scans all PDFs and extracts page count if missing
+ */
+export const fixMissingPageCounts = async () => {
+  try {
+    console.log('🔧 Checking for PDFs with missing page counts...');
+    const db = await initDB();
+    const libraryItems = await db.getAll(STORES.LIBRARY_ITEMS);
+    
+    let fixedCount = 0;
+    const pdfjsLib = await import('pdfjs-dist');
+    
+    for (const item of libraryItems) {
+      if (item.type === 'pdf' && (!item.totalPages || item.totalPages === 0)) {
+        try {
+          console.log(`📄 Fixing page count for: ${item.name}`);
+          
+          // Load PDF data
+          const pdfData = await db.get(STORES.PDF_DATA, item.id);
+          if (!pdfData || !pdfData.data) {
+            console.warn(`⚠️ No PDF data found for ${item.name}`);
+            continue;
+          }
+          
+          // Extract page count
+          const loadingTask = pdfjsLib.getDocument({ data: pdfData.data });
+          const pdf = await loadingTask.promise;
+          const pageCount = pdf.numPages;
+          
+          // Update library item
+          item.totalPages = pageCount;
+          await db.put(STORES.LIBRARY_ITEMS, item);
+          
+          fixedCount++;
+          console.log(`✅ Fixed ${item.name}: ${pageCount} pages`);
+        } catch (error) {
+          console.error(`❌ Error fixing ${item.name}:`, error);
+        }
+      }
+    }
+    
+    console.log(`✅ Fixed ${fixedCount} PDFs with missing page counts`);
+    return { success: true, fixed: fixedCount };
+  } catch (error) {
+    console.error('❌ Error fixing page counts:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default {
   addPDFToLibrary,
   getAllLibraryItems,
@@ -802,6 +867,7 @@ export default {
   getRecentlyOpened,
   searchLibrary,
   getLibraryStats,
+  fixMissingPageCounts,
   generateThumbnail,
   getThumbnail,
   storeThumbnail,

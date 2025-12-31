@@ -61,7 +61,23 @@ function LearningHubsList({ onBack, onOpenHub }) {
 
   useEffect(() => {
     loadData();
+    // Fix missing page counts in background
+    fixPageCounts();
   }, []);
+
+  const fixPageCounts = async () => {
+    try {
+      console.log('🔧 Checking for PDFs with missing page counts...');
+      const result = await libraryService.fixMissingPageCounts();
+      if (result.success && result.fixed > 0) {
+        console.log(`✅ Fixed ${result.fixed} PDFs`);
+        // Reload data to show updated page counts
+        loadData();
+      }
+    } catch (error) {
+      console.error('⚠️ Error fixing page counts:', error);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
