@@ -3747,6 +3747,44 @@ Return ONLY this valid JSON:
               </Box>
             )}
 
+            {/* Empty State - No Content Yet */}
+            {!teacherResponse && !loading && (
+              <Box sx={{ 
+                textAlign: 'center', 
+                mt: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+              }}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    mb: 1.5,
+                    '@keyframes pulse': {
+                      '0%, 100%': {
+                        transform: 'scale(1)',
+                        opacity: 1,
+                      },
+                      '50%': {
+                        transform: 'scale(1.1)',
+                        opacity: 0.8,
+                      },
+                    },
+                    animation: 'pulse 2s ease-in-out infinite',
+                  }}
+                >
+                  <LearnIcon sx={{ fontSize: 56, color: 'primary.main' }} />
+                </Box>
+                <Typography variant="subtitle2" fontWeight={600} color="text.primary" gutterBottom>
+                  Start learning
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Select a scope and generate AI-powered explanations
+                </Typography>
+              </Box>
+            )}
+
             {teacherResponse && teacherResponsePage === currentPage && !loading && (
               <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -4623,6 +4661,44 @@ Return ONLY this valid JSON:
               </Box>
             )}
 
+            {/* Empty State - No Content Yet */}
+            {!explainResponse && !loading && (
+              <Box sx={{ 
+                textAlign: 'center', 
+                mt: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+              }}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    mb: 1.5,
+                    '@keyframes pulse': {
+                      '0%, 100%': {
+                        transform: 'scale(1)',
+                        opacity: 1,
+                      },
+                      '50%': {
+                        transform: 'scale(1.1)',
+                        opacity: 0.8,
+                      },
+                    },
+                    animation: 'pulse 2s ease-in-out infinite',
+                  }}
+                >
+                  <ExplainIcon sx={{ fontSize: 56, color: 'primary.main' }} />
+                </Box>
+                <Typography variant="subtitle2" fontWeight={600} color="text.primary" gutterBottom>
+                  Get smart explanations
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Analyze content and discover insights with AI
+                </Typography>
+              </Box>
+            )}
+
             {explainResponse && explainResponsePage === currentPage && !loading && (
               <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
                 {typeof explainResponse === 'object' && (explainResponse.explanation || explainResponse.exercises || explainResponse.importantNotes) ? (
@@ -5493,6 +5569,44 @@ Return ONLY this valid JSON:
                 <CircularProgress />
               </Box>
             )}
+
+            {/* Empty State - No Content Yet */}
+            {!activitiesResponse && !loading && (
+              <Box sx={{ 
+                textAlign: 'center', 
+                mt: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+              }}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    mb: 1.5,
+                    '@keyframes pulse': {
+                      '0%, 100%': {
+                        transform: 'scale(1)',
+                        opacity: 1,
+                      },
+                      '50%': {
+                        transform: 'scale(1.1)',
+                        opacity: 0.8,
+                      },
+                    },
+                    animation: 'pulse 2s ease-in-out infinite',
+                  }}
+                >
+                  <ActivitiesIcon sx={{ fontSize: 56, color: 'primary.main' }} />
+                </Box>
+                <Typography variant="subtitle2" fontWeight={600} color="text.primary" gutterBottom>
+                  Create engaging activities
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Generate interactive exercises and practice questions
+                </Typography>
+              </Box>
+            )}
             
             {activitiesResponse && activitiesResponsePage === currentPage && !loading && (
               <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
@@ -6111,6 +6225,44 @@ Return ONLY this valid JSON:
                   }
                 `}</style>
               </Paper>
+            )}
+
+            {/* Empty State - No Content Yet */}
+            {!examPrepResponse && !generatingExam && (
+              <Box sx={{ 
+                textAlign: 'center', 
+                mt: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+              }}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    mb: 1.5,
+                    '@keyframes pulse': {
+                      '0%, 100%': {
+                        transform: 'scale(1)',
+                        opacity: 1,
+                      },
+                      '50%': {
+                        transform: 'scale(1.1)',
+                        opacity: 0.8,
+                      },
+                    },
+                    animation: 'pulse 2s ease-in-out infinite',
+                  }}
+                >
+                  <ExamIcon sx={{ fontSize: 56, color: 'primary.main' }} />
+                </Box>
+                <Typography variant="subtitle2" fontWeight={600} color="text.primary" gutterBottom>
+                  Prepare for exams
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Generate comprehensive exam questions and practice tests
+                </Typography>
+              </Box>
             )}
 
             {examPrepResponse && examPrepPage === currentPage && (

@@ -39,10 +39,10 @@ import {
   PictureAsPdf as PdfIcon,
   Folder as FolderIcon,
   Psychology as VyonnIcon,
-  School as LearnIcon,
-  Psychology as ExplainIcon,
-  SportsEsports as ActivitiesIcon,
-  Quiz as ExamIcon,
+  AutoStories as LearnIcon,        // ✓ Match AIModePanel button icon
+  Psychology as ExplainIcon,        // ✓ Already matches
+  Sports as ActivitiesIcon,         // ✓ Match AIModePanel button icon
+  FactCheck as ExamIcon,            // ✓ Match AIModePanel button icon
   Chat as ChatIcon,
   Notes as NotesIcon,
   MenuBook as StudyIcon,
