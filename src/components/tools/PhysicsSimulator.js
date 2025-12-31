@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import VoiceInputButton from '../VoiceInputButton';
+import experimentService from '../../services/experimentService';
+import { createExperiment, PHYSICS_EXPERIMENT_TYPES } from '../../schemas/experimentSchema';
 import {
   Dialog,
   DialogTitle,
@@ -33,7 +35,8 @@ import {
   Public as GravityIcon,
   Image as DiagramIcon,
   SmartToy as VyonnIcon,
-  Bolt as PhysicsIcon
+  Bolt as PhysicsIcon,
+  Save as SaveIcon
 } from '@mui/icons-material';
 import Matter from 'matter-js';
 import { callLLM } from '../../services/llmService';
