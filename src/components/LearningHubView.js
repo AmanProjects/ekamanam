@@ -81,6 +81,8 @@ function LearningHubView({
   // Add PDFs dialog
   const [addPdfDialogOpen, setAddPdfDialogOpen] = useState(false);
   const [availablePdfs, setAvailablePdfs] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   // PDF context menu
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -312,11 +314,15 @@ Provide a helpful, clear, and educational response.`;
     const file = event.target.files[0];
     if (!file) return;
     
+    setUploading(true);
+    setUploadProgress(0);
+    
     try {
       // Check if it's a ZIP file
       if (zipHandler.isZipFile(file)) {
         alert('ZIP file upload coming soon! For now, please upload individual PDFs.');
         event.target.value = ''; // Reset input
+        setUploading(false);
         return;
       }
       
@@ -324,8 +330,12 @@ Provide a helpful, clear, and educational response.`;
       if (file.type !== 'application/pdf') {
         alert('Please select a valid PDF or ZIP file');
         event.target.value = ''; // Reset input
+        setUploading(false);
         return;
       }
+      
+      // Simulate upload progress
+      setUploadProgress(30);
       
       // Upload PDF to library
       const pdfId = await libraryService.addPDFToLibrary(file, {
@@ -334,17 +344,29 @@ Provide a helpful, clear, and educational response.`;
         customSubject: hubData.description || ''
       });
       
+      setUploadProgress(70);
+      
       // Add the newly uploaded PDF to this hub
       if (pdfId) {
         await learningHubService.addPdfToHub(hubData.id, pdfId);
       }
       
+      setUploadProgress(100);
+      
       // Reload hub data
       await loadHubData();
-      setAddPdfDialogOpen(false);
+      
+      // Close dialog after successful upload
+      setTimeout(() => {
+        setAddPdfDialogOpen(false);
+        setUploading(false);
+        setUploadProgress(0);
+      }, 500);
     } catch (error) {
       console.error('❌ Upload error:', error);
       alert('Failed to upload file: ' + error.message);
+      setUploading(false);
+      setUploadProgress(0);
     } finally {
       // Always reset input
       event.target.value = '';
@@ -1002,87 +1024,102 @@ Provide a helpful, clear, and educational response.`;
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
-          {/* Upload Option */}
-          <Box
-            component="label"
-            sx={{
-              display: 'block',
-              width: '100%',
-              p: 4,
-              mb: 3,
-              textAlign: 'center',
-              bgcolor: 'rgba(25, 118, 210, 0.04)',
-              border: '2px dashed',
-              borderColor: 'primary.main',
-              borderRadius: 2,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              '&:hover': { 
-                bgcolor: 'rgba(25, 118, 210, 0.08)',
-                borderColor: 'primary.dark',
-                transform: 'scale(1.01)'
-              }
-            }}
-          >
-            <UploadIcon sx={{ fontSize: 56, color: 'primary.main', mb: 2 }} />
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Upload New PDF or ZIP File
+          {/* Step 1: Upload */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="overline" color="primary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
+              Step 1: Upload New PDF or ZIP File
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Add files directly to this hub
-            </Typography>
-            <input
-              type="file"
-              hidden
-              accept=".pdf,.zip"
-              onChange={handleFileUpload}
-            />
+            <Box
+              component="label"
+              sx={{
+                display: 'block',
+                width: '100%',
+                p: 4,
+                textAlign: 'center',
+                bgcolor: 'rgba(25, 118, 210, 0.04)',
+                border: '2px dashed',
+                borderColor: 'primary.main',
+                borderRadius: 2,
+                cursor: uploading ? 'not-allowed' : 'pointer',
+                opacity: uploading ? 0.6 : 1,
+                transition: 'all 0.2s',
+                '&:hover': !uploading ? { 
+                  bgcolor: 'rgba(25, 118, 210, 0.08)',
+                  borderColor: 'primary.dark',
+                  transform: 'scale(1.01)'
+                } : {}
+              }}
+            >
+              <UploadIcon sx={{ fontSize: 56, color: 'primary.main', mb: 2 }} />
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                {uploading ? 'Uploading...' : 'Upload New PDF or ZIP File'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: uploading ? 2 : 0 }}>
+                {uploading ? 'Please wait while we upload your file' : 'Add files directly to this hub'}
+              </Typography>
+              
+              {/* Upload Progress */}
+              {uploading && (
+                <Box sx={{ width: '100%', mt: 2 }}>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={uploadProgress} 
+                    sx={{ 
+                      height: 8, 
+                      borderRadius: 1,
+                      bgcolor: 'rgba(25, 118, 210, 0.1)',
+                      '& .MuiLinearProgress-bar': {
+                        borderRadius: 1
+                      }
+                    }} 
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    {uploadProgress}% complete
+                  </Typography>
+                </Box>
+              )}
+              
+              <input
+                type="file"
+                hidden
+                accept=".pdf,.zip"
+                onChange={handleFileUpload}
+                disabled={uploading}
+              />
+            </Box>
           </Box>
 
-          {/* OR Divider */}
+          {/* Step 2: Select from Library */}
           {availablePdfs.length > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 3 }}>
-              <Divider sx={{ flex: 1 }} />
-              <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                OR SELECT FROM LIBRARY
+            <Box>
+              <Typography variant="overline" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
+                Step 2: Or Select from Library
               </Typography>
-              <Divider sx={{ flex: 1 }} />
+              <List>
+                {availablePdfs.map((pdf) => (
+                  <ListItem
+                    key={pdf.id}
+                    secondaryAction={
+                      <Button size="small" onClick={() => handleAddPdf(pdf.id)}>
+                        Add
+                      </Button>
+                    }
+                  >
+                    <ListItemAvatar>
+                      <Avatar variant="rounded">
+                        <PdfIcon color="error" />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={pdf.name}
+                      secondary={`${pdf.totalPages} pages`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
             </Box>
           )}
-
-          {/* Existing PDFs */}
-          {availablePdfs.length === 0 ? (
-            <Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-              All your library PDFs are already in this hub!
-            </Typography>
-          ) : (
-            <List>
-              {availablePdfs.map((pdf) => (
-                <ListItem
-                  key={pdf.id}
-                  secondaryAction={
-                    <Button size="small" onClick={() => handleAddPdf(pdf.id)}>
-                      Add
-                    </Button>
-                  }
-                >
-                  <ListItemAvatar>
-                    <Avatar variant="rounded">
-                      <PdfIcon color="error" />
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={pdf.name}
-                    secondary={`${pdf.totalPages} pages`}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddPdfDialogOpen(false)}>Close</Button>
-        </DialogActions>
       </Dialog>
     </Box>
   );
