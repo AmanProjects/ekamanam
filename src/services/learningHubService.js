@@ -1,12 +1,18 @@
 /**
- * Learning Hub Service - v10.6.2
+ * Learning Hub Service - v11.0.1
  * 
  * Manages Learning Hubs - collections of PDFs grouped together for unified learning
  * Each hub contains multiple PDFs and can have unified chat, generated materials, etc.
  * 
  * Storage: Google Drive (primary) + IndexedDB (local cache)
- * Note: Simplified Drive sync - stores hubs as metadata, actual implementation in future version
+ * Syncs hubs to Google Drive for cross-device access
  */
+
+import {
+  hasDrivePermissions,
+  getHubsIndex,
+  updateHubsIndex
+} from './googleDriveService';
 
 const DB_NAME = 'EkamanamLearningHubs';
 const DB_VERSION = 1;
@@ -38,10 +44,43 @@ function initDB() {
 }
 
 /**
- * TODO: Implement proper Drive sync using existing googleDriveService API
- * For now, hubs are stored in IndexedDB only
- * Future: Store hubs in Drive using getLibraryIndex/updateLibraryIndex pattern
+ * Sync hubs to Google Drive
+ * @param {Array} hubs - Array of hub objects
  */
+async function syncHubsToDrive(hubs) {
+  if (!hasDrivePermissions()) {
+    console.log('⚠️ Drive permissions not available, skipping hub sync');
+    return;
+  }
+
+  try {
+    const hubsIndex = await getHubsIndex();
+    hubsIndex.data.hubs = hubs;
+    await updateHubsIndex(hubsIndex.fileId, hubsIndex.data);
+    console.log('✅ Synced hubs to Google Drive');
+  } catch (error) {
+    console.error('❌ Error syncing hubs to Drive:', error);
+    // Don't throw - allow operation to succeed even if Drive sync fails
+  }
+}
+
+/**
+ * Load hubs from Google Drive and merge with local
+ * @returns {Promise<Array>} Merged hub array
+ */
+async function loadHubsFromDrive() {
+  if (!hasDrivePermissions()) {
+    return null;
+  }
+
+  try {
+    const hubsIndex = await getHubsIndex();
+    return hubsIndex.data.hubs || [];
+  } catch (error) {
+    console.error('❌ Error loading hubs from Drive:', error);
+    return null;
+  }
+}
 
 /**
  * Create a new Learning Hub
@@ -65,14 +104,18 @@ export async function createLearningHub(hubData) {
   };
 
   // Save to IndexedDB
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const transaction = db.transaction([HUBS_STORE], 'readwrite');
     const store = transaction.objectStore(HUBS_STORE);
     const request = store.add(hub);
 
-    request.onsuccess = () => {
+    request.onsuccess = async () => {
       console.log('✅ Learning Hub created:', hub.name);
-      // TODO v10.6.3: Sync to Google Drive using library index pattern
+      
+      // Sync to Google Drive
+      const allHubs = await getAllLearningHubs();
+      await syncHubsToDrive(allHubs);
+      
       resolve(hub);
     };
     request.onerror = () => reject(request.error);
@@ -86,23 +129,53 @@ export async function createLearningHub(hubData) {
 export async function getAllLearningHubs() {
   const db = await initDB();
 
-  // TODO v10.6.3: Sync from Google Drive using library index pattern
-  
   // Get all hubs from IndexedDB
-  return new Promise((resolve, reject) => {
+  const localHubs = await new Promise((resolve, reject) => {
     const transaction = db.transaction([HUBS_STORE], 'readonly');
     const store = transaction.objectStore(HUBS_STORE);
     const request = store.getAll();
 
-    request.onsuccess = () => {
-      const hubs = request.result || [];
-      // Sort by last accessed (most recent first)
-      hubs.sort((a, b) => new Date(b.lastAccessedAt) - new Date(a.lastAccessedAt));
-      console.log(`📚 Loaded ${hubs.length} Learning Hubs`);
-      resolve(hubs);
-    };
+    request.onsuccess = () => resolve(request.result || []);
     request.onerror = () => reject(request.error);
   });
+
+  // Try to load from Google Drive and merge
+  const driveHubs = await loadHubsFromDrive();
+  
+  if (driveHubs && driveHubs.length > 0) {
+    console.log(`☁️ Loaded ${driveHubs.length} hubs from Drive`);
+    
+    // Merge Drive hubs with local hubs
+    const hubMap = new Map();
+    
+    // Add local hubs
+    localHubs.forEach(hub => hubMap.set(hub.id, hub));
+    
+    // Merge Drive hubs (Drive version wins for conflicts)
+    for (const driveHub of driveHubs) {
+      const localHub = hubMap.get(driveHub.id);
+      if (!localHub || new Date(driveHub.updatedAt) > new Date(localHub.updatedAt)) {
+        hubMap.set(driveHub.id, driveHub);
+        
+        // Save to IndexedDB if missing or outdated
+        if (!localHub || new Date(driveHub.updatedAt) > new Date(localHub.updatedAt)) {
+          const transaction = db.transaction([HUBS_STORE], 'readwrite');
+          const store = transaction.objectStore(HUBS_STORE);
+          store.put(driveHub);
+        }
+      }
+    }
+    
+    const mergedHubs = Array.from(hubMap.values());
+    mergedHubs.sort((a, b) => new Date(b.lastAccessedAt) - new Date(a.lastAccessedAt));
+    console.log(`📚 Loaded ${mergedHubs.length} Learning Hubs (merged)`);
+    return mergedHubs;
+  }
+
+  // No Drive hubs - return local only
+  localHubs.sort((a, b) => new Date(b.lastAccessedAt) - new Date(a.lastAccessedAt));
+  console.log(`📚 Loaded ${localHubs.length} Learning Hubs (local only)`);
+  return localHubs;
 }
 
 /**
@@ -147,14 +220,18 @@ export async function updateLearningHub(hubId, updates) {
   };
 
   // Update in IndexedDB
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const transaction = db.transaction([HUBS_STORE], 'readwrite');
     const store = transaction.objectStore(HUBS_STORE);
     const request = store.put(updatedHub);
 
-    request.onsuccess = () => {
+    request.onsuccess = async () => {
       console.log('✅ Learning Hub updated:', updatedHub.name);
-      // TODO v10.6.3: Sync to Google Drive
+      
+      // Sync to Google Drive
+      const allHubs = await getAllLearningHubs();
+      await syncHubsToDrive(allHubs);
+      
       resolve(updatedHub);
     };
     request.onerror = () => reject(request.error);
@@ -170,14 +247,18 @@ export async function deleteLearningHub(hubId) {
   const db = await initDB();
 
   // Delete from IndexedDB
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const transaction = db.transaction([HUBS_STORE], 'readwrite');
     const store = transaction.objectStore(HUBS_STORE);
     const request = store.delete(hubId);
 
-    request.onsuccess = () => {
+    request.onsuccess = async () => {
       console.log('🗑️ Learning Hub deleted:', hubId);
-      // TODO v10.6.3: Delete from Google Drive
+      
+      // Sync deletion to Google Drive
+      const allHubs = await getAllLearningHubs();
+      await syncHubsToDrive(allHubs);
+      
       resolve();
     };
     request.onerror = () => reject(request.error);

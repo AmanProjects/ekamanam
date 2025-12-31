@@ -44,6 +44,9 @@ export const FOLDER_STRUCTURE = {
 // Library index file
 const LIBRARY_INDEX_FILE = 'ekamanam_library.json';
 
+// Learning Hubs index file
+const HUBS_INDEX_FILE = 'ekamanam_hubs.json';
+
 // State
 let folderIds = null; // Cache folder IDs
 let isInitialized = false;
@@ -641,6 +644,116 @@ export async function updateLibraryIndex(fileId, data) {
     console.log('✅ Library index updated');
   } catch (error) {
     console.error('❌ Error updating library index:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get Learning Hubs index from Google Drive
+ * @returns {Promise<{fileId: string, data: Object}>}
+ */
+export async function getHubsIndex() {
+  if (!hasDrivePermissions()) {
+    throw new Error('Drive permissions not granted');
+  }
+
+  const folders = await initializeFolderStructure();
+
+  try {
+    // Find hubs index file
+    const response = await executeWithTokenRefresh(() =>
+      gapi.client.drive.files.list({
+        q: `name='${HUBS_INDEX_FILE}' and '${folders.root}' in parents and trashed=false`,
+        fields: 'files(id, name)',
+        spaces: 'drive'
+      })
+    );
+
+    if (response.result.files && response.result.files.length > 0) {
+      // File exists - download it
+      const fileId = response.result.files[0].id;
+      const content = await executeWithTokenRefresh(() =>
+        gapi.client.drive.files.get({
+          fileId: fileId,
+          alt: 'media'
+        })
+      );
+
+      return {
+        fileId: fileId,
+        data: JSON.parse(content.body)
+      };
+    } else {
+      // Create new hubs index file
+      const userEmail = auth.currentUser?.email || 'unknown';
+      const initialData = {
+        version: '1.0',
+        lastSync: new Date().toISOString(),
+        userId: userEmail,
+        hubs: []
+      };
+
+      const metadata = {
+        name: HUBS_INDEX_FILE,
+        mimeType: 'application/json',
+        parents: [folders.root]
+      };
+
+      const file = new Blob([JSON.stringify(initialData, null, 2)], { type: 'application/json' });
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      form.append('file', file);
+
+      const uploadResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: new Headers({
+          'Authorization': 'Bearer ' + gapi.auth.getToken().access_token
+        }),
+        body: form
+      });
+
+      const result = await uploadResponse.json();
+
+      return {
+        fileId: result.id,
+        data: initialData
+      };
+    }
+  } catch (error) {
+    console.error('❌ Error getting hubs index:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update Learning Hubs index file
+ * @param {string} fileId - Index file ID
+ * @param {Object} data - New data
+ */
+export async function updateHubsIndex(fileId, data) {
+  if (!hasDrivePermissions()) {
+    throw new Error('Drive permissions not granted');
+  }
+
+  try {
+    data.lastSync = new Date().toISOString();
+
+    const file = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+    const form = new FormData();
+    form.append('file', file);
+
+    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: new Headers({
+        'Authorization': 'Bearer ' + gapi.auth.getToken().access_token
+      }),
+      body: file
+    });
+
+    console.log('✅ Hubs index updated');
+  } catch (error) {
+    console.error('❌ Error updating hubs index:', error);
     throw error;
   }
 }
