@@ -56,6 +56,7 @@ import { markdownToHtml } from '../utils/markdownRenderer';
 import PDFViewer from './PDFViewer';
 import AIModePanel from './AIModePanel';
 import VoiceInputButton from './VoiceInputButton';
+import zipHandler from '../services/zipHandler';
 
 function LearningHubView({ 
   hub, 
@@ -303,6 +304,49 @@ Provide a helpful, clear, and educational response.`;
     } catch (error) {
       console.error('❌ Failed to add PDF:', error);
       alert('Failed to add PDF to hub');
+    }
+  };
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+      // Check if it's a ZIP file
+      if (zipHandler.isZipFile(file)) {
+        alert('ZIP file upload coming soon! For now, please upload individual PDFs.');
+        event.target.value = ''; // Reset input
+        return;
+      }
+      
+      // Validate PDF
+      if (file.type !== 'application/pdf') {
+        alert('Please select a valid PDF or ZIP file');
+        event.target.value = ''; // Reset input
+        return;
+      }
+      
+      // Upload PDF to library
+      const pdfId = await libraryService.addPDFToLibrary(file, {
+        subject: hubData.name,
+        class: '',
+        customSubject: hubData.description || ''
+      });
+      
+      // Add the newly uploaded PDF to this hub
+      if (pdfId) {
+        await learningHubService.addPdfToHub(hubData.id, pdfId);
+      }
+      
+      // Reload hub data
+      await loadHubData();
+      setAddPdfDialogOpen(false);
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      alert('Failed to upload file: ' + error.message);
+    } finally {
+      // Always reset input
+      event.target.value = '';
     }
   };
 
@@ -973,42 +1017,7 @@ Provide a helpful, clear, and educational response.`;
               type="file"
               hidden
               accept=".pdf,.zip"
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                try {
-                  // Import the necessary services
-                  const libraryService = require('../services/libraryService').default;
-                  const zipHandler = require('../services/zipHandler').default;
-                  
-                  // Handle ZIP files
-                  if (zipHandler.isZipFile(file)) {
-                    alert('ZIP file upload coming soon! For now, please upload individual PDFs.');
-                    return;
-                  }
-                  
-                  // Upload PDF
-                  if (file.type === 'application/pdf') {
-                    await libraryService.addPDFToLibrary(file, {
-                      subject: hub.name,
-                      class: '',
-                      customSubject: hub.description || ''
-                    });
-                    
-                    // Reload hub data to get the new PDF
-                    await loadHubData();
-                    setAddPdfDialogOpen(false);
-                  } else {
-                    alert('Please select a valid PDF or ZIP file');
-                  }
-                } catch (error) {
-                  console.error('Upload error:', error);
-                  alert('Failed to upload file');
-                }
-                // Reset input
-                e.target.value = '';
-              }}
+              onChange={handleFileUpload}
             />
           </Paper>
 

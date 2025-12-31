@@ -754,6 +754,16 @@ function App() {
             </IconButton>
           )}
           
+          {/* Language Detection Indicator */}
+          {view === 'reader' && selectedFile && (
+            <Chip
+              label="Language: Auto"
+              size="small"
+              variant="outlined"
+              sx={{ mr: 1, display: { xs: 'none', sm: 'inline-flex' } }}
+            />
+          )}
+          
           {/* Mobile: Menu button */}
           {isMobile && view !== 'reader' && (
             <IconButton 
