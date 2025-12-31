@@ -613,15 +613,49 @@ Provide a helpful, clear, and educational response.`;
         >
           {pdfFile && pdfDocument ? (
             studyTab === 10 ? (
-              // Hub Chat (Custom Implementation)
+              // Hub Chat (Custom Implementation - Input at Top)
               <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 3 }}>
                 <Typography variant="h6" gutterBottom>Hub Chat</Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Chat with all PDFs in this hub
                 </Typography>
                 
-                {/* Chat Messages */}
-                <Box sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
+                {/* Chat Input - Moved to Top */}
+                <Box sx={{ mb: 2 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    multiline
+                    maxRows={3}
+                    placeholder="Ask about hub materials..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    disabled={chatLoading}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={handleSendMessage}
+                            disabled={!input.trim() || chatLoading}
+                          >
+                            {chatLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Box>
+
+                {/* Chat Messages - Below Input */}
+                <Box sx={{ flex: 1, overflow: 'auto' }}>
                   {messages.length === 0 ? (
                     <Box sx={{ textAlign: 'center', mt: 4 }}>
                       <VyonnIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
@@ -664,7 +698,7 @@ Provide a helpful, clear, and educational response.`;
                     ))
                   )}
                   {chatLoading && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
                       <CircularProgress size={20} />
                       <Typography variant="caption" color="text.secondary">
                         Thinking...
@@ -673,43 +707,9 @@ Provide a helpful, clear, and educational response.`;
                   )}
                   <div ref={chatEndRef} />
                 </Box>
-
-                {/* Chat Input */}
-                <Box>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    multiline
-                    maxRows={3}
-                    placeholder="Ask about hub materials..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    disabled={chatLoading}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={handleSendMessage}
-                            disabled={!input.trim() || chatLoading}
-                          >
-                            {chatLoading ? <CircularProgress size={20} /> : <SendIcon />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Box>
               </Box>
             ) : (
-              // AIModePanel for other tabs
+              // AIModePanel for other tabs (sourceHub=null to hide duplicate Hub Chat tab)
               <AIModePanel
                 currentPage={pdfCurrentPage}
                 totalPages={pdfDocument?.numPages || 0}
@@ -728,7 +728,7 @@ Provide a helpful, clear, and educational response.`;
                 onAIQuery={() => {}}
                 pdfMetadata={selectedPdf}
                 onOpenSettings={() => {}}
-                sourceHub={hubData}
+                sourceHub={null}
               />
             )
           ) : (
