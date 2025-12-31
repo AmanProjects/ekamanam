@@ -10,7 +10,9 @@ import {
   Avatar,
   LinearProgress,
   IconButton,
-  Dialog
+  Dialog,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   LocalLibrary as LibraryIcon,
@@ -60,6 +62,10 @@ function Dashboard({
   currentStreak = 0,
   onOpenSettings  // v10.1: Open settings for API key configuration
 }) {
+  // Mobile detection
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   // v7.2.28: Pro Tools state and OTP control
   const [proToolsEnabled, setProToolsEnabled] = useState(false);
   const [showOTPDialog, setShowOTPDialog] = useState(false);
@@ -542,30 +548,35 @@ function Dashboard({
           onClose={() => { setShowMathTools(false); setToolContext(null); }} 
           user={user}
           vyonnContext={toolContext}
+          fullScreen={isMobile}
         />
         <ChemistryTools 
           open={showChemistryTools} 
           onClose={() => { setShowChemistryTools(false); setToolContext(null); }} 
           user={user}
           vyonnContext={toolContext}
+          fullScreen={isMobile}
         />
         <PhysicsSimulator 
           open={showPhysicsSimulator} 
           onClose={() => { setShowPhysicsSimulator(false); setToolContext(null); }} 
           user={user}
           vyonnContext={toolContext}
+          fullScreen={isMobile}
         />
         <CodeEditor 
           open={showCodeEditor} 
           onClose={() => { setShowCodeEditor(false); setToolContext(null); }} 
           user={user}
           vyonnContext={toolContext}
+          fullScreen={isMobile}
         />
         <GlobeViewer 
           open={showGlobeViewer} 
           onClose={() => { setShowGlobeViewer(false); setToolContext(null); }} 
           user={user}
           vyonnContext={toolContext}
+          fullScreen={isMobile}
         />
 
         {/* v10.5.6: Pro Tools Toggle - Hidden per user request (tools only from Dashboard) */}
