@@ -46,7 +46,8 @@ import {
   Chat as ChatIcon,
   Notes as NotesIcon,
   MenuBook as StudyIcon,
-  ChatBubbleOutline as ChatBubbleIcon
+  ChatBubbleOutline as ChatBubbleIcon,
+  CloudUpload as UploadIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService, { loadPDFData } from '../services/libraryService';
@@ -947,9 +948,85 @@ Provide a helpful, clear, and educational response.`;
       >
         <DialogTitle>Add PDF to Hub</DialogTitle>
         <DialogContent>
+          {/* Upload Option */}
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 3,
+              mb: 3,
+              textAlign: 'center',
+              bgcolor: 'primary.50',
+              borderColor: 'primary.main',
+              cursor: 'pointer',
+              '&:hover': { bgcolor: 'primary.100' }
+            }}
+            component="label"
+          >
+            <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+              Upload New PDF or ZIP File
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Add files directly to this hub
+            </Typography>
+            <input
+              type="file"
+              hidden
+              accept=".pdf,.zip"
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                  // Import the necessary services
+                  const libraryService = require('../services/libraryService').default;
+                  const zipHandler = require('../services/zipHandler').default;
+                  
+                  // Handle ZIP files
+                  if (zipHandler.isZipFile(file)) {
+                    alert('ZIP file upload coming soon! For now, please upload individual PDFs.');
+                    return;
+                  }
+                  
+                  // Upload PDF
+                  if (file.type === 'application/pdf') {
+                    await libraryService.addPDFToLibrary(file, {
+                      subject: hub.name,
+                      class: '',
+                      customSubject: hub.description || ''
+                    });
+                    
+                    // Reload hub data to get the new PDF
+                    await loadHubData();
+                    setAddPdfDialogOpen(false);
+                  } else {
+                    alert('Please select a valid PDF or ZIP file');
+                  }
+                } catch (error) {
+                  console.error('Upload error:', error);
+                  alert('Failed to upload file');
+                }
+                // Reset input
+                e.target.value = '';
+              }}
+            />
+          </Paper>
+
+          {/* OR Divider */}
+          {availablePdfs.length > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Divider sx={{ flex: 1 }} />
+              <Typography variant="caption" color="text.secondary">
+                OR SELECT FROM LIBRARY
+              </Typography>
+              <Divider sx={{ flex: 1 }} />
+            </Box>
+          )}
+
+          {/* Existing PDFs */}
           {availablePdfs.length === 0 ? (
-            <Typography color="text.secondary" sx={{ py: 2 }}>
-              All your PDFs are already in this hub!
+            <Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+              All your library PDFs are already in this hub!
             </Typography>
           ) : (
             <List>
