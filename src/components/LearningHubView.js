@@ -330,7 +330,7 @@ Provide a helpful, clear, and educational response.`;
 
   // LEARN TOOL HANDLER
   const handleLearnQuery = async () => {
-    if (!learnInput.trim() || !selectedPdf || !pdfBlobUrl) {
+    if (!learnInput.trim() || !selectedPdf || !pdfFile) {
       alert('Please select a PDF and enter a question');
       return;
     }
@@ -339,8 +339,8 @@ Provide a helpful, clear, and educational response.`;
     setLearnResponse('');
 
     try {
-      // Extract PDF content
-      const pdfText = await extractFullPdfText(pdfBlobUrl);
+      // Extract PDF content from the loaded file
+      const pdfText = await extractFullPdfText(pdfFile);
       
       const prompt = `You are an expert tutor. Based on the following PDF content, answer the student's question in a clear, educational manner.
 
@@ -363,7 +363,7 @@ Provide a comprehensive, easy-to-understand explanation.`;
 
   // EXPLAIN TOOL HANDLER
   const handleExplainQuery = async () => {
-    if (!explainInput.trim() || !selectedPdf || !pdfBlobUrl) {
+    if (!explainInput.trim() || !selectedPdf || !pdfFile) {
       alert('Please select a PDF and enter text to explain');
       return;
     }
@@ -372,7 +372,7 @@ Provide a comprehensive, easy-to-understand explanation.`;
     setExplainResponse('');
 
     try {
-      const pdfText = await extractFullPdfText(pdfBlobUrl);
+      const pdfText = await extractFullPdfText(pdfFile);
       
       const prompt = `You are an expert educator. Based on the PDF content below, provide a detailed explanation of the following concept or text.
 
@@ -395,7 +395,7 @@ Provide a clear, detailed explanation with examples if relevant.`;
 
   // EXAM PREP TOOL HANDLER
   const handleGenerateExam = async () => {
-    if (!selectedPdf || !pdfBlobUrl) {
+    if (!selectedPdf || !pdfFile) {
       alert('Please select a PDF first');
       return;
     }
@@ -404,7 +404,7 @@ Provide a clear, detailed explanation with examples if relevant.`;
     setExamResponse('');
 
     try {
-      const pdfText = await extractFullPdfText(pdfBlobUrl);
+      const pdfText = await extractFullPdfText(pdfFile);
       
       const prompt = `You are an exam preparation expert. Based on the PDF content below, generate:
 
