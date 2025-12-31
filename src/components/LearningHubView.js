@@ -44,7 +44,8 @@ import {
   SportsEsports as ActivitiesIcon,
   Quiz as ExamIcon,
   Chat as ChatIcon,
-  Notes as NotesIcon
+  Notes as NotesIcon,
+  MenuBook as StudyIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService, { loadPDFData } from '../services/libraryService';
@@ -673,7 +674,7 @@ Provide a helpful, clear, and educational response.`;
             borderBottom: '1px solid',
             borderColor: 'primary.dark'
           }}>
-            <LearnIcon sx={{ mr: 1, color: 'white', fontSize: 20 }} />
+            <StudyIcon sx={{ mr: 1, color: 'white', fontSize: 20 }} />
             <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
               Study Materials
             </Typography>

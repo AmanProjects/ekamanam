@@ -3566,8 +3566,27 @@ Return ONLY this valid JSON:
                     exclusive
                     onChange={(e, value) => value && setTeacherScope(value)}
                     fullWidth
-                    size="large"
-                    sx={{ mb: 2 }}
+                    size="medium"
+                    sx={{ 
+                      mb: 2,
+                      '& .MuiToggleButton-root': {
+                        py: 1.5,
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        '&.Mui-selected': {
+                          bgcolor: 'primary.main',
+                          color: 'white',
+                          '&:hover': {
+                            bgcolor: 'primary.dark',
+                          }
+                        },
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        }
+                      }
+                    }}
                   >
                     <ToggleButton value="page">
                       <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
