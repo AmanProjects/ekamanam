@@ -4374,46 +4374,73 @@ Return ONLY this valid JSON:
                 </Alert>
               )}
               
-              <Box sx={{ display: 'flex', gap: 1, mb: 1, flexDirection: 'column' }}>
+              <Box sx={{ mb: 1.5 }}>
                 {!explainResponse ? (
                   <>
-                    {!editableSelectedText && (
-                      <ToggleButtonGroup
-                        value={explainScope}
-                        exclusive
-                        onChange={(e, value) => value && setExplainScope(value)}
-                        fullWidth
-                        size="large"
-                        sx={{ mb: 2 }}
+                    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                      {!editableSelectedText && (
+                        <FormControl sx={{ flex: 1, minWidth: 160 }}>
+                          <Select
+                            value={explainScope}
+                            onChange={(e) => setExplainScope(e.target.value)}
+                            size="small"
+                            displayEmpty
+                            renderValue={(value) => (
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                {value === 'page' ? (
+                                  <>
+                                    <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
+                                    <Typography variant="body2">This Page</Typography>
+                                  </>
+                                ) : (
+                                  <>
+                                    <ReadIcon fontSize="small" sx={{ mr: 1 }} />
+                                    <Typography variant="body2">Entire Chapter</Typography>
+                                  </>
+                                )}
+                              </Box>
+                            )}
+                          >
+                            <MenuItem value="page">
+                              <DescriptionIcon fontSize="small" sx={{ mr: 1.5 }} />
+                              <Box>
+                                <Typography variant="body2" fontWeight={500}>This Page</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Current page only
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                            <MenuItem value="chapter">
+                              <ReadIcon fontSize="small" sx={{ mr: 1.5 }} />
+                              <Box>
+                                <Typography variant="body2" fontWeight={500}>Entire Chapter</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Full PDF analysis
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          </Select>
+                        </FormControl>
+                      )}
+                      <Button
+                        fullWidth={editableSelectedText ? true : false}
+                        variant="contained"
+                        size="small"
+                        startIcon={<ExplainIcon />}
+                        onClick={() => handleExplainText(editableSelectedText ? 'page' : explainScope)}
+                        disabled={loading || (!editableSelectedText && !pageText) || isAIFeatureDisabled()}
+                        sx={{ whiteSpace: 'nowrap' }}
+                        data-vyonn-trigger="explain"
                       >
-                        <ToggleButton value="page">
-                          <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
-                          This Page
-                        </ToggleButton>
-                        <ToggleButton value="chapter">
-                          <ReadIcon fontSize="small" sx={{ mr: 1 }} />
-                          Entire Chapter
-                        </ToggleButton>
-                      </ToggleButtonGroup>
-                    )}
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      size="large"
-                      startIcon={<ExplainIcon />}
-                      onClick={() => handleExplainText(editableSelectedText ? 'page' : explainScope)}
-                      disabled={loading || (!editableSelectedText && !pageText) || isAIFeatureDisabled()}
-                      sx={{ mb: 1 }}
-                      data-vyonn-trigger="explain"
-                    >
-                      {loading ? 'Analyzing...' :
-                       isAIFeatureDisabled() ? 'Upgrade to Continue' :
-                       editableSelectedText ? 'Explain Selection' : 'Analyze & Explain'}
-                    </Button>
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+                        {loading ? 'Analyzing...' :
+                         isAIFeatureDisabled() ? 'Upgrade' :
+                         editableSelectedText ? 'Explain Selection' : 'Analyze'}
+                      </Button>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       {editableSelectedText 
-                        ? 'Get detailed explanation with exercises and solutions'
-                        : 'AI-powered analysis with visual aids'}
+                        ? 'Get detailed explanation with exercises and solutions for your selection'
+                        : 'Get AI-powered analysis with visual aids and comprehensive explanations'}
                     </Typography>
                     
                   </>
