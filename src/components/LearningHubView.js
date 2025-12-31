@@ -324,9 +324,9 @@ Provide a helpful, clear, and educational response.`;
   };
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5', overflow: 'hidden' }}>
       {/* Main Content - 4 Panel Layout */}
-      <Box ref={containerRef} sx={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden' }}>
+      <Box ref={containerRef} sx={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden', minHeight: 0 }}>
         {/* LEFT PANEL: Hub Info & PDFs */}
         <Paper
           elevation={0}
@@ -760,7 +760,8 @@ Provide a helpful, clear, and educational response.`;
           p: 1, 
           bgcolor: '#f5f5f5', 
           borderTop: '1px solid #e0e0e0',
-          textAlign: 'center'
+          textAlign: 'center',
+          flexShrink: 0
         }}
       >
         <Typography variant="caption" color="text.secondary">
