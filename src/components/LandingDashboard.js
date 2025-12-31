@@ -262,125 +262,7 @@ function LandingDashboard({
         </Container>
       </Box>
 
-      {/* Story Section */}
-      <Box id="story" sx={{ py: { xs: 6, md: 10 }, bgcolor: 'white' }}>
-        <Container maxWidth="md">
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              mb: 4,
-              borderLeft: '4px solid',
-              borderColor: 'warning.main',
-              bgcolor: 'warning.50',
-            }}
-          >
-            <Typography variant="h5" fontWeight={700} gutterBottom>
-              The Learning Challenge
-            </Typography>
-            <Typography variant="body1" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
-              "Papa, I can read the words, but I don't really <em>understand</em> it.
-              Can you show me what a cube actually looks like? Where is Hyderabad on a map?
-              Can I hear this in my language? I want to <em>see</em> it, not just read about it..."
-            </Typography>
-          </Paper>
-
-          <Box sx={{ '& > p': { mb: 2, lineHeight: 1.8 } }}>
-            <Typography variant="body1" color="text.secondary" paragraph>
-              Students today face a unique challenge: textbooks are flat, static, and often in a language
-              they're still mastering. Reading about geometric shapes doesn't help them visualize.
-              Reading about historical locations doesn't show them where they are.
-              Reading scientific formulas doesn't make concepts come alive.
-            </Typography>
-
-            <Typography variant="body1" color="text.secondary" paragraph>
-              The struggle isn't ability; it's <strong>engagement</strong>. Learning needs to:
-            </Typography>
-
-            <Box component="ul" sx={{ pl: 4, mb: 3, '& li': { mb: 1 } }}>
-              <li>
-                <Typography variant="body1" color="text.secondary">
-                  <strong>Speak their language</strong> - Not just English, but Telugu, Hindi, Tamil, and more
-                </Typography>
-              </li>
-              <li>
-                <Typography variant="body1" color="text.secondary">
-                  <strong>Show, not just tell</strong> - 3D models you can rotate, molecules you can explore
-                </Typography>
-              </li>
-              <li>
-                <Typography variant="body1" color="text.secondary">
-                  <strong>Sound natural</strong> - Voice explanations that help auditory learners
-                </Typography>
-              </li>
-              <li>
-                <Typography variant="body1" color="text.secondary">
-                  <strong>Respond instantly</strong> - An AI that's always ready to explain, never judges
-                </Typography>
-              </li>
-              <li>
-                <Typography variant="body1" color="text.secondary">
-                  <strong>Make connections</strong> - From textbook concepts to real-world understanding
-                </Typography>
-              </li>
-            </Box>
-
-            <Typography variant="body1" color="text.secondary" paragraph>
-              That's why we created <strong>Ekamanam</strong> (ఏకమనం - "One Mind"). We asked:
-              <em> Could we build an AI learning platform that engages all the senses - visual, audio, and interactive?</em>
-            </Typography>
-
-            <Typography variant="h6" color="primary" fontWeight={600} sx={{ mt: 3 }}>
-              The answer was yes. And here's what we built.
-            </Typography>
-          </Box>
-        </Container>
-      </Box>
-
-      {/* Why Ekamanam Section */}
-      <Box
-        sx={{
-          py: { xs: 6, md: 10 },
-          background: 'linear-gradient(135deg, rgba(255, 237, 213, 0.3) 0%, rgba(255, 224, 178, 0.3) 100%)',
-        }}
-      >
-        <Container maxWidth="md">
-          <Typography variant="h4" fontWeight={700} textAlign="center" gutterBottom>
-            Why Ekamanam?
-          </Typography>
-
-          <Paper elevation={3} sx={{ p: { xs: 3, md: 5 }, mt: 4, borderRadius: 3 }}>
-            <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.8, fontSize: '1.1rem' }}>
-              We all have that stack of textbooks, PDFs, and study materials we swear we're going to master.
-              But let's be honest—<strong>staring at static pages doesn't equal learning</strong>.
-              It's overwhelming, and retention is a struggle.
-            </Typography>
-
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mt: 3 }}>
-              That's where Ekamanam comes in.
-            </Typography>
-
-            <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.8 }}>
-              Ekamanam isn't just a document reader; it's a <strong>complete learning workspace</strong>.
-            </Typography>
-
-            <Box sx={{ my: 3, p: 3, bgcolor: 'primary.50', borderRadius: 2 }}>
-              <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
-                Upload any PDF, and Ekamanam transforms it. Don't just read—<strong>apply</strong>.
-                Jump into our Labs to practice concepts hands-on, and use our suite of smart Tools
-                to break down complex data instantly. With our AI Tutor and Spaced Repetition,
-                you go from passive reading to active mastering in one seamless flow.
-              </Typography>
-            </Box>
-
-            <Typography variant="h6" fontWeight={600} color="primary" textAlign="center" sx={{ mt: 4 }}>
-              Stop just consuming information. Start building skills.
-            </Typography>
-          </Paper>
-        </Container>
-      </Box>
-
-      {/* Features Section */}
+      {/* Powerful Features Section - Moved to Main Section */}
       <Box id="features" sx={{ py: { xs: 6, md: 10 }, bgcolor: 'white' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" fontWeight={700} textAlign="center" gutterBottom>
@@ -464,6 +346,109 @@ function LandingDashboard({
               </Grid>
             ))}
           </Grid>
+        </Container>
+      </Box>
+
+      {/* Merged: Story + Why Ekamanam Section */}
+      <Box
+        id="story"
+        sx={{
+          py: { xs: 6, md: 10 },
+          background: 'linear-gradient(135deg, rgba(255, 237, 213, 0.3) 0%, rgba(255, 224, 178, 0.3) 100%)',
+        }}
+      >
+        <Container maxWidth="md">
+          <Typography variant="h4" fontWeight={700} textAlign="center" gutterBottom>
+            Why Ekamanam?
+          </Typography>
+
+          {/* The Challenge */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              mt: 4,
+              mb: 3,
+              borderLeft: '4px solid',
+              borderColor: 'warning.main',
+              bgcolor: 'rgba(255, 255, 255, 0.7)',
+            }}
+          >
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              The Learning Challenge
+            </Typography>
+            <Typography variant="body1" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+              "Papa, I can read the words, but I don't really <em>understand</em> it.
+              Can you show me what a cube actually looks like? Where is Hyderabad on a map?
+              Can I hear this in my language? I want to <em>see</em> it, not just read about it..."
+            </Typography>
+          </Paper>
+
+          {/* The Problem */}
+          <Paper elevation={3} sx={{ p: { xs: 3, md: 5 }, borderRadius: 3 }}>
+            <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.8 }}>
+              We all have that stack of textbooks, PDFs, and study materials we swear we're going to master.
+              But let's be honest—<strong>staring at static pages doesn't equal learning</strong>.
+              It's overwhelming, and retention is a struggle.
+            </Typography>
+
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2, lineHeight: 1.8 }}>
+              Students today face a unique challenge: textbooks are flat, static, and often in a language
+              they're still mastering. The struggle isn't ability; it's <strong>engagement</strong>.
+            </Typography>
+
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2, lineHeight: 1.8 }}>
+              Learning needs to:
+            </Typography>
+
+            <Box component="ul" sx={{ pl: 4, mb: 3, '& li': { mb: 1 } }}>
+              <li>
+                <Typography variant="body1" color="text.secondary">
+                  <strong>Speak their language</strong> - Not just English, but Telugu, Hindi, Tamil, and more
+                </Typography>
+              </li>
+              <li>
+                <Typography variant="body1" color="text.secondary">
+                  <strong>Show, not just tell</strong> - 3D models you can rotate, molecules you can explore
+                </Typography>
+              </li>
+              <li>
+                <Typography variant="body1" color="text.secondary">
+                  <strong>Sound natural</strong> - Voice explanations that help auditory learners
+                </Typography>
+              </li>
+              <li>
+                <Typography variant="body1" color="text.secondary">
+                  <strong>Respond instantly</strong> - An AI that's always ready to explain, never judges
+                </Typography>
+              </li>
+              <li>
+                <Typography variant="body1" color="text.secondary">
+                  <strong>Make connections</strong> - From textbook concepts to real-world understanding
+                </Typography>
+              </li>
+            </Box>
+
+            {/* The Solution */}
+            <Box sx={{ my: 3, p: 3, bgcolor: 'primary.50', borderRadius: 2 }}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                That's where Ekamanam comes in
+              </Typography>
+              <Typography variant="body1" sx={{ lineHeight: 1.8, mb: 2 }}>
+                Ekamanam (ఏకమనం - "One Mind") isn't just a document reader; it's a <strong>complete learning workspace</strong>.
+              </Typography>
+              <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+                Upload any PDF, and Ekamanam transforms it. Don't just read—<strong>apply</strong>.
+                Jump into our Labs to practice concepts hands-on, and use our suite of smart Tools
+                to break down complex data instantly. With our AI Tutor and Spaced Repetition,
+                you go from passive reading to active mastering in one seamless flow.
+              </Typography>
+            </Box>
+
+            <Typography variant="h6" fontWeight={600} color="primary" textAlign="center" sx={{ mt: 4 }}>
+              Stop just consuming information. Start building skills.
+            </Typography>
+          </Paper>
         </Container>
       </Box>
 
