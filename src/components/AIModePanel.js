@@ -67,7 +67,8 @@ import {
   Build as BuildIcon,              // Keep for Circuit Builder button
   Science as SimulateIcon,
   Send as SendIcon,
-  Delete as ClearChatIcon
+  Delete as ClearChatIcon,
+  Folder as FolderIcon             // v10.6.1: Hub Chat tab icon
 } from '@mui/icons-material';
 import NotesEditor from './NotesEditor';
 import { generateExplanation, generateTeacherMode, generateActivities, generateAdditionalResources, generateWordByWordAnalysis, generateExamPrep, generateLongAnswer, translateTeacherModeToEnglish } from '../services/geminiService';
@@ -457,7 +458,8 @@ function AIModePanel({
   isMobile = false,  // v7.2.10: Mobile responsiveness
   onAIQuery,         // v7.2.24: Track AI queries for analytics
   pdfMetadata,       // v7.2.25: PDF metadata including class/grade for adaptive responses
-  onOpenSettings     // v10.1: Open settings dialog for API key configuration
+  onOpenSettings,    // v10.1: Open settings dialog for API key configuration
+  sourceHub          // v10.6.1: Hub context when viewing PDF from a hub
 }) {
   // Use controlled state if provided, otherwise use internal state
   const [internalTab, setInternalTab] = useState(0);
@@ -3364,6 +3366,7 @@ Return ONLY this valid JSON:
   const showNotes = isTabEnabled(adminConfig, 'notes');
   // v10.5.7: Removed showProTools - Tools only accessible from Dashboard
   const showVyonn = isTabEnabled(adminConfig, 'vyonn'); // v7.2.30: Vyonn AI tab (always enabled by default)
+  const showHubChat = sourceHub !== null && sourceHub !== undefined; // v10.6.1: Hub Chat when viewing from hub
 
   // Calculate dynamic tab indices based on which tabs are enabled
   const tabIndices = {};
@@ -3374,6 +3377,7 @@ Return ONLY this valid JSON:
   if (showExamPrep) { tabIndices.examPrep = currentIndex++; }
   // v10.5.7: Removed proTools from tabIndices - Tools only from Dashboard
   if (showVyonn) { tabIndices.vyonn = currentIndex++; }
+  if (showHubChat) { tabIndices.hubChat = currentIndex++; } // v10.6.1: Hub Chat tab
   if (showNotes) { tabIndices.notes = currentIndex++; }
 
   // v10.5.6: Debug logging for language detection
@@ -3536,6 +3540,16 @@ Return ONLY this valid JSON:
               }}
             />
           } label="Vyonn" />}
+          {showHubChat && <Tab icon={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <FolderIcon />
+              {sourceHub?.icon && (
+                <Box component="span" sx={{ fontSize: '1rem' }}>
+                  {sourceHub.icon}
+                </Box>
+              )}
+            </Box>
+          } label="Hub Chat" />}
           {showNotes && <Tab icon={<NotesIcon />} label="Notes" />}
         </Tabs>
       </Paper>
@@ -6514,6 +6528,46 @@ Return ONLY this valid JSON:
                 Enter to send · Shift+Enter for new line
               </Typography>
             </Box>
+          </Box>
+        </TabPanel>}
+
+        {/* v10.6.1: Hub Chat Tab */}
+        {showHubChat && <TabPanel value={activeTab} index={tabIndices.hubChat}>
+          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
+            <Box sx={{ 
+              mb: 2, 
+              p: 2, 
+              bgcolor: sourceHub.color || '#2196F3',
+              color: 'white',
+              borderRadius: 2
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Box sx={{ fontSize: '2rem' }}>{sourceHub.icon}</Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h6" fontWeight={600}>
+                    {sourceHub.name}
+                  </Typography>
+                  {sourceHub.description && (
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      {sourceHub.description}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+              <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                Chat with your hub's materials. Ask questions across all PDFs in this learning hub.
+              </Typography>
+            </Box>
+            
+            <Alert severity="info" sx={{ mb: 2 }}>
+              💡 <strong>Tip:</strong> Hub Chat lets you ask questions about all materials in this hub, not just the current PDF. Try: "Summarize the key concepts from all my materials" or "What are the common themes?"
+            </Alert>
+            
+            <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+              🚧 Hub Chat coming soon! This feature will let you query all PDFs in your hub simultaneously.
+              <br /><br />
+              For now, use the Vyonn tab to chat about the current PDF.
+            </Typography>
           </Box>
         </TabPanel>}
 

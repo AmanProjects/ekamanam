@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Box, AppBar, Toolbar, IconButton, Fab, Tooltip, Chip, Badge, ThemeProvider, CssBaseline, useMediaQuery, BottomNavigation, BottomNavigationAction, List, ListItem, ListItemIcon, ListItemText, Divider, SwipeableDrawer } from '@mui/material';
+import { Box, AppBar, Toolbar, IconButton, Fab, Tooltip, Chip, Badge, ThemeProvider, CssBaseline, useMediaQuery, BottomNavigation, BottomNavigationAction, List, ListItem, ListItemIcon, ListItemText, Divider, SwipeableDrawer, Paper, Avatar, Typography, Button } from '@mui/material';
 import { Settings as SettingsIcon, Dashboard as DashboardIcon, AutoAwesome, LocalLibrary as LibraryIcon, AdminPanelSettings, HelpOutline as HelpIcon, Menu as MenuIcon, PictureAsPdf as PdfIcon, Psychology as AiIcon, Close as CloseIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import packageJson from '../package.json';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -60,6 +60,7 @@ function App() {
   const [view, setView] = useState('dashboard'); // 'dashboard', 'library', 'hubs', 'hub-view', or 'reader'
   const [libraryInitialTab, setLibraryInitialTab] = useState(0); // 0 = My PDFs, 1 = Samples
   const [currentHub, setCurrentHub] = useState(null); // v10.6.0: Currently viewing hub
+  const [pdfSourceHub, setPdfSourceHub] = useState(null); // v10.6.1: Hub context when viewing PDF from hub
   const [showSettings, setShowSettings] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showOTPDialog, setShowOTPDialog] = useState(false);
@@ -459,7 +460,7 @@ function App() {
     }
   };
   
-  const handleOpenFromLibrary = async (libraryItem) => {
+  const handleOpenFromLibrary = async (libraryItem, hubContext = null) => {
     try {
       console.log('📖 Opening from library:', libraryItem);
       console.log('📄 Library item details:', {
@@ -467,8 +468,12 @@ function App() {
         name: libraryItem.name,
         originalFileName: libraryItem.originalFileName,
         size: libraryItem.size,
-        driveFileId: libraryItem.driveFileId
+        driveFileId: libraryItem.driveFileId,
+        fromHub: hubContext?.name || 'None'
       });
+      
+      // v10.6.1: Store hub context if opening from a hub
+      setPdfSourceHub(hubContext);
       
       // Load PDF data from IndexedDB first
       let pdfData = await loadPDFData(libraryItem.id);
@@ -1074,13 +1079,9 @@ function App() {
           <LearningHubView
             hub={currentHub}
             onBack={() => setView('hubs')}
-            onOpenPdf={handleOpenFromLibrary}
+            onOpenPdf={(pdf) => handleOpenFromLibrary(pdf, currentHub)}
             onOpenFlashcards={() => setShowFlashcards(true)}
             onOpenTimeline={() => setShowTimeline(true)}
-            onOpenLab={(labType) => {
-              // Open specific lab - can be enhanced later
-              console.log('Opening lab:', labType);
-            }}
           />
         ) : view === 'library' ? (
           <StudentLibrary
@@ -1118,6 +1119,52 @@ function App() {
                 flexDirection: 'column'
               }}
             >
+                {/* v10.6.1: Hub Badge - show when viewing PDF from a hub */}
+                {pdfSourceHub && (
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      px: 2,
+                      py: 1,
+                      bgcolor: pdfSourceHub.color || '#2196F3',
+                      color: 'white',
+                      borderBottom: '1px solid rgba(255,255,255,0.2)'
+                    }}
+                  >
+                    <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 28, height: 28, fontSize: '1rem' }}>
+                      {pdfSourceHub.icon}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', lineHeight: 1.2 }}>
+                        Learning Hub
+                      </Typography>
+                      <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.2 }}>
+                        {pdfSourceHub.name}
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => {
+                        setView('hub-view');
+                        setPdfSourceHub(null);
+                      }}
+                      sx={{
+                        color: 'white',
+                        borderColor: 'rgba(255,255,255,0.5)',
+                        '&:hover': {
+                          borderColor: 'white',
+                          bgcolor: 'rgba(255,255,255,0.1)'
+                        }
+                      }}
+                    >
+                      Return to Hub
+                    </Button>
+                  </Paper>
+                )}
                 <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
               <PDFViewer
                 selectedFile={selectedFile}
@@ -1206,6 +1253,7 @@ function App() {
                   isMobile={isMobile}
                   pdfMetadata={currentLibraryItem}
                   onOpenSettings={() => setShowSettings(true)}
+                  sourceHub={pdfSourceHub}  // v10.6.1: Pass hub context for Hub Chat tab
                   onAIQuery={(queryType, queryText) => {
                     // v7.2.24: Track AI queries for analytics
                     if (sessionTrackerRef.current) {

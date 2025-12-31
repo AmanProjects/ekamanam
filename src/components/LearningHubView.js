@@ -55,16 +55,19 @@ import {
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService from '../services/libraryService';
-import llmService from '../services/llmService';
+import llmService, { PROVIDERS } from '../services/llmService';
 import { markdownToHtml } from '../utils/markdownRenderer';
+import { Snackbar, Alert } from '@mui/material';
+
+// Import educational tools
+import { MathTools, ChemistryTools, PhysicsSimulator, CodeEditor, GlobeViewer } from './tools';
 
 function LearningHubView({ 
   hub, 
   onBack, 
   onOpenPdf, 
   onOpenFlashcards,
-  onOpenTimeline,
-  onOpenLab 
+  onOpenTimeline
 }) {
   const [hubData, setHubData] = useState(hub);
   const [hubPdfs, setHubPdfs] = useState([]);
@@ -84,6 +87,14 @@ function LearningHubView({
   // PDF context menu
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedPdf, setSelectedPdf] = useState(null);
+  
+  // v10.6.1: Lab dialogs
+  const [showMathTools, setShowMathTools] = useState(false);
+  const [showChemistryTools, setShowChemistryTools] = useState(false);
+  const [showPhysicsSimulator, setShowPhysicsSimulator] = useState(false);
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [showGlobeViewer, setShowGlobeViewer] = useState(false);
+  const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
 
   useEffect(() => {
     loadHubData();
@@ -94,6 +105,34 @@ function LearningHubView({
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+  
+  // v10.6.1: Check if API keys are configured
+  const hasAnyApiKey = () => {
+    return llmService.hasApiKey(PROVIDERS.GEMINI) || llmService.hasApiKey(PROVIDERS.GROQ);
+  };
+
+  // v10.6.1: Wrapper to check API keys before opening AI-powered tools
+  const openToolWithApiCheck = (toolSetter) => {
+    if (!hasAnyApiKey()) {
+      setShowApiKeyAlert(true);
+      return;
+    }
+    toolSetter(true);
+  };
+  
+  // v10.6.1: Open specific lab
+  const handleOpenLab = (labType) => {
+    const labMap = {
+      math: () => openToolWithApiCheck(setShowMathTools),
+      chemistry: () => openToolWithApiCheck(setShowChemistryTools),
+      physics: () => openToolWithApiCheck(setShowPhysicsSimulator),
+      code: () => openToolWithApiCheck(setShowCodeEditor),
+      globe: () => openToolWithApiCheck(setShowGlobeViewer)
+    };
+    if (labMap[labType]) {
+      labMap[labType]();
+    }
+  };
 
   const loadHubData = async () => {
     setLoading(true);
@@ -505,7 +544,7 @@ Provide a helpful, clear, and educational response.`;
                   fullWidth
                   variant="outlined"
                   startIcon={<MathIcon />}
-                  onClick={() => onOpenLab('math')}
+                  onClick={() => handleOpenLab('math')}
                   sx={{ justifyContent: 'flex-start' }}
                 >
                   Math Lab
@@ -516,7 +555,7 @@ Provide a helpful, clear, and educational response.`;
                   fullWidth
                   variant="outlined"
                   startIcon={<ChemistryIcon />}
-                  onClick={() => onOpenLab('chemistry')}
+                  onClick={() => handleOpenLab('chemistry')}
                   sx={{ justifyContent: 'flex-start' }}
                 >
                   Chemistry
@@ -527,7 +566,7 @@ Provide a helpful, clear, and educational response.`;
                   fullWidth
                   variant="outlined"
                   startIcon={<PhysicsIcon />}
-                  onClick={() => onOpenLab('physics')}
+                  onClick={() => handleOpenLab('physics')}
                   sx={{ justifyContent: 'flex-start' }}
                 >
                   Physics
@@ -538,7 +577,7 @@ Provide a helpful, clear, and educational response.`;
                   fullWidth
                   variant="outlined"
                   startIcon={<CodeIcon />}
-                  onClick={() => onOpenLab('code')}
+                  onClick={() => handleOpenLab('code')}
                   sx={{ justifyContent: 'flex-start' }}
                 >
                   Code Editor
@@ -549,7 +588,7 @@ Provide a helpful, clear, and educational response.`;
                   fullWidth
                   variant="outlined"
                   startIcon={<GlobeIcon />}
-                  onClick={() => onOpenLab('globe')}
+                  onClick={() => handleOpenLab('globe')}
                   sx={{ justifyContent: 'flex-start' }}
                 >
                   Globe Viewer
@@ -617,6 +656,50 @@ Provide a helpful, clear, and educational response.`;
           <Button onClick={() => setAddPdfDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* v10.6.1: Educational Tool Dialogs */}
+      {showMathTools && (
+        <MathTools
+          open={showMathTools}
+          onClose={() => setShowMathTools(false)}
+        />
+      )}
+      {showChemistryTools && (
+        <ChemistryTools
+          open={showChemistryTools}
+          onClose={() => setShowChemistryTools(false)}
+        />
+      )}
+      {showPhysicsSimulator && (
+        <PhysicsSimulator
+          open={showPhysicsSimulator}
+          onClose={() => setShowPhysicsSimulator(false)}
+        />
+      )}
+      {showCodeEditor && (
+        <CodeEditor
+          open={showCodeEditor}
+          onClose={() => setShowCodeEditor(false)}
+        />
+      )}
+      {showGlobeViewer && (
+        <GlobeViewer
+          open={showGlobeViewer}
+          onClose={() => setShowGlobeViewer(false)}
+        />
+      )}
+
+      {/* API Key Alert */}
+      <Snackbar
+        open={showApiKeyAlert}
+        autoHideDuration={6000}
+        onClose={() => setShowApiKeyAlert(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="warning" onClose={() => setShowApiKeyAlert(false)}>
+          Please configure your API keys in Settings to use AI-powered tools
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
