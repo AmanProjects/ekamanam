@@ -1289,6 +1289,24 @@ Provide a helpful, clear, and educational response.`;
         </Box>
       </Box>
 
+      {/* Mobile Footer - Show only on mobile */}
+      {isMobile && (
+        <Box sx={{ 
+          py: 1, 
+          px: 2,
+          pr: 10, // Extra padding on right to avoid FAB button
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          textAlign: 'center',
+          bgcolor: 'white',
+          flexShrink: 0
+        }}>
+          <Box component="span" sx={{ fontSize: '0.65rem', color: 'text.secondary', display: 'block', lineHeight: 1.4 }}>
+            © 2025 Amandeep Singh Talwar | PDF copyrights belong to respective owners | For personal educational use only
+          </Box>
+        </Box>
+      )}
+
       {/* PDF Context Menu */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
         <MenuItem onClick={() => { onOpenPdf(selectedPdf); handleMenuClose(); }}>
