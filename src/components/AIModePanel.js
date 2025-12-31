@@ -3610,7 +3610,7 @@ Return ONLY this valid JSON:
                       startIcon={<LearnIcon />}
                       onClick={() => handleTeacherMode(teacherScope)}
                       disabled={loading || !pageText || isAIFeatureDisabled()}
-                      sx={{ whiteSpace: 'nowrap' }}
+                      sx={{ whiteSpace: 'nowrap', boxShadow: 3 }}
                     >
                       {loading ? 'Generating...' :
                        isAIFeatureDisabled() ? 'Upgrade' :
@@ -4429,7 +4429,7 @@ Return ONLY this valid JSON:
                         startIcon={<ExplainIcon />}
                         onClick={() => handleExplainText(editableSelectedText ? 'page' : explainScope)}
                         disabled={loading || (!editableSelectedText && !pageText) || isAIFeatureDisabled()}
-                        sx={{ whiteSpace: 'nowrap' }}
+                        sx={{ whiteSpace: 'nowrap', boxShadow: 3 }}
                         data-vyonn-trigger="explain"
                       >
                         {loading ? 'Analyzing...' :
@@ -5361,7 +5361,7 @@ Return ONLY this valid JSON:
                       startIcon={<ActivitiesIcon />}
                       onClick={() => handleGenerateActivities(activitiesScope)}
                       disabled={loading || !pageText || isAIFeatureDisabled()}
-                      sx={{ whiteSpace: 'nowrap' }}
+                      sx={{ whiteSpace: 'nowrap', boxShadow: 3 }}
                     >
                       {loading ? 'Generating...' :
                        isAIFeatureDisabled() ? 'Upgrade' :
@@ -6007,7 +6007,7 @@ Return ONLY this valid JSON:
               onClick={handleGenerateExamPrep}
               disabled={generatingExam || !pdfDocument || isAIFeatureDisabled()}
               startIcon={generatingExam ? null : <ExamIcon />}
-              sx={{ mb: 1 }}
+              sx={{ mb: 1, boxShadow: 3 }}
             >
               {generatingExam ? 'Processing...' :
                isAIFeatureDisabled() ? 'Upgrade to Continue' :
