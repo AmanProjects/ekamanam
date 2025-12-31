@@ -40,16 +40,23 @@ import {
   PictureAsPdf as PdfIcon,
   Folder as FolderIcon,
   Psychology as VyonnIcon,
-  AutoStories as LearnIcon,        // ✓ Match AIModePanel button icon
-  Psychology as ExplainIcon,        // ✓ Already matches
-  Sports as ActivitiesIcon,         // ✓ Match AIModePanel button icon
-  FactCheck as ExamIcon,            // ✓ Match AIModePanel button icon
+  AutoStories as LearnIcon,
+  Psychology as ExplainIcon,
+  Sports as ActivitiesIcon,
+  FactCheck as ExamIcon,
   Chat as ChatIcon,
   Notes as NotesIcon,
   MenuBook as StudyIcon,
   ChatBubbleOutline as ChatBubbleIcon,
   CloudUpload as UploadIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Style as FlashcardIcon,
+  Timeline as TimelineIcon,
+  Calculate as MathIcon,
+  Science as ChemistryIcon,
+  Bolt as PhysicsIcon,
+  Code as CodeIcon,
+  Public as GlobeIcon
 } from '@mui/icons-material';
 import learningHubService from '../services/learningHubService';
 import libraryService, { loadPDFData } from '../services/libraryService';
@@ -59,6 +66,13 @@ import PDFViewer from './PDFViewer';
 import AIModePanel from './AIModePanel';
 import VoiceInputButton from './VoiceInputButton';
 import zipHandler from '../services/zipHandler';
+import FlashcardManager from './FlashcardManager';
+import TimelineViewer from './TimelineViewer';
+import MathLabV2 from './tools/MathLabV2';
+import ChemistryTools from './tools/ChemistryTools';
+import PhysicsSimulator from './tools/PhysicsSimulator';
+import CodeEditor from './tools/CodeEditor';
+import GlobeViewer from './tools/GlobeViewer';
 
 function LearningHubView({ 
   hub, 
@@ -98,6 +112,15 @@ function LearningHubView({
   
   // Study Materials tab state (for AIModePanel + Hub Chat)
   const [studyTab, setStudyTab] = useState(0);
+  
+  // Tool dialog states
+  const [showFlashcards, setShowFlashcards] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [showMathLab, setShowMathLab] = useState(false);
+  const [showChemistry, setShowChemistry] = useState(false);
+  const [showPhysics, setShowPhysics] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+  const [showGlobe, setShowGlobe] = useState(false);
   
   // Resizable panels state
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
@@ -712,6 +735,108 @@ Provide a helpful, clear, and educational response.`;
               <NotesIcon />
             </IconButton>
           </Tooltip>
+
+          {/* Divider */}
+          <Box sx={{ width: '80%', height: '1px', bgcolor: 'rgba(255, 255, 255, 0.3)', my: 1 }} />
+
+          {/* Learning Tools */}
+          <Tooltip title="Flashcards" placement="right">
+            <IconButton
+              onClick={() => setShowFlashcards(true)}
+              sx={{
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
+                }
+              }}
+            >
+              <FlashcardIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Journey" placement="right">
+            <IconButton
+              onClick={() => setShowTimeline(true)}
+              sx={{
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
+                }
+              }}
+            >
+              <TimelineIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Math Lab" placement="right">
+            <IconButton
+              onClick={() => setShowMathLab(true)}
+              sx={{
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
+                }
+              }}
+            >
+              <MathIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Chemistry" placement="right">
+            <IconButton
+              onClick={() => setShowChemistry(true)}
+              sx={{
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
+                }
+              }}
+            >
+              <ChemistryIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Physics" placement="right">
+            <IconButton
+              onClick={() => setShowPhysics(true)}
+              sx={{
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
+                }
+              }}
+            >
+              <PhysicsIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Code Editor" placement="right">
+            <IconButton
+              onClick={() => setShowCode(true)}
+              sx={{
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
+                }
+              }}
+            >
+              <CodeIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Globe Viewer" placement="right">
+            <IconButton
+              onClick={() => setShowGlobe(true)}
+              sx={{
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
+                }
+              }}
+            >
+              <GlobeIcon />
+            </IconButton>
+          </Tooltip>
           </Box>
         </Paper>
 
@@ -1121,6 +1246,115 @@ Provide a helpful, clear, and educational response.`;
             </Box>
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* Flashcards Dialog */}
+      <Dialog
+        open={showFlashcards}
+        onClose={() => setShowFlashcards(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <FlashcardManager
+          user={user}
+          pdfId={selectedPdf?.id}
+          pdfMetadata={selectedPdf}
+          subscription={subscription}
+          onUpgrade={onUpgrade}
+          onClose={() => setShowFlashcards(false)}
+        />
+      </Dialog>
+
+      {/* Timeline Dialog */}
+      <Dialog
+        open={showTimeline}
+        onClose={() => setShowTimeline(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <TimelineViewer
+          user={user}
+          pdfId={selectedPdf?.id}
+          pdfMetadata={selectedPdf}
+          subscription={subscription}
+          onUpgrade={onUpgrade}
+          onClose={() => setShowTimeline(false)}
+        />
+      </Dialog>
+
+      {/* Math Lab Dialog */}
+      <Dialog
+        open={showMathLab}
+        onClose={() => setShowMathLab(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <MathLabV2
+          onClose={() => setShowMathLab(false)}
+          user={user}
+          subscription={subscription}
+          onUpgrade={onUpgrade}
+        />
+      </Dialog>
+
+      {/* Chemistry Dialog */}
+      <Dialog
+        open={showChemistry}
+        onClose={() => setShowChemistry(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <ChemistryTools
+          onClose={() => setShowChemistry(false)}
+          user={user}
+          subscription={subscription}
+          onUpgrade={onUpgrade}
+        />
+      </Dialog>
+
+      {/* Physics Dialog */}
+      <Dialog
+        open={showPhysics}
+        onClose={() => setShowPhysics(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <PhysicsSimulator
+          onClose={() => setShowPhysics(false)}
+          user={user}
+          subscription={subscription}
+          onUpgrade={onUpgrade}
+        />
+      </Dialog>
+
+      {/* Code Editor Dialog */}
+      <Dialog
+        open={showCode}
+        onClose={() => setShowCode(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <CodeEditor
+          onClose={() => setShowCode(false)}
+          user={user}
+          subscription={subscription}
+          onUpgrade={onUpgrade}
+        />
+      </Dialog>
+
+      {/* Globe Viewer Dialog */}
+      <Dialog
+        open={showGlobe}
+        onClose={() => setShowGlobe(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <GlobeViewer
+          onClose={() => setShowGlobe(false)}
+          user={user}
+          subscription={subscription}
+          onUpgrade={onUpgrade}
+        />
       </Dialog>
     </Box>
   );
