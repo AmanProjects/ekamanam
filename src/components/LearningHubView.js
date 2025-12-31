@@ -325,9 +325,9 @@ Provide a helpful, clear, and educational response.`;
   };
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
       {/* Main Content - 4 Panel Layout */}
-      <Box ref={containerRef} sx={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden' }}>
+      <Box ref={containerRef} sx={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden', minHeight: 0 }}>
         {/* LEFT PANEL: Hub Info & PDFs */}
         <Paper
           elevation={0}
@@ -337,7 +337,8 @@ Provide a helpful, clear, and educational response.`;
             flexDirection: 'column',
             borderRadius: 0,
             borderRight: '1px solid #e0e0e0',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            minHeight: 0
           }}
         >
           {/* Hub Header */}
@@ -667,6 +668,7 @@ Provide a helpful, clear, and educational response.`;
             borderRadius: 0,
             overflow: 'hidden',
             bgcolor: 'white',
+            minHeight: 0,
             // Hide the tab headers from AIModePanel (we use icons instead)
             '& .MuiPaper-root:has(.MuiTabs-root)': {
               display: 'none'
@@ -692,7 +694,7 @@ Provide a helpful, clear, and educational response.`;
           {pdfFile && pdfDocument ? (
             studyTab === 10 ? (
               // Hub Chat (Custom Implementation - Input at Top)
-              <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 3, overflow: 'hidden' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 3, overflow: 'auto', minHeight: 0 }}>
                 <Typography variant="h6" gutterBottom>Hub Chat</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Chat with all PDFs in this hub
@@ -788,7 +790,7 @@ Provide a helpful, clear, and educational response.`;
               </Box>
             ) : (
               // AIModePanel for other tabs (sourceHub=null to hide duplicate Hub Chat tab)
-              <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <AIModePanel
                 currentPage={pdfCurrentPage}
                 totalPages={pdfDocument?.numPages || 0}
