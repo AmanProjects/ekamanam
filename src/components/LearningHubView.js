@@ -31,7 +31,8 @@ import {
   Tooltip,
   LinearProgress,
   useMediaQuery,
-  useTheme
+  useTheme,
+  Drawer
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -50,6 +51,7 @@ import {
   Notes as NotesIcon,
   MenuBook as StudyIcon,
   ChatBubbleOutline as ChatBubbleIcon,
+  Menu as MenuIcon,
   CloudUpload as UploadIcon,
   Close as CloseIcon,
   Style as FlashcardIcon,
@@ -85,6 +87,7 @@ function LearningHubView({
   // Mobile detection
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   
   const [hubData, setHubData] = useState(hub);
   const [hubPdfs, setHubPdfs] = useState([]);
@@ -434,6 +437,145 @@ Provide a helpful, clear, and educational response.`;
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
+      {/* Mobile Header */}
+      {isMobile && (
+        <Paper elevation={1} sx={{ display: 'flex', alignItems: 'center', px: 1.5, py: 1, gap: 1, flexShrink: 0 }}>
+          <IconButton size="small" onClick={onBack}>
+            <BackIcon />
+          </IconButton>
+          <IconButton size="small" onClick={() => setMobileDrawerOpen(true)}>
+            <MenuIcon />
+          </IconButton>
+          <Avatar sx={{ bgcolor: hubData.color, width: 28, height: 28, fontSize: '0.9rem' }}>
+            {hubData.icon}
+          </Avatar>
+          <Typography variant="subtitle2" fontWeight={600} sx={{ flex: 1 }} noWrap>
+            {hubData.name}
+          </Typography>
+        </Paper>
+      )}
+
+      {/* Mobile Drawer for Sources */}
+      <Drawer
+        anchor="left"
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            width: '85%',
+            maxWidth: 320
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {/* Drawer Header */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            px: 2, 
+            py: 1.5, 
+            bgcolor: 'primary.main', 
+            color: 'white'
+          }}>
+            <FolderIcon sx={{ mr: 1, fontSize: 20 }} />
+            <Typography variant="subtitle1" fontWeight={600} sx={{ flex: 1 }}>
+              Sources
+            </Typography>
+            <IconButton size="small" onClick={() => setMobileDrawerOpen(false)} sx={{ color: 'white' }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          {/* Hub Info */}
+          <Box sx={{ p: 2, bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+              <Avatar sx={{ bgcolor: hubData.color, mr: 1.5, width: 32, height: 32 }}>
+                {hubData.icon}
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {hubData.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {hubPdfs.length} PDFs
+                </Typography>
+              </Box>
+            </Box>
+            {hubData.description && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+                {hubData.description}
+              </Typography>
+            )}
+            <Button
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setMobileDrawerOpen(false);
+                setAddPdfDialogOpen(true);
+              }}
+              fullWidth
+              variant="outlined"
+            >
+              Add PDF or Zip file
+            </Button>
+          </Box>
+
+          {/* PDF List */}
+          <List sx={{ flex: 1, overflow: 'auto', bgcolor: 'white' }}>
+            {hubPdfs.length === 0 && (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <PdfIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                <Typography variant="body2" color="text.secondary">
+                  No PDFs yet
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  Tap "Add PDF or Zip file" to get started
+                </Typography>
+              </Box>
+            )}
+            {hubPdfs.map((pdf) => (
+              <React.Fragment key={pdf.id}>
+                <ListItem 
+                  disablePadding 
+                  secondaryAction={
+                    <IconButton size="small" onClick={(e) => handleMenuOpen(e, pdf)}>
+                      <MoreIcon fontSize="small" />
+                    </IconButton>
+                  }
+                >
+                  <ListItemButton 
+                    onClick={() => {
+                      handleSelectPdf(pdf);
+                      setMobileDrawerOpen(false);
+                    }}
+                    selected={selectedPdf?.id === pdf.id}
+                  >
+                    <ListItemAvatar>
+                      <Avatar variant="rounded" sx={{ bgcolor: 'primary.light' }}>
+                        <PdfIcon />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={pdf.name}
+                      secondary={`${pdf.pageCount || '?'} pages`}
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: selectedPdf?.id === pdf.id ? 600 : 400,
+                        noWrap: true
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'caption'
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+                <Divider variant="inset" component="li" />
+              </React.Fragment>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
+
       {/* Main Content - 4 Panel Layout */}
       <Box ref={containerRef} sx={{ flex: 1, display: 'flex', gap: 0, overflow: 'hidden', minHeight: 0 }}>
         {/* LEFT PANEL: Hub Info & PDFs */}
