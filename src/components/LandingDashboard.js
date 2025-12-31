@@ -137,19 +137,9 @@ function LandingDashboard({
           <Box textAlign="center">
             {/* Personalized Greeting */}
             {isLoggedIn && (
-              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                  {getGreeting()}, {getUserFirstName()}!
-                </Typography>
-                {subscription?.daysRemaining && (
-                  <Chip
-                    label={`${subscription.daysRemaining}d left`}
-                    color="primary"
-                    size="small"
-                    sx={{ fontWeight: 600 }}
-                  />
-                )}
-              </Box>
+              <Typography variant="h5" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
+                {getGreeting()}, {getUserFirstName()}!
+              </Typography>
             )}
 
             <Typography
@@ -407,6 +397,73 @@ function LandingDashboard({
               >
                 Access all your study materials, AI tools, and learning features in one place.
               </Typography>
+
+              {/* Subscription Status Card */}
+              {subscription?.daysRemaining && (
+                <Paper
+                  elevation={3}
+                  sx={{
+                    maxWidth: 500,
+                    mx: 'auto',
+                    mb: 4,
+                    p: 3,
+                    background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, rgba(156, 39, 176, 0.05) 100%)',
+                    border: '1px solid',
+                    borderColor: 'primary.light',
+                    borderRadius: 2,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: 'primary.main',
+                        width: 48,
+                        height: 48,
+                      }}
+                    >
+                      <CheckIcon />
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        Premium Active
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {subscription.daysRemaining} {subscription.daysRemaining === 1 ? 'day' : 'days'} remaining in your current period
+                      </Typography>
+                    </Box>
+                  </Box>
+                  
+                  {/* Optional: Add a subtle progress indicator */}
+                  {subscription.daysRemaining <= 30 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Box
+                        sx={{
+                          width: '100%',
+                          height: 4,
+                          bgcolor: 'grey.200',
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: `${(subscription.daysRemaining / 30) * 100}%`,
+                            height: '100%',
+                            bgcolor: subscription.daysRemaining <= 7 ? 'warning.main' : 'primary.main',
+                            transition: 'width 0.3s ease',
+                          }}
+                        />
+                      </Box>
+                      {subscription.daysRemaining <= 7 && (
+                        <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block', fontWeight: 600 }}>
+                          Your subscription will expire soon. Consider renewing to continue enjoying premium features.
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+                </Paper>
+              )}
+
               <Dashboard
                 user={user}
                 onOpenHubs={onOpenHubs}
