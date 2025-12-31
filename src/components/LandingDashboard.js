@@ -11,6 +11,8 @@ import {
   Card,
   CardContent,
   IconButton,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   LocalLibrary as LibraryIcon,
@@ -31,6 +33,7 @@ import {
   Phone as PhoneIcon,
 } from '@mui/icons-material';
 import Dashboard from './Dashboard';
+import SubscriptionBanner from './SubscriptionBanner';
 
 /**
  * LandingDashboard Component - v10.7.38
@@ -67,6 +70,8 @@ function LandingDashboard({
   onOpenSettings,
   onSignIn, // Callback to trigger sign-in dialog
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isLoggedIn = !!user;
 
   // Get time-based greeting
@@ -91,6 +96,15 @@ function LandingDashboard({
 
   return (
     <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', width: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
+      {/* Subscription Banner - Mobile */}
+      {isMobile && isLoggedIn && subscription && (
+        <SubscriptionBanner 
+          subscription={subscription} 
+          onUpgrade={onUpgrade}
+          isMobile={true}
+        />
+      )}
+      
       {/* Hero Section */}
       <Box
         sx={{
