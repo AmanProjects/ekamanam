@@ -5287,41 +5287,67 @@ Return ONLY this valid JSON:
         {/* Activities Tab */}
         {showActivities && <TabPanel value={activeTab} index={tabIndices.activities}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ mb: 2, display: 'flex', gap: 1, flexDirection: 'column' }}>
+            <Box sx={{ mb: 1.5 }}>
               {!activitiesResponse ? (
                 <>
-                  <ToggleButtonGroup
-                    value={activitiesScope}
-                    exclusive
-                    onChange={(e, value) => value && setActivitiesScope(value)}
-                    fullWidth
-                    size="large"
-                    sx={{ mb: 2 }}
-                  >
-                    <ToggleButton value="page">
-                      <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
-                      This Page
-                    </ToggleButton>
-                    <ToggleButton value="chapter">
-                      <ReadIcon fontSize="small" sx={{ mr: 1 }} />
-                      Entire Chapter
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    size="large"
-                    startIcon={<ActivitiesIcon />}
-                    onClick={() => handleGenerateActivities(activitiesScope)}
-                    disabled={loading || !pageText || isAIFeatureDisabled()}
-                    sx={{ mb: 1 }}
-                  >
-                    {loading ? 'Generating...' :
-                     isAIFeatureDisabled() ? 'Upgrade to Continue' :
-                     'Generate Activities'}
-                  </Button>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-                    Interactive activities and practice questions
+                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    <FormControl sx={{ flex: 1, minWidth: 160 }}>
+                      <Select
+                        value={activitiesScope}
+                        onChange={(e) => setActivitiesScope(e.target.value)}
+                        size="small"
+                        displayEmpty
+                        renderValue={(value) => (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            {value === 'page' ? (
+                              <>
+                                <DescriptionIcon fontSize="small" sx={{ mr: 1 }} />
+                                <Typography variant="body2">This Page</Typography>
+                              </>
+                            ) : (
+                              <>
+                                <ReadIcon fontSize="small" sx={{ mr: 1 }} />
+                                <Typography variant="body2">Entire Chapter</Typography>
+                              </>
+                            )}
+                          </Box>
+                        )}
+                      >
+                        <MenuItem value="page">
+                          <DescriptionIcon fontSize="small" sx={{ mr: 1.5 }} />
+                          <Box>
+                            <Typography variant="body2" fontWeight={500}>This Page</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Current page only
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="chapter">
+                          <ReadIcon fontSize="small" sx={{ mr: 1.5 }} />
+                          <Box>
+                            <Typography variant="body2" fontWeight={500}>Entire Chapter</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Full PDF activities
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<ActivitiesIcon />}
+                      onClick={() => handleGenerateActivities(activitiesScope)}
+                      disabled={loading || !pageText || isAIFeatureDisabled()}
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      {loading ? 'Generating...' :
+                       isAIFeatureDisabled() ? 'Upgrade' :
+                       'Generate'}
+                    </Button>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    Get interactive activities, practice questions, and engaging exercises
                   </Typography>
                 </>
               ) : (
@@ -5955,7 +5981,7 @@ Return ONLY this valid JSON:
             <Button
               fullWidth
               variant="contained"
-              size="large"
+              size="small"
               onClick={handleGenerateExamPrep}
               disabled={generatingExam || !pdfDocument || isAIFeatureDisabled()}
               startIcon={generatingExam ? null : <ExamIcon />}
@@ -5965,8 +5991,8 @@ Return ONLY this valid JSON:
                isAIFeatureDisabled() ? 'Upgrade to Continue' :
                'Generate Exam Questions'}
             </Button>
-            <Typography variant="body2" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 2 }}>
-              AI-generated MCQs, short answers, and long answer questions
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+              Get AI-generated MCQs, short answers, and comprehensive exam questions
             </Typography>
 
             {/* Professional Progress Display */}
