@@ -28,6 +28,8 @@ import {
   Select,
   MenuItem,
   FormControl,
+  useTheme,
+  useMediaQuery,
   InputLabel,
   Badge,
   CardActionArea,
@@ -5152,7 +5154,12 @@ function AdvancedCalculator() {
 }
 
 // ==================== MAIN COMPONENT ====================
-function MathLabV2({ open, onClose, user }) {
+function MathLabV2({ open, onClose, user, fullScreen = false }) {
+  // Mobile detection
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isFullScreen = fullScreen || isMobile;
+  
   const [activeTab, setActiveTab] = useState(0);
   
   // v10.4.7: Move AI Chat state to main component (like Chemistry)
@@ -5240,9 +5247,10 @@ ${isRegional ? `Write your ENTIRE response in ${lang} using proper Unicode!` : '
     <Dialog 
       open={open} 
       onClose={onClose} 
-      maxWidth="lg" 
+      maxWidth={isFullScreen ? false : "lg"} 
       fullWidth 
-      PaperProps={{ sx: { height: '90vh' } }}
+      fullScreen={isFullScreen}
+      PaperProps={{ sx: { height: isFullScreen ? '100%' : '90vh' } }}
     >
       <DialogTitle
         sx={{
