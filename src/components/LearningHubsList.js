@@ -92,7 +92,8 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
     loadData();
     // Fix missing page counts in background
     fixPageCounts();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subscription]); // Re-load when subscription changes
 
   const fixPageCounts = async () => {
     try {
@@ -117,9 +118,12 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
       ]);
       
       // For free users, only show sample hubs
+      console.log('🔍 Subscription status:', { subscription, isFreeUser, isPaid: subscription?.isPaid });
       if (isFreeUser) {
+        console.log('✅ Loading sample hubs for free user');
         setHubs(SAMPLE_HUBS);
       } else {
+        console.log('✅ Loading user hubs:', loadedHubs.length);
         setHubs(loadedHubs);
       }
       setAllPdfs(loadedPdfs);

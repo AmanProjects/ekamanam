@@ -64,9 +64,9 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#90caf9',
-      light: '#a6d4fa',
-      dark: '#6fa8dc',
+      main: '#64b5f6',
+      light: '#90caf9',
+      dark: '#42a5f5',
     },
     secondary: {
       main: '#f48fb1',
@@ -74,20 +74,20 @@ export const darkTheme = createTheme({
       dark: '#e97ca6',
     },
     background: {
-      default: '#0a1929',  // Darker, more professional
-      paper: '#1a2332',    // Card backgrounds
+      default: '#121212',    // Pure dark background
+      paper: '#1e1e1e',      // Slightly lighter for cards
     },
     text: {
       primary: '#ffffff',
-      secondary: '#b0b8c1',
+      secondary: '#b3b3b3',
     },
-    divider: '#2d3843',
+    divider: 'rgba(255, 255, 255, 0.12)',
     action: {
       active: '#90caf9',
-      hover: '#1e2732',
-      selected: '#2d3843',
-      disabled: '#4b5563',
-      disabledBackground: '#1e2732',
+      hover: 'rgba(255, 255, 255, 0.08)',
+      selected: 'rgba(255, 255, 255, 0.16)',
+      disabled: 'rgba(255, 255, 255, 0.3)',
+      disabledBackground: 'rgba(255, 255, 255, 0.12)',
     },
     error: {
       main: '#f44336',
@@ -113,12 +113,50 @@ export const darkTheme = createTheme({
       dark: '#388e3c',
       lighter: 'rgba(102, 187, 106, 0.15)',
     },
+    grey: {
+      50: '#fafafa',
+      100: '#f5f5f5',
+      200: '#eeeeee',
+      300: '#e0e0e0',
+      400: '#bdbdbd',
+      500: '#9e9e9e',
+      600: '#757575',
+      700: '#616161',
+      800: '#424242',
+      900: '#212121',
+    },
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          scrollbarColor: "#424242 #121212",
+          "&::-webkit-scrollbar, & *::-webkit-scrollbar": {
+            backgroundColor: "#121212",
+            width: 8,
+          },
+          "&::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb": {
+            borderRadius: 8,
+            backgroundColor: "#424242",
+            minHeight: 24,
+          },
+          "&::-webkit-scrollbar-thumb:hover, & *::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: "#616161",
+          },
+        },
+      },
+    },
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundImage: 'none', // Remove default gradient
+          backgroundImage: 'none',
+          backgroundColor: '#1e1e1e',
+        },
+        elevation1: {
+          boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.5)',
+        },
+        elevation2: {
+          boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.5)',
         },
       },
     },
@@ -130,7 +168,13 @@ export const darkTheme = createTheme({
         contained: {
           boxShadow: 'none',
           '&:hover': {
-            boxShadow: '0px 2px 4px rgba(0,0,0,0.4)',
+            boxShadow: '0px 2px 4px rgba(0,0,0,0.6)',
+          },
+        },
+        outlined: {
+          borderColor: 'rgba(255, 255, 255, 0.23)',
+          '&:hover': {
+            borderColor: 'rgba(255, 255, 255, 0.40)',
           },
         },
       },
@@ -139,6 +183,7 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
+          backgroundColor: '#1e1e1e',
         },
       },
     },
@@ -146,6 +191,39 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
+          backgroundColor: '#1e1e1e',
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#2c2c2c',
+        },
+        outlined: {
+          borderColor: 'rgba(255, 255, 255, 0.23)',
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            '& fieldset': {
+              borderColor: 'rgba(255, 255, 255, 0.23)',
+            },
+            '&:hover fieldset': {
+              borderColor: 'rgba(255, 255, 255, 0.40)',
+            },
+          },
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          backgroundImage: 'none',
+          backgroundColor: '#1e1e1e',
         },
       },
     },
