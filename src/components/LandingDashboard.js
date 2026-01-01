@@ -547,65 +547,23 @@ function LandingDashboard({
         </Container>
       </Box>
 
-      {/* Professional Footer */}
+      {/* Footer */}
       <Box
         component="footer"
         sx={{
-          py: 6,
+          py: 4,
           bgcolor: 'grey.900',
           color: 'white',
         }}
       >
         <Container maxWidth="lg">
-          <Grid container spacing={4}>
-            {/* Ekamanam Info */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Ekamanam
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 2, opacity: 0.8, lineHeight: 1.7 }}>
-                Transform your learning with AI-powered tools, multilingual support, and interactive visualizations. 
-                Ekamanam (ఏకమనం - "One Mind") helps students master any subject through voice, visuals, and practice.
-              </Typography>
-            </Grid>
-
-            {/* AI Features */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                AI Features
-              </Typography>
-              <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Vyonn AI Tutor</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Voice Input & Output</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Smart Flashcards</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Spaced Repetition</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Exam Generation</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Interactive Labs</Typography></li>
-              </Box>
-            </Grid>
-
-            {/* Resources */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Resources
-              </Typography>
-              <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Math Lab</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Chemistry 3D</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Physics Simulator</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Code Editor</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Globe Viewer</Typography></li>
-                <li><Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>• Circuit Designer</Typography></li>
-              </Box>
-            </Grid>
-          </Grid>
-
-          <Box sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', mt: 4, pt: 4 }}>
-            <Typography variant="body2" textAlign="center" sx={{ opacity: 0.7 }}>
-              © 2025 Amandeep Talwar. All rights reserved.
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ opacity: 0.8, mb: 1 }}>
+              © {new Date().getFullYear()} Ekamanam. All rights reserved.
             </Typography>
-            <Typography variant="caption" textAlign="center" display="block" sx={{ mt: 1, opacity: 0.6 }}>
-              AI-generated content may contain errors. Please verify important information.
+            <Typography variant="caption" sx={{ opacity: 0.6, display: 'block' }}>
+              Disclaimer: AI-generated content is for educational purposes only and may contain errors. 
+              Users should verify all information independently. Ekamanam is not liable for any inaccuracies.
             </Typography>
           </Box>
         </Container>
