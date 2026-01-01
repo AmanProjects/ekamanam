@@ -249,12 +249,37 @@ function LearningHubView({
 
   const loadHubData = async () => {
     try {
-      // For sample hubs, skip database loading
+      // For sample hubs, create sample PDF entries
       if (hub.isSample) {
         console.log('📚 Loading sample hub:', hub.name);
         setHubData(hub);
-        // Sample hubs have empty PDFs for now (just for demo)
-        setHubPdfs([]);
+        
+        // Create sample PDF entries based on hub's pdfIds
+        const samplePdfs = [];
+        if (hub.pdfIds.includes('sample-coordinate-geometry')) {
+          samplePdfs.push({
+            id: 'sample-coordinate-geometry',
+            name: '7.Coordinate Geometry.pdf',
+            totalPages: 50,
+            pageCount: 50,
+            isSample: true,
+            subject: 'Mathematics',
+            addedAt: Date.now()
+          });
+        }
+        if (hub.pdfIds.includes('sample-freedom-movement')) {
+          samplePdfs.push({
+            id: 'sample-freedom-movement',
+            name: '8th Class-TS-EM-Social Studies-12 –Freedom Movement in Hyderabad State.pdf',
+            totalPages: 60,
+            pageCount: 60,
+            isSample: true,
+            subject: 'History',
+            addedAt: Date.now()
+          });
+        }
+        
+        setHubPdfs(samplePdfs);
         setAvailablePdfs([]);
         return;
       }
@@ -560,7 +585,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
   const handleTextSelect = useCallback(() => {}, []);
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       {/* Mobile Header */}
       {isMobile && (
         <Paper elevation={1} sx={{ display: 'flex', alignItems: 'center', px: 1.5, py: 1, gap: 1, flexShrink: 0 }}>
@@ -827,7 +852,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
                     }}
                   >
                     <ListItemAvatar>
-                      <Avatar variant="rounded" sx={{ bgcolor: '#fef3f2', width: 36, height: 36 }}>
+                      <Avatar variant="rounded" sx={{ bgcolor: 'error.lighter', width: 36, height: 36 }}>
                         <PdfIcon color="error" fontSize="small" />
                       </Avatar>
                     </ListItemAvatar>
@@ -1341,7 +1366,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
                           sx={{
                             p: 1.25,
                             maxWidth: '85%',
-                            bgcolor: msg.role === 'user' ? 'primary.main' : 'grey.100',
+                            bgcolor: msg.role === 'user' ? 'primary.main' : 'action.hover',
                             color: msg.role === 'user' ? 'white' : 'text.primary',
                             borderRadius: 2
                           }}
@@ -1427,7 +1452,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
           <Box sx={{ 
             px: 1, 
             py: 0.3, 
-            bgcolor: 'grey.100', 
+            bgcolor: 'background.paper', 
             borderTop: '1px solid',
             borderColor: 'divider',
             textAlign: 'center',

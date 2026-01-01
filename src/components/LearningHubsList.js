@@ -405,12 +405,12 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                           <Chip
                             label={`${stats.pdfCount} ${stats.pdfCount === 1 ? 'PDF' : 'PDFs'}`}
                             size="small"
-                            sx={{ bgcolor: '#f5f5f5', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
+                            sx={{ bgcolor: 'action.hover', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                           />
                           <Chip
                             label={`${stats.totalPages || 0} pages`}
                             size="small"
-                            sx={{ bgcolor: '#f5f5f5', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
+                            sx={{ bgcolor: 'action.hover', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                           />
                           {hub.isSample && (
                             <Chip

@@ -539,11 +539,36 @@ function App() {
         originalFileName: libraryItem.originalFileName,
         size: libraryItem.size,
         driveFileId: libraryItem.driveFileId,
+        isSample: libraryItem.isSample,
         fromHub: hubContext?.name || 'None'
       });
       
       // v10.6.1: Store hub context if opening from a hub
       setPdfSourceHub(hubContext);
+      
+      // Handle sample PDFs specially
+      if (libraryItem.isSample) {
+        console.log('📚 Loading sample PDF from public folder');
+        const sampleMap = {
+          'sample-coordinate-geometry': '7.Coordinate Geometry.pdf',
+          'sample-freedom-movement': '8th Class-TS-EM-Social Studies-12 –Freedom Movement in Hyderabad State.pdf'
+        };
+        const filename = sampleMap[libraryItem.id];
+        if (filename) {
+          const response = await fetch(`${process.env.PUBLIC_URL}/samples/${filename}`);
+          const blob = await response.blob();
+          const file = new File([blob], libraryItem.name, { type: 'application/pdf' });
+          
+          setPdfId(libraryItem.id);
+          setSelectedFile(file);
+          setCurrentLibraryItem(libraryItem);
+          setCurrentPage(1);
+          setView('reader');
+          
+          console.log(`✅ Opened sample PDF: ${libraryItem.name}`);
+          return;
+        }
+      }
       
       // Load PDF data from IndexedDB first
       let pdfData = await loadPDFData(libraryItem.id);
