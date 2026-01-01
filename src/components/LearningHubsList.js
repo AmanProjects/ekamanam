@@ -47,7 +47,33 @@ import libraryService from '../services/libraryService';
 const HUB_ICONS = ['📚', '🎓', '🔬', '📖', '💡', '🎯', '🚀', '⚡', '🌟', '🧠'];
 const HUB_COLORS = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#FF5722', '#3F51B5'];
 
-function LearningHubsList({ onBack, onOpenHub }) {
+// Sample hubs for free users
+const SAMPLE_HUBS = [
+  {
+    id: 'sample-geometry',
+    name: 'Geometry Fundamentals',
+    description: 'Learn coordinate geometry with sample materials',
+    icon: '📐',
+    color: '#2196F3',
+    pdfIds: ['sample-coordinate-geometry'],
+    isSample: true,
+    pdfCount: 1,
+    lastAccessed: Date.now()
+  },
+  {
+    id: 'sample-history',
+    name: 'Indian History',
+    description: 'Explore freedom movement in Hyderabad',
+    icon: '📜',
+    color: '#FF9800',
+    pdfIds: ['sample-freedom-movement'],
+    isSample: true,
+    pdfCount: 1,
+    lastAccessed: Date.now()
+  }
+];
+
+function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) {
   const [hubs, setHubs] = useState([]);
   const [allPdfs, setAllPdfs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +84,9 @@ function LearningHubsList({ onBack, onOpenHub }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedHub, setSelectedHub] = useState(null);
   const [showPdfSelector, setShowPdfSelector] = useState(false); // v10.6.2: PDF selection dialog
+  
+  // Check if user is free tier
+  const isFreeUser = subscription && !subscription.isPaid;
 
   useEffect(() => {
     loadData();
@@ -86,7 +115,13 @@ function LearningHubsList({ onBack, onOpenHub }) {
         learningHubService.getAllLearningHubs(),
         libraryService.getAllLibraryItems()
       ]);
-      setHubs(loadedHubs);
+      
+      // For free users, only show sample hubs
+      if (isFreeUser) {
+        setHubs(SAMPLE_HUBS);
+      } else {
+        setHubs(loadedHubs);
+      }
       setAllPdfs(loadedPdfs);
     } catch (error) {
       console.error('❌ Failed to load hubs:', error);
@@ -198,13 +233,25 @@ function LearningHubsList({ onBack, onOpenHub }) {
                 <BackIcon />
               </IconButton>
               <Typography variant={{ xs: 'h5', sm: 'h4' }} fontWeight={600}>
-                My Learning Hubs
+                {isFreeUser ? 'Sample Learning Hubs' : 'My Learning Hubs'}
               </Typography>
+              {isFreeUser && (
+                <Chip
+                  label="Free Preview"
+                  size="small"
+                  sx={{
+                    bgcolor: '#1976d2',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.7rem'
+                  }}
+                />
+              )}
             </Box>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setCreateDialogOpen(true)}
+              onClick={() => isFreeUser ? onUpgrade() : setCreateDialogOpen(true)}
               sx={{
                 borderRadius: 2,
                 px: { xs: 2, sm: 3 },
@@ -212,15 +259,28 @@ function LearningHubsList({ onBack, onOpenHub }) {
                 textTransform: 'none',
                 fontSize: { xs: '0.9rem', sm: '1rem' },
                 boxShadow: 2,
-                width: { xs: '100%', sm: 'auto' }
+                width: { xs: '100%', sm: 'auto' },
+                bgcolor: isFreeUser ? '#1976d2' : 'primary.main'
               }}
             >
-              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Create New Hub</Box>
-              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>New Hub</Box>
+              {isFreeUser ? (
+                <>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Upgrade to Create Hubs</Box>
+                  <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Upgrade</Box>
+                </>
+              ) : (
+                <>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Create New Hub</Box>
+                  <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>New Hub</Box>
+                </>
+              )}
             </Button>
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-            Organize your PDFs into focused Learning Hubs for better learning
+            {isFreeUser 
+              ? 'Explore these sample hubs. Upgrade to create your own personalized Learning Hubs!'
+              : 'Organize your PDFs into focused Learning Hubs for better learning'
+            }
           </Typography>
         </Box>
 
@@ -322,12 +382,15 @@ function LearningHubsList({ onBack, onOpenHub }) {
                             </Typography>
                           )}
                         </Box>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => handleMenuOpen(e, hub)}
-                        >
-                          <MoreIcon fontSize="small" />
-                        </IconButton>
+                        {/* Only show menu for non-sample hubs */}
+                        {!hub.isSample && (
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleMenuOpen(e, hub)}
+                          >
+                            <MoreIcon fontSize="small" />
+                          </IconButton>
+                        )}
                       </Box>
 
                       {/* Stats */}
@@ -343,6 +406,18 @@ function LearningHubsList({ onBack, onOpenHub }) {
                             size="small"
                             sx={{ bgcolor: '#f5f5f5', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                           />
+                          {hub.isSample && (
+                            <Chip
+                              label="Sample"
+                              size="small"
+                              sx={{
+                                bgcolor: '#e3f2fd',
+                                color: '#1976d2',
+                                fontWeight: 600,
+                                fontSize: { xs: '0.7rem', sm: '0.8125rem' }
+                              }}
+                            />
+                          )}
                         </Box>
                         {stats.pdfCount > 0 && (
                           <Box sx={{ mb: 2 }}>

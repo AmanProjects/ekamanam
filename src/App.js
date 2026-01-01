@@ -930,18 +930,21 @@ function App() {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={`Learning Hubs${hubCount > 0 ? ` (${hubCount} Hubs)` : ''}`}>
-              <IconButton 
-                id="library-button"
-                onClick={() => setView('hubs')}
-                color="default"
-                data-tour="library-button"
-              >
-                <Badge badgeContent={hubCount} color="primary">
-                  <LibraryIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+            {/* Learning Hubs - Only show for authenticated users */}
+            {user && (
+              <Tooltip title={`Learning Hubs${hubCount > 0 ? ` (${hubCount} Hubs)` : ''}`}>
+                <IconButton 
+                  id="library-button"
+                  onClick={() => setView('hubs')}
+                  color="default"
+                  data-tour="library-button"
+                >
+                  <Badge badgeContent={hubCount} color="primary">
+                    <LibraryIcon />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+            )}
 
             <Tooltip title="Help & Guide">
               <IconButton 
@@ -1036,14 +1039,17 @@ function App() {
               <ListItemText primary="Home" />
             </ListItem>
             
-            <ListItem button onClick={() => { setView('hubs'); setMobileMenuOpen(false); }}>
-              <ListItemIcon>
-                <Badge badgeContent={hubCount} color="primary">
-                  <LibraryIcon />
-                </Badge>
-              </ListItemIcon>
-              <ListItemText primary="Learning Hubs" secondary={hubCount > 0 ? `${hubCount} Hubs` : null} />
-            </ListItem>
+            {/* Learning Hubs - Only show for authenticated users */}
+            {user && (
+              <ListItem button onClick={() => { setView('hubs'); setMobileMenuOpen(false); }}>
+                <ListItemIcon>
+                  <Badge badgeContent={hubCount} color="primary">
+                    <LibraryIcon />
+                  </Badge>
+                </ListItemIcon>
+                <ListItemText primary="Learning Hubs" secondary={hubCount > 0 ? `${hubCount} Hubs` : null} />
+              </ListItem>
+            )}
           </List>
           
           <Divider />
@@ -1135,6 +1141,9 @@ function App() {
           <LearningHubsList
             onBack={() => setView('dashboard')}
             onOpenHub={(hub) => { setCurrentHub(hub); setView('hub-view'); }}
+            user={user}
+            subscription={subscription}
+            onUpgrade={() => setShowSubscriptionDialog(true)}
           />
         ) : view === 'hub-view' ? (
           // v10.6.3: 3-Panel Hub View (Sources | Hub Chat | Materials)
