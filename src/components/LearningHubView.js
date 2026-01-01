@@ -143,8 +143,10 @@ function LearningHubView({
 
   useEffect(() => {
     loadHubData();
-    // Mark hub as accessed
-    learningHubService.markHubAccessed(hub.id);
+    // Mark hub as accessed (skip for sample hubs)
+    if (!hub.isSample) {
+      learningHubService.markHubAccessed(hub.id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hub.id]);
 
@@ -247,6 +249,16 @@ function LearningHubView({
 
   const loadHubData = async () => {
     try {
+      // For sample hubs, skip database loading
+      if (hub.isSample) {
+        console.log('📚 Loading sample hub:', hub.name);
+        setHubData(hub);
+        // Sample hubs have empty PDFs for now (just for demo)
+        setHubPdfs([]);
+        setAvailablePdfs([]);
+        return;
+      }
+      
       const [updatedHub, allLibraryPdfs] = await Promise.all([
         learningHubService.getLearningHub(hub.id),
         libraryService.getAllLibraryItems()
@@ -618,18 +630,21 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
                 {hubData.description}
               </Typography>
             )}
-            <Button
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                setMobileDrawerOpen(false);
-                setAddPdfDialogOpen(true);
-              }}
-              fullWidth
-              variant="outlined"
-            >
-              Add PDF or Zip file
-            </Button>
+            {/* Hide Add button for sample hubs */}
+            {!hubData.isSample && (
+              <Button
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  setMobileDrawerOpen(false);
+                  setAddPdfDialogOpen(true);
+                }}
+                fullWidth
+                variant="outlined"
+              >
+                Add PDF or Zip file
+              </Button>
+            )}
           </Box>
 
           {/* PDF List */}
@@ -637,12 +652,25 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
             {hubPdfs.length === 0 && (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <PdfIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
-                <Typography variant="body2" color="text.secondary">
-                  No PDFs yet
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                  Tap "Add PDF or Zip file" to get started
-                </Typography>
+                {hubData.isSample ? (
+                  <>
+                    <Typography variant="body2" fontWeight={600} color="primary.main" sx={{ mb: 1 }}>
+                      Sample Hub Preview
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      This is a sample hub. Upgrade to create your own hubs and add PDFs!
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <Typography variant="body2" color="text.secondary">
+                      No PDFs yet
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      Tap "Add PDF or Zip file" to get started
+                    </Typography>
+                  </>
+                )}
               </Box>
             )}
             {hubPdfs.map((pdf) => (
@@ -740,15 +768,18 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
                 {hubData.description}
               </Typography>
             )}
-            <Button
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={() => setAddPdfDialogOpen(true)}
-              fullWidth
-              variant="outlined"
-            >
-              Add PDF or Zip file
-            </Button>
+            {/* Hide Add button for sample hubs */}
+            {!hubData.isSample && (
+              <Button
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => setAddPdfDialogOpen(true)}
+                fullWidth
+                variant="outlined"
+              >
+                Add PDF or Zip file
+              </Button>
+            )}
           </Box>
           
           {/* PDF List */}
@@ -756,9 +787,23 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
             {hubPdfs.length === 0 && (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <PdfIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
-                <Typography variant="body2" color="text.secondary">
-                  No PDFs yet
-                </Typography>
+                {hubData.isSample ? (
+                  <>
+                    <Typography variant="body2" fontWeight={600} color="primary.main" sx={{ mb: 1 }}>
+                      Sample Hub Preview
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      This is a sample hub to demonstrate the feature.
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                      Upgrade to create your own hubs and add PDFs!
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No PDFs yet
+                  </Typography>
+                )}
               </Box>
             )}
             {hubPdfs.map((pdf) => (
