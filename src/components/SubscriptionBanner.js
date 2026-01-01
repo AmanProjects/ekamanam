@@ -210,7 +210,10 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
         <>
           <Box
             onClick={onUpgrade}
-            onContextMenu={handleMenuOpen}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              handleMenuOpen(e);
+            }}
             sx={{
               display: 'flex',
               alignItems: 'center',
@@ -237,14 +240,21 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
             <Avatar
               src={user?.photoURL}
               alt={getUserFirstName()}
-              onClick={handleMenuOpen}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMenuOpen(e);
+              }}
               sx={{
                 width: 28,
                 height: 28,
                 fontSize: '0.75rem',
                 bgcolor: '#4caf50',
                 border: '2px solid white',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                cursor: 'pointer',
+                '&:hover': {
+                  opacity: 0.8
+                }
               }}
             >
               {getUserInitials()}
@@ -283,29 +293,82 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
         </>
       );
     } else {
+      // Free tier with user menu
       return (
-        <Chip
-          icon={isOutOfQueries ? <WarningIcon sx={{ fontSize: '0.9rem' }} /> : undefined}
-          label={`Free: ${remainingQueries || 0}/${usage?.limit || 3} left`}
-          size="small"
-          onClick={onUpgrade}
-          sx={{
-            height: 24,
-            fontSize: '0.7rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            bgcolor: isOutOfQueries ? '#ffebee' : isLowOnQueries ? '#fff3e0' : '#e3f2fd',
-            color: isOutOfQueries ? '#c62828' : isLowOnQueries ? '#e65100' : '#1565c0',
-            border: '1px solid',
-            borderColor: isOutOfQueries ? '#ef5350' : isLowOnQueries ? '#ff9800' : '#42a5f5',
-            '& .MuiChip-label': { px: 1 },
-            '& .MuiChip-icon': { 
-              color: isOutOfQueries ? '#c62828' : '#e65100', 
-              ml: 0.5 
-            },
-            '&:hover': { opacity: 0.9 }
-          }}
-        />
+        <>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <Chip
+              icon={isOutOfQueries ? <WarningIcon sx={{ fontSize: '0.9rem' }} /> : undefined}
+              label={`Free: ${remainingQueries || 0}/${usage?.limit || 3} left`}
+              size="small"
+              onClick={onUpgrade}
+              sx={{
+                height: 24,
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                bgcolor: isOutOfQueries ? '#ffebee' : isLowOnQueries ? '#fff3e0' : '#e3f2fd',
+                color: isOutOfQueries ? '#c62828' : isLowOnQueries ? '#e65100' : '#1565c0',
+                border: '1px solid',
+                borderColor: isOutOfQueries ? '#ef5350' : isLowOnQueries ? '#ff9800' : '#42a5f5',
+                '& .MuiChip-label': { px: 1 },
+                '& .MuiChip-icon': { 
+                  color: isOutOfQueries ? '#c62828' : '#e65100', 
+                  ml: 0.5 
+                },
+                '&:hover': { opacity: 0.9 }
+              }}
+            />
+            <Avatar
+              src={user?.photoURL}
+              alt={getUserFirstName()}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMenuOpen(e);
+              }}
+              sx={{
+                width: 28,
+                height: 28,
+                fontSize: '0.75rem',
+                bgcolor: isOutOfQueries ? '#c62828' : isLowOnQueries ? '#e65100' : '#1565c0',
+                cursor: 'pointer',
+                '&:hover': {
+                  opacity: 0.8
+                }
+              }}
+            >
+              {getUserInitials()}
+            </Avatar>
+          </Box>
+          <Menu
+            anchorEl={anchorEl}
+            open={menuOpen}
+            onClose={handleMenuClose}
+            onClick={handleMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem disabled>
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              <Typography variant="body2">{user?.email}</Typography>
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleSignOut}>
+              <ListItemIcon>
+                <LogoutIcon fontSize="small" />
+              </ListItemIcon>
+              Sign Out
+            </MenuItem>
+          </Menu>
+        </>
       );
     }
   }
@@ -326,42 +389,82 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
         // Student subscription banner
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <StarIcon sx={{ color: '#4caf50', fontSize: '1.25rem' }} />
+            <Avatar
+              src={user?.photoURL}
+              alt={getUserFirstName()}
+              sx={{
+                width: 32,
+                height: 32,
+                fontSize: '0.75rem',
+                bgcolor: '#4caf50'
+              }}
+            >
+              {getUserInitials()}
+            </Avatar>
             <Box>
               <Typography variant="caption" fontWeight={600} color="#2e7d32" display="block">
-                Student Subscription Active
+                {getUserFirstName()}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                 {daysRemaining} days to renew
               </Typography>
             </Box>
           </Box>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={onUpgrade}
-            sx={{
-              textTransform: 'none',
-              fontSize: '0.75rem',
-              py: 0.5,
-              px: 1.5,
-              borderColor: '#4caf50',
-              color: '#4caf50',
-              '&:hover': {
-                borderColor: '#45a049',
-                bgcolor: 'rgba(76, 175, 80, 0.04)'
-              }
-            }}
-          >
-            Details
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={onUpgrade}
+              sx={{
+                textTransform: 'none',
+                fontSize: '0.75rem',
+                py: 0.5,
+                px: 1.5,
+                borderColor: '#4caf50',
+                color: '#4caf50',
+                '&:hover': {
+                  borderColor: '#45a049',
+                  bgcolor: 'rgba(76, 175, 80, 0.04)'
+                }
+              }}
+            >
+              Renew
+            </Button>
+            <Button
+              size="small"
+              variant="text"
+              onClick={handleSignOut}
+              startIcon={<LogoutIcon sx={{ fontSize: '0.8rem' }} />}
+              sx={{
+                textTransform: 'none',
+                fontSize: '0.75rem',
+                py: 0.5,
+                px: 1,
+                color: '#2e7d32',
+                minWidth: 'auto'
+              }}
+            >
+              Sign Out
+            </Button>
+          </Box>
         </Box>
       ) : (
         // Free tier banner
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {isOutOfQueries && <WarningIcon sx={{ color: '#d32f2f', fontSize: '1.25rem' }} />}
+              <Avatar
+                src={user?.photoURL}
+                alt={getUserFirstName()}
+                sx={{
+                  width: 32,
+                  height: 32,
+                  fontSize: '0.75rem',
+                  bgcolor: isOutOfQueries ? '#c62828' : isLowOnQueries ? '#e65100' : '#1565c0'
+                }}
+              >
+                {getUserInitials()}
+              </Avatar>
               <Box>
                 <Typography 
                   variant="caption" 
@@ -369,31 +472,49 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
                   color={isOutOfQueries ? '#c62828' : isLowOnQueries ? '#e65100' : '#1565c0'} 
                   display="block"
                 >
-                  {isOutOfQueries ? 'No Queries Left' : 'Free Plan'}
+                  {getUserFirstName()} - {isOutOfQueries ? 'No Queries Left' : 'Free Plan'}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                   {remainingQueries || 0} of {usage?.limit || 3} queries remaining today
                 </Typography>
               </Box>
             </Box>
-            <Button
-              size="small"
-              variant="contained"
-              startIcon={<CartIcon sx={{ fontSize: '0.9rem' }} />}
-              onClick={onUpgrade}
-              sx={{
-                textTransform: 'none',
-                fontSize: '0.75rem',
-                py: 0.5,
-                px: 1.5,
-                bgcolor: isOutOfQueries ? '#d32f2f' : '#1976d2',
-                '&:hover': {
-                  bgcolor: isOutOfQueries ? '#c62828' : '#1565c0'
-                }
-              }}
-            >
-              Upgrade
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<CartIcon sx={{ fontSize: '0.9rem' }} />}
+                onClick={onUpgrade}
+                sx={{
+                  textTransform: 'none',
+                  fontSize: '0.75rem',
+                  py: 0.5,
+                  px: 1.5,
+                  bgcolor: isOutOfQueries ? '#d32f2f' : '#1976d2',
+                  '&:hover': {
+                    bgcolor: isOutOfQueries ? '#c62828' : '#1565c0'
+                  }
+                }}
+              >
+                Upgrade
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                onClick={handleSignOut}
+                startIcon={<LogoutIcon sx={{ fontSize: '0.8rem' }} />}
+                sx={{
+                  textTransform: 'none',
+                  fontSize: '0.75rem',
+                  py: 0.5,
+                  px: 1,
+                  color: isOutOfQueries ? '#c62828' : isLowOnQueries ? '#e65100' : '#1565c0',
+                  minWidth: 'auto'
+                }}
+              >
+                Sign Out
+              </Button>
+            </Box>
           </Box>
           {/* Progress bar */}
           <LinearProgress
