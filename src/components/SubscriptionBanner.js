@@ -6,7 +6,7 @@
  * - Desktop: Compact badge in header
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Chip,
@@ -14,37 +14,114 @@ import {
   Typography,
   Button,
   LinearProgress,
-  Avatar
+  Avatar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  Divider
 } from '@mui/material';
 import {
   Star as StarIcon,
   Warning as WarningIcon,
-  ShoppingCart as CartIcon
+  ShoppingCart as CartIcon,
+  Logout as LogoutIcon,
+  Person as PersonIcon,
+  Settings as SettingsIcon,
+  Login as LoginIcon
 } from '@mui/icons-material';
+import { signOut, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth, googleProvider, isFirebaseConfigured } from '../firebase/config';
 
 function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, user }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const menuOpen = Boolean(anchorEl);
+
+  const handleMenuOpen = (event) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleSignIn = async () => {
+    if (!isFirebaseConfigured) {
+      window.confirm(
+        "🔧 Firebase Not Configured\n\n" +
+        "Google Sign-In requires Firebase setup. You have two options:\n\n" +
+        "1. Continue WITHOUT Sign-In (Recommended for quick start)\n" +
+        "   - App works fully\n" +
+        "   - Store API key locally\n" +
+        "   - Notes saved in browser\n\n" +
+        "2. Set up Firebase (For cloud sync)\n" +
+        "   - Enable Google Sign-In\n" +
+        "   - Sync across devices\n\n" +
+        "Click OK to continue without sign-in."
+      );
+      return;
+    }
+
+    try {
+      googleProvider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        localStorage.setItem('google_access_token', credential.accessToken);
+        console.log('✅ Signed in successfully');
+      }
+    } catch (error) {
+      console.error('Sign-in error:', error);
+      if (error.code === 'auth/popup-closed-by-user') {
+        console.log("User closed the sign-in popup");
+      } else if (error.code === 'auth/popup-blocked') {
+        alert("🚫 Popup Blocked\n\nYour browser blocked the sign-in popup.\n\nTo fix:\n1. Allow popups for this site\n2. Try again");
+      } else {
+        alert('Failed to sign in: ' + error.message);
+      }
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      localStorage.removeItem('google_access_token');
+      await signOut(auth);
+      handleMenuClose();
+    } catch (error) {
+      console.error('Sign-out error:', error);
+      alert('Failed to sign out: ' + error.message);
+    }
+  };
+
   if (subscription?.loading) return null;
 
   // Not logged in state
   if (!isLoggedIn) {
-    // Desktop version - Compact chip
+    // Desktop version - Sign In button
     if (!isMobile) {
       return (
-        <Chip
-          label="Subscribe"
+        <Button
+          variant="outlined"
           size="small"
-          onClick={onUpgrade}
+          startIcon={<LoginIcon />}
+          onClick={handleSignIn}
           sx={{
-            height: 24,
-            fontSize: '0.7rem',
+            textTransform: 'none',
+            fontSize: '0.75rem',
             fontWeight: 600,
-            cursor: 'pointer',
-            bgcolor: '#4caf50',
-            color: 'white',
-            '& .MuiChip-label': { px: 1 },
-            '&:hover': { bgcolor: '#45a049' }
+            borderColor: '#4caf50',
+            color: '#4caf50',
+            '&:hover': {
+              borderColor: '#45a049',
+              bgcolor: 'rgba(76, 175, 80, 0.04)'
+            }
           }}
-        />
+        >
+          Sign In
+        </Button>
       );
     }
 
@@ -72,8 +149,8 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
           <Button
             size="small"
             variant="contained"
-            startIcon={<CartIcon sx={{ fontSize: '0.9rem' }} />}
-            onClick={onUpgrade}
+            startIcon={<LoginIcon sx={{ fontSize: '0.9rem' }} />}
+            onClick={handleSignIn}
             sx={{
               textTransform: 'none',
               fontSize: '0.75rem',
@@ -86,7 +163,7 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
               }
             }}
           >
-            Subscribe
+            Sign In
           </Button>
         </Box>
       </Paper>
@@ -130,54 +207,80 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
   if (!isMobile) {
     if (isPaid) {
       return (
-        <Box
-          onClick={onUpgrade}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            bgcolor: '#e8f5e9',
-            borderRadius: 2,
-            px: 1.5,
-            py: 0.5,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            border: '1px solid #4caf50',
-            '&:hover': {
-              bgcolor: '#c8e6c9',
-              transform: 'translateY(-1px)',
-              boxShadow: '0 2px 8px rgba(76, 175, 80, 0.2)'
-            }
-          }}
-        >
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#2e7d32', lineHeight: 1 }}>
-              Student
-            </Typography>
-          </Box>
-          <Avatar
-            src={user?.photoURL}
-            alt={getUserFirstName()}
+        <>
+          <Box
+            onClick={onUpgrade}
+            onContextMenu={handleMenuOpen}
             sx={{
-              width: 28,
-              height: 28,
-              fontSize: '0.75rem',
-              bgcolor: '#4caf50',
-              border: '2px solid white',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              bgcolor: '#e8f5e9',
+              borderRadius: 2,
+              px: 1.5,
+              py: 0.5,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              border: '1px solid #4caf50',
+              '&:hover': {
+                bgcolor: '#c8e6c9',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 2px 8px rgba(76, 175, 80, 0.2)'
+              }
             }}
           >
-            {getUserInitials()}
-          </Avatar>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#1b5e20', lineHeight: 1.2 }}>
-              {getUserFirstName()}
-            </Typography>
-            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#388e3c', lineHeight: 1.2 }}>
-              {daysRemaining}d to renew
-            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#2e7d32', lineHeight: 1 }}>
+                Student
+              </Typography>
+            </Box>
+            <Avatar
+              src={user?.photoURL}
+              alt={getUserFirstName()}
+              onClick={handleMenuOpen}
+              sx={{
+                width: 28,
+                height: 28,
+                fontSize: '0.75rem',
+                bgcolor: '#4caf50',
+                border: '2px solid white',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+            >
+              {getUserInitials()}
+            </Avatar>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#1b5e20', lineHeight: 1.2 }}>
+                {getUserFirstName()}
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#388e3c', lineHeight: 1.2 }}>
+                {daysRemaining}d to renew
+              </Typography>
+            </Box>
           </Box>
-        </Box>
+          <Menu
+            anchorEl={anchorEl}
+            open={menuOpen}
+            onClose={handleMenuClose}
+            onClick={handleMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem disabled>
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              <Typography variant="body2">{user?.email}</Typography>
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleSignOut}>
+              <ListItemIcon>
+                <LogoutIcon fontSize="small" />
+              </ListItemIcon>
+              Sign Out
+            </MenuItem>
+          </Menu>
+        </>
       );
     } else {
       return (

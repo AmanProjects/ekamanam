@@ -895,14 +895,6 @@ function App() {
                     }
                   }}
                 />
-                {/* Subscription Badge - Desktop */}
-                <SubscriptionBanner 
-                  subscription={subscription} 
-                  onUpgrade={() => setShowSubscriptionDialog(true)}
-                  isMobile={false}
-                  isLoggedIn={!!user}
-                  user={user}
-                />
               </Box>
               <Box component="span" sx={{ fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1.4 }}>
                 One Focus, Limitless Learning
@@ -912,27 +904,6 @@ function App() {
           
           {/* Desktop Navigation */}
           <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, alignItems: 'center' }}>
-            {/* Subscription Badge - Only for paid users (free users badge is on the left) */}
-            {subscription.isPaid && (
-              <Chip
-                label={subscription.tier}
-                size="small"
-                onClick={() => setShowSubscriptionDialog(true)}
-                sx={{
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #5568d3 0%, #6339a3 100%)',
-                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              />
-            )}
-
             {/* Cognitive Load Gauge - Only show in reader view */}
             {view === 'reader' && (
               <CognitiveLoadGauge
@@ -999,7 +970,14 @@ function App() {
             </Tooltip>
             */}
 
-            <AuthButton user={user} />
+            {/* Enhanced Student Badge with User Info - Desktop */}
+            <SubscriptionBanner 
+              subscription={subscription} 
+              onUpgrade={() => setShowSubscriptionDialog(true)}
+              isMobile={false}
+              isLoggedIn={!!user}
+              user={user}
+            />
           </Box>
 
           {/* Mobile: Minimal icons */}
@@ -1011,7 +989,7 @@ function App() {
                 sx={{ fontSize: '0.7rem', height: 24 }}
               />
             )}
-            <AuthButton user={user} compact={isMobile} />
+            {/* Mobile user badge shown below in SubscriptionBanner */}
           </Box>
         </Toolbar>
       </AppBar>
