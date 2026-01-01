@@ -177,49 +177,30 @@ function Dashboard({
         {/* Welcome Header */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography 
+            <Typography 
               variant="h5" 
               sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.3 }}
-                  >
+            >
               {getGreeting()}, {user?.displayName?.split(' ')[0] || 'there'}!
-                </Typography>
+            </Typography>
                 
-            {subscription && !subscription.loading && (
-              subscription.subscription?.isDemo ? (
-                // Demo account badge
-                <Chip
-                  icon={<CheckIcon sx={{ fontSize: '0.9rem !important' }} />}
-                  label="DEMO (Full Access)"
-                  size="small"
-                  color="warning"
-                  sx={{ 
-                    fontWeight: 700, 
-                    height: 24,
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
-                    color: 'white',
-                    '& .MuiChip-icon': {
-                      color: 'white'
-                    }
-                  }}
-                />
-              ) : subscription.isPaid ? (
-                    <Chip
-                  icon={<CheckIcon sx={{ fontSize: '0.9rem !important' }} />}
-                  label={subscription.daysRemaining ? `${subscription.daysRemaining}d left` : 'Active'}
-                      size="small"
-                  color="success"
-                  sx={{ fontWeight: 600, height: 24 }}
-                    />
-              ) : (
-                <Button
-                  variant="text"
-                  size="small"
-                  onClick={onUpgrade}
-                  sx={{ fontWeight: 600, textTransform: 'none', color: 'primary.main', minWidth: 'auto' }}
-                >
-                  Upgrade
-                </Button>
-              )
+            {subscription && !subscription.loading && subscription.subscription?.isDemo && (
+              // Demo account badge (only shown for demo accounts)
+              <Chip
+                icon={<CheckIcon sx={{ fontSize: '0.9rem !important' }} />}
+                label="DEMO (Full Access)"
+                size="small"
+                color="warning"
+                sx={{ 
+                  fontWeight: 700, 
+                  height: 24,
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+                  color: 'white',
+                  '& .MuiChip-icon': {
+                    color: 'white'
+                  }
+                }}
+              />
             )}
           </Box>
         </Box>

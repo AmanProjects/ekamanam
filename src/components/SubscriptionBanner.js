@@ -105,7 +105,7 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn }) {
       return (
         <Chip
           icon={<StarIcon sx={{ fontSize: '0.9rem' }} />}
-          label={`Premium: ${daysRemaining}d left`}
+          label={`Student: ${daysRemaining}d to renew`}
           size="small"
           onClick={onUpgrade}
           sx={{
@@ -162,16 +162,16 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn }) {
       }}
     >
       {isPaid ? (
-        // Premium banner
+        // Student subscription banner
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <StarIcon sx={{ color: '#4caf50', fontSize: '1.25rem' }} />
             <Box>
               <Typography variant="caption" fontWeight={600} color="#2e7d32" display="block">
-                {tier} Subscription Active
+                Student Subscription Active
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                {daysRemaining} days remaining
+                {daysRemaining} days to renew
               </Typography>
             </Box>
           </Box>
