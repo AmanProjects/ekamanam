@@ -13,7 +13,8 @@ import {
   Paper,
   Typography,
   Button,
-  LinearProgress
+  LinearProgress,
+  Avatar
 } from '@mui/material';
 import {
   Star as StarIcon,
@@ -21,7 +22,7 @@ import {
   ShoppingCart as CartIcon
 } from '@mui/icons-material';
 
-function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn }) {
+function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, user }) {
   if (subscription?.loading) return null;
 
   // Not logged in state
@@ -99,27 +100,84 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn }) {
   const isLowOnQueries = isFree && remainingQueries !== null && remainingQueries <= 1;
   const isOutOfQueries = isFree && remainingQueries === 0;
 
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return 'U';
+    if (user.displayName) {
+      const names = user.displayName.split(' ');
+      return names.length > 1 
+        ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+        : names[0][0].toUpperCase();
+    }
+    if (user.email) {
+      return user.email[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const getUserFirstName = () => {
+    if (!user) return 'User';
+    if (user.displayName) {
+      return user.displayName.split(' ')[0];
+    }
+    if (user.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
   // Desktop version - Compact chip in header
   if (!isMobile) {
     if (isPaid) {
       return (
-        <Chip
-          icon={<StarIcon sx={{ fontSize: '0.9rem' }} />}
-          label={`Student: ${daysRemaining}d to renew`}
-          size="small"
+        <Box
           onClick={onUpgrade}
           sx={{
-            height: 24,
-            fontSize: '0.7rem',
-            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            bgcolor: '#e8f5e9',
+            borderRadius: 2,
+            px: 1.5,
+            py: 0.5,
             cursor: 'pointer',
-            bgcolor: '#4caf50',
-            color: 'white',
-            '& .MuiChip-label': { px: 1 },
-            '& .MuiChip-icon': { color: 'white', ml: 0.5 },
-            '&:hover': { bgcolor: '#45a049' }
+            transition: 'all 0.2s',
+            border: '1px solid #4caf50',
+            '&:hover': {
+              bgcolor: '#c8e6c9',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 2px 8px rgba(76, 175, 80, 0.2)'
+            }
           }}
-        />
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#2e7d32', lineHeight: 1 }}>
+              Student
+            </Typography>
+          </Box>
+          <Avatar
+            src={user?.photoURL}
+            alt={getUserFirstName()}
+            sx={{
+              width: 28,
+              height: 28,
+              fontSize: '0.75rem',
+              bgcolor: '#4caf50',
+              border: '2px solid white',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            {getUserInitials()}
+          </Avatar>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#1b5e20', lineHeight: 1.2 }}>
+              {getUserFirstName()}
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#388e3c', lineHeight: 1.2 }}>
+              {daysRemaining}d to renew
+            </Typography>
+          </Box>
+        </Box>
       );
     } else {
       return (
