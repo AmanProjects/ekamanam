@@ -277,17 +277,17 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
             <MenuItem disabled>
-              <ListItemIcon>
+              <ListItemIcon sx={{ minWidth: 36 }}>
                 <PersonIcon fontSize="small" />
               </ListItemIcon>
               <Typography variant="body2">{user?.email}</Typography>
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleSignOut}>
-              <ListItemIcon>
+              <ListItemIcon sx={{ minWidth: 36, color: '#d32f2f' }}>
                 <LogoutIcon fontSize="small" />
               </ListItemIcon>
-              Sign Out
+              <Typography variant="body2" sx={{ color: '#d32f2f' }}>Sign Out</Typography>
             </MenuItem>
           </Menu>
         </>
@@ -355,17 +355,17 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
             <MenuItem disabled>
-              <ListItemIcon>
+              <ListItemIcon sx={{ minWidth: 36 }}>
                 <PersonIcon fontSize="small" />
               </ListItemIcon>
               <Typography variant="body2">{user?.email}</Typography>
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleSignOut}>
-              <ListItemIcon>
+              <ListItemIcon sx={{ minWidth: 36, color: '#d32f2f' }}>
                 <LogoutIcon fontSize="small" />
               </ListItemIcon>
-              Sign Out
+              <Typography variant="body2" sx={{ color: '#d32f2f' }}>Sign Out</Typography>
             </MenuItem>
           </Menu>
         </>
