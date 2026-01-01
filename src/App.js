@@ -549,24 +549,40 @@ function App() {
       // Handle sample PDFs specially
       if (libraryItem.isSample) {
         console.log('📚 Loading sample PDF from public folder');
-        const sampleMap = {
-          'sample-coordinate-geometry': '7.Coordinate Geometry.pdf',
-          'sample-freedom-movement': '8th Class-TS-EM-Social Studies-12 –Freedom Movement in Hyderabad State.pdf'
-        };
-        const filename = sampleMap[libraryItem.id];
-        if (filename) {
-          const response = await fetch(`${process.env.PUBLIC_URL}/samples/${filename}`);
-          const blob = await response.blob();
-          const file = new File([blob], libraryItem.name, { type: 'application/pdf' });
-          
-          setPdfId(libraryItem.id);
-          setSelectedFile(file);
-          setCurrentLibraryItem(libraryItem);
-          setCurrentPage(1);
-          setView('reader');
-          
-          console.log(`✅ Opened sample PDF: ${libraryItem.name}`);
-          return;
+        try {
+          const sampleMap = {
+            'sample-coordinate-geometry': '7.Coordinate Geometry.pdf',
+            'sample-freedom-movement': '8th Class-TS-EM-Social Studies-12 –Freedom Movement in Hyderabad State.pdf'
+          };
+          const filename = sampleMap[libraryItem.id];
+          if (filename) {
+            const url = `${process.env.PUBLIC_URL}/samples/${filename}`;
+            console.log('📥 Fetching sample PDF from:', url);
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch sample PDF: ${response.status} ${response.statusText}`);
+            }
+            
+            const blob = await response.blob();
+            console.log('✅ Sample PDF fetched:', blob.size, 'bytes');
+            
+            const file = new File([blob], libraryItem.name, { type: 'application/pdf' });
+            
+            setPdfId(libraryItem.id);
+            setSelectedFile(file);
+            setCurrentLibraryItem(libraryItem);
+            setCurrentPage(1);
+            setView('reader');
+            
+            console.log(`✅ Opened sample PDF: ${libraryItem.name}`);
+            return;
+          } else {
+            throw new Error(`Sample PDF mapping not found for: ${libraryItem.id}`);
+          }
+        } catch (sampleError) {
+          console.error('❌ Failed to load sample PDF:', sampleError);
+          throw new Error(`Failed to load sample PDF: ${sampleError.message}`);
         }
       }
       

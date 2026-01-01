@@ -28,7 +28,8 @@ import {
   Avatar,
   LinearProgress,
   List,
-  ListItem
+  ListItem,
+  Skeleton
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -278,10 +279,18 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
               )}
             </Button>
           </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              fontSize: '0.9375rem',
+              lineHeight: 1.6,
+              maxWidth: '800px'
+            }}
+          >
             {isFreeUser 
-              ? 'Explore these sample hubs. Upgrade to create your own personalized Learning Hubs!'
-              : 'Organize your PDFs into focused Learning Hubs for better learning'
+              ? 'Explore these sample hubs and experience the power of organized learning. Upgrade to create unlimited personalized Learning Hubs!'
+              : 'Organize your study materials into focused Learning Hubs. Group related PDFs together for efficient, structured learning.'
             }
           </Typography>
         </Box>
@@ -291,33 +300,110 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
           <Paper
             elevation={0}
             sx={{
-              p: { xs: 4, sm: 8 },
+              p: { xs: 5, sm: 8 },
               textAlign: 'center',
               border: '2px dashed',
               borderColor: 'divider',
               borderRadius: 3,
-              bgcolor: 'background.paper'
+              bgcolor: 'background.paper',
+              maxWidth: 600,
+              mx: 'auto'
             }}
           >
-            <FolderIcon sx={{ fontSize: { xs: 60, sm: 80 }, color: 'text.disabled', mb: 2 }} />
-            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
-              No Learning Hubs Yet
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                bgcolor: 'primary.lighter',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3
+              }}
+            >
+              <FolderIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+            </Box>
+            <Typography 
+              variant="h5" 
+              fontWeight={600} 
+              gutterBottom 
+              sx={{ fontSize: '1.375rem', mb: 1.5 }}
+            >
+              Start Your Learning Journey
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
-              Create your first Learning Hub to organize your study materials
+            <Typography 
+              variant="body1" 
+              color="text.secondary" 
+              sx={{ 
+                mb: 4, 
+                fontSize: '0.9375rem',
+                lineHeight: 1.7,
+                px: { xs: 0, sm: 4 }
+              }}
+            >
+              Create your first Learning Hub to group related study materials together. 
+              Organize PDFs by subject, topic, or course for a structured learning experience.
             </Typography>
             <Button
               variant="contained"
+              size="large"
               startIcon={<AddIcon />}
               onClick={() => setCreateDialogOpen(true)}
               sx={{ 
-                width: { xs: '100%', sm: 'auto' },
-                py: { xs: 1, sm: 1.5 }
+                px: 4,
+                py: 1.25,
+                fontSize: '0.9375rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                borderRadius: 2,
+                boxShadow: 2,
+                '&:hover': {
+                  boxShadow: 4
+                }
               }}
             >
               Create Your First Hub
             </Button>
           </Paper>
+        )}
+
+        {/* Loading Skeletons */}
+        {loading && (
+          <Grid container spacing={{ xs: 2, sm: 2.5 }}>
+            {[1, 2, 3, 4].map((n) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={n}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    height: '100%',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2.5
+                  }}
+                >
+                  <CardContent sx={{ p: 2.5, pt: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                      <Skeleton variant="circular" width={48} height={48} sx={{ mr: 1.5 }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Skeleton variant="text" width="70%" height={24} sx={{ mb: 0.5 }} />
+                        <Skeleton variant="text" width="90%" height={20} />
+                        <Skeleton variant="text" width="85%" height={20} />
+                      </Box>
+                    </Box>
+                    <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ display: 'flex', gap: 0.75, mb: 1.5 }}>
+                        <Skeleton variant="rounded" width={60} height={24} />
+                        <Skeleton variant="rounded" width={70} height={24} />
+                      </Box>
+                      <Skeleton variant="rounded" width="100%" height={40} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
         )}
 
         {/* Hubs Grid */}
@@ -334,43 +420,62 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                       height: '100%',
                       border: '1px solid',
                       borderColor: 'divider',
-                      borderRadius: 2,
-                      transition: 'all 0.2s',
+                      borderRadius: 2.5,
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden',
                       '&:hover': {
                         borderColor: 'primary.main',
                         boxShadow: (theme) => theme.palette.mode === 'dark' 
-                          ? '0 4px 12px rgba(0,0,0,0.3)' 
-                          : '0 4px 12px rgba(0,0,0,0.08)',
-                        transform: 'translateY(-2px)'
+                          ? '0 8px 24px rgba(0,0,0,0.4)' 
+                          : '0 8px 24px rgba(0,0,0,0.12)',
+                        transform: 'translateY(-4px)',
+                        '& .hub-open-button': {
+                          bgcolor: 'primary.dark'
+                        }
+                      },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 3,
+                        bgcolor: hub.color,
+                        opacity: 0.8
                       }
                     }}
                   >
-                    <CardContent sx={{ p: 2 }}>
+                    <CardContent sx={{ p: 2.5, pt: 3 }}>
                       {/* Hub Header */}
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
                         <Avatar
                           sx={{
                             bgcolor: hub.color,
-                            width: 44,
-                            height: 44,
+                            width: 48,
+                            height: 48,
                             fontSize: '1.5rem',
-                            mr: 1.5
+                            mr: 1.5,
+                            boxShadow: (theme) => theme.palette.mode === 'dark'
+                              ? '0 2px 8px rgba(0,0,0,0.3)'
+                              : '0 2px 8px rgba(0,0,0,0.08)'
                           }}
                         >
                           {hub.icon}
                         </Avatar>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                           <Typography
-                            variant="subtitle1"
+                            variant="h6"
                             fontWeight={600}
                             sx={{
-                              fontSize: '0.9375rem',
+                              fontSize: '1rem',
                               lineHeight: 1.3,
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
-                              mb: 0.5
+                              mb: 0.5,
+                              letterSpacing: '-0.01em'
                             }}
                           >
                             {hub.name}
@@ -381,7 +486,7 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                               color="text.secondary"
                               sx={{
                                 fontSize: '0.8125rem',
-                                lineHeight: 1.4,
+                                lineHeight: 1.5,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 display: '-webkit-box',
@@ -401,7 +506,12 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                               e.stopPropagation();
                               handleMenuOpen(e, hub);
                             }}
-                            sx={{ ml: 0.5 }}
+                            sx={{ 
+                              ml: 0.5,
+                              '&:hover': {
+                                bgcolor: 'action.hover'
+                              }
+                            }}
                           >
                             <MoreIcon fontSize="small" />
                           </IconButton>
@@ -469,13 +579,19 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                             e.stopPropagation();
                             onOpenHub(hub);
                           }}
-                          size="small"
+                          size="medium"
+                          className="hub-open-button"
                           sx={{
                             borderRadius: 1.5,
                             textTransform: 'none',
                             fontWeight: 600,
-                            fontSize: '0.8125rem',
-                            py: 0.75
+                            fontSize: '0.875rem',
+                            py: 1,
+                            boxShadow: 'none',
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              boxShadow: 2
+                            }
                           }}
                         >
                           Open Hub
