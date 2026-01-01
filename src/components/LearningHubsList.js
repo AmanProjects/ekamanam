@@ -233,7 +233,7 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
             gap: 2
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-              <IconButton onClick={onBack} sx={{ bgcolor: 'white' }} size="small">
+              <IconButton onClick={onBack} sx={{ bgcolor: 'background.paper' }} size="small">
                 <BackIcon />
               </IconButton>
               <Typography variant={{ xs: 'h5', sm: 'h4' }} fontWeight={600}>
@@ -295,9 +295,10 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
             sx={{
               p: { xs: 4, sm: 8 },
               textAlign: 'center',
-              border: '2px dashed #e0e0e0',
+              border: '2px dashed',
+              borderColor: 'divider',
               borderRadius: 3,
-              bgcolor: 'white'
+              bgcolor: 'background.paper'
             }}
           >
             <FolderIcon sx={{ fontSize: { xs: 60, sm: 80 }, color: '#bdbdbd', mb: 2 }} />
@@ -332,7 +333,8 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                     elevation={0}
                     sx={{
                       height: '100%',
-                      border: '1px solid #e0e0e0',
+                      border: '1px solid',
+                      borderColor: 'divider',
                       borderRadius: 3,
                       transition: 'all 0.2s',
                       '&:hover': {
@@ -541,7 +543,8 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                 key={icon}
                 onClick={() => setHubForm({ ...hubForm, icon })}
                 sx={{
-                  border: hubForm.icon === icon ? '2px solid #2196F3' : '1px solid #e0e0e0',
+                  border: hubForm.icon === icon ? '2px solid' : '1px solid',
+                  borderColor: hubForm.icon === icon ? 'primary.main' : 'divider',
                   fontSize: { xs: '1.25rem', sm: '1.5rem' },
                   width: { xs: 42, sm: 48 },
                   height: { xs: 42, sm: 48 }
@@ -671,7 +674,8 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                 key={icon}
                 onClick={() => setHubForm({ ...hubForm, icon })}
                 sx={{
-                  border: hubForm.icon === icon ? '2px solid #2196F3' : '1px solid #e0e0e0',
+                  border: hubForm.icon === icon ? '2px solid' : '1px solid',
+                  borderColor: hubForm.icon === icon ? 'primary.main' : 'divider',
                   fontSize: { xs: '1.25rem', sm: '1.5rem' },
                   width: { xs: 42, sm: 48 },
                   height: { xs: 42, sm: 48 }

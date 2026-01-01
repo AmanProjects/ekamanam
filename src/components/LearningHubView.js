@@ -611,7 +611,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
           </Box>
 
           {/* Hub Info */}
-          <Box sx={{ p: 2, bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}>
+          <Box sx={{ p: 2, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
               <Avatar sx={{ bgcolor: hubData.color, mr: 1.5, width: 32, height: 32 }}>
                 {hubData.icon}
@@ -648,7 +648,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
           </Box>
 
           {/* PDF List */}
-          <List sx={{ flex: 1, overflow: 'auto', bgcolor: 'white' }}>
+          <List sx={{ flex: 1, overflow: 'auto', bgcolor: 'background.paper' }}>
             {hubPdfs.length === 0 && (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <PdfIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
@@ -732,7 +732,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
           }}
         >
           {/* Hub Header */}
-          <Box sx={{ bgcolor: 'white' }}>
+          <Box sx={{ bgcolor: 'background.paper' }}>
             {/* Panel Title */}
             <Box sx={{ 
               display: 'flex', 
@@ -783,7 +783,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
           </Box>
           
           {/* PDF List */}
-          <List sx={{ flex: 1, overflow: 'auto', bgcolor: 'white' }}>
+          <List sx={{ flex: 1, overflow: 'auto', bgcolor: 'background.paper' }}>
             {hubPdfs.length === 0 && (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <PdfIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
@@ -1186,7 +1186,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
             flexDirection: 'column',
             borderRadius: 0,
             overflow: 'hidden',
-            bgcolor: 'white',
+            bgcolor: 'background.paper',
             minHeight: 0,
             // Hide the tab headers from AIModePanel (we use icons instead)
             '& .MuiPaper-root:has(.MuiTabs-root)': {
@@ -1449,7 +1449,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
           borderTop: '1px solid',
           borderColor: 'divider',
           textAlign: 'center',
-          bgcolor: 'white',
+          bgcolor: 'background.paper',
           flexShrink: 0
         }}>
           <Box component="span" sx={{ fontSize: '0.65rem', color: 'text.secondary', display: 'block', lineHeight: 1.4 }}>
@@ -1872,7 +1872,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
               borderTop: '1px solid',
               borderColor: 'divider',
               textAlign: 'center',
-              bgcolor: 'white',
+              bgcolor: 'background.paper',
               flexShrink: 0
             }}>
               <Box component="span" sx={{ fontSize: '0.65rem', color: 'text.secondary', display: 'block', lineHeight: 1.4 }}>

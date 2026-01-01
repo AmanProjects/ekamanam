@@ -95,7 +95,7 @@ function LandingDashboard({
   };
 
   return (
-    <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', width: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', width: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
       {/* Subscription Banner - Mobile */}
       {isMobile && (
         <SubscriptionBanner 
@@ -257,7 +257,7 @@ function LandingDashboard({
       </Box>
 
       {/* Powerful Features Section - Professional EdTech Design */}
-      <Box id="features" sx={{ py: { xs: 6, md: 10 }, bgcolor: 'grey.50' }}>
+      <Box id="features" sx={{ py: { xs: 6, md: 10 }, bgcolor: 'background.default' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" fontWeight={700} textAlign="center" gutterBottom>
             Powerful Features
@@ -323,7 +323,7 @@ function LandingDashboard({
                   sx={{
                     p: 3,
                     height: '100%',
-                    bgcolor: 'white',
+                    bgcolor: 'background.paper',
                     borderRadius: 2,
                     transition: 'all 0.2s ease',
                     '&:hover': {
@@ -366,7 +366,7 @@ function LandingDashboard({
         id="story"
         sx={{
           py: { xs: 6, md: 10 },
-          bgcolor: 'grey.50',
+          bgcolor: 'background.default',
         }}
       >
         <Container maxWidth="md">
@@ -390,7 +390,7 @@ function LandingDashboard({
               mb: 4,
               borderLeft: '4px solid',
               borderColor: 'primary.main',
-              bgcolor: 'white',
+              bgcolor: 'background.paper',
             }}
           >
             <Typography variant="body1" sx={{ fontStyle: 'italic', color: 'text.secondary', lineHeight: 1.8 }}>
@@ -404,7 +404,7 @@ function LandingDashboard({
           </Paper>
 
           {/* The Challenge */}
-          <Paper elevation={1} sx={{ p: { xs: 3, md: 4 }, mb: 4, bgcolor: 'white' }}>
+          <Paper elevation={1} sx={{ p: { xs: 3, md: 4 }, mb: 4, bgcolor: 'background.paper' }}>
             <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.8 }}>
               We all have that stack of textbooks, PDFs, and study materials we swear we're going to master.
               But let's be honest—<strong>staring at static pages doesn't equal learning</strong>.
@@ -511,7 +511,7 @@ function LandingDashboard({
               onClick={onOpenHubs}
               endIcon={<ArrowIcon />}
               sx={{
-                bgcolor: 'white',
+                bgcolor: 'background.paper',
                 color: 'primary.main',
                 px: 5,
                 py: 1.5,
