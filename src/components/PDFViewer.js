@@ -9,9 +9,10 @@ import {
   Note as NoteIcon
 } from '@mui/icons-material';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
-// Set worker path
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Set worker using the bundled worker (more reliable than CDN)
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 function PDFViewer({ 
   selectedFile, 
