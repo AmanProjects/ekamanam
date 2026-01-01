@@ -220,32 +220,31 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa' }}>
-      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3 } }}>
         {/* Header */}
-        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+        <Box sx={{ mb: 3 }}>
           <Box sx={{ 
             display: 'flex', 
             alignItems: { xs: 'flex-start', sm: 'center' }, 
             justifyContent: 'space-between', 
-            mb: 2,
+            mb: 1.5,
             flexDirection: { xs: 'column', sm: 'row' },
-            gap: 2
+            gap: 1.5
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <IconButton onClick={onBack} sx={{ bgcolor: 'background.paper' }} size="small">
                 <BackIcon />
               </IconButton>
-              <Typography variant={{ xs: 'h5', sm: 'h4' }} fontWeight={600}>
+              <Typography variant="h5" fontWeight={600} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                 {isFreeUser ? 'Sample Learning Hubs' : 'My Learning Hubs'}
               </Typography>
               {isFreeUser && (
                 <Chip
                   label="Free Preview"
                   size="small"
+                  color="primary"
                   sx={{
-                    bgcolor: '#1976d2',
-                    color: 'white',
                     fontWeight: 600,
                     fontSize: '0.7rem'
                   }}
@@ -259,12 +258,11 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
               sx={{
                 borderRadius: 2,
                 px: { xs: 2, sm: 3 },
-                py: { xs: 1, sm: 1.5 },
+                py: 1,
                 textTransform: 'none',
-                fontSize: { xs: '0.9rem', sm: '1rem' },
-                boxShadow: 2,
-                width: { xs: '100%', sm: 'auto' },
-                bgcolor: isFreeUser ? '#1976d2' : 'primary.main'
+                fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+                fontWeight: 600,
+                width: { xs: '100%', sm: 'auto' }
               }}
             >
               {isFreeUser ? (
@@ -301,7 +299,7 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
               bgcolor: 'background.paper'
             }}
           >
-            <FolderIcon sx={{ fontSize: { xs: 60, sm: 80 }, color: '#bdbdbd', mb: 2 }} />
+            <FolderIcon sx={{ fontSize: { xs: 60, sm: 80 }, color: 'text.disabled', mb: 2 }} />
             <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
               No Learning Hubs Yet
             </Typography>
@@ -324,48 +322,55 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
 
         {/* Hubs Grid */}
         {!loading && hubs.length > 0 && (
-          <Grid container spacing={{ xs: 2, sm: 3 }}>
+          <Grid container spacing={{ xs: 2, sm: 2.5 }}>
             {hubs.map((hub) => {
               const stats = getHubStats(hub);
               return (
-                <Grid item xs={12} sm={6} md={4} key={hub.id}>
+                <Grid item xs={12} sm={6} md={4} lg={3} key={hub.id}>
                   <Card
                     elevation={0}
+                    onClick={() => onOpenHub(hub)}
                     sx={{
                       height: '100%',
                       border: '1px solid',
                       borderColor: 'divider',
-                      borderRadius: 3,
+                      borderRadius: 2,
                       transition: 'all 0.2s',
+                      cursor: 'pointer',
                       '&:hover': {
-                        boxShadow: 4,
-                        transform: 'translateY(-4px)'
+                        borderColor: 'primary.main',
+                        boxShadow: (theme) => theme.palette.mode === 'dark' 
+                          ? '0 4px 12px rgba(0,0,0,0.3)' 
+                          : '0 4px 12px rgba(0,0,0,0.08)',
+                        transform: 'translateY(-2px)'
                       }
                     }}
                   >
-                    <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                    <CardContent sx={{ p: 2 }}>
                       {/* Hub Header */}
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}>
                         <Avatar
                           sx={{
                             bgcolor: hub.color,
-                            width: { xs: 48, sm: 56 },
-                            height: { xs: 48, sm: 56 },
-                            fontSize: { xs: '1.75rem', sm: '2rem' },
-                            mr: { xs: 1.5, sm: 2 }
+                            width: 44,
+                            height: 44,
+                            fontSize: '1.5rem',
+                            mr: 1.5
                           }}
                         >
                           {hub.icon}
                         </Avatar>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                           <Typography
-                            variant="h6"
+                            variant="subtitle1"
                             fontWeight={600}
                             sx={{
-                              fontSize: { xs: '1rem', sm: '1.25rem' },
+                              fontSize: '0.9375rem',
+                              lineHeight: 1.3,
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
+                              whiteSpace: 'nowrap',
+                              mb: 0.5
                             }}
                           >
                             {hub.name}
@@ -375,8 +380,8 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                               variant="body2"
                               color="text.secondary"
                               sx={{
-                                mt: 0.5,
-                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                fontSize: '0.8125rem',
+                                lineHeight: 1.4,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 display: '-webkit-box',
@@ -392,7 +397,11 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                         {!hub.isSample && (
                           <IconButton
                             size="small"
-                            onClick={(e) => handleMenuOpen(e, hub)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMenuOpen(e, hub);
+                            }}
+                            sx={{ ml: 0.5 }}
                           >
                             <MoreIcon fontSize="small" />
                           </IconButton>
@@ -400,45 +409,54 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                       </Box>
 
                       {/* Stats */}
-                      <Box sx={{ mt: { xs: 2, sm: 3 }, pt: 2, borderTop: '1px solid #f0f0f0' }}>
-                        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                      <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                        <Box sx={{ display: 'flex', gap: 0.75, mb: 1.5, flexWrap: 'wrap' }}>
                           <Chip
                             label={`${stats.pdfCount} ${stats.pdfCount === 1 ? 'PDF' : 'PDFs'}`}
                             size="small"
-                            sx={{ bgcolor: 'action.hover', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
+                            sx={{ 
+                              bgcolor: 'action.hover', 
+                              fontSize: '0.75rem',
+                              height: 24
+                            }}
                           />
                           <Chip
                             label={`${stats.totalPages || 0} pages`}
                             size="small"
-                            sx={{ bgcolor: 'action.hover', fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
+                            sx={{ 
+                              bgcolor: 'action.hover', 
+                              fontSize: '0.75rem',
+                              height: 24
+                            }}
                           />
                           {hub.isSample && (
                             <Chip
                               label="Sample"
                               size="small"
+                              color="primary"
+                              variant="outlined"
                               sx={{
-                                bgcolor: '#e3f2fd',
-                                color: '#1976d2',
                                 fontWeight: 600,
-                                fontSize: { xs: '0.7rem', sm: '0.8125rem' }
+                                fontSize: '0.75rem',
+                                height: 24
                               }}
                             />
                           )}
                         </Box>
                         {stats.pdfCount > 0 && (
-                          <Box sx={{ mb: 2 }}>
+                          <Box sx={{ mb: 1 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
                                 Progress
                               </Typography>
-                              <Typography variant="caption" fontWeight={600} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                              <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.6875rem' }}>
                                 {stats.avgProgress}%
                               </Typography>
                             </Box>
                             <LinearProgress
                               variant="determinate"
                               value={stats.avgProgress}
-                              sx={{ height: { xs: 5, sm: 6 }, borderRadius: 1 }}
+                              sx={{ height: 5, borderRadius: 1 }}
                             />
                           </Box>
                         )}
@@ -447,14 +465,17 @@ function LearningHubsList({ onBack, onOpenHub, user, subscription, onUpgrade }) 
                         <Button
                           fullWidth
                           variant="contained"
-                          onClick={() => onOpenHub(hub)}
-                          size="medium"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenHub(hub);
+                          }}
+                          size="small"
                           sx={{
-                            borderRadius: 2,
+                            borderRadius: 1.5,
                             textTransform: 'none',
                             fontWeight: 600,
-                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                            py: { xs: 0.75, sm: 1 }
+                            fontSize: '0.8125rem',
+                            py: 0.75
                           }}
                         >
                           Open Hub
