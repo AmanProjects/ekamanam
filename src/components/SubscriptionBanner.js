@@ -112,11 +112,11 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
             textTransform: 'none',
             fontSize: '0.75rem',
             fontWeight: 600,
-            borderColor: '#4caf50',
-            color: '#4caf50',
+            borderColor: '#1976d2',
+            color: '#1976d2',
             '&:hover': {
-              borderColor: '#45a049',
-              bgcolor: 'rgba(76, 175, 80, 0.04)'
+              borderColor: '#1565c0',
+              bgcolor: 'rgba(25, 118, 210, 0.04)'
             }
           }}
         >
@@ -132,7 +132,7 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
         sx={{
           borderRadius: 0,
           borderBottom: '1px solid #e0e0e0',
-          background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
+          background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
           px: 2,
           py: 1.5
         }}
@@ -157,7 +157,7 @@ function SubscriptionBanner({ subscription, onUpgrade, isMobile, isLoggedIn, use
               py: 0.5,
               px: 1.5,
               bgcolor: 'white',
-              color: '#2e7d32',
+              color: '#1565c0',
               '&:hover': {
                 bgcolor: 'rgba(255,255,255,0.9)'
               }
