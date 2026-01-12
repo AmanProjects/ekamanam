@@ -259,8 +259,7 @@ function LearningHubView({
         if (hub.pdfIds.includes('sample-coordinate-geometry')) {
           samplePdfs.push({
             id: 'sample-coordinate-geometry',
-            name: 'Coordinate Geometry',
-            originalFileName: '7.Coordinate Geometry.pdf',
+            name: '7.Coordinate Geometry.pdf',
             totalPages: 50,
             pageCount: 50,
             isSample: true,
@@ -271,8 +270,7 @@ function LearningHubView({
         if (hub.pdfIds.includes('sample-freedom-movement')) {
           samplePdfs.push({
             id: 'sample-freedom-movement',
-            name: 'Freedom Movement in Hyderabad State',
-            originalFileName: '8th Class-TS-EM-Social Studies-12 –Freedom Movement in Hyderabad State.pdf',
+            name: '8th Class-TS-EM-Social Studies-12 –Freedom Movement in Hyderabad State.pdf',
             totalPages: 60,
             pageCount: 60,
             isSample: true,
