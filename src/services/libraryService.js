@@ -102,13 +102,17 @@ export const addPDFToLibrary = async (file, metadata = {}) => {
 
     // Read file as ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
+    
+    // Create a copy to prevent detachment issues when used by multiple operations
+    const arrayBufferCopy = arrayBuffer.slice(0);
 
     // Extract page count from PDF using PDF.js
     let pageCount = metadata.totalPages || 0;
     if (!pageCount) {
       try {
         const pdfjsLib = await import('pdfjs-dist');
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        // Use the copy for PDF.js to avoid detaching the original
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBufferCopy });
         const pdf = await loadingTask.promise;
         pageCount = pdf.numPages;
         console.log('📄 Extracted page count:', pageCount);

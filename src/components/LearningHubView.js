@@ -516,7 +516,7 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
       setUploadProgress(30);
       
       // Upload PDF to library
-      const pdfId = await libraryService.addPDFToLibrary(file, {
+      const libraryItem = await libraryService.addPDFToLibrary(file, {
         subject: hubData.name,
         class: '',
         customSubject: hubData.description || ''
@@ -525,8 +525,8 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
       setUploadProgress(70);
       
       // Add the newly uploaded PDF to this hub
-      if (pdfId) {
-        await learningHubService.addPdfToHub(hubData.id, pdfId);
+      if (libraryItem && libraryItem.id) {
+        await learningHubService.addPdfToHub(hubData.id, libraryItem.id);
       }
       
       setUploadProgress(100);
