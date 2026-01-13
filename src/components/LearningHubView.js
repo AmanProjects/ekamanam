@@ -498,9 +498,67 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
     try {
       // Check if it's a ZIP file
       if (zipHandler.isZipFile(file)) {
-        alert('ZIP file upload coming soon! For now, please upload individual PDFs.');
-        event.target.value = ''; // Reset input
-        setUploading(false);
+        console.log('📦 Processing ZIP file:', file.name);
+        setUploadProgress(10);
+        
+        // Extract PDFs from ZIP with progress tracking
+        const pdfFiles = await zipHandler.extractZipFile(file, (current, total, message) => {
+          const progress = 10 + Math.floor((current / total) * 40); // 10-50%
+          setUploadProgress(progress);
+          console.log(`📦 ${current}/${total}: ${message}`);
+        });
+        
+        console.log(`✅ Extracted ${pdfFiles.length} PDFs from ZIP`);
+        setUploadProgress(50);
+        
+        // Upload each PDF to library
+        const uploadedIds = [];
+        for (let i = 0; i < pdfFiles.length; i++) {
+          const pdfItem = pdfFiles[i];
+          const progress = 50 + Math.floor((i / pdfFiles.length) * 40); // 50-90%
+          setUploadProgress(progress);
+          
+          console.log(`📤 Uploading ${i + 1}/${pdfFiles.length}: ${pdfItem.filename}`);
+          
+          try {
+            const libraryItem = await libraryService.addPDFToLibrary(pdfItem.file, {
+              subject: pdfItem.metadata.subject || hubData.name,
+              class: pdfItem.metadata.class || '',
+              collection: pdfItem.metadata.collection || hubData.name,
+              chapter: pdfItem.metadata.chapter,
+              chapterTitle: pdfItem.metadata.title,
+              pdfTitle: pdfItem.metadata.pdfTitle,
+              customSubject: hubData.description || '',
+              totalPages: pdfItem.metadata.totalPages
+            });
+            
+            if (libraryItem && libraryItem.id) {
+              uploadedIds.push(libraryItem.id);
+              
+              // Add to hub
+              await learningHubService.addPdfToHub(hubData.id, libraryItem.id);
+            }
+          } catch (pdfError) {
+            console.error(`❌ Failed to upload ${pdfItem.filename}:`, pdfError);
+            // Continue with other PDFs
+          }
+        }
+        
+        setUploadProgress(100);
+        
+        // Show success message
+        alert(`Successfully uploaded ${uploadedIds.length} out of ${pdfFiles.length} PDFs from ZIP file!`);
+        
+        // Reload hub data
+        await loadHubData();
+        
+        // Close dialog after successful upload
+        setTimeout(() => {
+          setAddPdfDialogOpen(false);
+          setUploading(false);
+          setUploadProgress(0);
+        }, 1000);
+        
         return;
       }
       
