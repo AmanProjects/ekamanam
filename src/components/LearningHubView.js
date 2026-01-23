@@ -137,7 +137,7 @@ function LearningHubView({
   const [toolContext, setToolContext] = useState(null);
   
   // Resizable panels state
-  const [rightPanelWidth, setRightPanelWidth] = useState(400);
+  const [rightPanelWidth, setRightPanelWidth] = useState(500);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
@@ -225,8 +225,8 @@ function LearningHubView({
     const containerRect = containerRef.current.getBoundingClientRect();
     const newWidth = containerRect.right - e.clientX - 60; // 60 for icon band width
     
-    // Constrain between 300px and 600px
-    if (newWidth >= 300 && newWidth <= 600) {
+    // Constrain between 350px and 900px
+    if (newWidth >= 350 && newWidth <= 900) {
       setRightPanelWidth(newWidth);
     }
   };
@@ -1263,8 +1263,8 @@ Provide a helpful, clear, and educational response. If relevant, suggest an inte
         <Box
           sx={{
             width: isMobile ? 0 : rightPanelWidth,
-            minWidth: isMobile ? 0 : 300,
-            maxWidth: isMobile ? 0 : 600,
+            minWidth: isMobile ? 0 : 350,
+            maxWidth: isMobile ? 0 : 900,
             display: isMobile ? 'none' : 'flex',
             flexDirection: 'column',
             borderRadius: 0,
